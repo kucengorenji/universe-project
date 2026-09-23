@@ -3,256 +3,154 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Planet Globe 3D — Procedural Hex World</title>
+  <title>Planet Globe</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body>
-  <!-- 3D WebGL Canvas Container -->
-  <div id="canvas-container"></div>
-
-  <!-- Top-Left Menu Toggle Button -->
-  <div class="top-bar-controls">
-    <button id="menuToggleBtn" class="menu-toggle-btn" aria-label="Buka Menu Pengaturan Globe">
-      <div class="hex-icon">
-        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12 2 21 7 21 17 12 22 3 17 3 7 12 2"></polygon>
-        </svg>
-      </div>
-      <span class="btn-text">Globe Menu</span>
-      <span class="indicator-dot"></span>
-    </button>
+  <!-- Seed number as wall type, hung behind the globe -->
+  <div class="wall-type" aria-hidden="true">
+    <span class="wall-type__label">Seed</span>
+    <span id="wallSeed" class="wall-type__seed">000000</span>
   </div>
 
-  <!-- Top-Right Live Status HUD -->
-  <div class="top-right-hud">
-    <div class="hud-pill">
-      <span class="dot-live"></span>
-      <span id="storageStatusBadge">Local Storage Synced</span>
-    </div>
-    <div class="hud-pill seed-pill">
-      <span class="pill-label">Seed:</span>
-      <span id="seedBadge" class="mono">#000000</span>
-    </div>
-  </div>
+  <div id="canvas-container" aria-label="Globe 3D. Seret untuk memutar, scroll untuk zoom."></div>
 
-  <!-- Collapsible Side Drawer (Civ & Generation Menu) -->
-  <aside id="sidebarDrawer" class="sidebar-drawer">
-    <div class="drawer-header">
-      <div class="brand">
-        <div class="brand-icon">
-          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M2 12h20"></path>
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-          </svg>
-        </div>
-        <div>
-          <h2>Terra Hex 3D</h2>
-          <p class="subtitle">Procedural Geodesic Globe</p>
-        </div>
-      </div>
-      <button id="closeSidebarBtn" class="icon-close-btn" aria-label="Tutup Menu">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
+  <header class="topbar">
+    <span class="wordmark">Planet Globe</span>
+    <div class="topbar__right">
+      <span id="storageStatusBadge" class="topbar__status">Tersimpan di browser</span>
+      <span class="cta-pair">
+        <span class="cta-pair__question">Dunia lain?</span>
+        <button id="quickRegenerateBtn" class="pill" type="button">Acak dunia</button>
+      </span>
+      <button id="menuToggleBtn" class="menu-circle" type="button" aria-label="Buka pengaturan" aria-expanded="false" aria-controls="sidebarDrawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <p id="assetStatus" class="asset-status" role="status">Memuat model 3D</p>
+
+  <p class="hint">Seret untuk memutar. Scroll untuk zoom. Klik tile untuk detail.</p>
+
+  <aside id="sidebarDrawer" class="panel" aria-label="Pengaturan globe" aria-hidden="true">
+    <div class="panel__head">
+      <h2 class="panel__title">Pengaturan</h2>
+      <button id="closeSidebarBtn" class="menu-circle menu-circle--close" type="button" aria-label="Tutup pengaturan">
+        <span></span><span></span>
       </button>
     </div>
 
-    <div class="drawer-content">
-      <!-- Section 1: Procedural Map Generator -->
-      <section class="menu-section">
-        <div class="section-title-wrap">
-          <span class="section-badge">MAP GEN</span>
-          <h3>Procedural Generator</h3>
-        </div>
-        <p class="section-desc">
-          Map disimpan permanen di <strong>Local Storage</strong>. Klik regenerate untuk mengacak daratan baru.
-        </p>
+    <div class="panel__body">
+      <section class="panel__section" aria-labelledby="secWorld">
+        <h3 id="secWorld" class="panel__heading">Dunia</h3>
 
-        <div class="control-group">
-          <label for="seedInput">World Seed:</label>
-          <div class="input-with-action">
-            <input type="number" id="seedInput" placeholder="Contoh: 123456" />
-            <button id="randomSeedBtn" class="btn-secondary" title="Acak Angka Seed">🎲 Acak</button>
+        <div class="field">
+          <label for="seedInput" class="field__label">Seed</label>
+          <div class="field__row">
+            <input type="number" id="seedInput" class="field__input" placeholder="Angka seed, misal 123456" />
+            <button id="randomSeedBtn" class="pill pill--ghost" type="button">Acak seed</button>
           </div>
         </div>
 
-        <div class="control-group">
-          <div class="slider-header">
-            <label for="seaLevelSlider">Permukaan Air (Sea Level):</label>
-            <span id="seaLevelValue" class="slider-val">50%</span>
+        <div class="field">
+          <div class="field__row field__row--split">
+            <label for="seaLevelSlider" class="field__label">Permukaan laut</label>
+            <output id="seaLevelValue" class="field__value" for="seaLevelSlider">50%</output>
           </div>
           <input type="range" id="seaLevelSlider" min="-0.3" max="0.2" step="0.02" value="-0.05" />
         </div>
 
-        <div class="control-group">
-          <div class="slider-header">
-            <label for="mountainSlider">Kerapatan Gunung:</label>
-            <span id="mountainValue" class="slider-val">60%</span>
+        <div class="field">
+          <div class="field__row field__row--split">
+            <label for="mountainSlider" class="field__label">Kerapatan gunung</label>
+            <output id="mountainValue" class="field__value" for="mountainSlider">60%</output>
           </div>
           <input type="range" id="mountainSlider" min="0.25" max="0.55" step="0.02" value="0.38" />
         </div>
 
-        <div class="control-group">
-          <div class="slider-header">
-            <label for="subdivisionSlider">Total Tiles (Kepadatan Grid):</label>
-            <span id="subdivisionValue" class="slider-val">10.242 Tiles (Ultra)</span>
+        <div class="field">
+          <div class="field__row field__row--split">
+            <label for="subdivisionSlider" class="field__label">Jumlah tile</label>
+            <output id="subdivisionValue" class="field__value" for="subdivisionSlider">10.242</output>
           </div>
           <input type="range" id="subdivisionSlider" min="2" max="5" step="1" value="5" />
-          <div class="slider-ticks">
-            <span>162</span>
-            <span>642</span>
-            <span>2.5k</span>
-            <span>10k</span>
-          </div>
         </div>
 
-        <button id="regenerateBtn" class="btn-primary">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-          </svg>
-          Regenerate New Map
-        </button>
-      </section>
-
-      <!-- Section 2: Civilization Territory Layout -->
-      <section class="menu-section">
-        <div class="section-title-wrap">
-          <span class="section-badge civ">CIVILIZATION</span>
-          <h3>Wilayah & Koneksi Faksi</h3>
-        </div>
-
-        <!-- Player Card -->
-        <div class="faction-card player-faction">
-          <div class="faction-card-header">
-            <div class="faction-avatar player-avatar">👑</div>
-            <div class="faction-info">
-              <h4>Player Starter Territory</h4>
-              <span class="capital-name">Ibukota: <strong>New Babylon</strong></span>
-            </div>
-            <span class="territory-tag player-tag" id="playerTilesBadge">9 Hex Tiles</span>
-          </div>
-          <p class="faction-note">
-            Border neon cyan mengelilingi perimeter wilayah starter pack Anda.
-          </p>
-        </div>
-
-        <!-- System NPC Card -->
-        <div class="faction-card system-faction">
-          <div class="faction-card-header">
-            <div class="faction-avatar system-avatar">🛡️</div>
-            <div class="faction-info">
-              <h4>System (NPC) Territory</h4>
-              <span class="capital-name">Ibukota: <strong>Aegis Citadel</strong></span>
-            </div>
-            <span class="territory-tag system-tag" id="systemTilesBadge">9 Hex Tiles</span>
-          </div>
-          <p class="faction-note">
-            Wilayah otonom sistem di benua seberang dengan border neon magenta.
-          </p>
-        </div>
-
-        <!-- Connection Route Card -->
-        <div class="connection-card">
-          <div class="connection-icon">⚡</div>
-          <div class="connection-text">
-            <strong>Garis Koneksi Antar Ibukota:</strong>
-            <p>Rute perdagangan & diplomasi antara New Babylon dan Aegis Citadel.</p>
-          </div>
-        </div>
-
-        <!-- Route Toggles: Jalur Udara & Jalur Darat -->
-        <div class="route-toggles-container">
-          <div class="toggle-row route-toggle-row">
-            <span class="route-toggle-label">
-              <span class="route-dot air-dot"></span>
-              ✈️ Jalur Udara (Sky Route)
-            </span>
-            <label class="switch">
-              <input type="checkbox" id="airRouteToggle" checked />
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="toggle-row route-toggle-row">
-            <span class="route-toggle-label">
-              <span class="route-dot ground-dot"></span>
-              🚂 Jalur Darat (Surface Route)
-            </span>
-            <label class="switch">
-              <input type="checkbox" id="groundRouteToggle" checked />
-              <span class="slider round"></span>
-            </label>
-          </div>
+        <div class="cta-pair cta-pair--block">
+          <span class="cta-pair__question">Siap dengan pengaturan ini?</span>
+          <button id="regenerateBtn" class="pill" type="button">Bangun ulang dunia</button>
         </div>
       </section>
 
-      <!-- Section 3: Camera & View Settings -->
-      <section class="menu-section">
-        <div class="section-title-wrap">
-          <span class="section-badge">VIEW</span>
-          <h3>Kamera & Navigasi</h3>
+      <section class="panel__section panel__section--flush" aria-labelledby="secFaction">
+        <h3 id="secFaction" class="panel__heading panel__heading--inset">Faksi</h3>
+        <div class="blocks">
+          <div class="block block--green">
+            <span class="block__name">New Babylon</span>
+            <span class="block__meta">Pemain <span class="sep">/</span> <span id="playerTilesBadge">0 tile</span></span>
+          </div>
+          <div class="block block--red">
+            <span class="block__name">Aegis Citadel</span>
+            <span class="block__meta">Sistem <span class="sep">/</span> <span id="systemTilesBadge">0 tile</span></span>
+          </div>
         </div>
+        <p id="settlementSummary" class="panel__note panel__note--inset">Belum ada pemukiman.</p>
+      </section>
 
-        <div class="toggle-row">
-          <span>Auto-Rotate Planet</span>
-          <label class="switch">
-            <input type="checkbox" id="autoRotateToggle" />
-            <span class="slider round"></span>
-          </label>
-        </div>
+      <section class="panel__section" aria-labelledby="secRoutes">
+        <h3 id="secRoutes" class="panel__heading">Jalur</h3>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title">Udara</span>
+            <span class="switch-row__meta">Busur antar dua ibukota</span>
+          </span>
+          <input type="checkbox" id="airRouteToggle" class="switch" checked />
+        </label>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title">Darat</span>
+            <span id="landRouteMeta" class="switch-row__meta">Jalan dan karavan</span>
+          </span>
+          <input type="checkbox" id="groundRouteToggle" class="switch" checked />
+        </label>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title">Laut</span>
+            <span id="seaRouteMeta" class="switch-row__meta">Rute kapal antar pelabuhan</span>
+          </span>
+          <input type="checkbox" id="seaRouteToggle" class="switch" checked />
+        </label>
+      </section>
 
-        <div class="button-row">
-          <button id="resetCameraBtn" class="btn-secondary full-width">
-            🎯 Reset Frame 75% Lebar Layar
-          </button>
-        </div>
-
-        <div class="button-row mt-sm">
-          <button id="clearStorageBtn" class="btn-subtle full-width">
-            🗑️ Reset Cache LocalStorage
-          </button>
+      <section class="panel__section" aria-labelledby="secCamera">
+        <h3 id="secCamera" class="panel__heading">Kamera</h3>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title">Putar otomatis</span>
+          </span>
+          <input type="checkbox" id="autoRotateToggle" class="switch" />
+        </label>
+        <div class="button-stack">
+          <button id="resetCameraBtn" class="pill pill--ghost" type="button">Kembalikan posisi kamera</button>
+          <button id="clearStorageBtn" class="text-button" type="button">Hapus peta tersimpan</button>
         </div>
       </section>
 
-      <!-- Section 4: Tile Inspector -->
-      <section class="menu-section">
-        <div class="section-title-wrap">
-          <span class="section-badge">INSPECT</span>
-          <h3>Inspeksi Tile Hexagon</h3>
-        </div>
-        <p class="section-desc">Klik salah satu tile hexagon di planet globe untuk melihat detailnya.</p>
+      <section class="panel__section" aria-labelledby="secInspect">
+        <h3 id="secInspect" class="panel__heading">Tile terpilih</h3>
         <div id="inspectedTileInfo">
-          <div class="empty-inspect">
-            <span>🖱️ Belum ada tile yang dipilih</span>
-          </div>
+          <p class="panel__note">Klik satu tile di globe untuk melihat bioma, pemilik, dan kotanya di sini.</p>
         </div>
       </section>
     </div>
   </aside>
 
-  <!-- Bottom Navigation Helper Hints -->
-  <div class="bottom-helper-bar">
-    <div class="helper-item">
-      <span class="key-mouse">🖱️ Drag</span> Rotasi Planet
-    </div>
-    <div class="divider"></div>
-    <div class="helper-item">
-      <span class="key-mouse">📜 Scroll</span> Zoom
-    </div>
-    <div class="divider"></div>
-    <div class="helper-item">
-      <span class="key-mouse">👆 Hover / Click</span> Inspeksi Hex Tile
-    </div>
-  </div>
+  <div id="tileTooltip" class="tooltip" role="tooltip"></div>
 
-  <!-- Mouse Hover Floating Tooltip -->
-  <div id="tileTooltip" class="tile-tooltip"></div>
-
-  <!-- Entry Script -->
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>

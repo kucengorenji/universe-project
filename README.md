@@ -72,3 +72,26 @@ globe/
 │   └── ui/
 │       └── menuController.js   # Kontrol menu toggle kiri atas, slider, & tile inspector
 ```
+
+---
+
+## 🎨 Update: Cartoon Terrain ala Civilization VI
+
+- **Tile hexagon datar**: semua daratan rata di satu level, laut sedikit lebih rendah dengan tebing pantai dan buih pesisir.
+- **Bioma**: laut dalam, laut, pesisir dangkal, pantai, padang rumput, hutan, padang pasir (dune + kaktus), gunung, dan tundra.
+- **Pegunungan dinamis** (`src/render/mountainBuilder.js`): tile gunung yang bersebelahan dilebur jadi satu massif heightfield. Tinggi dihitung dari jarak ke tepi range + ridged noise, dengan tudung salju mengikuti inti massif.
+- **Kota**: ibukota dan kota kecil 3D dengan banner nama, plus mercusuar di kota pelabuhan.
+- **Jalur darat & laut**: jaringan jalan dibuat dengan A* (menghindari gunung dan laut) dan dilalui karavan. Jalur laut putus-putus beranimasi antar pelabuhan dan dilalui kapal. Keduanya punya toggle di menu.
+- **Aset 3D Blender**: `tools/blender/build_assets.py` membuat GLB low-poly ke `public/models/` (kota, pohon pinus/bulat/palem, kaktus, batu, kapal, karavan, pelabuhan). Jalankan ulang lewat Blender MCP:
+  `exec(open('tools/blender/build_assets.py').read(), globals())`
+
+---
+
+## Update 2: UI The1 + aset v2 + optimasi
+
+- **UI** mengikuti arah desain The1: kanvas concrete `#d9d9d9`, Barlow Condensed (pengganti KH Teka), angka seed sebagai tipografi dinding di belakang globe, tombol pill iron, panel pengaturan flat dengan garis hairline, blok warna faksi (The Green = pemain, The Red = sistem). Tidak ada shadow, glow, atau glass.
+- **Kamera default** menampilkan seluruh planet (sekitar 91% sisi layar terpendek).
+- **Aset** (`tools/blender/build_assets.py` → `public/models/assets.glb`, 31 aset + 4 LOD, ±108 KB): pohon pinus/bulat/palem/akasia, semak, rumput, batu, mesa gurun, kaktus, balok es, 3 varian rumah, menara, kastil, kuil, tembok, pagar, lumbung, kincir angin, jerami, baris gandum/sayur, dermaga, perahu, kapal, karavan, jembatan, mercusuar.
+- **Kombinasi multi-tile**: kota 1 sampai 7 tile (ibukota 7 tile bertembok, kota kecil berpagar), ladang 1 sampai 7 tile dengan baris tanaman yang sejajar antar tile, pagar di keliling ladang, lumbung dan kincir angin. Jembatan muncul otomatis di titik jalan menyeberangi sungai, dan pinus tumbuh di kaki pegunungan.
+- **Optimasi**: satu request GLB tanpa normal/UV, props berupa InstancedMesh dibagi 12 chunk dengan horizon culling, LOD pohon saat zoom jauh, props detail (rumput, semak, jerami) hanya tampil saat dekat, ribbon sungai/jalan/rute laut di-merge, pointer diproses sekali per frame, dan penyimpanan localStorage dipadatkan per kolom (sekitar 2 MB menjadi sekitar 150 KB).
+

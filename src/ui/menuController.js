@@ -1,48 +1,65 @@
 import { BIOMES, STORAGE_KEY } from '../map/mapGenerator.js';
+import { BIOME_PALETTE } from '../render/planetRenderer.js';
+
+const BIOME_NAMES = {
+  [BIOMES.OCEAN_DEEP]: 'Laut dalam',
+  [BIOMES.OCEAN]: 'Laut',
+  [BIOMES.COAST]: 'Pesisir dangkal',
+  [BIOMES.BEACH]: 'Pantai',
+  [BIOMES.PLAINS]: 'Padang rumput',
+  [BIOMES.FOREST]: 'Hutan',
+  [BIOMES.DESERT]: 'Padang pasir',
+  [BIOMES.MOUNTAIN]: 'Pegunungan',
+  [BIOMES.TUNDRA]: 'Tundra salju'
+};
+
+const OWNER_NAMES = { player: 'New Babylon (pemain)', system: 'Aegis Citadel (sistem)' };
+const TILE_COUNTS = { 2: '162', 3: '642', 4: '2.562', 5: '10.242' };
+
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
 
 export class MenuController {
-  constructor({
-    onRegenerate,
-    onResetCamera,
-    onToggleAutoRotate,
-    mapData,
-    renderer
-  }) {
+  constructor({ onRegenerate, onResetCamera, onToggleAutoRotate, mapData, renderer }) {
     this.onRegenerate = onRegenerate;
     this.onResetCamera = onResetCamera;
     this.onToggleAutoRotate = onToggleAutoRotate;
     this.mapData = mapData;
     this.renderer = renderer;
-
     this.isOpen = false;
-    this.autoRotateActive = false;
+    this.lastTooltipTile = null;
 
-    this.elements = {
-      menuToggleBtn: document.getElementById('menuToggleBtn'),
-      sidebar: document.getElementById('sidebarDrawer'),
-      closeBtn: document.getElementById('closeSidebarBtn'),
-      regenerateBtn: document.getElementById('regenerateBtn'),
-      randomSeedBtn: document.getElementById('randomSeedBtn'),
-      seedInput: document.getElementById('seedInput'),
-      seaLevelSlider: document.getElementById('seaLevelSlider'),
-      seaLevelValue: document.getElementById('seaLevelValue'),
-      mountainSlider: document.getElementById('mountainSlider'),
-      mountainValue: document.getElementById('mountainValue'),
-      subdivisionSlider: document.getElementById('subdivisionSlider'),
-      subdivisionValue: document.getElementById('subdivisionValue'),
-      autoRotateToggle: document.getElementById('autoRotateToggle'),
-      airRouteToggle: document.getElementById('airRouteToggle'),
-      groundRouteToggle: document.getElementById('groundRouteToggle'),
-      resetCameraBtn: document.getElementById('resetCameraBtn'),
-      clearStorageBtn: document.getElementById('clearStorageBtn'),
-      // Stats elements
-      seedBadge: document.getElementById('seedBadge'),
-      playerTilesBadge: document.getElementById('playerTilesBadge'),
-      systemTilesBadge: document.getElementById('systemTilesBadge'),
-      storageStatusBadge: document.getElementById('storageStatusBadge'),
-      // Tile tooltip & detail
-      tileTooltip: document.getElementById('tileTooltip'),
-      inspectedTileInfo: document.getElementById('inspectedTileInfo')
+    const $ = (id) => document.getElementById(id);
+    this.el = {
+      menuToggleBtn: $('menuToggleBtn'),
+      panel: $('sidebarDrawer'),
+      closeBtn: $('closeSidebarBtn'),
+      quickRegenerateBtn: $('quickRegenerateBtn'),
+      regenerateBtn: $('regenerateBtn'),
+      randomSeedBtn: $('randomSeedBtn'),
+      seedInput: $('seedInput'),
+      seaLevelSlider: $('seaLevelSlider'),
+      seaLevelValue: $('seaLevelValue'),
+      mountainSlider: $('mountainSlider'),
+      mountainValue: $('mountainValue'),
+      subdivisionSlider: $('subdivisionSlider'),
+      subdivisionValue: $('subdivisionValue'),
+      autoRotateToggle: $('autoRotateToggle'),
+      airRouteToggle: $('airRouteToggle'),
+      groundRouteToggle: $('groundRouteToggle'),
+      seaRouteToggle: $('seaRouteToggle'),
+      resetCameraBtn: $('resetCameraBtn'),
+      clearStorageBtn: $('clearStorageBtn'),
+      wallSeed: $('wallSeed'),
+      playerTilesBadge: $('playerTilesBadge'),
+      systemTilesBadge: $('systemTilesBadge'),
+      settlementSummary: $('settlementSummary'),
+      landRouteMeta: $('landRouteMeta'),
+      seaRouteMeta: $('seaRouteMeta'),
+      storageStatusBadge: $('storageStatusBadge'),
+      assetStatus: $('assetStatus'),
+      tileTooltip: $('tileTooltip'),
+      inspectedTileInfo: $('inspectedTileInfo')
     };
 
     this.bindEvents();
@@ -50,307 +67,218 @@ export class MenuController {
   }
 
   bindEvents() {
-    // Menu toggle
-    this.elements.menuToggleBtn?.addEventListener('click', () => this.toggleSidebar());
-    this.elements.closeBtn?.addEventListener('click', () => this.closeSidebar());
+    const el = this.el;
+    el.menuToggleBtn.addEventListener('click', () => this.toggleSidebar());
+    el.closeBtn.addEventListener('click', () => this.closeSidebar());
 
     this.seedManuallyEdited = false;
-    this.elements.seedInput?.addEventListener('input', () => {
+    el.seedInput.addEventListener('input', () => (this.seedManuallyEdited = true));
+
+    el.regenerateBtn.addEventListener('click', () => {
+      const typed = parseInt(el.seedInput.value.trim(), 10);
+      const seed = this.seedManuallyEdited && !isNaN(typed) ? typed : this.randomSeed();
+      this.regenerate(seed);
+    });
+    el.quickRegenerateBtn.addEventListener('click', () => this.regenerate(this.randomSeed()));
+
+    el.randomSeedBtn.addEventListener('click', () => {
+      el.seedInput.value = this.randomSeed();
       this.seedManuallyEdited = true;
     });
 
-    // Regenerate Map
-    this.elements.regenerateBtn?.addEventListener('click', () => {
-      let seed = null;
-      if (this.seedManuallyEdited && this.elements.seedInput?.value.trim()) {
-        seed = parseInt(this.elements.seedInput.value.trim(), 10);
-      } else {
-        seed = Math.floor(Math.random() * 900000 + 100000);
-        if (this.elements.seedInput) {
-          this.elements.seedInput.value = seed;
-        }
-      }
-
-      const seaLevel = parseFloat(this.elements.seaLevelSlider?.value ?? -0.05);
-      const mountainThreshold = parseFloat(this.elements.mountainSlider?.value ?? 0.38);
-      const subdivision = parseInt(this.elements.subdivisionSlider?.value ?? 5, 10);
-
-      const label = this.formatSubdivisionLabel(subdivision);
-      this.flashStatus(`Generating ${label} world (Seed #${seed})...`);
-      this.onRegenerate(seed, { seaLevel, mountainThreshold, subdivision });
+    el.seaLevelSlider.addEventListener('input', (e) => {
+      el.seaLevelValue.textContent = `${Math.round((parseFloat(e.target.value) + 0.5) * 100)}%`;
+    });
+    el.mountainSlider.addEventListener('input', (e) => {
+      el.mountainValue.textContent = `${Math.round((1.0 - parseFloat(e.target.value)) * 100)}%`;
+    });
+    el.subdivisionSlider.addEventListener('input', (e) => {
+      el.subdivisionValue.textContent = TILE_COUNTS[e.target.value] || e.target.value;
     });
 
-    // Randomize Seed
-    this.elements.randomSeedBtn?.addEventListener('click', () => {
-      const newSeed = Math.floor(Math.random() * 900000 + 100000);
-      if (this.elements.seedInput) {
-        this.elements.seedInput.value = newSeed;
-      }
-      this.seedManuallyEdited = true;
-    });
+    el.autoRotateToggle.addEventListener('change', (e) => this.onToggleAutoRotate(e.target.checked));
+    el.airRouteToggle.addEventListener('change', (e) => this.renderer.setAirRouteVisible(e.target.checked));
+    el.groundRouteToggle.addEventListener('change', (e) => this.renderer.setGroundRouteVisible(e.target.checked));
+    el.seaRouteToggle.addEventListener('change', (e) => this.renderer.setSeaRouteVisible(e.target.checked));
 
-    // Sliders
-    this.elements.seaLevelSlider?.addEventListener('input', (e) => {
-      if (this.elements.seaLevelValue) {
-        const val = parseFloat(e.target.value);
-        this.elements.seaLevelValue.textContent = `${Math.round((val + 0.5) * 100)}%`;
-      }
-    });
-
-    this.elements.mountainSlider?.addEventListener('input', (e) => {
-      if (this.elements.mountainValue) {
-        const val = parseFloat(e.target.value);
-        this.elements.mountainValue.textContent = `${Math.round((1.0 - val) * 100)}%`;
-      }
-    });
-
-    this.elements.subdivisionSlider?.addEventListener('input', (e) => {
-      if (this.elements.subdivisionValue) {
-        const val = parseInt(e.target.value, 10);
-        this.elements.subdivisionValue.textContent = this.formatSubdivisionLabel(val);
-      }
-    });
-
-    // Auto Rotate
-    this.elements.autoRotateToggle?.addEventListener('change', (e) => {
-      this.autoRotateActive = e.target.checked;
-      this.onToggleAutoRotate(this.autoRotateActive);
-    });
-
-    // Air Route Toggle
-    this.elements.airRouteToggle?.addEventListener('change', (e) => {
-      this.renderer.setAirRouteVisible(e.target.checked);
-      this.flashStatus(`Jalur Udara: ${e.target.checked ? 'Ditampilkan' : 'Disembunyikan'}`);
-    });
-
-    // Ground Route Toggle
-    this.elements.groundRouteToggle?.addEventListener('change', (e) => {
-      this.renderer.setGroundRouteVisible(e.target.checked);
-      this.flashStatus(`Jalur Darat: ${e.target.checked ? 'Ditampilkan' : 'Disembunyikan'}`);
-    });
-
-    // Reset Camera Framing
-    this.elements.resetCameraBtn?.addEventListener('click', () => {
+    el.resetCameraBtn.addEventListener('click', () => {
       this.onResetCamera();
-      this.flashStatus('Camera reset to 75% horizontal frame');
+      this.flashStatus('Kamera kembali ke posisi awal');
     });
 
-    // Clear Storage
-    this.elements.clearStorageBtn?.addEventListener('click', () => {
+    el.clearStorageBtn.addEventListener('click', () => {
       try {
         localStorage.removeItem(STORAGE_KEY);
-        this.flashStatus('Local Storage cache cleared');
+        el.storageStatusBadge.textContent = 'Belum tersimpan';
+        this.flashStatus('Peta tersimpan dihapus. Muat ulang halaman untuk dunia baru.');
       } catch (err) {
-        console.warn(err);
+        this.flashStatus('Browser menolak akses penyimpanan, peta tidak bisa dihapus.');
       }
     });
 
-    // Wire renderer tile events
-    this.renderer.onTileHover = (tile, screenX, screenY) => this.handleTileHover(tile, screenX, screenY);
+    this.renderer.onTileHover = (tile, x, y) => this.handleTileHover(tile, x, y);
     this.renderer.onTileSelect = (tile) => this.handleTileSelect(tile);
+    this.renderer.onAssetsStatus = (state) => this.setAssetStatus(state);
+    if (this.renderer.assetsState) this.setAssetStatus(this.renderer.assetsState);
 
-    // Close on Escape
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) {
-        this.closeSidebar();
-      }
+      if (e.key === 'Escape' && this.isOpen) this.closeSidebar();
     });
+  }
+
+  randomSeed() {
+    return Math.floor(Math.random() * 900000 + 100000);
+  }
+
+  regenerate(seed) {
+    const el = this.el;
+    el.seedInput.value = seed;
+    const options = {
+      seaLevel: parseFloat(el.seaLevelSlider.value),
+      mountainThreshold: parseFloat(el.mountainSlider.value),
+      subdivision: parseInt(el.subdivisionSlider.value, 10)
+    };
+    // Let the button state paint before the synchronous rebuild blocks the thread
+    [el.regenerateBtn, el.quickRegenerateBtn].forEach((b) => (b.disabled = true));
+    el.storageStatusBadge.textContent = 'Membangun dunia';
+    requestAnimationFrame(() =>
+      setTimeout(() => {
+        try {
+          this.onRegenerate(seed, options);
+        } catch (err) {
+          console.error(err);
+          this.flashStatus('Gagal membangun dunia. Coba seed lain.');
+        } finally {
+          [el.regenerateBtn, el.quickRegenerateBtn].forEach((b) => (b.disabled = false));
+        }
+      }, 0)
+    );
+  }
+
+  setAssetStatus(state) {
+    const s = this.el.assetStatus;
+    if (!s) return;
+    s.dataset.state = state;
+    s.textContent =
+      state === 'error'
+        ? 'Model 3D gagal dimuat. Terrain tetap tampil, kota dan pohon tidak. Muat ulang halaman untuk mencoba lagi.'
+        : state === 'ready'
+        ? 'Model 3D siap'
+        : 'Memuat model 3D';
   }
 
   toggleSidebar() {
-    this.isOpen = !this.isOpen;
-    if (this.isOpen) {
-      this.elements.sidebar?.classList.add('open');
-      this.elements.menuToggleBtn?.classList.add('active');
-    } else {
-      this.elements.sidebar?.classList.remove('open');
-      this.elements.menuToggleBtn?.classList.remove('active');
-    }
+    this.isOpen ? this.closeSidebar() : this.openSidebar();
+  }
+
+  openSidebar() {
+    this.isOpen = true;
+    this.el.panel.classList.add('open');
+    this.el.panel.setAttribute('aria-hidden', 'false');
+    this.el.menuToggleBtn.setAttribute('aria-expanded', 'true');
+    this.el.closeBtn.focus({ preventScroll: true });
   }
 
   closeSidebar() {
+    if (!this.isOpen) return;
     this.isOpen = false;
-    this.elements.sidebar?.classList.remove('open');
-    this.elements.menuToggleBtn?.classList.remove('active');
+    this.el.panel.classList.remove('open');
+    this.el.panel.setAttribute('aria-hidden', 'true');
+    this.el.menuToggleBtn.setAttribute('aria-expanded', 'false');
+    this.el.menuToggleBtn.focus({ preventScroll: true });
   }
 
   updateUI(mapData) {
     this.mapData = mapData;
     this.seedManuallyEdited = false;
     if (!mapData) return;
+    const el = this.el;
 
-    if (this.elements.seedInput) {
-      this.elements.seedInput.value = mapData.seed;
+    el.seedInput.value = mapData.seed;
+    el.wallSeed.textContent = mapData.seed;
+    el.playerTilesBadge.textContent = `${mapData.player?.claimedTileCount ?? 0} tile`;
+    el.systemTilesBadge.textContent = `${mapData.system?.claimedTileCount ?? 0} tile`;
+    el.storageStatusBadge.textContent = 'Tersimpan di browser';
+
+    const cities = mapData.cities || [];
+    const farms = mapData.farms || [];
+    const ports = cities.filter((c) => c.isPort).length;
+    el.settlementSummary.textContent = cities.length
+      ? `${cities.length} kota (${ports} pelabuhan), ${farms.length} ladang.`
+      : 'Belum ada pemukiman di dunia ini.';
+
+    const land = mapData.landRoutes?.length ?? 0;
+    const sea = mapData.seaRoutes?.length ?? 0;
+    el.landRouteMeta.textContent = land ? `${land} jalan, dilewati karavan` : 'Tidak ada jalan di dunia ini';
+    el.seaRouteMeta.textContent = sea ? `${sea} rute kapal antar pelabuhan` : 'Tidak ada rute laut di dunia ini';
+
+    if (mapData.subdivision) {
+      el.subdivisionSlider.value = mapData.subdivision;
+      el.subdivisionValue.textContent = TILE_COUNTS[mapData.subdivision] || mapData.subdivision;
     }
-    if (this.elements.seedBadge) {
-      this.elements.seedBadge.textContent = `#${mapData.seed}`;
-    }
-    if (this.elements.playerTilesBadge) {
-      this.elements.playerTilesBadge.textContent = `${mapData.player?.claimedTileCount || 9} Hex Tiles`;
-    }
-    if (this.elements.systemTilesBadge) {
-      this.elements.systemTilesBadge.textContent = `${mapData.system?.claimedTileCount || 9} Hex Tiles`;
-    }
-    if (this.elements.storageStatusBadge) {
-      this.elements.storageStatusBadge.textContent = 'Saved in LocalStorage';
-    }
-    if (mapData.subdivision && this.elements.subdivisionSlider) {
-      this.elements.subdivisionSlider.value = mapData.subdivision;
-      if (this.elements.subdivisionValue) {
-        this.elements.subdivisionValue.textContent = this.formatSubdivisionLabel(mapData.subdivision);
-      }
-    }
+    el.inspectedTileInfo.innerHTML =
+      '<p class="panel__note">Klik satu tile di globe untuk melihat bioma, pemilik, dan kotanya di sini.</p>';
   }
 
-  formatSubdivisionLabel(level) {
-    switch (level) {
-      case 2:
-        return '162 Tiles (Retro)';
-      case 3:
-        return '642 Tiles (Classic)';
-      case 4:
-        return '2.562 Tiles (High)';
-      case 5:
-        return '10.242 Tiles (Ultra)';
-      default:
-        return `${level} Level`;
-    }
+  getCity(tile) {
+    if (tile.cityIndex === null || tile.cityIndex === undefined) return null;
+    return this.mapData?.cities?.[tile.cityIndex] || null;
   }
 
-  handleTileHover(tile, screenX, screenY) {
-    const tooltip = this.elements.tileTooltip;
-    if (!tooltip) return;
+  swatch(tile) {
+    return `<span class="swatch" style="background:${hex(BIOME_PALETTE[tile.biome] ?? 0x888888)}"></span>`;
+  }
 
+  handleTileHover(tile, x, y) {
+    const tip = this.el.tileTooltip;
     if (!tile) {
-      tooltip.classList.remove('visible');
+      tip.classList.remove('visible');
+      this.lastTooltipTile = null;
       return;
     }
-
-    const biomeName = this.formatBiomeName(tile.biome);
-    const ownerBadge = tile.owner
-      ? `<span class="tag tag-${tile.owner}">${tile.owner === 'player' ? '👤 Player Starter' : '🤖 System NPC'}</span>`
-      : '<span class="tag tag-neutral">Unclaimed Wilds</span>';
-
-    const capitalBadge = tile.isCapital
-      ? `<span class="tag tag-capital">★ ${tile.capitalOf === 'player' ? 'New Babylon' : 'Aegis Citadel'} (Capital)</span>`
-      : '';
-
-    const riverBadge = tile.hasRiver ? '<span class="tag tag-river">💧 Fresh River</span>' : '';
-
-    tooltip.innerHTML = `
-      <div class="tooltip-header">
-        <span class="tooltip-icon">${this.getBiomeIcon(tile.biome)}</span>
-        <strong>${biomeName}</strong>
-      </div>
-      <div class="tooltip-tags">
-        ${capitalBadge}
-        ${ownerBadge}
-        ${riverBadge}
-      </div>
-      <div class="tooltip-stats">
-        <span>Elev: ${(tile.elevation * 100).toFixed(0)}m</span>
-        <span>Moist: ${(tile.moisture * 100).toFixed(0)}%</span>
-        <span>Tile ID: #${tile.id}</span>
-      </div>
-    `;
-
-    // Position tooltip near cursor
-    const x = Math.min(window.innerWidth - 220, Math.max(15, screenX + 16));
-    const y = Math.min(window.innerHeight - 130, Math.max(15, screenY + 16));
-    tooltip.style.left = `${x}px`;
-    tooltip.style.top = `${y}px`;
-    tooltip.classList.add('visible');
+    // Rebuild the content only when the hovered tile changes
+    if (tile !== this.lastTooltipTile) {
+      this.lastTooltipTile = tile;
+      const city = this.getCity(tile);
+      const parts = [];
+      if (city) parts.push(`${escapeHtml(city.name)}, ${city.size} tile`);
+      if (tile.farmIndex !== null && tile.farmIndex !== undefined) parts.push('Ladang');
+      if (tile.road) parts.push('Jalan');
+      if (tile.hasRiver) parts.push('Sungai');
+      if (tile.owner) parts.push(tile.owner === 'player' ? 'Wilayah pemain' : 'Wilayah sistem');
+      tip.innerHTML = `
+        <div class="tooltip__title">${this.swatch(tile)}${BIOME_NAMES[tile.biome] || 'Daratan'}</div>
+        <div class="tooltip__meta">${parts.length ? parts.join(' / ') : 'Belum dihuni'}</div>`;
+    }
+    const w = tip.offsetWidth || 220;
+    const h = tip.offsetHeight || 60;
+    tip.style.transform = `translate(${Math.min(window.innerWidth - w - 10, x + 16)}px, ${Math.min(
+      window.innerHeight - h - 10,
+      y + 16
+    )}px)`;
+    tip.classList.add('visible');
   }
 
   handleTileSelect(tile) {
-    if (!tile || !this.elements.inspectedTileInfo) return;
-
-    const biomeName = this.formatBiomeName(tile.biome);
-    this.elements.inspectedTileInfo.innerHTML = `
-      <div class="inspector-card">
-        <div class="inspector-row">
-          <span class="label">Tipe Tile:</span>
-          <span class="value">${this.getBiomeIcon(tile.biome)} ${biomeName}</span>
-        </div>
-        <div class="inspector-row">
-          <span class="label">Wilayah / Owner:</span>
-          <span class="value">${
-            tile.owner === 'player'
-              ? '👑 Player Starter Area'
-              : tile.owner === 'system'
-              ? '🛡️ System NPC Territory'
-              : '🌍 Netral / Wilderness'
-          }</span>
-        </div>
-        <div class="inspector-row">
-          <span class="label">Status Kota:</span>
-          <span class="value">${tile.isCapital ? '★ Ibukota Utama' : 'Standard Hex'}</span>
-        </div>
-        <div class="inspector-row">
-          <span class="label">Aliran Sungai:</span>
-          <span class="value">${tile.hasRiver ? '💧 Ada sungai' : 'Tidak ada'}</span>
-        </div>
-        <div class="inspector-row">
-          <span class="label">Elevasi / Lembah:</span>
-          <span class="value">${(tile.elevation * 100).toFixed(1)} m</span>
-        </div>
-        <div class="inspector-row">
-          <span class="label">Tetangga Hexagon:</span>
-          <span class="value">${tile.neighbors.length} Hex</span>
-        </div>
-      </div>
-    `;
-
-    // Open sidebar if closed
-    if (!this.isOpen) {
-      this.toggleSidebar();
-    }
-  }
-
-  formatBiomeName(biome) {
-    switch (biome) {
-      case BIOMES.OCEAN_DEEP:
-        return 'Palung Samudra (Deep Ocean)';
-      case BIOMES.OCEAN:
-        return 'Lautan (Ocean)';
-      case BIOMES.PLAINS:
-        return 'Padang Rumput Datar (Plains)';
-      case BIOMES.FOREST:
-        return 'Hutan Pinus/Rimbun (Forest)';
-      case BIOMES.MOUNTAIN:
-        return 'Pegunungan Plum / Bersalju (Mountain)';
-      case BIOMES.SAVANNAH:
-        return 'Sabana Emas / Gurun (Savannah)';
-      case BIOMES.TUNDRA:
-        return 'Tundra / Gletser Es (Tundra)';
-      case BIOMES.RIVER:
-        return 'Lembah Sungai (River)';
-      default:
-        return 'Daratan';
-    }
-  }
-
-  getBiomeIcon(biome) {
-    switch (biome) {
-      case BIOMES.OCEAN_DEEP:
-        return '🌊';
-      case BIOMES.OCEAN:
-        return '🌊';
-      case BIOMES.PLAINS:
-        return '🌾';
-      case BIOMES.FOREST:
-        return '🌲';
-      case BIOMES.MOUNTAIN:
-        return '⛰️';
-      case BIOMES.SAVANNAH:
-        return '🏜️';
-      case BIOMES.TUNDRA:
-        return '❄️';
-      case BIOMES.RIVER:
-        return '💧';
-      default:
-        return '🌐';
-    }
+    if (!tile) return;
+    const city = this.getCity(tile);
+    const farm = tile.farmIndex !== null && tile.farmIndex !== undefined ? this.mapData?.farms?.[tile.farmIndex] : null;
+    const owner = tile.owner
+      ? `<span class="owner-dot owner-dot--${tile.owner}"></span>${OWNER_NAMES[tile.owner]}`
+      : 'Belum diklaim';
+    const rows = [
+      ['Pemilik', owner],
+      ['Kota', city ? `${escapeHtml(city.name)} (${city.size} tile${city.isPort ? ', pelabuhan' : ''})` : 'Tidak ada'],
+      ['Ladang', farm ? `${farm.crop === 'wheat' ? 'Gandum' : 'Sayur'}, ${farm.tiles.length} tile` : 'Tidak ada'],
+      ['Jalan', tile.road ? 'Dilewati jalan darat' : 'Tidak ada'],
+      ['Sungai', tile.hasRiver ? 'Ada' : 'Tidak ada'],
+      ['Elevasi', (tile.elevation * 100).toFixed(1)],
+      ['ID tile', `${tile.id}`]
+    ];
+    this.el.inspectedTileInfo.innerHTML = `
+      <div class="inspect-title">${this.swatch(tile)}${BIOME_NAMES[tile.biome] || 'Daratan'}</div>
+      <dl class="facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+    if (!this.isOpen) this.openSidebar();
   }
 
   flashStatus(message) {
@@ -358,13 +286,13 @@ export class MenuController {
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'toastNotice';
-      toast.className = 'toast-notice';
+      toast.className = 'toast';
+      toast.setAttribute('role', 'status');
       document.body.appendChild(toast);
     }
     toast.textContent = message;
     toast.classList.add('show');
-    setTimeout(() => {
-      toast.classList.remove('show');
-    }, 2800);
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
   }
 }

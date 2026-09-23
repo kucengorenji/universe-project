@@ -97,5 +97,6 @@ class App {
 
 // Start application when DOM is ready
 window.addEventListener('DOMContentLoaded', () => {
-  new App();
+  const app = new App();
+  if (import.meta.env.DEV) window.__globe = app; // dev-only handle for debugging in the console
 });

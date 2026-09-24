@@ -14,6 +14,8 @@ const BIOME_NAMES = {
 };
 
 const OWNER_NAMES = { player: 'New Babylon (pemain)', system: 'Aegis Citadel (sistem)' };
+const MODE_NAMES = { air: 'udara', land: 'darat', sea: 'laut' };
+const MODE_ORDER = ['land', 'sea', 'air'];
 const TILE_COUNTS = { 2: '162', 3: '642', 4: '2.562', 5: '10.242' };
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -48,6 +50,20 @@ export class MenuController {
       airRouteToggle: $('airRouteToggle'),
       groundRouteToggle: $('groundRouteToggle'),
       seaRouteToggle: $('seaRouteToggle'),
+      flatTerrainToggle: $('flatTerrainToggle'),
+      gridToggle: $('gridToggle'),
+      airRouteMeta: $('airRouteMeta'),
+      povEnterBtn: $('povEnterBtn'),
+      screenshotBtns: [$('screenshotBtn'), $('screenshotPanelBtn')],
+      povHud: $('povHud'),
+      povMode: $('povMode'),
+      povName: $('povName'),
+      povRoute: $('povRoute'),
+      povIndex: $('povIndex'),
+      povPrevBtn: $('povPrevBtn'),
+      povNextBtn: $('povNextBtn'),
+      povExitBtn: $('povExitBtn'),
+      povModeBtns: [...document.querySelectorAll('.pov__mode')],
       resetCameraBtn: $('resetCameraBtn'),
       clearStorageBtn: $('clearStorageBtn'),
       wallSeed: $('wallSeed'),
@@ -59,7 +75,10 @@ export class MenuController {
       storageStatusBadge: $('storageStatusBadge'),
       assetStatus: $('assetStatus'),
       tileTooltip: $('tileTooltip'),
-      inspectedTileInfo: $('inspectedTileInfo')
+      infoCard: $('infoCard'),
+      infoCardBody: $('infoCardBody'),
+      cityList: $('cityList'),
+      factionBtns: [...document.querySelectorAll('[data-focus-faction]')]
     };
 
     this.bindEvents();
@@ -101,6 +120,42 @@ export class MenuController {
     el.groundRouteToggle.addEventListener('change', (e) => this.renderer.setGroundRouteVisible(e.target.checked));
     el.seaRouteToggle.addEventListener('change', (e) => this.renderer.setSeaRouteVisible(e.target.checked));
 
+    el.gridToggle.checked = this.renderer.showGrid;
+    el.gridToggle.addEventListener('change', (e) => this.renderer.setGridVisible(e.target.checked));
+
+    el.flatTerrainToggle.checked = this.renderer.terrainMode === 'flat';
+    el.flatTerrainToggle.addEventListener('change', (e) => {
+      this.renderer.setTerrainMode(e.target.checked ? 'flat' : 'relief');
+      this.flashStatus(e.target.checked ? 'Daratan dan laut kini satu level' : 'Daratan kembali bertebing di atas laut');
+    });
+
+    // Screenshot: the panel closes first so only the world is captured
+    el.screenshotBtns.forEach((btn) =>
+      btn.addEventListener('click', async () => {
+        if (this.isOpen) this.closeSidebar();
+        const seed = this.mapData?.seed ?? 'dunia';
+        const ok = await this.renderer.saveScreenshot(`planet-globe-${seed}`);
+        this.flashStatus(ok ? 'Gambar tersimpan ke folder unduhan' : 'Browser menolak membuat gambar, coba lagi');
+      })
+    );
+
+    // Ride-along (POV)
+    el.povEnterBtn.addEventListener('click', () => {
+      const mode = MODE_ORDER.find((m) => this.renderer.moversOf(m).length);
+      if (!mode) return this.flashStatus('Belum ada kendaraan. Tunggu model 3D selesai dimuat.');
+      this.closeSidebar();
+      this.renderer.setPovMode(mode);
+    });
+    el.povPrevBtn.addEventListener('click', () => this.renderer.cyclePov(-1));
+    el.povNextBtn.addEventListener('click', () => this.renderer.cyclePov(1));
+    el.povExitBtn.addEventListener('click', () => this.renderer.exitPov());
+    el.povModeBtns.forEach((b) =>
+      b.addEventListener('click', () => {
+        if (!this.renderer.setPovMode(b.dataset.mode)) this.flashStatus(`Tidak ada kendaraan ${MODE_NAMES[b.dataset.mode]} di dunia ini`);
+      })
+    );
+    this.renderer.onPovChange = (info) => this.renderPov(info);
+
     el.resetCameraBtn.addEventListener('click', () => {
       this.onResetCamera();
       this.flashStatus('Kamera kembali ke posisi awal');
@@ -117,12 +172,41 @@ export class MenuController {
     });
 
     this.renderer.onTileHover = (tile, x, y) => this.handleTileHover(tile, x, y);
-    this.renderer.onTileSelect = (tile) => this.handleTileSelect(tile);
+    this.renderer.onFocusChange = (spec) => this.renderInfoCard(spec);
+
+    // Focus: faction blocks, city list and the card's own buttons
+    const narrow = () => window.innerWidth < 900;
+    el.factionBtns.forEach((b) =>
+      b.addEventListener('click', () => {
+        if (narrow()) this.closeSidebar();
+        this.renderer.focusOn({ type: 'faction', owner: b.dataset.focusFaction });
+      })
+    );
+    el.cityList.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-focus-city]');
+      if (!btn) return;
+      if (narrow()) this.closeSidebar();
+      this.renderer.focusOn({ type: 'city', index: Number(btn.dataset.focusCity) });
+    });
+    el.infoCard.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      if (btn.dataset.action === 'close') this.renderer.clearFocus();
+      else if (btn.dataset.action === 'ride' && !this.renderer.povFromCity(Number(btn.dataset.city))) {
+        this.flashStatus('Belum ada kendaraan yang melayani kota ini');
+      } else if (btn.dataset.focusCity !== undefined) this.renderer.focusOn({ type: 'city', index: Number(btn.dataset.focusCity) });
+    });
     this.renderer.onAssetsStatus = (state) => this.setAssetStatus(state);
     if (this.renderer.assetsState) this.setAssetStatus(this.renderer.assetsState);
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) this.closeSidebar();
+      if (e.target.matches?.('input, textarea')) return;
+      if (e.key === 'Escape') {
+        if (this.isOpen) this.closeSidebar();
+        else if (this.renderer.pov) this.renderer.exitPov();
+        else if (this.renderer.focus) this.renderer.clearFocus();
+      } else if (this.renderer.pov && e.key === 'ArrowRight') this.renderer.cyclePov(1);
+      else if (this.renderer.pov && e.key === 'ArrowLeft') this.renderer.cyclePov(-1);
     });
   }
 
@@ -153,6 +237,27 @@ export class MenuController {
         }
       }, 0)
     );
+  }
+
+  renderPov(info) {
+    const el = this.el;
+    document.body.classList.toggle('is-pov', info.active);
+    el.povHud.hidden = !info.active;
+    el.povModeBtns.forEach((b) => {
+      const n = info.counts[b.dataset.mode] || 0;
+      b.querySelector('[data-count]').textContent = n;
+      b.disabled = n === 0;
+      b.setAttribute('aria-pressed', String(info.active && info.mode === b.dataset.mode));
+    });
+    if (!info.active) return;
+    el.tileTooltip.classList.remove('visible');
+    el.povMode.textContent = `POV ${MODE_NAMES[info.mode]}, kota ${info.style === 'modern' ? 'modern' : 'fantasi'}`;
+    el.povName.textContent = info.name;
+    el.povRoute.textContent = info.route;
+    el.povIndex.textContent = `${info.index + 1} / ${info.total}`;
+    const single = info.total < 2;
+    el.povPrevBtn.disabled = single;
+    el.povNextBtn.disabled = single;
   }
 
   setAssetStatus(state) {
@@ -211,13 +316,120 @@ export class MenuController {
     const sea = mapData.seaRoutes?.length ?? 0;
     el.landRouteMeta.textContent = land ? `${land} jalan, dilewati karavan` : 'Tidak ada jalan di dunia ini';
     el.seaRouteMeta.textContent = sea ? `${sea} rute kapal antar pelabuhan` : 'Tidak ada rute laut di dunia ini';
+    const air = mapData.airRoutes?.length ?? 0;
+    el.airRouteMeta.textContent = air ? `${air} rute, balon udara dan pesawat` : 'Tidak ada rute udara di dunia ini';
 
     if (mapData.subdivision) {
       el.subdivisionSlider.value = mapData.subdivision;
       el.subdivisionValue.textContent = TILE_COUNTS[mapData.subdivision] || mapData.subdivision;
     }
-    el.inspectedTileInfo.innerHTML =
-      '<p class="panel__note">Klik satu tile di globe untuk melihat bioma, pemilik, dan kotanya di sini.</p>';
+    el.cityList.innerHTML = cities
+      .map(
+        (c) => `<li><button type="button" class="city-row" data-focus-city="${c.index}">
+          <span class="city-row__mark city-row__mark--${c.owner || 'neutral'}"></span>
+          <span class="city-row__name">${escapeHtml(c.name)}</span>
+          <span class="city-row__meta">${c.type === 'capital' ? 'Ibukota, ' : ''}${c.style === 'modern' ? 'modern' : 'fantasi'}, ${c.size} tile</span>
+        </button></li>`
+      )
+      .join('');
+  }
+
+  /** Focus card: city, faction or tile details, kept apart from the settings panel. */
+  renderInfoCard(spec) {
+    const card = this.el.infoCard;
+    const body = this.el.infoCardBody;
+    document.body.classList.toggle('has-card', !!spec);
+    // On wide screens the globe re-centres into the space right of the card
+    // The globe re-centres into the space the card leaves free (beside it on desktop, above it on phones)
+    const inset = () =>
+      window.innerWidth >= 900 ? { left: card.offsetLeft + card.offsetWidth } : { bottom: card.offsetHeight };
+    if (!spec) {
+      card.hidden = true;
+      this.renderer.setInset();
+      return;
+    }
+    const d = this.mapData;
+    const close = `<button type="button" class="menu-circle menu-circle--close menu-circle--small" data-action="close" aria-label="Tutup dan kembali ke globe"><span></span><span></span></button>`;
+    const facts = (rows) => `<dl class="facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+    let html = '';
+
+    if (spec.type === 'city') {
+      const c = d.cities[spec.index];
+      const involves = (r) => r.from === c.index || r.to === c.index;
+      const farms = (d.farms || []).filter((f) => f.city === c.index);
+      const air = (d.airRoutes || []).filter(involves).length;
+      const tone = c.owner === 'player' ? 'green' : c.owner === 'system' ? 'red' : 'iron';
+      html = `
+        <header class="card-block card-block--${tone}">
+          <span class="card-block__eyebrow">${c.type === 'capital' ? 'Ibukota' : 'Kota'} ${c.style === 'modern' ? 'modern' : 'fantasi'}</span>
+          <h2 class="card-block__title">${escapeHtml(c.name)}</h2>
+          ${close}
+        </header>
+        <div class="info-card__content">
+          ${facts([
+            ['Ukuran', `${c.size} tile`],
+            ['Pelabuhan', c.isPort ? 'Ya' : 'Tidak'],
+            ['Ladang', farms.length ? `${farms.length} ladang, ${farms.reduce((n, f) => n + f.tiles.length, 0)} tile` : 'Tidak ada'],
+            ['Jalan darat', `${(d.landRoutes || []).filter(involves).length} rute`],
+            ['Rute laut', `${(d.seaRoutes || []).filter(involves).length} rute`],
+            ['Rute udara', `${air} rute${air ? (c.style === 'modern' ? ', pesawat' : ', balon udara') : ''}`]
+          ])}
+          <div class="info-card__actions">
+            <button type="button" class="pill" data-action="ride" data-city="${c.index}">Naik kendaraan dari sini</button>
+            <button type="button" class="pill pill--ghost" data-action="close">Kembali ke globe</button>
+          </div>
+        </div>`;
+    } else if (spec.type === 'faction') {
+      const info = d[spec.owner];
+      const style = spec.owner === 'system' ? 'modern' : 'fantasy';
+      const towns = (d.cities || []).filter((c) => c.style === style);
+      html = `
+        <header class="card-block card-block--${spec.owner === 'player' ? 'green' : 'red'}">
+          <span class="card-block__eyebrow">${spec.owner === 'player' ? 'Faksi pemain' : 'Faksi sistem'}</span>
+          <h2 class="card-block__title">${spec.owner === 'player' ? 'New Babylon' : 'Aegis Citadel'}</h2>
+          ${close}
+        </header>
+        <div class="info-card__content">
+          ${facts([
+            ['Wilayah', `${info?.claimedTileCount ?? 0} tile`],
+            ['Peradaban', style === 'modern' ? 'Modern: truk, kapal kontainer, pesawat' : 'Fantasi: karavan, kapal layar, balon udara'],
+            ['Kota', `${towns.length} kota`]
+          ])}
+          <ul class="city-list city-list--card">${towns
+            .map(
+              (c) => `<li><button type="button" class="city-row" data-focus-city="${c.index}">
+                <span class="city-row__name">${escapeHtml(c.name)}</span>
+                <span class="city-row__meta">${c.type === 'capital' ? 'Ibukota, ' : ''}${c.size} tile</span>
+              </button></li>`
+            )
+            .join('')}</ul>
+          <div class="info-card__actions">
+            <button type="button" class="pill pill--ghost" data-action="close">Kembali ke globe</button>
+          </div>
+        </div>`;
+    } else {
+      const tile = this.renderer.hexasphere.tileMap.get(spec.tileId);
+      if (!tile) return;
+      const farm = tile.farmIndex !== null && tile.farmIndex !== undefined ? d.farms?.[tile.farmIndex] : null;
+      html = `
+        <header class="info-card__head">
+          <span class="card-block__eyebrow">Tile ${tile.id}</span>
+          <h2 class="info-card__title">${this.swatch(tile)}${BIOME_NAMES[tile.biome] || 'Daratan'}</h2>
+          ${close}
+        </header>
+        <div class="info-card__content">
+          ${facts([
+            ['Pemilik', tile.owner ? `<span class="owner-dot owner-dot--${tile.owner}"></span>${OWNER_NAMES[tile.owner]}` : 'Belum diklaim'],
+            ['Ladang', farm ? `${farm.tiles.length} tile` : 'Tidak ada'],
+            ['Jalan', tile.road ? 'Dilewati jalan darat' : 'Tidak ada'],
+            ['Sungai', tile.hasRiver ? 'Ada' : 'Tidak ada'],
+            ['Elevasi', (tile.elevation * 100).toFixed(1)]
+          ])}
+        </div>`;
+    }
+    body.innerHTML = html;
+    card.hidden = false;
+    this.renderer.setInset(inset());
   }
 
   getCity(tile) {
@@ -231,7 +443,7 @@ export class MenuController {
 
   handleTileHover(tile, x, y) {
     const tip = this.el.tileTooltip;
-    if (!tile) {
+    if (!tile || this.renderer.pov) {
       tip.classList.remove('visible');
       this.lastTooltipTile = null;
       return;
@@ -257,28 +469,6 @@ export class MenuController {
       y + 16
     )}px)`;
     tip.classList.add('visible');
-  }
-
-  handleTileSelect(tile) {
-    if (!tile) return;
-    const city = this.getCity(tile);
-    const farm = tile.farmIndex !== null && tile.farmIndex !== undefined ? this.mapData?.farms?.[tile.farmIndex] : null;
-    const owner = tile.owner
-      ? `<span class="owner-dot owner-dot--${tile.owner}"></span>${OWNER_NAMES[tile.owner]}`
-      : 'Belum diklaim';
-    const rows = [
-      ['Pemilik', owner],
-      ['Kota', city ? `${escapeHtml(city.name)} (${city.size} tile${city.isPort ? ', pelabuhan' : ''})` : 'Tidak ada'],
-      ['Ladang', farm ? `${farm.crop === 'wheat' ? 'Gandum' : 'Sayur'}, ${farm.tiles.length} tile` : 'Tidak ada'],
-      ['Jalan', tile.road ? 'Dilewati jalan darat' : 'Tidak ada'],
-      ['Sungai', tile.hasRiver ? 'Ada' : 'Tidak ada'],
-      ['Elevasi', (tile.elevation * 100).toFixed(1)],
-      ['ID tile', `${tile.id}`]
-    ];
-    this.el.inspectedTileInfo.innerHTML = `
-      <div class="inspect-title">${this.swatch(tile)}${BIOME_NAMES[tile.biome] || 'Daratan'}</div>
-      <dl class="facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
-    if (!this.isOpen) this.openSidebar();
   }
 
   flashStatus(message) {

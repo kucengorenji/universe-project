@@ -26,6 +26,8 @@
         <span class="cta-pair__question">Dunia lain?</span>
         <button id="quickRegenerateBtn" class="pill" type="button">Acak dunia</button>
       </span>
+      <button id="povEnterBtn" class="pill pill--ghost" type="button">Naik kendaraan</button>
+      <button id="screenshotBtn" class="pill pill--ghost" type="button">Simpan gambar</button>
       <button id="menuToggleBtn" class="menu-circle" type="button" aria-label="Buka pengaturan" aria-expanded="false" aria-controls="sidebarDrawer">
         <span></span><span></span><span></span>
       </button>
@@ -34,7 +36,29 @@
 
   <p id="assetStatus" class="asset-status" role="status">Memuat model 3D</p>
 
-  <p class="hint">Seret untuk memutar. Scroll untuk zoom. Klik tile untuk detail.</p>
+  <p class="hint">Seret untuk memutar. Scroll untuk zoom. Klik kota atau tile untuk detail, klik kendaraan untuk ikut naik.</p>
+
+  <!-- Ride-along (POV) controls, shown while following a vehicle -->
+  <section id="povHud" class="pov" aria-label="Mode POV kendaraan" hidden>
+    <div class="pov__info">
+      <span id="povMode" class="pov__eyebrow">POV darat</span>
+      <span id="povName" class="pov__name">Karavan</span>
+      <span id="povRoute" class="pov__route">Rute</span>
+    </div>
+    <div class="pov__modes" role="group" aria-label="Pilih jenis jalur">
+      <button class="pill pill--ghost pov__mode" type="button" data-mode="air" aria-pressed="false">Udara <span data-count="air">0</span></button>
+      <button class="pill pill--ghost pov__mode" type="button" data-mode="land" aria-pressed="false">Darat <span data-count="land">0</span></button>
+      <button class="pill pill--ghost pov__mode" type="button" data-mode="sea" aria-pressed="false">Laut <span data-count="sea">0</span></button>
+    </div>
+    <div class="pov__nav">
+      <button id="povPrevBtn" class="pill pill--ghost" type="button" aria-label="Kendaraan sebelumnya">Sebelumnya</button>
+      <span id="povIndex" class="pov__index">1 / 1</span>
+      <button id="povNextBtn" class="pill pill--ghost" type="button" aria-label="Kendaraan berikutnya">Berikutnya</button>
+      <button id="povExitBtn" class="menu-circle menu-circle--close" type="button" aria-label="Keluar dari mode POV">
+        <span></span><span></span>
+      </button>
+    </div>
+  </section>
 
   <aside id="sidebarDrawer" class="panel" aria-label="Pengaturan globe" aria-hidden="true">
     <div class="panel__head">
@@ -46,7 +70,13 @@
 
     <div class="panel__body">
       <section class="panel__section" aria-labelledby="secWorld">
-        <h3 id="secWorld" class="panel__heading">Dunia</h3>
+        <div class="panel__heading-row">
+          <h3 id="secWorld" class="panel__heading">Dunia</h3>
+          <label class="switch-inline">
+            <span>Garis hexagon</span>
+            <input type="checkbox" id="gridToggle" class="switch" checked />
+          </label>
+        </div>
 
         <div class="field">
           <label for="seedInput" class="field__label">Seed</label>
@@ -89,16 +119,24 @@
       <section class="panel__section panel__section--flush" aria-labelledby="secFaction">
         <h3 id="secFaction" class="panel__heading panel__heading--inset">Faksi</h3>
         <div class="blocks">
-          <div class="block block--green">
+          <button type="button" class="block block--green" data-focus-faction="player" aria-label="Fokus ke wilayah New Babylon">
             <span class="block__name">New Babylon</span>
             <span class="block__meta">Pemain <span class="sep">/</span> <span id="playerTilesBadge">0 tile</span></span>
-          </div>
-          <div class="block block--red">
+            <span class="block__meta">Kota fantasi, balon udara</span>
+          </button>
+          <button type="button" class="block block--red" data-focus-faction="system" aria-label="Fokus ke wilayah Aegis Citadel">
             <span class="block__name">Aegis Citadel</span>
             <span class="block__meta">Sistem <span class="sep">/</span> <span id="systemTilesBadge">0 tile</span></span>
-          </div>
+            <span class="block__meta">Kota modern, pesawat</span>
+          </button>
         </div>
         <p id="settlementSummary" class="panel__note panel__note--inset">Belum ada pemukiman.</p>
+      </section>
+
+      <section class="panel__section" aria-labelledby="secCities">
+        <h3 id="secCities" class="panel__heading">Kota</h3>
+        <p class="panel__note">Pilih kota untuk terbang ke sana.</p>
+        <ul id="cityList" class="city-list"></ul>
       </section>
 
       <section class="panel__section" aria-labelledby="secRoutes">
@@ -106,7 +144,7 @@
         <label class="switch-row">
           <span class="switch-row__text">
             <span class="switch-row__title">Udara</span>
-            <span class="switch-row__meta">Busur antar dua ibukota</span>
+            <span id="airRouteMeta" class="switch-row__meta">Balon udara dan pesawat</span>
           </span>
           <input type="checkbox" id="airRouteToggle" class="switch" checked />
         </label>
@@ -127,7 +165,14 @@
       </section>
 
       <section class="panel__section" aria-labelledby="secCamera">
-        <h3 id="secCamera" class="panel__heading">Kamera</h3>
+        <h3 id="secCamera" class="panel__heading">Tampilan</h3>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title">Daratan rata dengan laut</span>
+            <span class="switch-row__meta">Matikan untuk daratan bertebing di atas laut</span>
+          </span>
+          <input type="checkbox" id="flatTerrainToggle" class="switch" />
+        </label>
         <label class="switch-row">
           <span class="switch-row__text">
             <span class="switch-row__title">Putar otomatis</span>
@@ -135,18 +180,18 @@
           <input type="checkbox" id="autoRotateToggle" class="switch" />
         </label>
         <div class="button-stack">
+          <button id="screenshotPanelBtn" class="pill" type="button">Simpan gambar tampilan ini</button>
           <button id="resetCameraBtn" class="pill pill--ghost" type="button">Kembalikan posisi kamera</button>
           <button id="clearStorageBtn" class="text-button" type="button">Hapus peta tersimpan</button>
         </div>
       </section>
 
-      <section class="panel__section" aria-labelledby="secInspect">
-        <h3 id="secInspect" class="panel__heading">Tile terpilih</h3>
-        <div id="inspectedTileInfo">
-          <p class="panel__note">Klik satu tile di globe untuk melihat bioma, pemilik, dan kotanya di sini.</p>
-        </div>
-      </section>
     </div>
+  </aside>
+
+  <!-- Focus card: details for the selected city, faction or tile -->
+  <aside id="infoCard" class="info-card" aria-live="polite" hidden>
+    <div id="infoCardBody"></div>
   </aside>
 
   <div id="tileTooltip" class="tooltip" role="tooltip"></div>

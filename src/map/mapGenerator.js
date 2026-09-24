@@ -1,6 +1,6 @@
 import { createNoise3D } from '../math/simplex3d.js';
 
-export const STORAGE_KEY = 'planet_globe_map_v4';
+export const STORAGE_KEY = 'planet_globe_map_v5';
 
 export const BIOMES = {
   OCEAN_DEEP: 'ocean_deep',
@@ -245,10 +245,12 @@ export class MapGenerator {
 
     // 5. Cities, road network & sea lanes
     const cities = this.placeCities(playerInfo, systemInfo);
+    this.assignCityStyles(cities);
     this.growCityFootprints(cities);
     const farms = this.placeFarms(cities);
     const landRoutes = this.buildLandRoutes(cities);
     const seaRoutes = this.buildSeaRoutes(cities);
+    const airRoutes = this.buildAirRoutes(cities);
 
     return {
       seed: finalSeed,
@@ -262,6 +264,7 @@ export class MapGenerator {
       farms,
       landRoutes,
       seaRoutes,
+      airRoutes,
       mountainRanges: this.findMountainRanges(),
       tilesData: this.tiles.map((t) => ({
         id: t.id,
@@ -633,8 +636,44 @@ export class MapGenerator {
       const path = this.findPath(a.tileId, b.tileId, cost, d * 1.6 + 0.1);
       if (!path || path.length < 2) continue;
       path.forEach((id) => (this.tileMap.get(id).road = true));
-      routes.push({ from: a.index, to: b.index, path });
+      routes.push({ from: a.index, to: b.index, style: a.style, path });
       this.landLinked.add(`${Math.min(a.index, b.index)}_${Math.max(a.index, b.index)}`);
+    }
+    return routes;
+  }
+
+  /**
+   * Two civilisations share the planet: the player's capital founds a fantasy
+   * realm, the system's capital a modern nation. Every town adopts the style
+   * of the capital it sits closest to.
+   */
+  assignCityStyles(cities) {
+    const capitals = cities.filter((c) => c.type === 'capital');
+    for (const city of cities) {
+      if (city.type === 'capital') {
+        city.style = city.owner === 'system' ? 'modern' : 'fantasy';
+        continue;
+      }
+      let best = null;
+      let bestAngle = Infinity;
+      for (const cap of capitals) {
+        const angle = this.angleBetween(city.tileId, cap.tileId);
+        if (angle < bestAngle) {
+          bestAngle = angle;
+          best = cap;
+        }
+      }
+      city.style = best?.owner === 'system' ? 'modern' : 'fantasy';
+    }
+  }
+
+  /** Air links inside each civilisation: balloons (fantasy) and airliners (modern). */
+  buildAirRoutes(cities) {
+    const routes = [];
+    for (const style of ['fantasy', 'modern']) {
+      const group = cities.filter((c) => c.style === style);
+      const pairs = this.nearestPairs(group, 2).filter(({ d }) => d > 0.18);
+      pairs.slice(0, style === 'modern' ? 7 : 5).forEach(({ a, b }) => routes.push({ from: a.index, to: b.index, style }));
     }
     return routes;
   }
@@ -650,7 +689,7 @@ export class MapGenerator {
       if (this.landLinked?.has(key) && d < 0.5) continue;
       const path = this.findPath(a.tileId, b.tileId, cost, Math.PI);
       if (!path || path.length < 4) continue;
-      routes.push({ from: a.index, to: b.index, path });
+      routes.push({ from: a.index, to: b.index, style: a.style, path });
     }
     return routes;
   }

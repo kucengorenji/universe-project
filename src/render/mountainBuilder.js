@@ -21,7 +21,7 @@ const PALETTE = {
  * corner values and 3D position, neighbouring tiles stitch without cracks
  * and the silhouette follows the range shape instead of the hex grid.
  */
-export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, seed = 1 }) {
+export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, seed = 1, edgeMid = null }) {
   const { tiles, tileMap, globalCorners } = hexasphere;
   const isMtn = (t) => t.biome === BIOMES.MOUNTAIN;
   const mountains = tiles.filter(isMtn);
@@ -80,7 +80,8 @@ export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, see
     return tileSpacing * base * (0.6 + 0.8 * jag * jag * jag + 0.08 * detail);
   };
 
-  const k = { 2: 9, 3: 7, 4: 5, 5: 4 }[hexasphere.subdivision] || 4;
+  // Grid resolution per fan sector (edges split in two when edgeMid is used)
+  const k = edgeMid ? { 2: 7, 3: 5, 4: 4, 5: 3 }[hexasphere.subdivision] || 3 : { 2: 9, 3: 7, 4: 5, 5: 4 }[hexasphere.subdivision] || 4;
   const positions = [];
   // Low, gentle spots on the massif flanks: the renderer grows pines there
   const foothills = [];
@@ -129,26 +130,38 @@ export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, see
     for (let ci = 0; ci < n; ci++) {
       const ia = tile.cornerIndices[ci];
       const ib = tile.cornerIndices[(ci + 1) % n];
-      const A = globalCorners[ia];
-      const B = globalCorners[ib];
-      const vA = valueOfCorner(ia);
-      const vB = valueOfCorner(ib);
-
-      const grid = [];
-      for (let i = 0; i <= k; i++) {
-        grid[i] = [];
-        for (let j = 0; j <= k - i; j++) {
-          const g = vertex(C, A, B, vC, vA, vB, i, j);
-          grid[i][j] = g;
-          const hn = g.h / tileSpacing;
-          // interior grid points only (skip shared edge points so they are not doubled)
-          if (hn > 0.06 && hn < 0.45 && i > 0 && j > 0 && i + j < k) foothills.push({ p: g.p, hn });
-        }
+      const A0 = globalCorners[ia];
+      const B0 = globalCorners[ib];
+      const vA0 = valueOfCorner(ia);
+      const vB0 = valueOfCorner(ib);
+      // Each hex edge is bent through the same wobbly midpoint the land mesh uses,
+      // so the massif meets the lowland without gaps.
+      const sectors = [[A0, B0, vA0, vB0]];
+      if (edgeMid) {
+        const M = edgeMid(ia, ib);
+        const nb = cornerTiles.get(ia).find((t) => t !== tile && cornerTiles.get(ib).includes(t));
+        const nbMtn = nb && isMtn(nb);
+        const vM = nbMtn ? Math.max((vA0 + vB0) / 2, Math.min(vC, depth.get(nb.id) ?? 1) * 0.5) : 0;
+        sectors[0] = [A0, M, vA0, vM];
+        sectors.push([M, B0, vM, vB0]);
       }
-      for (let i = 0; i < k; i++) {
-        for (let j = 0; j < k - i; j++) {
-          pushTri(grid[i][j], grid[i + 1][j], grid[i][j + 1], absLat);
-          if (j < k - i - 1) pushTri(grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1], absLat);
+      for (const [A, B, vA, vB] of sectors) {
+        const grid = [];
+        for (let i = 0; i <= k; i++) {
+          grid[i] = [];
+          for (let j = 0; j <= k - i; j++) {
+            const g = vertex(C, A, B, vC, vA, vB, i, j);
+            grid[i][j] = g;
+            const hn = g.h / tileSpacing;
+            // interior grid points only (skip shared edge points so they are not doubled)
+            if (hn > 0.06 && hn < 0.45 && i > 0 && j > 0 && i + j < k) foothills.push({ p: g.p, hn });
+          }
+        }
+        for (let i = 0; i < k; i++) {
+          for (let j = 0; j < k - i; j++) {
+            pushTri(grid[i][j], grid[i + 1][j], grid[i][j + 1], absLat);
+            if (j < k - i - 1) pushTri(grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1], absLat);
+          }
         }
       }
     }

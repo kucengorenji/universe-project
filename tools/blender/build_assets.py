@@ -45,6 +45,10 @@ PALETTE = {
     'snow': 0xf6f9fc, 'grass': 0x7fb24a, 'wheat': 0xe8c14a, 'wheat_dark': 0xc99a2e, 'crop': 0x4f9a3a,
     'hay': 0xe3c16a, 'barn': 0xb5412f, 'trim': 0xf3eee4, 'sail': 0xf7f1e1, 'hull': 0x7a4a2a, 'hull_dark': 0x5a3520,
     'flag': 0xc4513a, 'gold': 0xf0bf45, 'door': 0x4a3020, 'water': 0x4cb6ee, 'canvas': 0xefe6cf, 'ox': 0x8e6b4d,
+    'glass': 0x6f9fc8, 'glass_dark': 0x3e5f80, 'concrete': 0xc9c7c1, 'asphalt': 0x55575c, 'steel': 0x9aa3ad,
+    'white': 0xf2f2ee, 'c_red': 0xc4513a, 'c_blue': 0x3f6fb0, 'c_yellow': 0xe0b030, 'c_green': 0x3f8f5a,
+    'balloon_a': 0xe0584a, 'balloon_b': 0xf2c14e, 'flower': 0xf19ec8, 'flower_y': 0xf5d547, 'reed': 0x6f9a3a,
+    'cattail': 0x6b4426, 'moss': 0x6f8f4a, 'birch': 0xe9e4d8, 'poplar': 0x4f9a3e,
 }
 C = {}
 for k, v in PALETTE.items():
@@ -392,6 +396,182 @@ objs = [cyl('stone_dark', (0, 0, 0.03), 0.3, 0.06, 8),
         box('roof_red', (0, 0, 0.3), (0.21, 0.21, 0.06)), box('roof_red', (0, 0, 0.5), (0.18, 0.18, 0.05)),
         cyl('gold', (0, 0, 0.72), 0.08, 0.1, 10), cone('roof_red', (0, 0, 0.84), 0.1, 0.14, 10)]
 asset('lighthouse', objs)
+
+# ------------------------------------------------------------------ nature variants
+asset('tree_round_b', [
+    cyl('birch', (0, 0, 0.2), 0.045, 0.4, 6, r2=0.035),
+    blob('poplar', (0, 0, 0.62), 0.2, (0.8, 0.8, 1.7), jitter=0.02),
+    blob('leaf_light', (0.06, 0.03, 0.82), 0.13, (0.8, 0.8, 1.4), jitter=0.015),
+])
+
+objs = [cyl('wood', (0, 0, 0.1), 0.04, 0.2, 6)]
+for i, (r, h, z) in enumerate([(0.24, 0.34, 0.26), (0.2, 0.3, 0.44), (0.16, 0.28, 0.62), (0.12, 0.26, 0.8), (0.07, 0.22, 0.98)]):
+    objs.append(cone('pine_dark' if i % 2 else 'pine', (0, 0, z), r, h, 8, jitter=0.01))
+asset('tree_pine_b', objs)
+
+objs = [blob('leaf', (0, 0, 0.1), 0.15, (1, 1, 0.8), jitter=0.02), blob('leaf_dark', (0.12, -0.04, 0.08), 0.11, jitter=0.015)]
+for i in range(6):
+    a = i / 6 * math.tau
+    objs.append(blob('flower' if i % 2 else 'flower_y', (math.cos(a) * 0.12, math.sin(a) * 0.1, 0.17 + (i % 3) * 0.02), 0.025))
+asset('bush_b', objs)
+
+asset('rock_b', [
+    blob('rock', (0, 0, 0.05), 0.24, (1.3, 0.9, 0.35), jitter=0.03),
+    blob('moss', (0.02, 0.02, 0.1), 0.16, (1.2, 0.8, 0.25), jitter=0.02),
+    blob('rock_dark', (0.24, -0.1, 0.05), 0.1, (1, 1, 0.7), jitter=0.02),
+])
+
+objs = []
+for i in range(9):
+    a = i / 9 * math.tau + rnd.uniform(0, 0.5)
+    d = 0.04 + rnd.uniform(0, 0.12)
+    x, y = math.cos(a) * d, math.sin(a) * d
+    h = 0.22 + rnd.uniform(0, 0.14)
+    objs.append(cone('reed' if i % 2 else 'grass', (x, y, h / 2), 0.018, h, 4,
+                     rot=(rnd.uniform(-0.2, 0.2), rnd.uniform(-0.2, 0.2), 0)))
+    if i % 3 == 0:
+        objs.append(cyl('cattail', (x, y, h * 0.92), 0.018, 0.06, 6))
+asset('reeds', objs)
+
+# ------------------------------------------------------------------ bridges (span X -0.5..0.5)
+objs = [box('wood_light', (0, 0, 0.1), (1.0, 0.24, 0.035))]
+for i in range(10):
+    objs.append(box('wood', (-0.45 + i * 0.1, 0, 0.12), (0.03, 0.25, 0.01)))
+for x in (-0.45, -0.15, 0.15, 0.45):
+    for y in (-0.11, 0.11):
+        objs.append(cyl('wood', (x, y, 0.1), 0.018, 0.24, 6))
+objs += [box('wood', (0, 0.11, 0.2), (1.0, 0.02, 0.02)), box('wood', (0, -0.11, 0.2), (1.0, 0.02, 0.02))]
+asset('bridge_wood', objs)
+
+objs = [box('stone', (0, 0, 0.2), (1.0, 0.3, 0.07), bevel=0.01)]
+for x in (-0.46, -0.16, 0.16, 0.46):
+    objs.append(box('stone_dark', (x, 0, 0.09), (0.09, 0.32, 0.2)))
+for x in (-0.31, 0.0, 0.31):
+    arch = cyl('stone', (x, 0, 0.13), 0.12, 0.3, 12, rot=(math.pi / 2, 0, 0))
+    objs.append(arch)
+for i in range(12):
+    objs.append(box('stone', (-0.46 + i * 0.084, 0.14, 0.26), (0.05, 0.03, 0.06)))
+    objs.append(box('stone', (-0.46 + i * 0.084, -0.14, 0.26), (0.05, 0.03, 0.06)))
+asset('bridge_stone', objs)
+
+objs = [box('concrete', (0, 0, 0.16), (1.0, 0.26, 0.04))]
+for x in (-0.28, 0.28):
+    objs.append(box('steel', (x, 0.13, 0.32), (0.04, 0.04, 0.5)))
+    objs.append(box('steel', (x, -0.13, 0.32), (0.04, 0.04, 0.5)))
+    objs.append(box('steel', (x, 0, 0.56), (0.04, 0.3, 0.04)))
+    objs.append(box('concrete', (x, 0, 0.06), (0.08, 0.2, 0.14)))
+for side in (0.13, -0.13):
+    for seg in ((-0.5, -0.28), (-0.28, 0.0), (0.0, 0.28), (0.28, 0.5)):
+        x0, x1 = seg
+        z0 = 0.56 if abs(x0) == 0.28 else 0.18
+        z1 = 0.56 if abs(x1) == 0.28 else (0.3 if x1 == 0.0 else 0.18)
+        L = math.hypot(x1 - x0, z1 - z0)
+        c = box('steel', ((x0 + x1) / 2, side, (z0 + z1) / 2), (L, 0.012, 0.012))
+        c.rotation_euler = (0, -math.atan2(z1 - z0, x1 - x0), 0)
+        objs.append(c)
+objs.append(box('white', (0, 0, 0.183), (1.0, 0.012, 0.004)))
+asset('bridge_modern', objs)
+
+# ------------------------------------------------------------------ modern city
+def window_bands(x, y, w, d, z0, z1, step, m='glass_dark'):
+    out = []
+    z = z0 + step / 2
+    while z < z1 - 0.01:
+        out.append(box(m, (x, y, z), (w * 1.02, d * 1.02, step * 0.28)))
+        z += step
+    return out
+
+
+objs = [box('glass', (0, 0, 0.65), (0.3, 0.3, 1.3), bevel=0.01)]
+objs += window_bands(0, 0, 0.3, 0.3, 0.05, 1.3, 0.1)
+objs += [box('concrete', (0, 0, 1.33), (0.22, 0.22, 0.06)), box('steel', (0.05, 0.05, 1.4), (0.05, 0.05, 0.08))]
+asset('tower_glass_a', objs)
+
+objs = []
+for w, z0, z1 in ((0.38, 0, 0.5), (0.3, 0.5, 0.95), (0.2, 0.95, 1.3)):
+    objs.append(box('concrete', (0, 0, (z0 + z1) / 2), (w, w, z1 - z0)))
+    objs += window_bands(0, 0, w, w, z0, z1, 0.08, 'glass')
+objs.append(cyl('steel', (0, 0, 1.45), 0.012, 0.3, 5))
+asset('tower_glass_b', objs)
+
+objs = [box('white', (0, 0, 0.25), (0.46, 0.3, 0.5), bevel=0.01)]
+objs += window_bands(0, 0, 0.46, 0.3, 0.04, 0.5, 0.1, 'glass')
+objs.append(box('concrete', (0, 0, 0.52), (0.4, 0.24, 0.04)))
+asset('apartment', objs)
+
+asset('modern_house', [
+    box('white', (0, 0, 0.1), (0.36, 0.28, 0.2), bevel=0.008),
+    box('white', (0.06, 0.02, 0.26), (0.22, 0.2, 0.14), bevel=0.008),
+    box('glass_dark', (0.18, 0, 0.1), (0.012, 0.18, 0.12)),
+    box('asphalt', (0, 0, 0.205), (0.37, 0.29, 0.012)),
+    box('leaf', (-0.14, -0.1, 0.03), (0.08, 0.08, 0.06)),
+])
+
+objs = [cyl('concrete', (0, 0, 0.05), 0.22, 0.1, 12), cyl('white', (0, 0, 0.9), 0.06, 1.7, 10, r2=0.035)]
+objs += [blob('glass', (0, 0, 1.45), 0.13, (1, 1, 0.7), sub=2), cyl('steel', (0, 0, 1.9), 0.012, 0.5, 5)]
+for i in range(3):
+    a = i / 3 * math.tau
+    leg = cyl('white', (math.cos(a) * 0.1, math.sin(a) * 0.1, 0.4), 0.025, 0.8, 6)
+    leg.rotation_euler = (math.sin(a) * 0.2, -math.cos(a) * 0.2, 0)
+    objs.append(leg)
+asset('landmark_spire', objs)
+
+objs = []
+cols = ['c_red', 'c_blue', 'c_yellow', 'c_green']
+for i in range(3):
+    for j in range(2):
+        for k in range(2):
+            objs.append(box(cols[(i + j * 2 + k) % 4], (-0.2 + i * 0.2, -0.06 + j * 0.12, 0.05 + k * 0.1), (0.19, 0.11, 0.095)))
+asset('container_stack', objs)
+
+objs = [box('c_yellow', (0, -0.12, 0.35), (0.04, 0.04, 0.7)), box('c_yellow', (0, 0.12, 0.35), (0.04, 0.04, 0.7)),
+        box('c_yellow', (0.1, 0, 0.72), (0.7, 0.06, 0.06)), box('steel', (-0.18, 0, 0.66), (0.14, 0.16, 0.1)),
+        box('steel', (0.3, 0, 0.6), (0.02, 0.02, 0.2)), box('concrete', (0, 0, 0.02), (0.16, 0.36, 0.04))]
+asset('port_crane', objs)
+
+# ------------------------------------------------------------------ modern vehicles (forward = +X)
+objs = [box('white', (0.24, 0, 0.13), (0.16, 0.2, 0.18), bevel=0.01), box('glass_dark', (0.325, 0, 0.17), (0.01, 0.17, 0.07)),
+        box('c_blue', (-0.1, 0, 0.16), (0.46, 0.21, 0.2)), box('asphalt', (0.05, 0, 0.05), (0.7, 0.16, 0.03))]
+for x in (-0.25, -0.1, 0.25):
+    for y in (-0.1, 0.1):
+        objs.append(cyl('asphalt', (x, y, 0.045), 0.045, 0.03, 10, rot=(math.pi / 2, 0, 0)))
+asset('truck', objs)
+
+L, W, H = 1.2, 0.3, 0.16
+hull = [(-L / 2, -W / 2, H), (L / 2 - 0.12, -W / 2, H), (L / 2 + 0.06, 0, H), (L / 2 - 0.12, W / 2, H), (-L / 2, W / 2, H),
+        (-L / 2 + 0.04, -W / 2 * 0.9, 0), (L / 2 - 0.16, -W / 2 * 0.9, 0), (L / 2 - 0.06, 0, 0.02), (L / 2 - 0.16, W / 2 * 0.9, 0), (-L / 2 + 0.04, W / 2 * 0.9, 0)]
+hf = [(0, 1, 2, 3, 4), (9, 8, 7, 6, 5), (0, 5, 6, 1), (1, 6, 7, 2), (2, 7, 8, 3), (3, 8, 9, 4), (4, 9, 5, 0)]
+objs = [mesh('asphalt', hull, hf), box('c_red', (0, 0, H + 0.005), (L - 0.1, W * 0.98, 0.01))]
+for i in range(6):
+    for j in range(2):
+        objs.append(box(cols[(i + j) % 4], (0.35 - i * 0.14, -0.065 + j * 0.13, H + 0.06), (0.13, 0.12, 0.1)))
+        if i % 2 == 0:
+            objs.append(box(cols[(i + j + 1) % 4], (0.35 - i * 0.14, -0.065 + j * 0.13, H + 0.16), (0.13, 0.12, 0.1)))
+objs += [box('white', (-0.5, 0, H + 0.12), (0.12, 0.26, 0.24)), box('glass_dark', (-0.44, 0, H + 0.2), (0.01, 0.24, 0.05))]
+asset('container_ship', objs)
+
+objs = [cyl('white', (0, 0, 0), 0.06, 0.9, 12, rot=(0, math.pi / 2, 0)),
+        cone('white', (0.5, 0, 0), 0.06, 0.12, 12, rot=(0, math.pi / 2, 0)),
+        cone('white', (-0.5, 0, 0.01), 0.06, 0.14, 12, rot=(0, -math.pi / 2, 0)),
+        box('glass_dark', (0.46, 0, 0.035), (0.05, 0.08, 0.02)),
+        mesh('steel', [(0.12, 0, 0), (-0.1, 0.55, 0.02), (-0.2, 0.55, 0.02), (-0.08, 0, 0)], [(0, 1, 2, 3)]),
+        mesh('steel', [(0.12, 0, 0), (-0.08, 0, 0), (-0.2, -0.55, 0.02), (-0.1, -0.55, 0.02)], [(0, 1, 2, 3)]),
+        mesh('c_red', [(-0.36, 0, 0.04), (-0.52, 0, 0.04), (-0.54, 0, 0.24), (-0.46, 0, 0.24)], [(0, 1, 2, 3)]),
+        mesh('steel', [(-0.4, 0, 0.02), (-0.52, 0.2, 0.03), (-0.54, 0.2, 0.03), (-0.5, 0, 0.02)], [(0, 1, 2, 3)]),
+        mesh('steel', [(-0.4, 0, 0.02), (-0.5, 0, 0.02), (-0.54, -0.2, 0.03), (-0.52, -0.2, 0.03)], [(0, 1, 2, 3)]),
+        cyl('steel', (0.0, 0.24, -0.05), 0.03, 0.12, 8, rot=(0, math.pi / 2, 0)),
+        cyl('steel', (0.0, -0.24, -0.05), 0.03, 0.12, 8, rot=(0, math.pi / 2, 0))]
+asset('airplane', objs)
+
+# ------------------------------------------------------------------ fantasy air (hot-air balloon)
+objs = [blob('balloon_a', (0, 0, 0.72), 0.36, (1, 1, 1.15), sub=2),
+        cyl('balloon_b', (0, 0, 0.72), 0.37, 0.14, 16),
+        cyl('balloon_b', (0, 0, 0.98), 0.29, 0.1, 16),
+        cone('balloon_a', (0, 0, 0.36), 0.2, 0.2, 12, rot=(math.pi, 0, 0)),
+        box('wood', (0, 0, 0.08), (0.14, 0.14, 0.1))]
+for x, y in ((-0.06, -0.06), (0.06, -0.06), (-0.06, 0.06), (0.06, 0.06)):
+    objs.append(cyl('hull_dark', (x * 1.4, y * 1.4, 0.2), 0.004, 0.24, 4))
+asset('balloon', objs)
 
 # ------------------------------------------------------------------ far LODs
 # Cheap stand-ins drawn when the camera is zoomed out (same silhouette, ~1/4 tris)

@@ -166,6 +166,7 @@ output {
 }
 
 /* Small text that can sit over the planet gets a concrete cut-out so it keeps its contrast */
+.wordmark,
 .topbar__status,
 .cta-pair__question,
 .asset-status,
@@ -368,6 +369,22 @@ output {
 
 .panel__note--inset {
   padding: var(--space-15) var(--space-20);
+}
+
+/* Heading with a control at its right edge */
+.panel__heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-15);
+}
+
+.switch-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+  font-size: var(--text-body);
+  cursor: pointer;
 }
 
 /* ---------------------------------------------------------------- form fields */
@@ -674,6 +691,272 @@ input[type='range']::-moz-range-thumb {
   visibility: visible;
 }
 
+/* ---------------------------------------------------------------- focus card + city list */
+
+button.block {
+  border: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.block:hover .block__name {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.city-list {
+  list-style: none;
+  border-top: var(--hairline);
+}
+
+.city-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: var(--space-10);
+  width: 100%;
+  padding: var(--space-10) 0;
+  border: none;
+  border-bottom: var(--hairline);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.city-row:hover .city-row__name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.city-list--card .city-row {
+  grid-template-columns: 1fr auto;
+}
+
+/* Owner mark: wayfinding square in the faction's identity colour */
+.city-row__mark {
+  width: 9px;
+  height: 9px;
+  align-self: center;
+}
+
+.city-row__mark--player {
+  background: var(--color-the-green);
+}
+
+.city-row__mark--system {
+  background: var(--color-the-red);
+}
+
+.city-row__mark--neutral {
+  border: var(--hairline);
+}
+
+.city-row__name {
+  font-size: var(--text-body-lg);
+  letter-spacing: -0.03em;
+}
+
+.city-row__meta {
+  font-size: var(--text-body);
+  color: var(--color-iron-soft);
+}
+
+.info-card {
+  position: fixed;
+  top: 84px;
+  left: var(--space-20);
+  z-index: 12;
+  width: 360px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  background: var(--color-concrete);
+  border: var(--hairline);
+}
+
+.info-card[hidden] {
+  display: none;
+}
+
+.card-block,
+.info-card__head {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 120px;
+  justify-content: flex-end;
+  padding: var(--space-20);
+  padding-right: 64px;
+}
+
+.info-card__head {
+  min-height: 0;
+  border-bottom: var(--hairline);
+}
+
+.card-block--green {
+  background: var(--color-the-green);
+  color: #ffffff;
+}
+
+.card-block--red {
+  background: var(--color-the-red);
+  color: var(--color-iron);
+}
+
+.card-block--iron {
+  background: var(--color-iron);
+  color: var(--color-concrete);
+}
+
+.card-block__eyebrow {
+  font-family: var(--font-system);
+  font-size: var(--text-caption);
+}
+
+.card-block__title,
+.info-card__title {
+  font-size: 44px;
+  font-weight: 400;
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+}
+
+.info-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  font-size: var(--text-subheading);
+  line-height: 1;
+}
+
+.card-block .menu-circle,
+.info-card__head .menu-circle {
+  position: absolute;
+  top: var(--space-15);
+  right: var(--space-15);
+}
+
+.card-block--green .menu-circle,
+.card-block--iron .menu-circle {
+  background: var(--color-concrete);
+}
+
+.card-block--green .menu-circle span,
+.card-block--iron .menu-circle span {
+  background: var(--color-iron);
+}
+
+.menu-circle--small {
+  width: 36px;
+  height: 36px;
+}
+
+.menu-circle--small span {
+  width: 14px;
+  top: 17px !important;
+  left: 11px !important;
+}
+
+.info-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-15);
+  padding: var(--space-20);
+}
+
+.info-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-10);
+}
+
+/* ---------------------------------------------------------------- POV (ride-along) */
+
+.pov {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--space-20);
+  padding: var(--space-15) var(--space-20);
+  background: var(--color-concrete);
+  border-top: var(--hairline);
+}
+
+.pov[hidden] {
+  display: none;
+}
+
+.pov__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pov__eyebrow {
+  font-family: var(--font-system);
+  font-size: var(--text-caption);
+  color: var(--color-iron-soft);
+}
+
+.pov__name {
+  font-size: var(--text-subheading);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.pov__route {
+  font-size: var(--text-body);
+  color: var(--color-iron-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pov__modes,
+.pov__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+.pov__mode[aria-pressed='true'] {
+  background: var(--color-iron);
+  color: var(--color-concrete);
+}
+
+.pov__mode:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.pov__mode span {
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pov__index {
+  min-width: 48px;
+  text-align: center;
+  font-size: var(--text-body-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* While riding, the planet fills the screen: drop the wall type and globe hints */
+body.is-pov .wall-type,
+body.is-pov .hint,
+body.is-pov .info-card,
+body.is-pov .topbar .cta-pair,
+body.is-pov #povEnterBtn {
+  display: none;
+}
+
 /* ---------------------------------------------------------------- small screens */
 
 @media (max-width: 720px) {
@@ -715,6 +998,38 @@ input[type='range']::-moz-range-thumb {
 
   .cta-pair--block .cta-pair__question {
     display: inline;
+  }
+
+  .pov {
+    grid-template-columns: 1fr;
+    gap: var(--space-10);
+    padding: var(--space-15);
+  }
+
+  .pov__modes .pill,
+  .pov__nav .pill {
+    padding: var(--space-5) var(--space-10);
+    min-height: 36px;
+  }
+
+  #povEnterBtn,
+  #screenshotBtn {
+    display: none;
+  }
+
+  /* The focus card becomes a bottom sheet on phones */
+  .info-card {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 55vh;
+    border-width: 1px 0 0;
+  }
+
+  body.has-card .wall-type {
+    display: none;
   }
 }
 

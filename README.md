@@ -62,12 +62,12 @@ globe/
 ├── src/
 │   ├── main.js                 # Entry point: engine, world, director (router mode)
 │   ├── style.css               # Styling UI, HUD tiap mode, cover transisi
-│   ├── core/                   # engine (satu WebGL + loop), director, router, overlay, quality
+│   ├── core/                   # engine, director, router, overlay, quality, post, audio, missions, tips, pauseMenu
 │   ├── world/                  # world (seed + cache planet), solarSystem, planetTypes, bake worker
 │   ├── modes/
 │   │   ├── space/              # SpaceMode, benda langit, kapal, HUD, bake tekstur planet
 │   │   ├── planet/             # PlanetMode (membungkus planetRenderer + menu)
-│   │   └── town/               # TownMode, layout kota, builder diorama, crowd, collider, HUD
+│   │   └── town/               # TownMode, layout, builder, groundPaint, sky, vehicle, fleet, interior, crowd, HUD
 │   ├── math/
 │   │   ├── hexasphere.js       # Generator topologi dual bola heksagon (Goldberg Polyhedron)
 │   │   └── simplex3d.js        # Seedable 3D Simplex & fBm noise
@@ -76,7 +76,8 @@ globe/
 │   ├── render/
 │   │   └── planetRenderer.js   # Three.js scene, lighting, border Civ, koneksi 3D, & kamera 75%
 │   └── ui/
-│       └── menuController.js   # Kontrol menu toggle kiri atas, slider, & tile inspector
+│       ├── menuController.js   # Kontrol menu toggle kiri atas, slider, & tile inspector
+│       └── gauges.js           # Minimap kota dan speedometer
 ```
 
 ---
@@ -181,3 +182,40 @@ Tiga mode, masing-masing di "halaman" sendiri (URL hash) dan chunk JS sendiri. H
   - `space.glb`: kapal fregat, 8k tris di LOD0.
   - `character.glb`: penjelajah ber-rig dengan animasi idle, walk, dan run.
 - **Performa**: satu konteks WebGL dan satu render loop. Setting grafis Auto/Tinggi/Sedang/Rendah; di Auto, resolusi turun atau naik mengikuti FPS. Tier rendah memperpendek jarak LOD, mengurangi pohon, pejalan kaki, dan resolusi terrain, serta mematikan bayangan. Terukur 75 fps (batas refresh monitor) di ketiga mode di laptop, dan tetap 75 fps pada emulasi HP dengan CPU di-throttle 4×.
+
+---
+
+## Update 9: kota hidup, masuk rumah, misi, dan polish produksi
+
+**Kota tanpa kedip dan tabrakan**
+- Gedung ditempatkan dari footprint asli aset (bukan kotak kira-kira), jadi tidak lagi saling tembus. Jalan, marka, zebra cross, dan ladang dicat ke tekstur tanah (`groundPaint.js`), bukan pita geometri, jadi tidak ada z-fighting.
+- Langit (`sky.js`) mengikuti tipe planet dan jam dunia yang sebenarnya (posisi planet di orbit + rotasinya): pagi, senja, malam dengan bintang dan bulan. Batas dunia: cincin horizon sampai 4,2 km dengan kabut hybrid, air dengan riak, buih, dan kilau.
+- Malam hari: jendela gedung kaca menyala acak per lantai, lampu jalan dan jendela rumah bersinar (bloom).
+
+**Nyetir ala GTA di semua mode**
+- Mobil (`vehicle.js`): grip lateral, rem tangan untuk drift, suspensi, tabrakan memantul, kamera chase yang tertinggal di tikungan. 11 tipe (sedan, hatchback, SUV, van, bus, sport, pikap, polisi, kereta kuda, wagon, karavan).
+- Semua kendaraan bisa dinaiki: dekati lalu tekan E. Mobil yang sedang jalan bisa diambil alih (sopirnya kabur). Ada lalu lintas di jalan besar.
+- Luar angkasa: 3 kapal di hangar (fregat, interceptor, freighter) dan kapal NPC yang lalu-lalang. Di planet: tombol "Nyetir rover" untuk menjelajah permukaan.
+
+**Masuk rumah** (`interior.js`)
+- Rumah, pondok, apartemen, toko, kedai, dan kantor bisa dimasuki (E di depan pintu). Ruangan dibuat prosedural dengan tampilan dollhouse (dinding yang menghalangi kamera disembunyikan), perabot dari `furniture.glb`, dan tekstur lantai/dinding dari atlas.
+- Interaksi: duduk, tidur sampai pagi (jam dunia maju), buka/tutup lemari dan kulkas, nyalakan lampu, TV, radio, dan perapian, ambil dan taruh barang.
+
+**Misi** (`core/missions.js`, tombol J)
+- Empat checklist lintas mode: Rumah pertama, Malam santai, Penjelajah, Pilot. Tiap tugas tercentang otomatis. Kalau satu misi lengkap, muncul popup dengan confetti dan fanfare.
+
+**Polish**
+- *Post-processing* (`core/post.js`): MSAA, bloom setengah resolusi, tone mapping ACES, color grading dan vinyet per mode. Otomatis mati di tier Rendah.
+- *Audio* (`core/audio.js`): semuanya Web Audio, tanpa file. Suasana per tempat (dengung luar angkasa, angin, burung siang, jangkrik malam, dengung kota), musik pad generatif, suara mesin dengan perpindahan gigi, ban berdecit, langkah kaki, pintu, saklar, radio lo-fi, TV, dan perapian.
+- *HUD*: minimap kota yang berputar mengikuti kamera (pintu yang bisa dimasuki ditandai kuning), speedometer dengan gigi, prompt interaksi yang bisa di-tap.
+- *Menu jeda* (P atau tombol bulat kanan bawah): kualitas grafis, efek visual, volume utama/musik/efek, bisu (B), daftar kontrol, tampilkan tips lagi, reset misi. Waktu game berhenti selama jeda.
+- *Onboarding*: kartu judul di kunjungan pertama, lalu satu tip singkat saat pertama kali berada di tiap tempat atau cara bergerak.
+
+**Kontrol ringkas**
+
+| Tempat | Tombol |
+| :--- | :--- |
+| Luar angkasa | W/S dorong, A/D belok, Q/E geser, R/F naik turun, Shift boost, L mendarat, M peta sistem |
+| Planet | Seret putar, klik kota, O kembali ke orbit; rover: WASD, Spasi drift, Esc keluar |
+| Kota | 1/2/3 diorama/jalan/nyetir, WASD, Shift lari/ngebut, Spasi lompat/rem tangan, E masuk atau pakai, Esc keluar |
+| Umum | J misi, P menu, B bisu |

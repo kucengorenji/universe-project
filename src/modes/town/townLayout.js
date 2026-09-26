@@ -11,7 +11,7 @@ import { createNoise3D } from '../../math/simplex3d.js';
 // In three.js that is rotation.y = -yaw.
 
 export const TILE_M = 85; // one hex tile radius, in metres
-export const DIORAMA_R = 620; // radius of the playable disc
+export const DIORAMA_MAX = 860; // largest playable disc (a big capital); each town sizes its own
 export const HORIZON_M = 4400; // tiles are gathered this far out, for the horizon
 
 const TAU = Math.PI * 2;
@@ -214,7 +214,7 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   for (let i = 0; i < 24; i++) {
     const a = (i / 24) * TAU;
     let r = 10;
-    while (r < DIORAMA_R && inCity(Math.cos(a) * r, Math.sin(a) * r, 0.5)) r += 4;
+    while (r < DIORAMA_MAX && inCity(Math.cos(a) * r, Math.sin(a) * r, 0.5)) r += 4;
     edgeAt.push(r);
     cityR += r / 24;
   }
@@ -248,6 +248,8 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     size: cityTiles.length,
     planetType,
     cityR,
+    // The playable disc grows with the city: a hamlet sits on a small table, a capital on a big one
+    dioramaR: Math.min(DIORAMA_MAX, Math.max(400, Math.round(cityR * 1.7 + 220))),
     tiles: local,
     fields,
     streets: [],
@@ -744,7 +746,7 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
   // Farmland: long plots with crop rows in their own direction
   const fields = [];
   for (const t of local) {
-    if (!t.farm || t.city || Math.hypot(t.x, t.z) > DIORAMA_R - 60) continue;
+    if (!t.farm || t.city || Math.hypot(t.x, t.z) > L.dioramaR - 60) continue;
     const plots = 2 + Math.floor(rng() * 2);
     for (let p = 0; p < plots; p++) {
       const x = t.x + (rng() - 0.5) * 80;
@@ -768,7 +770,7 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
 
   // Trees, rocks and bushes over the whole disc, driven by the blended fields
   const S = {};
-  const R = DIORAMA_R;
+  const R = L.dioramaR;
   const tries = Math.round(9000 * (0.45 + detail * 0.55)); // fewer trees on lighter tiers
   for (let i = 0; i < tries; i++) {
     const a = rng() * Math.PI * 2;

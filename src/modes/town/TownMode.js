@@ -5,7 +5,7 @@ import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { loadAssetPack, ASSET_PACK_URL, ASSET_PACK_LOD0_URL, getToonGradient } from '../../render/assetLibrary.js';
 import { mulberry32 } from '../../map/mapGenerator.js';
 import { PLANET_TYPES } from '../../world/planetTypes.js';
-import { generateTownLayout, DIORAMA_R } from './townLayout.js';
+import { generateTownLayout } from './townLayout.js';
 import { TownBuilder, WATER_Y, packFootprints } from './townBuilder.js';
 import { Crowd, Pedestrians } from './crowd.js';
 import { Colliders } from './colliders.js';
@@ -187,7 +187,7 @@ export default class TownMode {
 
     // Controls
     this.orbit = new OrbitControls(this.camera, engine.renderer.domElement);
-    Object.assign(this.orbit, { enableDamping: true, dampingFactor: 0.08, screenSpacePanning: false, maxPolarAngle: 1.36, minDistance: 18, maxDistance: 1100, zoomSpeed: 1.1 });
+    Object.assign(this.orbit, { enableDamping: true, dampingFactor: 0.08, screenSpacePanning: false, maxPolarAngle: 1.36, minDistance: 18, maxDistance: this.layout.dioramaR * 1.8, zoomSpeed: 1.1 });
     this.orbit.enabled = false;
     this.follow = { yaw: sp.yaw + Math.PI, pitch: 0.32, dist: 6.5 };
     this.bindInput();
@@ -296,7 +296,7 @@ export default class TownMode {
       if (prev === 'diorama') {
         // Drop in where the camera was looking, if it is free
         const t = this.orbit.target;
-        if (Math.hypot(t.x, t.z) < DIORAMA_R - 30 && this.builder.heightAt(t.x, t.z) > WATER_Y + 0.2) this.placePlayer(t.x, t.z);
+        if (Math.hypot(t.x, t.z) < this.layout.dioramaR - 30 && this.builder.heightAt(t.x, t.z) > WATER_Y + 0.2) this.placePlayer(t.x, t.z);
       }
       this.follow.dist = 6.5;
       this.follow.yaw = this.player.yaw + Math.PI;
@@ -688,7 +688,7 @@ export default class TownMode {
         const a = this.colliders.resolve(x, z, r);
         return this.fleet.resolve(a.x, a.z, r, exclude);
       },
-      blocked: (x, z) => this.builder.heightAt(x, z) < WATER_Y - 0.3 || Math.hypot(x, z) > DIORAMA_R - 8
+      blocked: (x, z) => this.builder.heightAt(x, z) < WATER_Y - 0.3 || Math.hypot(x, z) > this.layout.dioramaR - 8
     };
   }
 
@@ -794,7 +794,20 @@ export default class TownMode {
     };
     this.onPointerUp = () => (this.drag = null);
     this.onWheel = (e) => {
-      if (this.view === 'diorama') return;
+      if (this.view === 'diorama') {
+        // Keep scrolling out past the widest view: rise back up to the planet
+        const far = this.camera.position.distanceTo(this.orbit.target) > this.orbit.maxDistance * 0.97;
+        if (far && e.deltaY > 0 && !this.tween && !this.ctx.director.busy) {
+          this.pullOut = (this.pullOut || 0) + Math.min(120, e.deltaY);
+          this.hud.setPrompt(this.pullOut > 500 ? 'Naik ke planet' : 'Scroll terus untuk naik ke planet', '↑');
+          if (this.pullOut > 700) {
+            this.pullOut = 0;
+            this.hud.setPrompt(null);
+            this.ctx.director.go({ mode: 'planet', planet: this.route.planet, city: this.route.city });
+          }
+        } else if (e.deltaY < 0) this.pullOut = 0;
+        return;
+      }
       this.follow.dist = THREE.MathUtils.clamp(this.follow.dist * Math.exp(e.deltaY * 0.001), 3, 30);
     };
     window.addEventListener('keydown', this.onKeyDown);
@@ -860,7 +873,7 @@ export default class TownMode {
     const g = this.builder.heightAt(r.x, r.z);
     // Too steep to climb: stop at the foot of cliffs (going down is fine)
     const climb = (g - this.builder.heightAt(p.x, p.z)) / Math.max(1e-3, Math.hypot(r.x - p.x, r.z - p.z));
-    if (g > WATER_Y - 0.5 && Math.hypot(r.x, r.z) < DIORAMA_R - 6 && climb < 1.1) {
+    if (g > WATER_Y - 0.5 && Math.hypot(r.x, r.z) < this.layout.dioramaR - 6 && climb < 1.1) {
       p.x = r.x;
       p.z = r.z;
     } else p.speed *= 0.5;
@@ -950,11 +963,15 @@ export default class TownMode {
         tw.done?.();
       }
     } else if (this.view === 'diorama') {
+      if (this.pullOut > 0) {
+        this.pullOut = Math.max(0, this.pullOut - dt * 350);
+        if (!this.pullOut) this.hud.setPrompt(null);
+      }
       this.orbit.update();
       // Keep the table in reach
       const tg = this.orbit.target;
       const r = Math.hypot(tg.x, tg.z);
-      if (r > DIORAMA_R * 0.85) tg.multiplyScalar((DIORAMA_R * 0.85) / r);
+      if (r > this.layout.dioramaR * 0.85) tg.multiplyScalar((this.layout.dioramaR * 0.85) / r);
       tg.y = Math.max(0, this.builder.groundAt(tg.x, tg.z));
     } else if (this.view === 'walk') {
       if (this.transfer) this.updateTransfer(t);
@@ -1027,7 +1044,7 @@ export default class TownMode {
     const fog = this.scene.fog;
     fog.color.copy(L.fog);
     fog.near = THREE.MathUtils.lerp(camDist * 0.95, 260, this.fogBlend);
-    fog.far = THREE.MathUtils.lerp(camDist + DIORAMA_R * 1.05, 3900, this.fogBlend);
+    fog.far = THREE.MathUtils.lerp(camDist + this.layout.dioramaR * 1.05, 3900, this.fogBlend);
 
     // Shadow box on the point of interest, snapped to whole shadow texels so it does not shimmer
     const focus = this.view === 'walk' ? this.player : this.view === 'drive' && this.drive ? this.drive.car : this.orbit.target;

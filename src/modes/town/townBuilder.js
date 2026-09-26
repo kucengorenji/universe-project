@@ -3,7 +3,6 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createToonMaterial } from '../../render/assetLibrary.js';
 import { createNoise3D } from '../../math/simplex3d.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../../world/planetTypes.js';
-import { DIORAMA_R } from './townLayout.js';
 import { GroundPaint, detailNoiseTexture } from './groundPaint.js';
 
 // Turns a town layout into a tabletop diorama: one terrain disc (heights and
@@ -354,7 +353,7 @@ export class TownBuilder {
 
   /** Heights on a regular grid over the playable disc (also used by walkers and vehicles). */
   buildHeights() {
-    const R = DIORAMA_R + 40; // a margin so the horizon ring stitches onto real heights
+    const R = this.L.dioramaR + 40; // a margin so the horizon ring stitches onto real heights
     const cell = this.quality.settings.detail >= 1 ? 4 : this.quality.settings.detail >= 0.75 ? 5 : 6;
     const n = Math.ceil((R * 2) / cell) + 1;
     this.hR = R;
@@ -467,6 +466,23 @@ export class TownBuilder {
   }
 
   /**
+   * Ground height anywhere out to the horizon, as the horizon ring draws it:
+   * the real heights on the disc, then the planet's fields flattening and
+   * dropping a little far away (a hint of curvature). Also fills `c` with the colour.
+   */
+  farHeight(x, z, S, c, rim = false) {
+    const R0 = this.hR - 2;
+    const r = Math.hypot(x, z);
+    if (rim || r <= R0) {
+      this.sampleGround(x, z, S, c);
+      return this.heightAt(x, z);
+    }
+    const h = this.sampleGround(x, z, S, c);
+    const far = THREE.MathUtils.smoothstep(r, R0 * 1.6, HORIZON_R);
+    return THREE.MathUtils.lerp(h, Math.min(h, 3) - 25, far * far);
+  }
+
+  /**
    * Land beyond the town, out to the horizon: coarse rings that carry on the
    * same fields (mountains, coasts), then melt into fog. Not walkable.
    */
@@ -487,11 +503,8 @@ export class TownBuilder {
         const a = (i / segs) * Math.PI * 2;
         const x = Math.cos(a) * r;
         const z = Math.sin(a) * r;
-        let h = k === 0 ? this.heightAt(x, z) : this.sampleGround(x, z, S, c);
-        if (k === 0) this.sampleGround(x, z, S, c);
-        // Far away the land flattens out and drops a little (a hint of curvature)
+        const h = this.farHeight(x, z, S, c, k === 0);
         const far = THREE.MathUtils.smoothstep(r, R0 * 1.6, R1);
-        h = THREE.MathUtils.lerp(h, Math.min(h, 3) - 25, far * far);
         pos.push(x, h, z);
         c.lerp(fogFar, far * 0.3);
         col.push(c.r, c.g, c.b);
@@ -530,6 +543,23 @@ export class TownBuilder {
     depthTex.magFilter = THREE.LinearFilter;
     depthTex.minFilter = THREE.LinearFilter;
     depthTex.needsUpdate = true;
+    // Beyond the disc: a coarse depth map out to the horizon, from the same
+    // heights the horizon ring uses (without it the near map's square edge showed)
+    const fn = 200;
+    const fStep = (HORIZON_R * 2) / fn;
+    const farData = new Uint8Array(fn * fn);
+    const S = {};
+    const c = new THREE.Color();
+    for (let j = 0; j < fn; j++) {
+      for (let i = 0; i < fn; i++) {
+        const h = this.farHeight(-HORIZON_R + (i + 0.5) * fStep, -HORIZON_R + (j + 0.5) * fStep, S, c);
+        farData[j * fn + i] = Math.max(0, Math.min(255, ((h + 14) / 16) * 255));
+      }
+    }
+    const farTex = this.track(new THREE.DataTexture(farData, fn, fn, THREE.RedFormat, THREE.UnsignedByteType));
+    farTex.magFilter = THREE.LinearFilter;
+    farTex.minFilter = THREE.LinearFilter;
+    farTex.needsUpdate = true;
     const g = this.track(new THREE.CircleGeometry(HORIZON_R, 160));
     g.rotateX(-Math.PI / 2);
     const u = this.uniforms;
@@ -537,6 +567,8 @@ export class TownBuilder {
       uTime: u.uTime,
       uDepth: { value: depthTex },
       uDepthRect: { value: new THREE.Vector3(-this.hR, -this.hR, this.hR * 2) },
+      uDepthFar: { value: farTex },
+      uFarRect: { value: new THREE.Vector3(-HORIZON_R, -HORIZON_R, HORIZON_R * 2) },
       uShallow: { value: new THREE.Color(lava ? 0xffc04a : this.palette.coast) },
       uMid: { value: new THREE.Color(lava ? 0xff7a1f : this.palette.ocean) },
       uDeep: { value: new THREE.Color(lava ? 0xc2350f : this.palette.ocean_deep) },
@@ -564,6 +596,8 @@ export class TownBuilder {
           uniform float uTime;
           uniform sampler2D uDepth;
           uniform vec3 uDepthRect;
+          uniform sampler2D uDepthFar;
+          uniform vec3 uFarRect;
           uniform vec3 uShallow;
           uniform vec3 uMid;
           uniform vec3 uDeep;
@@ -579,8 +613,11 @@ export class TownBuilder {
           void main() {
             vec2 p = vWorld.xz;
             vec2 uv = (p - uDepthRect.xy) / uDepthRect.z;
-            bool inside = uv.x > 0.0 && uv.y > 0.0 && uv.x < 1.0 && uv.y < 1.0;
-            float ground = inside ? texture2D(uDepth, uv).r * 16.0 - 14.0 : -14.0;
+            float farGround = texture2D(uDepthFar, (p - uFarRect.xy) / uFarRect.z).r * 16.0 - 14.0;
+            float nearGround = texture2D(uDepth, clamp(uv, 0.0, 1.0)).r * 16.0 - 14.0;
+            // Sharp map on the disc, blending into the coarse one toward its rim
+            float rim = uDepthRect.z * 0.5;
+            float ground = mix(nearGround, farGround, smoothstep(rim * 0.9, rim, length(p)));
             float depth = ${WATER_Y.toFixed(2)} - ground;
             // Ripples: a few travelling sine waves, derivatives -> normal
             float e = 0.35;
@@ -724,7 +761,7 @@ export class TownBuilder {
 
   buildInstances() {
     const L = this.L;
-    const R = DIORAMA_R;
+    const R = this.L.dioramaR;
     const cellW = (R * 2) / CHUNKS;
     const chunkOf = (x, z) => {
       const i = THREE.MathUtils.clamp(Math.floor((x + R) / cellW), 0, CHUNKS - 1);

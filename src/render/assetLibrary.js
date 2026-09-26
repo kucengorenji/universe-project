@@ -57,8 +57,21 @@ function bakeNode(root) {
   return merged;
 }
 
-/** Resolves to { assetName: { 0?: BufferGeometry, 1?: ..., 2?: ... } }. Rejects if the pack cannot load. */
-export async function loadAssetPack(url) {
+/**
+ * Resolves to { assetName: { 0?: BufferGeometry, 1?: ..., 2?: ... } }. Rejects if the pack cannot load.
+ * Packs are loaded once per URL and shared by every mode: never dispose their geometries.
+ */
+const packs = new Map();
+export function loadAssetPack(url) {
+  if (!packs.has(url)) {
+    const p = loadPack(url);
+    p.catch(() => packs.delete(url)); // a failed load may be retried later
+    packs.set(url, p);
+  }
+  return packs.get(url);
+}
+
+async function loadPack(url) {
   const gltf = await new GLTFLoader().loadAsync(url);
   gltf.scene.updateMatrixWorld(true);
   const lib = {};

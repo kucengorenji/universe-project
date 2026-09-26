@@ -5,6 +5,7 @@ const QUALITY_LABEL = { auto: 'Auto', high: 'Tinggi', medium: 'Sedang', low: 'Re
 const HINTS = {
   diorama: 'Seret untuk memutar, klik kanan atau dua jari untuk menggeser, scroll untuk zoom. Tombol 2 jalan kaki, 3 nyetir.',
   walk: 'WASD jalan, Shift lari, Spasi lompat, E masuk kendaraan. Seret untuk melihat sekeliling. Esc kembali ke diorama.',
+  interior: 'WASD jalan, E pakai atau ambil barang, seret untuk memutar kamera, Esc keluar.',
   drive: 'W gas, S rem/mundur, A/D belok, Spasi rem tangan (drift), Shift ngebut, E turun. Seret untuk melihat sekeliling.'
 };
 
@@ -104,7 +105,8 @@ export class TownHud {
   }
 
   setView(v) {
-    this.buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+    const shown = v === 'interior' ? 'walk' : v;
+    this.buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === shown)));
     this.hint.textContent = HINTS[v];
     this.joyEl.hidden = !(this.touch && v !== 'diorama');
     this.root.classList.toggle('is-street', v !== 'diorama');

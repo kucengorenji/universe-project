@@ -27,15 +27,16 @@ const LABELS = {
  *   exit()                      dispose everything
  */
 export class Director {
-  constructor({ engine, world, overlay }) {
+  constructor({ engine, world, overlay, missions }) {
     this.engine = engine;
     this.world = world;
     this.overlay = overlay;
+    this.missions = missions;
     this.mode = null;
     this.route = null;
     this.busy = false;
     this.pending = null;
-    this.ctx = { engine, world, overlay, director: this };
+    this.ctx = { engine, world, overlay, missions, director: this };
     window.addEventListener('hashchange', () => {
       if (this.ignoreHash === location.hash) {
         this.ignoreHash = null;

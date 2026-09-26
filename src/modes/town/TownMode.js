@@ -119,8 +119,8 @@ export default class TownMode {
     for (const [name, lods] of Object.entries(base || {})) planetPack[name] = { ...lods };
     for (const [name, lods] of Object.entries(lod0 || {})) planetPack[name] = { ...(planetPack[name] || {}), ...lods };
 
-    this.layout = generateTownLayout({ map, hexasphere, cityIndex: this.route.city, planetType: planet.type });
     const quality = engine.quality;
+    this.layout = generateTownLayout({ map, hexasphere, cityIndex: this.route.city, planetType: planet.type, detail: quality.settings.detail });
     this.builder = new TownBuilder(this.layout, { planetPack, townPack, quality, planetType: planet.type });
     this.colliders = new Colliders(this.layout.colliders);
 

@@ -137,7 +137,7 @@ class Fields {
  *   map: planet map data, hexasphere: tiles with that map applied,
  *   cityIndex, planetType, seed
  */
-export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 'terran' }) {
+export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 'terran', detail = 1 }) {
   const city = map.cities[cityIndex];
   const tileMap = hexasphere.tileMap;
   const seed = ((map.seed || 1) * 131 + cityIndex * 977) >>> 0;
@@ -326,7 +326,7 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     addStreet(smoothPts, modern ? 10 : 5.5, 'road');
   }
 
-  planSurroundings(layout, { rng, noise, at, place, streetClear, claim, local, modern, planetType });
+  planSurroundings(layout, { rng, noise, at, place, streetClear, claim, local, modern, planetType, detail });
   buildGraphs(layout);
   return layout;
 }
@@ -696,7 +696,7 @@ function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim }
 
 // ---------------------------------------------------------------- outside the walls
 
-function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern, planetType }) {
+function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern, planetType, detail }) {
   const flora = { ice: 'snow', desert: 'dry', lava: 'none', barren: 'none' }[planetType] || 'green';
   // Farmland: long plots with crop rows in their own direction
   const fields = [];
@@ -726,7 +726,7 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
   // Trees, rocks and bushes over the whole disc, driven by the blended fields
   const S = {};
   const R = DIORAMA_R;
-  const tries = 9000;
+  const tries = Math.round(9000 * (0.45 + detail * 0.55)); // fewer trees on lighter tiers
   for (let i = 0; i < tries; i++) {
     const a = rng() * Math.PI * 2;
     const r = Math.sqrt(rng()) * R;

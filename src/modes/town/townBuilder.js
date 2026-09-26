@@ -659,9 +659,13 @@ export class TownBuilder {
   /** Per-chunk LOD by distance from the camera. */
   update(camera) {
     const p = camera.position;
+    // Lower quality tiers switch to lighter models sooner
+    const k = this.quality.settings.detail;
+    const near = LOD_NEAR * k;
+    const mid = LOD_MID * (0.5 + k * 0.5);
     for (const c of this.chunks) {
       const d = Math.max(0, Math.hypot(c.cx - p.x, c.cz - p.z, p.y * 0.5) - 110);
-      const level = d < LOD_NEAR ? 0 : d < LOD_MID ? 1 : 2;
+      const level = d < near ? 0 : d < mid ? 1 : 2;
       if (level !== c.level) {
         c.level = level;
         c.levels.forEach((l, i) => (l.visible = i === level));

@@ -60,8 +60,14 @@ globe/
 ├── package.json                # Dependensi Three.js & Vite
 ├── TILES_ROADMAP.md            # Catatan rencana generasi aset tile 3D lanjutan
 ├── src/
-│   ├── main.js                 # Entry point inisialisasi aplikasi
-│   ├── style.css               # Styling UI glassmorphism, HUD, dan warna faksi
+│   ├── main.js                 # Entry point: engine, world, director (router mode)
+│   ├── style.css               # Styling UI, HUD tiap mode, cover transisi
+│   ├── core/                   # engine (satu WebGL + loop), director, router, overlay, quality
+│   ├── world/                  # world (seed + cache planet), solarSystem, planetTypes, bake worker
+│   ├── modes/
+│   │   ├── space/              # SpaceMode, benda langit, kapal, HUD, bake tekstur planet
+│   │   ├── planet/             # PlanetMode (membungkus planetRenderer + menu)
+│   │   └── town/               # TownMode, layout kota, builder diorama, crowd, collider, HUD
 │   ├── math/
 │   │   ├── hexasphere.js       # Generator topologi dual bola heksagon (Goldberg Polyhedron)
 │   │   └── simplex3d.js        # Seedable 3D Simplex & fBm noise
@@ -148,3 +154,30 @@ globe/
 - **Dua pack**: `assets.glb` (LOD1+LOD2, sekitar 290 KB) dimuat lebih dulu. `assets_lod0.glb` (sekitar 340 KB) menyusul, dan begitu tiba, props serta kendaraan otomatis naik ke LOD0.
 - **LOD per chunk**: props dibagi ke 32 chunk (titik dan pusat muka icosahedron). Tiap chunk menampilkan satu LOD sesuai jarak dari kamera: LOD0 di bawah 0,35R, LOD1 di bawah 1,1R, LOD2 selebihnya. Chunk di balik horizon dilewati.
 - **Luar angkasa**: latar CSS biru-hitam dengan vignette, bola nebula prosedural di sepanjang pita galaksi, dan sekitar 3.200 bintang dengan variasi ukuran dan warna. Kontrol header memakai permukaan concrete supaya terbaca di langit gelap.
+
+---
+
+## Update 8: tiga mode (space, planet, kota), transisi mulus, aset Blender high-poly
+
+Tiga mode, masing-masing di "halaman" sendiri (URL hash) dan chunk JS sendiri. Hanya mode yang tampil yang dimuat, dirender, dan menyimpan mesh:
+
+| Mode | URL | Isi |
+| :--- | :--- | :--- |
+| **Space** | `#/space`, `#/space/<planet>` | Tata surya dari seed dunia: bintang, 5–8 planet, bulan, cincin, sabuk asteroid. Kapal bisa terbang bebas (WASD, R/F naik turun, Shift boost) atau autopilot (klik planet / daftar). Tombol M membuka peta sistem. |
+| **Planet** | `#/planet/<i>`, `#/planet/<i>/city/<c>` | Globe hex seperti sebelumnya, sekarang untuk setiap planet yang bisa didarati. |
+| **Kota** | `#/town/<i>/<c>` | Diorama kota skala meter yang dipotong dari peta hex planet. Bisa jalan kaki (orang ketiga) atau menyetir. |
+
+- **Tipe planet** (`src/world/planetTypes.js`): terran (rumah), samudra, gurun, es, vulkanik, tandus, raksasa gas. Tipe mengatur parameter generator (laut, gurun, tundra, sungai, ada kota atau tidak) dan tampilan (palet, gunung, air/lava, atmosfer, awan, langit, flora). Kota dan faksi hanya ada di terran, samudra, dan gurun. Raksasa gas hanya bisa diorbit.
+- **Yang disimpan tetap cuma peta planet rumah** (localStorage, seperti sebelumnya). Planet lain di-generate ulang dari seed-nya masing-masing (sekitar 50 ms) dan di-cache di memori. "Acak dunia" membuat planet rumah baru sekaligus tata surya baru.
+- **Transisi**:
+  - *Space ke planet*: kapal masuk orbit (autopilot), lalu kamera menukik sampai planet memenuhi layar dengan framing yang persis sama dengan globe. Frame terakhir di-crossfade ke globe, jadi terlihat seperti zoom.
+  - *Planet ke kota*: kartu kota punya tombol "Mendarat di kota". Kamera menukik ke kota, masuk awan, lalu keluar di atas diorama.
+  - *Balik*: "Lepas landas" (kota ke planet, kembali ke close-up kota di globe) dan "Ke orbit" (planet ke space, kapal naik dari sisi planet yang sedang dilihat).
+  - Mode berikutnya dimuat selama animasi keberangkatan. Loading hanya muncul kalau memang perlu (misalnya cold start dari URL).
+- **Tekstur planet di space** di-bake di Web Worker dari peta tile yang sama dengan globe (tile hex terdekat per piksel), jadi benuanya identik. Channel alpha dipakai untuk lampu kota di sisi malam dan cahaya lava.
+- **Kota**: jalan utama memancar dari plaza, ada ring dan gang, landmark (kastil/kuil/menara), tembok dan gerbang, lapak pasar, sumur, dermaga (kota fantasi). Kota modern dapat grid jalan dengan trotoar, pusat kota bergedung tinggi, taman, lampu jalan, mobil parkir, dan lalu lintas. Sekeliling kota diambil dari tile di sekitarnya: ladang, hutan, gunung, pantai, danau, dan jalan ke kota tetangga. Pejalan kaki digambar instanced (4 draw call untuk seluruh kerumunan).
+- **Aset Blender** (`tools/blender/build_town_space.py`, dibangun lewat Blender MCP, disimpan juga sebagai `town_space_assets.blend`):
+  - `town.glb` (sekitar 1,6 MB): 47 aset skala meter dengan LOD0/1/2 dan varian. LOD0 total sekitar 100 ribu tris: rumah 1,3–4,4k, kastil 16k.
+  - `space.glb`: kapal fregat, 8k tris di LOD0.
+  - `character.glb`: penjelajah ber-rig dengan animasi idle, walk, dan run.
+- **Performa**: satu konteks WebGL dan satu render loop. Setting grafis Auto/Tinggi/Sedang/Rendah; di Auto, resolusi turun atau naik mengikuti FPS. Tier rendah memperpendek jarak LOD, mengurangi pohon, pejalan kaki, dan resolusi terrain, serta mematikan bayangan. Terukur 75 fps (batas refresh monitor) di ketiga mode di laptop, dan tetap 75 fps pada emulasi HP dengan CPU di-throttle 4×.

@@ -799,15 +799,21 @@ export class TownBuilder {
     }
   }
 
-  /** Per-chunk LOD by distance from the camera. */
-  update(camera) {
+  /**
+   * Per-chunk LOD by distance from the camera. From the diorama (orbit = the
+   * point it circles around) the distance is measured so that it does not
+   * change while orbiting: otherwise the near and far sides swap levels on
+   * every turn of the table and the town flickers.
+   */
+  update(camera, orbit = null) {
     const p = camera.position;
     // Lower quality tiers switch to lighter models sooner
     const k = this.quality.settings.detail;
     const near = LOD_NEAR * k;
     const mid = LOD_MID * (0.5 + k * 0.5);
+    const zoom = orbit ? p.distanceTo(orbit) : 0;
     for (const c of this.chunks) {
-      const d = Math.max(0, Math.hypot(c.cx - p.x, c.cz - p.z, p.y * 0.5) - 110);
+      const d = orbit ? Math.max(0, zoom * 0.85 + Math.hypot(c.cx - orbit.x, c.cz - orbit.z) * 0.35 - 110) : Math.max(0, Math.hypot(c.cx - p.x, c.cz - p.z, p.y * 0.5) - 110);
       // Hysteresis: a chunk only changes level once it is clearly past the line
       const h = c.level === -1 ? 1 : 0.12;
       let level = c.level;

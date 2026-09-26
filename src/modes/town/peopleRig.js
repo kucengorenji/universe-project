@@ -93,24 +93,28 @@ export class RiggedPeople {
 
   /** Give the pool to the walkers nearest the camera (every quarter second). */
   assign(walkers, people, cam, reach = 70) {
-    const near = [];
-    for (const w of walkers) {
-      const p = people[w.i];
-      const d = Math.hypot(p.x - cam.x, p.z - cam.z);
-      if (d < reach) near.push([d, w]);
-    }
-    near.sort((a, b) => a[0] - b[0]);
-    const chosen = new Set(near.slice(0, this.pool.length).map(([, w]) => w.i));
-    // Keep existing assignments where possible (no popping between rigs)
+    const dist = (i) => Math.hypot(people[i].x - cam.x, people[i].z - cam.z);
+    // Hysteresis: a rig keeps its walker until it is clearly out of reach, so
+    // people at the edge do not swap between rig and instance every tick
     const free = [];
+    const held = new Set();
     for (const r of this.pool) {
-      if (r.index >= 0 && chosen.has(r.index)) chosen.delete(r.index);
+      if (r.index >= 0 && dist(r.index) < reach * 1.25) held.add(r.index);
       else {
+        if (r.index >= 0) people[r.index].visible = true;
         r.index = -1;
         free.push(r);
       }
     }
-    for (const i of chosen) {
+    if (!free.length) return;
+    const near = [];
+    for (const w of walkers) {
+      if (held.has(w.i)) continue;
+      const d = dist(w.i);
+      if (d < reach) near.push([d, w.i]);
+    }
+    near.sort((a, b) => a[0] - b[0]);
+    for (const [, i] of near) {
       const r = free.pop();
       if (!r) break;
       r.index = i;

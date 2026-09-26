@@ -981,9 +981,26 @@ export default class TownMode {
     if (this.avatar) this.player.visible = false;
     this.crowd.pose();
     this.updateAvatar(dt);
-    this.builder.update(this.camera);
+    this.builder.update(this.camera, this.view === 'diorama' ? this.orbit.target : null);
     this.updateEnvironment(dt, t);
+    this.updateDepthRange();
     this.hud.update(this);
+  }
+
+  /**
+   * Near plane follows the camera's distance to what it looks at. With a fixed
+   * 0.3 m near plane the depth buffer resolves only ~7 cm at diorama distance,
+   * so windows, doors and trim fight with their walls and flicker.
+   */
+  updateDepthRange() {
+    const cam = this.camera;
+    const street = this.view !== 'diorama' && !this.tween;
+    const d = street ? 0 : cam.position.distanceTo(this.orbit.target);
+    const near = street ? 0.3 : THREE.MathUtils.clamp(d * 0.04, 0.3, 40);
+    if (Math.abs(near - cam.near) / cam.near > 0.1) {
+      cam.near = near;
+      cam.updateProjectionMatrix();
+    }
   }
 
   /** Time of day, light, fog and the sun's shadow box. */

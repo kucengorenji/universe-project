@@ -154,6 +154,18 @@ export default class SpaceMode {
     return this.bodies.planets[i];
   }
 
+  /** Near plane as far out as the closest thing allows (ship or a planet's surface): less depth fighting far away. */
+  updateDepthRange() {
+    const cam = this.camera;
+    let closest = cam.position.distanceTo(this.ship.position) - 1.5;
+    for (const p of this.bodies.planets) closest = Math.min(closest, cam.position.distanceTo(p.holder.position) - p.def.radius * 1.1);
+    const near = THREE.MathUtils.clamp(closest * 0.3, 0.05, 1.5);
+    if (Math.abs(near - cam.near) / cam.near > 0.1) {
+      cam.near = near;
+      cam.updateProjectionMatrix();
+    }
+  }
+
   planetVelocity(i, out = new THREE.Vector3()) {
     const pl = this.planet(i);
     const p = pl.def;
@@ -643,6 +655,7 @@ export default class SpaceMode {
       this.updateCamera(dt, t);
     }
     this.updateStreaks();
+    this.updateDepthRange();
     const sh = this.ship;
     this.ctx.audio?.engine('ship', { speed01: Math.min(1, sh.speed / sh.boostSpeed), throttle: sh.thrust, boost: sh.boostFx || 0 });
     const { width, height } = this.ctx.engine.size;

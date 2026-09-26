@@ -4,6 +4,8 @@ import { createToonMaterial } from '../../render/assetLibrary.js';
 import { createNoise3D } from '../../math/simplex3d.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../../world/planetTypes.js';
 import { GroundPaint, detailNoiseTexture } from './groundPaint.js';
+import { GroundCover } from './groundCover.js';
+import { FarTrees } from './farTrees.js';
 
 // Turns a town layout into a tabletop diorama: one terrain disc (heights and
 // colours from the blended hex fields), street ribbons, water, a soil skirt
@@ -192,6 +194,18 @@ export class TownBuilder {
     this.buildFieldRows();
     this.buildInstances();
     this.buildBridges();
+    // Grass, flowers, ferns, reeds and pebbles: one instanced sprite mesh
+    const cover = detail >= 1 ? 72000 : detail >= 0.75 ? 36000 : 14000;
+    this.groundCover = new GroundCover(this, { count: cover });
+    this.disposables.push(this.groundCover);
+    this.group.add(this.groundCover.mesh);
+    // Forests out toward the horizon, as billboards
+    const far = detail >= 1 ? 14000 : detail >= 0.75 ? 7000 : 0;
+    if (far) {
+      this.farTrees = new FarTrees(this, { count: far });
+      this.disposables.push(this.farTrees);
+      this.group.add(this.farTrees.mesh);
+    }
   }
 
   // -------------------------------------------------------------- rivers and bridges
@@ -760,6 +774,7 @@ export class TownBuilder {
   setEnvironment({ time, night, sunDir, sunColor, sunIntensity, sky }) {
     this.uniforms.uTime.value = time;
     this.uniforms.uNight.value = night;
+    this.farTrees?.update(sunIntensity, night);
     if (this.waterUniforms) {
       this.waterUniforms.uSunDir.value.copy(sunDir);
       this.waterUniforms.uSunColor.value.copy(sunColor);
@@ -945,6 +960,7 @@ export class TownBuilder {
     const near = LOD_NEAR * k;
     const mid = LOD_MID * (0.5 + k * 0.5);
     const zoom = orbit ? p.distanceTo(orbit) : 0;
+    this.groundCover?.update(camera, orbit);
     for (const c of this.chunks) {
       const d = orbit ? Math.max(0, zoom * 0.85 + Math.hypot(c.cx - orbit.x, c.cz - orbit.z) * 0.35 - 110) : Math.max(0, Math.hypot(c.cx - p.x, c.cz - p.z, p.y * 0.5) - 110);
       // Hysteresis: a chunk only changes level once it is clearly past the line

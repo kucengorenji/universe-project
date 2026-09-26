@@ -1,6 +1,7 @@
 import { BIOMES, isWater, mulberry32 } from '../../map/mapGenerator.js';
 import { createNoise3D } from '../../math/simplex3d.js';
 import { planWards, planRivers, planBridges, fillBlock, farmStrips, riverDistance } from './townPlan.js';
+import { planVegetation } from './vegetation.js';
 
 // Town layout: a city and its surroundings, cut out of the planet's hex map
 // and unrolled onto a flat, metre-scale disc (a tabletop diorama). Pure data:
@@ -796,82 +797,9 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
   }
   L.fields2 = fields;
 
-  // Trees, rocks and bushes over the whole disc, driven by the blended fields
+  // Trees in clumps, flower patches, rock groups
+  planVegetation(L, { rng, noise, at, place, streetClear, fields, flora, detail });
   const S = {};
-  const R = L.dioramaR;
-  const tries = Math.round(9000 * (0.45 + detail * 0.55)); // fewer trees on lighter tiers
-  for (let i = 0; i < tries; i++) {
-    const a = rng() * Math.PI * 2;
-    const r = Math.sqrt(rng()) * R;
-    const x = Math.cos(a) * r;
-    const z = Math.sin(a) * r;
-    const s = at(x, z, S);
-    if (s.land < 0.62 || s.city > 0.3 || s.otherCity > 0.3) continue;
-    if (streetClear(x, z, 20) < 3) continue;
-    if (fields.some((f) => Math.hypot(f.x - x, f.z - z) < Math.max(f.w, f.d) * 0.55)) continue;
-    const dens = noise.noise(x * 0.006, z * 0.006, 3) * 0.5 + 0.5;
-    // Stands of one kind of tree span many metres (smooth noise), autumn patches here and there
-    const stand = noise.noise(x * 0.008, z * 0.008, 9);
-    const autumn = noise.noise(x * 0.004, z * 0.004, 13) > 0.45;
-    let asset = null;
-    let variant = 0;
-    let size = 4;
-    const pick = (list) => list[Math.floor(rng() * list.length)];
-    if (flora === 'none') {
-      if (rng() < 0.18) {
-        asset = 'r_rock';
-        variant = Math.floor(rng() * 3);
-        size = 2 + rng() * 5;
-      }
-    } else if (s.mountain > 0.5) {
-      if (rng() < 0.25) {
-        if (rng() < 0.2) {
-          asset = 'r_rock';
-          variant = Math.floor(rng() * 3);
-          size = 3 + rng() * 4;
-        } else {
-          asset = rng() < 0.5 ? 't_pine' : 't_spruce';
-          variant = flora === 'snow' || s.mountain > 0.8 ? 1 : 0;
-          size = 4 + rng() * 3;
-        }
-      }
-    } else if (s.forest > 0.45) {
-      if (rng() < 0.55 + dens * 0.35) {
-        size = 4.5 + rng() * 2.5;
-        if (flora === 'snow') [asset, variant] = [rng() < 0.5 ? 't_pine' : 't_spruce', 1];
-        else if (flora === 'dry') [asset, variant] = pick([['t_acacia', 0], ['t_acacia', 1], ['t_palm', 0], ['t_cypress', 0]]);
-        else if (Math.abs(stand) > 0.25) [asset, variant] = [rng() < 0.5 ? 't_pine' : 't_spruce', 0];
-        else if (autumn) [asset, variant] = pick([['t_oak', 2], ['t_birch', 1], ['t_oak', 1]]);
-        else [asset, variant] = pick([['t_oak', 0], ['t_oak', 1], ['t_birch', 0], ['t_birch', 0], ['t_fruit', 0]]);
-      } else if (flora === 'green' && rng() < 0.2) {
-        [asset, variant, size] = ['b_bush', Math.floor(rng() * 2), 2];
-      }
-    } else if (s.desert > 0.5) {
-      if (rng() < 0.05) {
-        asset = rng() < 0.6 ? 'cactus' : 'rock_mesa';
-        size = asset === 'cactus' ? 3 : 8 + rng() * 8;
-      } else if (rng() < 0.02) [asset, variant, size] = ['r_rock', Math.floor(rng() * 2), 2 + rng() * 3];
-    } else if (s.tundra > 0.5) {
-      if (rng() < 0.06) [asset, variant] = ['t_spruce', 1];
-    } else if (s.beach > 0.5) {
-      if (flora === 'green' && rng() < 0.03) asset = 't_palm';
-    } else {
-      // Open land: scattered trees, bushes, flower patches and the odd boulder
-      const roll = rng();
-      if (roll < 0.035 + dens * 0.05) {
-        if (flora === 'dry') [asset, variant] = pick([['t_acacia', 0], ['t_cypress', 0]]);
-        else if (flora === 'snow') [asset, variant] = ['t_spruce', 1];
-        else [asset, variant] = pick([['t_oak', autumn ? 2 : 0], ['t_oak', 1], ['t_fruit', 0], ['t_fruit', 1], ['t_birch', 0], ['t_pine', 0]]);
-      } else if (roll < 0.12 && flora !== 'snow') [asset, variant, size] = ['b_bush', Math.floor(rng() * 2), 2];
-      else if (roll < 0.2 && flora === 'green') [asset, variant, size] = ['b_flowers', Math.floor(rng() * 3), 1.8];
-      else if (roll < 0.215) [asset, variant, size] = ['r_rock', Math.floor(rng() * 3), 1.5 + rng() * 2];
-    }
-    if (!asset) continue;
-    const small = size < 2.5;
-    if (place(L.trees, asset, x, z, rng() * Math.PI * 2, size * 0.7, size * 0.7, { collide: false, pad: small ? -0.5 : 0.1, variant })) {
-      if (!small) L.colliders.push({ type: 'circle', x, z, r: Math.min(1.2, size * 0.15) });
-    }
-  }
 
   // Harbour: docks and boats where the town meets the water
   const shore = [];

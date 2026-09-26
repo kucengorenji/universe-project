@@ -4,6 +4,7 @@ import { createToonMaterial } from '../../render/assetLibrary.js';
 import { createNoise3D } from '../../math/simplex3d.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../../world/planetTypes.js';
 import { DIORAMA_R } from './townLayout.js';
+import { GroundPaint, detailNoiseTexture } from './groundPaint.js';
 
 // Turns a town layout into a tabletop diorama: one terrain disc (heights and
 // colours from the blended hex fields), street ribbons, water, a soil skirt
@@ -11,10 +12,10 @@ import { DIORAMA_R } from './townLayout.js';
 // into spatial chunks with per-chunk LOD.
 
 export const WATER_Y = -0.8;
-const SKIRT_BOTTOM = -46;
+export const HORIZON_R = 4200;
 const CHUNKS = 6;
-const LOD_NEAR = 170;
-const LOD_MID = 430;
+const LOD_NEAR = 260;
+const LOD_MID = 620;
 
 /**
  * Town catalogue. `fb` = fallback asset from the planet pack (scaled to the
@@ -78,6 +79,28 @@ export const CATALOG = {
   cactus: { fb: 'cactus', fit: 'h', size: 4, natural: true }
 };
 
+/**
+ * Modelled footprint of every town-pack asset: union of its variants' LOD0
+ * bounding boxes in x/z (front = +Z). The layout places buildings by these,
+ * so porches, balconies and roof overhangs never run into each other.
+ */
+export function packFootprints(townPack) {
+  const out = {};
+  for (const [key, lods] of Object.entries(townPack || {})) {
+    const g = lods[0] || lods[1];
+    if (!g) continue;
+    if (!g.boundingBox) g.computeBoundingBox();
+    const b = g.boundingBox;
+    const name = key.replace(/_v\d+$/, '');
+    const f = (out[name] ||= { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
+    f.minX = Math.min(f.minX, b.min.x);
+    f.maxX = Math.max(f.maxX, b.max.x);
+    f.minZ = Math.min(f.minZ, b.min.z);
+    f.maxZ = Math.max(f.maxZ, b.max.z);
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- proto props (until the town pack has them)
 
 function colored(geo, hex, matrix) {
@@ -137,18 +160,23 @@ export class TownBuilder {
     this.palette = { ...TERRAN_PALETTE, ...(this.look.palette || {}) };
     this.group = new THREE.Group();
     this.disposables = [];
-    this.material = createToonMaterial({ vertexColors: true });
-    this.disposables.push(this.material);
     this.noise = createNoise3D(layout.seed + 7);
     this.fitCache = new Map();
     this.protoCache = new Map();
     this.chunks = [];
+    this.uniforms = { uNight: { value: 0 }, uTime: { value: 0 } };
+    this.setupGroundColors();
     this.buildHeights();
+    const detail = quality.settings.detail;
+    this.paint = new GroundPaint(layout, { res: detail >= 1 ? 2048 : detail >= 0.75 ? 1536 : 1024, farRes: detail >= 0.75 ? 1024 : 512 });
+    this.disposables.push(this.paint);
+    this.detailTex = this.track(detailNoiseTexture());
+    this.material = this.track(this.makePropMaterial());
+    this.terrainMaterial = this.track(this.makeTerrainMaterial());
     this.buildTerrain();
-    this.buildSkirt();
+    this.buildHorizon();
     this.buildWater();
-    this.buildStreets();
-    this.buildFields();
+    this.buildFieldRows();
     this.buildInstances();
   }
 
@@ -157,79 +185,193 @@ export class TownBuilder {
     return o;
   }
 
+  // -------------------------------------------------------------- materials
+
+  /** Buildings and props: toon shading, and glass or lamps that glow at night. */
+  makePropMaterial() {
+    const m = createToonMaterial({ vertexColors: true });
+    const u = this.uniforms;
+    m.onBeforeCompile = (shader) => {
+      shader.uniforms.uNight = u.uNight;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float emissive;\nvarying float vEmissive;\nvarying float vLit;')
+        .replace(
+          '#include <begin_vertex>',
+          `#include <begin_vertex>
+          vEmissive = emissive;
+          #ifdef USE_INSTANCING
+            // Some buildings keep their lights off: a stable hash of the instance position
+            vLit = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453);
+          #else
+            vLit = 1.0;
+          #endif`
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vEmissive;\nvarying float vLit;')
+        .replace(
+          '#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>
+          float glow = vEmissive >= 0.99 ? 1.0 : vEmissive * step(0.38, vLit);
+          totalEmissiveRadiance += vec3(1.0, 0.76, 0.42) * glow * uNight * 1.35;`
+        );
+    };
+    m.customProgramCacheKey = () => 'town-props';
+    return m;
+  }
+
+  /** Ground: vertex colours from the fields, painted streets on top, fine grain everywhere. */
+  makeTerrainMaterial() {
+    const m = createToonMaterial({ vertexColors: true });
+    const near = this.paint.near;
+    const far = this.paint.far;
+    const uni = {
+      uPaintNear: { value: near.tex },
+      uPaintFar: { value: far.tex },
+      uNearRect: { value: new THREE.Vector3(near.x0, near.z0, near.size) },
+      uFarRect: { value: new THREE.Vector3(far.x0, far.z0, far.size) },
+      uDetail: { value: this.detailTex }
+    };
+    m.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, uni);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vGround;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGround = position;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+          uniform sampler2D uPaintNear;
+          uniform sampler2D uPaintFar;
+          uniform vec3 uNearRect;
+          uniform vec3 uFarRect;
+          uniform sampler2D uDetail;
+          varying vec3 vGround;`
+        )
+        .replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+          vec2 un = (vGround.xz - uNearRect.xy) / uNearRect.z;
+          vec2 uf = (vGround.xz - uFarRect.xy) / uFarRect.z;
+          vec4 pn = (un.x > 0.0 && un.y > 0.0 && un.x < 1.0 && un.y < 1.0) ? texture2D(uPaintNear, un) : vec4(0.0);
+          vec4 pf = (uf.x > 0.0 && uf.y > 0.0 && uf.x < 1.0 && uf.y < 1.0) ? texture2D(uPaintFar, uf) : vec4(0.0);
+          vec4 paint = pn.a > 0.02 ? pn : pf;
+          // Grain: two octaves of tiling noise, stronger on bare ground than on paving
+          float g = texture2D(uDetail, vGround.xz * 0.11).r * 0.6 + texture2D(uDetail, vGround.xz * 0.023).r * 0.4;
+          diffuseColor.rgb *= mix(0.86 + g * 0.26, 0.95 + g * 0.1, paint.a);
+          diffuseColor.rgb = mix(diffuseColor.rgb, paint.rgb * (0.94 + g * 0.1), paint.a);`
+        );
+    };
+    m.customProgramCacheKey = () => 'town-ground';
+    return m;
+  }
+
   // -------------------------------------------------------------- height field
 
-  /** Heights on a regular grid (also used by the avatar and vehicles). */
-  buildHeights() {
+  setupGroundColors() {
     const L = this.L;
-    const R = DIORAMA_R;
+    const pal = Object.fromEntries(Object.entries(this.palette).map(([k, v]) => [k, new THREE.Color(v)]));
+    const mtn = { rock: 0x9a8672, rockDark: 0x6e5f52, snow: 0xf5f8fb, ...(this.look.mountain || {}) };
+    this.gc = {
+      pal,
+      rock: new THREE.Color(mtn.rock),
+      rockDark: new THREE.Color(mtn.rockDark),
+      snow: new THREE.Color(mtn.snow),
+      // Inside town: trodden lawns and yards (streets and plazas are painted on top)
+      cityGround: new THREE.Color(this.palette.plains).lerp(new THREE.Color(L.modern ? 0xa9ad9a : 0xb3a47a), L.modern ? 0.3 : 0.36),
+      soil: new THREE.Color(0x9a7447),
+      tmp: new THREE.Color()
+    };
+  }
+
+  /** Height and colour of the ground at (x, z), from the blended hex fields. */
+  sampleGround(x, z, S, c) {
+    const L = this.L;
+    const { pal, rock, rockDark, snow, cityGround, soil, tmp } = this.gc;
+    const noise = this.noise;
+    const smooth = THREE.MathUtils.smoothstep;
+    const s = L.fields.sample(x, z, S);
+    const land = smooth(s.land, 0.36, 0.64);
+    const gentle = noise.noise(x * 0.004, z * 0.004, 1) * 3.2 + noise.noise(x * 0.018, z * 0.018, 2) * 0.9;
+    const ridged = 1 - Math.abs(noise.noise(x * 0.005, z * 0.005, 3));
+    const mountain = Math.pow(s.mountain, 1.4) * (30 + ridged * ridged * 70 + noise.noise(x * 0.02, z * 0.02, 4) * 6);
+    const town = smooth(s.city + s.otherCity * 0.8, 0.12, 0.5);
+    let h = 1.3 + gentle * (1 - town) + mountain * (1 - town);
+    h = THREE.MathUtils.lerp(-4 - s.deep * 7 + gentle * 0.5, h, land);
+    h = THREE.MathUtils.lerp(h, 1.1, town * land);
+    if (!c) return h;
+    // Beach tiles are 170 m across: only the strip by the water is sand
+    const shore = 1 - smooth(h, WATER_Y + 1.2, WATER_Y + 3.5);
+    const beach = s.beach * shore;
+    const wOther = Math.max(0, 1 - s.forest - s.desert - s.tundra - s.beach - s.mountain);
+    c.copy(pal.plains).multiplyScalar(wOther + s.mountain + s.beach - beach);
+    for (const [k, w] of [['forest', s.forest], ['desert', s.desert], ['tundra', s.tundra], ['beach', beach]]) {
+      if (w > 0) c.add(tmp.copy(pal[k]).multiplyScalar(w));
+    }
+    if (s.forest > 0) c.lerp(tmp.copy(pal.forest).multiplyScalar(0.8), s.forest * 0.3);
+    if (s.mountain > 0.05) {
+      const high = smooth(h, 55, 85);
+      const m = tmp.copy(rock).lerp(rockDark, smooth(ridged, 0.5, 1));
+      if (high > 0) m.lerp(snow, high);
+      c.lerp(m, smooth(s.mountain, 0.15, 0.6));
+    }
+    if (s.farm > 0.2) c.lerp(soil, smooth(s.farm, 0.3, 0.7) * 0.35);
+    c.lerp(cityGround, smooth(s.city + s.otherCity, 0.3, 0.6));
+    // Underwater ground takes the water colour, deeper = darker
+    if (h < WATER_Y + 0.4) {
+      const depth = smooth(WATER_Y - h, -0.4, 6);
+      tmp.copy(pal.coast).lerp(pal.ocean, depth).lerp(pal.ocean_deep, smooth(WATER_Y - h, 5, 10));
+      c.lerp(tmp, Math.min(1, 0.35 + depth));
+    } else if (h < WATER_Y + 1.6 && s.land < 0.75) c.lerp(pal.beach, 0.6);
+    c.offsetHSL(0, 0, noise.noise(x * 0.03, z * 0.03, 5) * 0.035);
+    return h;
+  }
+
+  /** Heights on a regular grid over the playable disc (also used by walkers and vehicles). */
+  buildHeights() {
+    const R = DIORAMA_R + 40; // a margin so the horizon ring stitches onto real heights
     const cell = this.quality.settings.detail >= 1 ? 4 : this.quality.settings.detail >= 0.75 ? 5 : 6;
     const n = Math.ceil((R * 2) / cell) + 1;
+    this.hR = R;
     this.hCell = cell;
     this.hN = n;
     this.heights = new Float32Array(n * n);
     this.colors = new Float32Array(n * n * 3);
     const S = {};
     const c = new THREE.Color();
-    const pal = Object.fromEntries(Object.entries(this.palette).map(([k, v]) => [k, new THREE.Color(v)]));
-    const mtn = { rock: 0x9a8672, rockDark: 0x6e5f52, snow: 0xf5f8fb, ...(this.look.mountain || {}) };
-    const rock = new THREE.Color(mtn.rock);
-    const rockDark = new THREE.Color(mtn.rockDark);
-    const snow = new THREE.Color(mtn.snow);
-    // Inside town: trodden lawns and yards (streets and plazas are drawn on top)
-    const cityGround = new THREE.Color(this.palette.plains).lerp(new THREE.Color(L.modern ? 0xa9ad9a : 0xb3a47a), L.modern ? 0.35 : 0.42);
-    const soil = new THREE.Color(0x9a7447);
-    const noise = this.noise;
-    const smooth = THREE.MathUtils.smoothstep;
-    const tmp = new THREE.Color();
     for (let j = 0; j < n; j++) {
       for (let i = 0; i < n; i++) {
-        const x = -R + i * cell;
-        const z = -R + j * cell;
-        const s = L.fields.sample(x, z, S);
-        const land = smooth(s.land, 0.36, 0.64);
-        const gentle = noise.noise(x * 0.004, z * 0.004, 1) * 3.2 + noise.noise(x * 0.018, z * 0.018, 2) * 0.9;
-        const ridged = 1 - Math.abs(noise.noise(x * 0.005, z * 0.005, 3));
-        const mountain = Math.pow(s.mountain, 1.4) * (30 + ridged * ridged * 70 + noise.noise(x * 0.02, z * 0.02, 4) * 6);
-        const town = smooth(s.city + s.otherCity * 0.8, 0.12, 0.5);
-        let h = 1.3 + gentle * (1 - town) + mountain * (1 - town);
-        h = THREE.MathUtils.lerp(-4 - s.deep * 7 + gentle * 0.5, h, land);
-        h = THREE.MathUtils.lerp(h, 1.1, town * land);
-        this.heights[j * n + i] = h;
-
-        // Colour: blend of the biome palette by field weight
-        // Beach tiles are 170 m across: only the strip by the water is sand
-        const shore = 1 - smooth(h, WATER_Y + 1.2, WATER_Y + 3.5);
-        const beach = s.beach * shore;
-        const wOther = Math.max(0, 1 - s.forest - s.desert - s.tundra - s.beach - s.mountain);
-        c.copy(pal.plains).multiplyScalar(wOther + s.mountain + s.beach - beach);
-        for (const [k, w] of [['forest', s.forest], ['desert', s.desert], ['tundra', s.tundra], ['beach', beach]]) {
-          if (w > 0) c.add(tmp.copy(pal[k]).multiplyScalar(w));
-        }
-        if (s.forest > 0) c.lerp(tmp.copy(pal.forest).multiplyScalar(0.8), s.forest * 0.3);
-        if (s.mountain > 0.05) {
-          const high = smooth(h, 55, 85);
-          const m = tmp.copy(rock).lerp(rockDark, smooth(ridged, 0.5, 1));
-          if (high > 0) m.lerp(snow, high);
-          c.lerp(m, smooth(s.mountain, 0.15, 0.6));
-        }
-        if (s.farm > 0.2) c.lerp(soil, smooth(s.farm, 0.3, 0.7) * 0.35);
-        c.lerp(cityGround, smooth(s.city + s.otherCity, 0.3, 0.6));
-        // Underwater ground takes the water colour, deeper = darker
-        if (h < WATER_Y + 0.4) {
-          const depth = smooth(WATER_Y - h, -0.4, 6);
-          tmp.copy(pal.coast).lerp(pal.ocean, depth).lerp(pal.ocean_deep, smooth(WATER_Y - h, 5, 10));
-          c.lerp(tmp, Math.min(1, 0.35 + depth));
-        } else if (h < WATER_Y + 1.6 && s.land < 0.75) c.lerp(pal.beach, 0.6);
-        c.offsetHSL(0, 0, noise.noise(x * 0.03, z * 0.03, 5) * 0.035);
+        this.heights[j * n + i] = this.sampleGround(-R + i * cell, -R + j * cell, S, c);
         c.toArray(this.colors, (j * n + i) * 3);
+      }
+    }
+    // Steep ground shows bare rock, in bands (strata) so slopes read as cliffs
+    const H = this.heights;
+    const { rock, rockDark } = this.gc;
+    const strata = new THREE.Color();
+    for (let j = 1; j < n - 1; j++) {
+      for (let i = 1; i < n - 1; i++) {
+        const k = j * n + i;
+        const gx = (H[k + 1] - H[k - 1]) / (2 * cell);
+        const gz = (H[k + n] - H[k - n]) / (2 * cell);
+        const slope = Math.hypot(gx, gz);
+        const t = THREE.MathUtils.smoothstep(slope, 0.55, 1.1);
+        if (t <= 0 || H[k] < WATER_Y + 1) continue;
+        const band = Math.sin(H[k] * 0.55) * 0.5 + 0.5;
+        strata.copy(rock).lerp(rockDark, band * 0.7);
+        c.fromArray(this.colors, k * 3).lerp(strata, t * 0.85).toArray(this.colors, k * 3);
       }
     }
   }
 
+  /** Ground slope (rise over run) at (x, z). */
+  slopeAt(x, z) {
+    const e = this.hCell;
+    return Math.hypot(this.heightAt(x + e, z) - this.heightAt(x - e, z), this.heightAt(x, z + e) - this.heightAt(x, z - e)) / (2 * e);
+  }
+
   /** Bilinear ground height (the same surface the terrain mesh shows). */
   heightAt(x, z) {
-    const R = DIORAMA_R;
+    const R = this.hR;
     const n = this.hN;
     const fx = THREE.MathUtils.clamp((x + R) / this.hCell, 0, n - 1.001);
     const fz = THREE.MathUtils.clamp((z + R) / this.hCell, 0, n - 1.001);
@@ -254,7 +396,7 @@ export class TownBuilder {
   // -------------------------------------------------------------- terrain
 
   buildTerrain() {
-    const R = DIORAMA_R;
+    const R = this.hR;
     const n = this.hN;
     const cell = this.hCell;
     const pos = new Float32Array(n * n * 3);
@@ -263,7 +405,7 @@ export class TownBuilder {
         let x = -R + i * cell;
         let z = -R + j * cell;
         const r = Math.hypot(x, z);
-        // Vertices outside the disc snap onto its rim: a clean round edge
+        // Outer vertices snap onto the rim, where the horizon ring picks up
         if (r > R) {
           x *= R / r;
           z *= R / r;
@@ -292,206 +434,190 @@ export class TownBuilder {
     g.setAttribute('color', new THREE.BufferAttribute(this.colors, 3));
     g.setIndex(idx);
     g.computeVertexNormals();
-    this.terrain = new THREE.Mesh(this.track(g), this.material);
+    this.terrain = new THREE.Mesh(this.track(g), this.terrainMaterial);
     this.terrain.receiveShadow = true;
     this.terrain.name = 'terrain';
     this.group.add(this.terrain);
   }
 
-  /** Cut edge of the diorama: soil strata down to a flat base. */
-  buildSkirt() {
-    const R = DIORAMA_R;
-    const segs = 360;
-    const bands = [
-      [0, new THREE.Color(this.look.skirt?.[0] ?? 0x9b7a52)],
-      [0.35, new THREE.Color(this.look.skirt?.[0] ?? 0x9b7a52).multiplyScalar(0.85)],
-      [0.36, new THREE.Color(this.look.skirt?.[1] ?? 0x7a5c3c)],
-      [1, new THREE.Color(this.look.skirt?.[1] ?? 0x7a5c3c).multiplyScalar(0.7)]
-    ];
+  /**
+   * Land beyond the town, out to the horizon: coarse rings that carry on the
+   * same fields (mountains, coasts), then melt into fog. Not walkable.
+   */
+  buildHorizon() {
+    const R0 = this.hR - 2;
+    const R1 = HORIZON_R;
+    const rings = 28;
+    const segs = this.quality.settings.detail >= 0.75 ? 160 : 112;
     const pos = [];
     const col = [];
-    const colorAt = (t) => {
-      for (let i = 1; i < bands.length; i++) if (t <= bands[i][0]) return bands[i - 1][1].clone().lerp(bands[i][1], (t - bands[i - 1][0]) / (bands[i][0] - bands[i - 1][0] || 1));
-      return bands[bands.length - 1][1];
-    };
-    const rows = [0, 0.02, 0.35, 0.36, 0.7, 1];
-    for (let s = 0; s < segs; s++) {
-      const a0 = (s / segs) * Math.PI * 2;
-      const a1 = ((s + 1) / segs) * Math.PI * 2;
-      const top0 = this.groundAt(Math.cos(a0) * R, Math.sin(a0) * R);
-      const top1 = this.groundAt(Math.cos(a1) * R, Math.sin(a1) * R);
-      for (let r = 0; r + 1 < rows.length; r++) {
-        const ya0 = THREE.MathUtils.lerp(top0, SKIRT_BOTTOM, rows[r]);
-        const yb0 = THREE.MathUtils.lerp(top0, SKIRT_BOTTOM, rows[r + 1]);
-        const ya1 = THREE.MathUtils.lerp(top1, SKIRT_BOTTOM, rows[r]);
-        const yb1 = THREE.MathUtils.lerp(top1, SKIRT_BOTTOM, rows[r + 1]);
-        const P = (a, y) => [Math.cos(a) * R, y, Math.sin(a) * R];
-        const quad = [P(a0, ya0), P(a0, yb0), P(a1, ya1), P(a1, ya1), P(a0, yb0), P(a1, yb1)];
-        const ts = [rows[r], rows[r + 1], rows[r], rows[r], rows[r + 1], rows[r + 1]];
-        quad.forEach((p, i) => {
-          pos.push(...p);
-          const c = r === 0 && top0 < WATER_Y + 0.1 ? new THREE.Color(this.palette.ocean) : colorAt(ts[i]);
-          col.push(c.r, c.g, c.b);
-        });
+    const S = {};
+    const c = new THREE.Color();
+    const fogFar = new THREE.Color(this.palette.plains);
+    for (let k = 0; k <= rings; k++) {
+      const t = k / rings;
+      const r = R0 * Math.pow(R1 / R0, t);
+      for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        const x = Math.cos(a) * r;
+        const z = Math.sin(a) * r;
+        let h = k === 0 ? this.heightAt(x, z) : this.sampleGround(x, z, S, c);
+        if (k === 0) this.sampleGround(x, z, S, c);
+        // Far away the land flattens out and drops a little (a hint of curvature)
+        const far = THREE.MathUtils.smoothstep(r, R0 * 1.6, R1);
+        h = THREE.MathUtils.lerp(h, Math.min(h, 3) - 25, far * far);
+        pos.push(x, h, z);
+        c.lerp(fogFar, far * 0.3);
+        col.push(c.r, c.g, c.b);
       }
     }
-    // Base cap
-    const baseC = new THREE.Color(this.look.skirt?.[1] ?? 0x7a5c3c).multiplyScalar(0.5);
-    for (let s = 0; s < 96; s++) {
-      const a0 = (s / 96) * Math.PI * 2;
-      const a1 = ((s + 1) / 96) * Math.PI * 2;
-      pos.push(0, SKIRT_BOTTOM, 0, Math.cos(a1) * R, SKIRT_BOTTOM, Math.sin(a1) * R, Math.cos(a0) * R, SKIRT_BOTTOM, Math.sin(a0) * R);
-      for (let i = 0; i < 3; i++) col.push(baseC.r, baseC.g, baseC.b);
+    const idx = [];
+    for (let k = 0; k < rings; k++) {
+      for (let i = 0; i < segs; i++) {
+        const a = k * segs + i;
+        const b = k * segs + ((i + 1) % segs);
+        idx.push(a, b + segs, b, a, a + segs, b + segs);
+      }
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx);
     g.computeVertexNormals();
-    const mat = this.track(createToonMaterial({ vertexColors: true, side: THREE.DoubleSide }));
-    const mesh = new THREE.Mesh(this.track(g), mat);
-    this.group.add(mesh);
+    this.horizon = new THREE.Mesh(this.track(g), this.terrainMaterial);
+    this.horizon.receiveShadow = true;
+    this.group.add(this.horizon);
   }
 
+  /**
+   * Water: depth-tinted (turquoise shallows to deep blue), rippling normals,
+   * a foam line that laps at the shore, sun glint and a sky-coloured fresnel.
+   * Lava worlds get a glowing, slowly churning surface instead.
+   */
   buildWater() {
-    const R = DIORAMA_R;
     const lava = !!this.look.water?.unlit;
-    const g = this.track(new THREE.CircleGeometry(R, 128));
+    const n = this.hN;
+    // Heights near the water as a byte texture: (h + 14) / 16 in 0..1
+    const data = new Uint8Array(n * n);
+    for (let i = 0; i < n * n; i++) data[i] = Math.max(0, Math.min(255, ((this.heights[i] + 14) / 16) * 255));
+    const depthTex = this.track(new THREE.DataTexture(data, n, n, THREE.RedFormat, THREE.UnsignedByteType));
+    depthTex.magFilter = THREE.LinearFilter;
+    depthTex.minFilter = THREE.LinearFilter;
+    depthTex.needsUpdate = true;
+    const g = this.track(new THREE.CircleGeometry(HORIZON_R, 160));
     g.rotateX(-Math.PI / 2);
+    const u = this.uniforms;
+    this.waterUniforms = {
+      uTime: u.uTime,
+      uDepth: { value: depthTex },
+      uDepthRect: { value: new THREE.Vector3(-this.hR, -this.hR, this.hR * 2) },
+      uShallow: { value: new THREE.Color(lava ? 0xffc04a : this.palette.coast) },
+      uMid: { value: new THREE.Color(lava ? 0xff7a1f : this.palette.ocean) },
+      uDeep: { value: new THREE.Color(lava ? 0xc2350f : this.palette.ocean_deep) },
+      uSky: { value: new THREE.Color(0xcfe4f4) },
+      uSunDir: { value: new THREE.Vector3(0, 1, 0) },
+      uSunColor: { value: new THREE.Color(1, 1, 1) },
+      uSunI: { value: 1 },
+      uLava: { value: lava ? 1 : 0 },
+      uNight: u.uNight
+    };
     const mat = this.track(
-      lava
-        ? new THREE.MeshBasicMaterial({ color: this.palette.ocean, transparent: true, opacity: 0.95 })
-        : new THREE.MeshPhongMaterial({ color: this.palette.ocean, transparent: true, opacity: 0.72, shininess: 80, specular: 0x6fa8d6, depthWrite: false })
+      new THREE.ShaderMaterial({
+        uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {}]),
+        vertexShader: `
+          varying vec3 vWorld;
+          #include <fog_pars_vertex>
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWorld = wp.xyz;
+            vec4 mvPosition = viewMatrix * wp;
+            gl_Position = projectionMatrix * mvPosition;
+            #include <fog_vertex>
+          }`,
+        fragmentShader: `
+          uniform float uTime;
+          uniform sampler2D uDepth;
+          uniform vec3 uDepthRect;
+          uniform vec3 uShallow;
+          uniform vec3 uMid;
+          uniform vec3 uDeep;
+          uniform vec3 uSky;
+          uniform vec3 uSunDir;
+          uniform vec3 uSunColor;
+          uniform float uSunI;
+          uniform float uLava;
+          uniform float uNight;
+          varying vec3 vWorld;
+          #include <fog_pars_fragment>
+          float wave(vec2 p, vec2 d, float f, float s) { return sin(dot(p, d) * f + uTime * s); }
+          void main() {
+            vec2 p = vWorld.xz;
+            vec2 uv = (p - uDepthRect.xy) / uDepthRect.z;
+            bool inside = uv.x > 0.0 && uv.y > 0.0 && uv.x < 1.0 && uv.y < 1.0;
+            float ground = inside ? texture2D(uDepth, uv).r * 16.0 - 14.0 : -14.0;
+            float depth = ${WATER_Y.toFixed(2)} - ground;
+            // Ripples: a few travelling sine waves, derivatives -> normal
+            float e = 0.35;
+            float h0 = wave(p, vec2(0.8, 0.6), 0.55, 1.4) + wave(p, vec2(-0.5, 0.86), 0.8, 1.9) * 0.6 + wave(p, vec2(0.2, -0.98), 1.9, 2.6) * 0.25;
+            float hx = wave(p + vec2(e, 0.0), vec2(0.8, 0.6), 0.55, 1.4) + wave(p + vec2(e, 0.0), vec2(-0.5, 0.86), 0.8, 1.9) * 0.6 + wave(p + vec2(e, 0.0), vec2(0.2, -0.98), 1.9, 2.6) * 0.25;
+            float hz = wave(p + vec2(0.0, e), vec2(0.8, 0.6), 0.55, 1.4) + wave(p + vec2(0.0, e), vec2(-0.5, 0.86), 0.8, 1.9) * 0.6 + wave(p + vec2(0.0, e), vec2(0.2, -0.98), 1.9, 2.6) * 0.25;
+            vec3 N = normalize(vec3((h0 - hx) * 0.12, 1.0, (h0 - hz) * 0.12));
+            vec3 V = normalize(cameraPosition - vWorld);
+            vec3 col = mix(uShallow, uMid, smoothstep(0.1, 3.0, depth));
+            col = mix(col, uDeep, smoothstep(3.0, 12.0, depth));
+            if (uLava > 0.5) {
+              float churn = 0.5 + 0.5 * sin(p.x * 0.07 + uTime * 0.4) * sin(p.y * 0.05 - uTime * 0.3);
+              col = mix(uDeep, uShallow, churn * 0.6 + h0 * 0.08);
+              col += vec3(0.25, 0.08, 0.0) * smoothstep(0.5, 0.0, depth);
+              gl_FragColor = vec4(col * 1.25, 1.0);
+            } else {
+              float fres = pow(1.0 - max(dot(N, V), 0.0), 4.0);
+              col = mix(col, uSky, fres * 0.55);
+              vec3 L = normalize(uSunDir);
+              float spec = pow(max(dot(reflect(-L, N), V), 0.0), 160.0) * uSunI;
+              col += uSunColor * spec * 1.4;
+              // Foam where the water meets the shore, pulsing in and out
+              float lap = 0.55 + 0.25 * sin(uTime * 1.3 + p.x * 0.05 + p.y * 0.04);
+              float foam = (1.0 - smoothstep(0.0, lap, depth)) * (0.65 + 0.35 * sin(p.x * 1.7 + p.y * 1.3 + uTime * 2.0));
+              col = mix(col, vec3(0.97, 0.99, 1.0) * (0.35 + 0.65 * (1.0 - uNight * 0.7)), clamp(foam, 0.0, 1.0) * 0.85);
+              float alpha = mix(0.5, 0.94, smoothstep(0.0, 2.5, depth));
+              gl_FragColor = vec4(col * (1.0 - uNight * 0.72), alpha);
+            }
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
+            #include <fog_fragment>
+          }`,
+        transparent: !lava,
+        depthWrite: lava,
+        fog: true
+      })
     );
+    Object.assign(mat.uniforms, this.waterUniforms);
     this.water = new THREE.Mesh(g, mat);
     this.water.position.y = WATER_Y;
     this.water.renderOrder = 2;
-    this.water.receiveShadow = !lava;
     this.group.add(this.water);
   }
 
-  // -------------------------------------------------------------- streets
-
-  ribbon(pts, width, lift, color, { edge = null, edgeW = 0 } = {}) {
-    // Resample so the ribbon drapes over the ground
-    const dense = [];
-    for (let i = 0; i + 1 < pts.length; i++) {
-      const [ax, az] = pts[i];
-      const [bx, bz] = pts[i + 1];
-      const len = Math.hypot(bx - ax, bz - az);
-      const steps = Math.max(1, Math.ceil(len / 3));
-      for (let s = 0; s < steps; s++) dense.push([ax + ((bx - ax) * s) / steps, az + ((bz - az) * s) / steps]);
+  /** Light and time for the shaders (called by the mode each frame). */
+  setEnvironment({ time, night, sunDir, sunColor, sunIntensity, sky }) {
+    this.uniforms.uTime.value = time;
+    this.uniforms.uNight.value = night;
+    if (this.waterUniforms) {
+      this.waterUniforms.uSunDir.value.copy(sunDir);
+      this.waterUniforms.uSunColor.value.copy(sunColor);
+      this.waterUniforms.uSunI.value = sunIntensity / 2.5;
+      this.waterUniforms.uSky.value.copy(sky);
     }
-    dense.push(pts[pts.length - 1]);
-    const pos = [];
-    const col = [];
-    const cMain = new THREE.Color(color);
-    const cEdge = edge !== null ? new THREE.Color(edge) : null;
-    const strips = cEdge ? [[-width / 2 - edgeW, -width / 2, cEdge], [-width / 2, width / 2, cMain], [width / 2, width / 2 + edgeW, cEdge]] : [[-width / 2, width / 2, cMain]];
-    for (let i = 0; i + 1 < dense.length; i++) {
-      const [ax, az] = dense[i];
-      const [bx, bz] = dense[i + 1];
-      const dirA = i > 0 ? Math.atan2(bz - dense[i - 1][1], bx - dense[i - 1][0]) : Math.atan2(bz - az, bx - ax);
-      const dirB = i + 2 < dense.length ? Math.atan2(dense[i + 2][1] - az, dense[i + 2][0] - ax) : Math.atan2(bz - az, bx - ax);
-      const na = [-Math.sin(dirA), Math.cos(dirA)];
-      const nb = [-Math.sin(dirB), Math.cos(dirB)];
-      for (const [o0, o1, c] of strips) {
-        const p = (x, z, nrm, o) => {
-          const px = x + nrm[0] * o;
-          const pz = z + nrm[1] * o;
-          return [px, Math.max(this.heightAt(px, pz), WATER_Y + 0.3) + lift, pz];
-        };
-        const q = [p(ax, az, na, o0), p(ax, az, na, o1), p(bx, bz, nb, o0), p(bx, bz, nb, o1)];
-        // Counter-clockwise seen from above (the ribbon faces up)
-        for (const k of [0, 1, 2, 2, 1, 3]) {
-          pos.push(...q[k]);
-          col.push(c.r, c.g, c.b);
-        }
-      }
-    }
-    return { pos, col };
   }
 
-  buildStreets() {
-    const L = this.L;
-    const pos = [];
-    const col = [];
-    const push = (r) => {
-      pos.push(...r.pos);
-      col.push(...r.col);
-    };
-    // Where streets cross, the more important one lies on top (no z-fighting)
-    const LIFT = { road: 0.05, lane: 0.08, grid: 0.1, ring: 0.11, main: 0.14 };
-    for (const s of L.streets) {
-      const lift = LIFT[s.kind] ?? 0.08;
-      if (L.modern) {
-        const asphalt = s.kind === 'road' ? 0x5d6066 : 0x4f5157;
-        push(this.ribbon(s.pts, s.w, lift, asphalt, s.kind === 'road' ? {} : { edge: 0xc9c6bd, edgeW: 2.4 }));
-      } else {
-        // Cobbled main streets with a darker kerb, packed-earth lanes and roads
-        if (s.kind === 'main') push(this.ribbon(s.pts, s.w, lift, 0xa89c88, { edge: 0x857a69, edgeW: 0.5 }));
-        else push(this.ribbon(s.pts, s.w, lift, s.kind === 'road' ? 0xb8905a : 0xc0a074));
-      }
-    }
-    // Plaza: a paved disc
-    if (L.plaza) {
-      const c = new THREE.Color(L.modern ? 0xd4d0c6 : 0xb0a592);
-      const r = L.plaza.r;
-      const seg = 40;
-      for (let i = 0; i < seg; i++) {
-        const a0 = (i / seg) * Math.PI * 2;
-        const a1 = ((i + 1) / seg) * Math.PI * 2;
-        const P = (a, rr) => {
-          const x = L.plaza.x + Math.cos(a) * rr;
-          const z = L.plaza.z + Math.sin(a) * rr;
-          return [x, this.heightAt(x, z) + 0.17, z];
-        };
-        pos.push(...P(0, 0), ...P(a1, r), ...P(a0, r));
-        for (let k = 0; k < 3; k++) col.push(c.r, c.g, c.b);
-      }
-    }
-    if (!pos.length) return;
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    g.computeVertexNormals();
-    const mat = this.track(createToonMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
-    const mesh = new THREE.Mesh(this.track(g), mat);
-    mesh.receiveShadow = true;
-    this.group.add(mesh);
-  }
-
-  /** Farm plots: coloured soil patches with crop rows on top (rows are instanced props). */
-  buildFields() {
-    const L = this.L;
-    const pos = [];
-    const col = [];
-    const SOIL = { wheat: 0xd6b34a, crop: 0x6f9b3d, plowed: 0x9a7447 };
+  /** Crop rows on the farm plots (the plots themselves are painted on the ground). */
+  buildFieldRows() {
     this.rows = [];
-    for (const f of L.fields2 || []) {
-      const c = new THREE.Color(SOIL[f.crop]);
+    for (const f of this.L.fields2 || []) {
+      if (f.crop === 'plowed') continue;
       const ca = Math.cos(f.yaw);
       const sa = Math.sin(f.yaw);
-      const P = (u, v) => {
-        const x = f.x + u * ca - v * sa;
-        const z = f.z + u * sa + v * ca;
-        return [x, this.heightAt(x, z) + 0.1, z];
-      };
-      const nu = Math.ceil(f.w / 6);
-      const nv = Math.ceil(f.d / 6);
-      for (let i = 0; i < nu; i++) {
-        for (let j = 0; j < nv; j++) {
-          const u0 = -f.w / 2 + (i * f.w) / nu;
-          const u1 = -f.w / 2 + ((i + 1) * f.w) / nu;
-          const v0 = -f.d / 2 + (j * f.d) / nv;
-          const v1 = -f.d / 2 + ((j + 1) * f.d) / nv;
-          const q = [P(u0, v0), P(u1, v0), P(u0, v1), P(u1, v1)];
-          for (const k of [0, 2, 1, 1, 2, 3]) {
-            pos.push(...q[k]);
-            col.push(c.r, c.g, c.b);
-          }
-        }
-      }
-      if (f.crop === 'plowed') continue;
       const asset = f.crop === 'wheat' ? 'wheat_row' : 'crop_row';
       for (let v = -f.d / 2 + 1.5; v < f.d / 2 - 1; v += 1.6) {
         for (let u = -f.w / 2 + 3; u < f.w / 2 - 2; u += 6.2) {
@@ -501,15 +627,6 @@ export class TownBuilder {
         }
       }
     }
-    if (!pos.length) return;
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    g.computeVertexNormals();
-    const mat = this.track(createToonMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
-    const mesh = new THREE.Mesh(this.track(g), mat);
-    mesh.receiveShadow = true;
-    this.group.add(mesh);
   }
 
   // -------------------------------------------------------------- instances
@@ -665,7 +782,12 @@ export class TownBuilder {
     const mid = LOD_MID * (0.5 + k * 0.5);
     for (const c of this.chunks) {
       const d = Math.max(0, Math.hypot(c.cx - p.x, c.cz - p.z, p.y * 0.5) - 110);
-      const level = d < near ? 0 : d < mid ? 1 : 2;
+      // Hysteresis: a chunk only changes level once it is clearly past the line
+      const h = c.level === -1 ? 1 : 0.12;
+      let level = c.level;
+      if (c.level === -1 || d < near * (1 - h) || (c.level === 0 && d > near * (1 + h)) || d > mid * (1 + h) || (c.level === 2 && d < mid * (1 - h))) {
+        level = d < near ? 0 : d < mid ? 1 : 2;
+      }
       if (level !== c.level) {
         c.level = level;
         c.levels.forEach((l, i) => (l.visible = i === level));

@@ -76,10 +76,12 @@ export function generateSystem(seed) {
       seed: home ? seed : Math.floor(rng() * 900000 + 100000),
       radius,
       orbit,
-      // Slow enough to read as a living system without turning landing into a chase
-      orbitSpeed: (0.018 / Math.sqrt(orbit / 58)) * (0.8 + rng() * 0.4),
+      // A year spans many days (the town's day/night comes from spin, not orbit),
+      // and the system still visibly turns while you fly
+      orbitSpeed: (0.0025 / Math.sqrt(orbit / 58)) * (0.8 + rng() * 0.4),
       phase: rng() * Math.PI * 2,
-      spin: (0.03 + rng() * 0.04) * (rng() < 0.15 ? -1 : 1),
+      // One day lasts 8-17 minutes: slow enough for a town to have its evening
+      spin: (0.03 + rng() * 0.04) * 0.2 * (rng() < 0.15 ? -1 : 1),
       moons,
       ring: gas && rng() < 0.6 ? { inner: radius * 1.35, outer: radius * (1.9 + rng() * 0.5), tilt: (rng() - 0.5) * 0.5 } : null,
       bands: gas ? Array.from({ length: 4 }, () => rng()) : null,

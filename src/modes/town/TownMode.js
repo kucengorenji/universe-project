@@ -6,10 +6,11 @@ import { loadAssetPack, ASSET_PACK_URL, ASSET_PACK_LOD0_URL, getToonGradient } f
 import { mulberry32 } from '../../map/mapGenerator.js';
 import { PLANET_TYPES } from '../../world/planetTypes.js';
 import { generateTownLayout, DIORAMA_R } from './townLayout.js';
-import { TownBuilder, WATER_Y } from './townBuilder.js';
+import { TownBuilder, WATER_Y, packFootprints } from './townBuilder.js';
 import { Crowd, Pedestrians } from './crowd.js';
 import { Colliders } from './colliders.js';
 import { TownHud } from './hud.js';
+import { TownSky } from './sky.js';
 
 // Inside a city: the diorama is the main view; from there you can walk the
 // streets (third person) or drive. Everything is built from the planet's map
@@ -27,70 +28,9 @@ const packs = () =>
     loadCharacter()
   ]);
 
-const SKY = {
-  terran: [0x5d9fdc, 0xd6e8f5],
-  ocean: [0x4f9fe0, 0xd2ecf7],
-  desert: [0xc98f52, 0xf5e2bf],
-  ice: [0x8fb9e0, 0xeff6fb],
-  lava: [0x2a0f0c, 0x9a4428],
-  barren: [0x040509, 0x2a2c33]
-};
 const UP = new THREE.Vector3(0, 1, 0);
 const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const _v = new THREE.Vector3();
-
-function skyDome(top, horizon) {
-  const g = new THREE.SphereGeometry(4000, 32, 16);
-  const m = new THREE.ShaderMaterial({
-    uniforms: { uTop: { value: new THREE.Color(top) }, uHorizon: { value: new THREE.Color(horizon) } },
-    vertexShader: `varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `
-      uniform vec3 uTop; uniform vec3 uHorizon; varying vec3 vDir;
-      void main() {
-        float h = vDir.y;
-        vec3 c = mix(uHorizon, uTop, smoothstep(-0.05, 0.55, h));
-        c = mix(c, uHorizon * 0.92, smoothstep(0.0, -0.5, h));
-        gl_FragColor = vec4(c, 1.0);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
-    side: THREE.BackSide,
-    depthWrite: false,
-    fog: false
-  });
-  const mesh = new THREE.Mesh(g, m);
-  mesh.renderOrder = -10;
-  return mesh;
-}
-
-function cloudSea(color, seed) {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const ctx = c.getContext('2d');
-  const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(255,255,255,0.95)');
-  grad.addColorStop(0.5, 'rgba(255,255,255,0.6)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 128, 128);
-  const tex = new THREE.CanvasTexture(c);
-  const mat = new THREE.SpriteMaterial({ map: tex, color, transparent: true, depthWrite: false, fog: false });
-  const group = new THREE.Group();
-  const rng = mulberry32(seed);
-  for (let i = 0; i < 70; i++) {
-    const a = rng() * Math.PI * 2;
-    const r = DIORAMA_R * (0.7 + rng() * 2.2);
-    const s = new THREE.Sprite(mat);
-    s.position.set(Math.cos(a) * r, -70 - rng() * 120, Math.sin(a) * r);
-    s.scale.setScalar(260 + rng() * 380);
-    group.add(s);
-  }
-  group.userData.dispose = () => {
-    tex.dispose();
-    mat.dispose();
-  };
-  return group;
-}
 
 export default class TownMode {
   static prepare() {
@@ -120,7 +60,7 @@ export default class TownMode {
     for (const [name, lods] of Object.entries(lod0 || {})) planetPack[name] = { ...(planetPack[name] || {}), ...lods };
 
     const quality = engine.quality;
-    this.layout = generateTownLayout({ map, hexasphere, cityIndex: this.route.city, planetType: planet.type, detail: quality.settings.detail });
+    this.layout = generateTownLayout({ map, hexasphere, cityIndex: this.route.city, planetType: planet.type, detail: quality.settings.detail, footprints: packFootprints(townPack) });
     this.builder = new TownBuilder(this.layout, { planetPack, townPack, quality, planetType: planet.type });
     this.colliders = new Colliders(this.layout.colliders);
 
@@ -128,22 +68,25 @@ export default class TownMode {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(40, width / height, 0.3, 6000);
     this.scene.add(this.camera);
-    const [top, horizon] = SKY[planet.type] || SKY.terran;
-    this.sky = skyDome(top, horizon);
-    this.scene.add(this.sky);
-    this.scene.fog = new THREE.Fog(horizon, 900, 2600);
+    // Sky and time of day follow the city's place on the planet and the planet's place in the system
     const look = PLANET_TYPES[planet.type].look || {};
-    if (look.clouds !== null) {
-      this.clouds = cloudSea(look.clouds?.color ?? 0xffffff, this.layout.seed);
-      this.scene.add(this.clouds);
-    }
+    this.sky = new TownSky(planet.type, world.system.star.light, {
+      seed: this.layout.seed,
+      clouds: look.clouds !== null,
+      darkClouds: planet.type === 'lava'
+    });
+    this.scene.add(this.sky.group);
+    this.scene.fog = new THREE.Fog(0xcfe4f4, 900, 2600);
     this.scene.add(this.builder.group);
 
-    // Light: sky fill + a sun whose shadow box follows what you are looking at
-    this.scene.add(new THREE.HemisphereLight(top, 0x6b5a45, 1.0));
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.22));
-    const sun = new THREE.DirectionalLight(planet.type === 'lava' ? 0xffc9a0 : 0xfff1dc, 2.3);
+    // Light: sky fill + a sun (or the moon) whose shadow box follows what you are looking at
+    this.hemi = new THREE.HemisphereLight(0xcfe4f4, 0x6b5a45, 1.0);
+    this.ambient = new THREE.AmbientLight(0xffffff, 0.22);
+    this.scene.add(this.hemi, this.ambient);
+    const sun = new THREE.DirectionalLight(0xfff1dc, 2.3);
     this.sunDir = new THREE.Vector3(-0.55, 0.75, 0.35).normalize();
+    this.sunVec = new THREE.Vector3();
+    this.fogBlend = 0; // 0 = diorama haze, 1 = street-level horizon
     const shadows = quality.settings.shadows;
     engine.renderer.shadowMap.enabled = shadows;
     engine.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -152,6 +95,7 @@ export default class TownMode {
       sun.castShadow = true;
       sun.shadow.mapSize.set(high ? 2048 : 1024, high ? 2048 : 1024);
       const ext = high ? 150 : 110;
+      this.shadowExt = ext;
       Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext, near: 10, far: 900 });
       sun.shadow.bias = -0.0006;
       sun.shadow.normalBias = 0.6;
@@ -540,7 +484,9 @@ export default class TownMode {
     const r = this.colliders.resolve(nx, nz, 0.42);
     // No wading into deep water, no stepping off the edge of the table
     const g = this.builder.heightAt(r.x, r.z);
-    if (g > WATER_Y - 0.5 && Math.hypot(r.x, r.z) < DIORAMA_R - 6) {
+    // Too steep to climb: stop at the foot of cliffs (going down is fine)
+    const climb = (g - this.builder.heightAt(p.x, p.z)) / Math.max(1e-3, Math.hypot(r.x - p.x, r.z - p.z));
+    if (g > WATER_Y - 0.5 && Math.hypot(r.x, r.z) < DIORAMA_R - 6 && climb < 1.1) {
       p.x = r.x;
       p.z = r.z;
     } else p.speed *= 0.5;
@@ -639,12 +585,49 @@ export default class TownMode {
     this.updateAvatar(dt);
     this.updateTraffic(dt);
     this.builder.update(this.camera);
-    if (this.clouds) this.clouds.rotation.y += dt * 0.004;
-    // Sun and its shadow box follow the point of interest
-    const focus = this.view === 'walk' ? this.player : this.view === 'drive' && this.car ? this.car : this.orbit.target;
-    this.sun.target.position.set(focus.x, 0, focus.z);
-    this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunDir, 400);
+    this.updateEnvironment(dt, t);
     this.hud.update(this);
+  }
+
+  /** Time of day, light, fog and the sun's shadow box. */
+  updateEnvironment(dt, t) {
+    const s = this.ctx.world.sunAt(this.route.planet, this.layout.frame);
+    this.sunVec.set(s.x, s.y, s.z).normalize();
+    const L = this.sky.update(this.sunVec, dt);
+    this.sky.group.position.copy(this.camera.position);
+    this.sunDir.copy(L.lightDir);
+    this.sun.color.copy(L.sunColor);
+    this.sun.intensity = L.sunIntensity;
+    this.hemi.color.copy(L.hemiSky);
+    this.hemi.intensity = L.hemiIntensity;
+    this.ambient.intensity = L.ambient;
+    this.builder.setEnvironment({ time: t, night: L.night, sunDir: this.sunVec, sunColor: L.sunColor, sunIntensity: L.sunIntensity, sky: L.fog });
+    this.night = L.night;
+
+    // Fog: from the table the world's edge melts into haze; at street level the horizon opens up
+    const street = this.view !== 'diorama' && !this.tween ? 1 : 0;
+    this.fogBlend += (street - this.fogBlend) * (1 - Math.exp(-dt * 2));
+    const camDist = this.camera.position.distanceTo(this.orbit.target);
+    const fog = this.scene.fog;
+    fog.color.copy(L.fog);
+    fog.near = THREE.MathUtils.lerp(camDist * 0.95, 260, this.fogBlend);
+    fog.far = THREE.MathUtils.lerp(camDist + DIORAMA_R * 1.05, 3900, this.fogBlend);
+
+    // Shadow box on the point of interest, snapped to whole shadow texels so it does not shimmer
+    const focus = this.view === 'walk' ? this.player : this.view === 'drive' && this.car ? this.car : this.orbit.target;
+    const sun = this.sun;
+    const target = _v.set(focus.x, 0, focus.z);
+    if (this.shadowExt) {
+      const texel = (this.shadowExt * 2) / sun.shadow.mapSize.x;
+      const lightRot = new THREE.Matrix4().lookAt(new THREE.Vector3(), this.sunDir.clone().negate(), UP);
+      const inv = lightRot.clone().invert();
+      target.applyMatrix4(inv);
+      target.x = Math.round(target.x / texel) * texel;
+      target.y = Math.round(target.y / texel) * texel;
+      target.applyMatrix4(lightRot);
+    }
+    sun.target.position.copy(target);
+    sun.position.copy(target).addScaledVector(this.sunDir, 400);
   }
 
   render() {
@@ -683,9 +666,7 @@ export default class TownMode {
     this.avatar?.materials.forEach((m) => m.dispose());
     this.avatar?.mixer.stopAllAction();
     this.traffic?.groups.forEach((g) => g.inst.dispose());
-    this.sky.geometry.dispose();
-    this.sky.material.dispose();
-    this.clouds?.userData.dispose();
+    this.sky.dispose();
     this.ctx.engine.renderer.shadowMap.enabled = false;
     this.sun.shadow.map?.dispose();
     this.scene = null;

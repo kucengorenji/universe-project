@@ -368,8 +368,9 @@ export class SystemBodies {
     this.group.add(this.belt);
   }
 
-  update(dt, t) {
-    this.starMat.uniforms.uTime.value = t;
+  /** t: world clock (positions), anim: app time (surface animation). */
+  update(dt, t, anim = t) {
+    this.starMat.uniforms.uTime.value = anim;
     for (const pl of this.planets) {
       const p = pl.def;
       // Positions follow the app clock, so the system keeps turning while you are on a planet
@@ -379,7 +380,7 @@ export class SystemBodies {
       if (pl.clouds) pl.clouds.rotation.y = p.phase * 3 + t * 0.012;
       if (pl.atmo) pl.atmo.material.uniforms.uCenter.value.copy(pl.holder.position);
       for (const m of pl.moons) {
-        const a = m.phase + t * m.speed;
+        const a = m.phase + anim * m.speed;
         m.mesh.position.set(Math.cos(a) * m.distance, Math.sin(a * 0.7) * m.distance * 0.08, Math.sin(a) * m.distance);
       }
     }

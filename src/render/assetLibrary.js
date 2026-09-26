@@ -26,6 +26,19 @@ export function createToonMaterial(params = {}) {
   return new THREE.MeshToonMaterial({ gradientMap: getToonGradient(), ...params });
 }
 
+/** Palette materials that light up at night: 1 = always, 0.7 = window glass (lit per building). */
+const EMISSIVE = {
+  M_glass_lit: 1,
+  M_lamp: 1,
+  M_fire: 1,
+  M_engine: 1,
+  M_glass: 0.7,
+  M_glass_blue: 0.7,
+  M_glass_teal: 0.7,
+  M_glass_dark: 0.7,
+  M_cockpit: 0.7
+};
+
 /**
  * Bake one LOD node into a single non-indexed geometry with material colours
  * as vertex colours and flat face normals, relative to the node itself (so
@@ -48,6 +61,9 @@ function bakeNode(root) {
     const colors = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) color.toArray(colors, i * 3);
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    // Night glow: lamps and fires always, windows on some buildings (see town material)
+    const glow = EMISSIVE[node.material?.name] ?? 0;
+    geo.setAttribute('emissive', new THREE.BufferAttribute(new Float32Array(count).fill(glow), 1));
     parts.push(geo);
   });
   if (!parts.length) return null;

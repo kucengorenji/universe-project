@@ -61,7 +61,7 @@ export default class SpaceMode {
 
     this.bodies = new SystemBodies(this.system, baked, engine.quality);
     this.scene.add(this.bodies.group);
-    this.bodies.update(0, engine.time);
+    this.bodies.update(0, world.now(), engine.time);
 
     const lods = pack?.ship_frigate ? [0, 1, 2].map((i) => pack.ship_frigate[i]) : [proceduralShipGeometry()];
     this.ship = new Ship(lods);
@@ -501,7 +501,8 @@ export default class SpaceMode {
   // ------------------------------------------------------------------ loop
 
   update(dt, t) {
-    this.bodies.update(dt, t);
+    // Orbits and spins run on the world clock (shared with the town's time of day)
+    this.bodies.update(dt, this.ctx.world.now(), t);
     const seq = this.sequence;
     if (seq?.kind === 'land') this.runLanding(seq, t);
     else if (seq?.kind === 'hold') {

@@ -12,6 +12,7 @@ import { createNoise3D } from '../../math/simplex3d.js';
 
 export const TILE_M = 85; // one hex tile radius, in metres
 export const DIORAMA_R = 620; // radius of the playable disc
+export const HORIZON_M = 4400; // tiles are gathered this far out, for the horizon
 
 const TAU = Math.PI * 2;
 const smooth = (e0, e1, x) => {
@@ -137,7 +138,7 @@ class Fields {
  *   map: planet map data, hexasphere: tiles with that map applied,
  *   cityIndex, planetType, seed
  */
-export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 'terran', detail = 1 }) {
+export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 'terran', detail = 1, footprints = {} }) {
   const city = map.cities[cityIndex];
   const tileMap = hexasphere.tileMap;
   const seed = ((map.seed || 1) * 131 + cityIndex * 977) >>> 0;
@@ -169,8 +170,8 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   const k = TILE_M / unitTr;
   const project = (c) => [(c.x * U[0] + c.y * U[1] + c.z * U[2]) * k, (c.x * V[0] + c.y * V[1] + c.z * V[2]) * k];
 
-  // Tiles within reach of the disc
-  const maxAngle = ((DIORAMA_R + TILE_M * 3) / TILE_M) * unitTr;
+  // Tiles out to the horizon (the land beyond the playable disc is drawn too)
+  const maxAngle = (HORIZON_M / TILE_M) * unitTr;
   const cosMax = Math.cos(maxAngle);
   const local = [];
   const byId = new Map();
@@ -237,6 +238,7 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   }
 
   const layout = {
+    frame: { N, U, V }, // town x = U, y = N (up), z = V on the planet
     seed,
     name: city.name,
     style: city.style,
@@ -297,29 +299,49 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     occ.add(rect.x, rect.z, Math.hypot(rect.hw, rect.hd), rect);
     if (collide) layout.colliders.push({ type: 'box', x: rect.x, z: rect.z, hw: rect.hw, hd: rect.hd, yaw: rect.yaw });
   };
+  /**
+   * Real footprint of an asset (the modelled bounding box of all its variants,
+   * which is not centred on the origin when porches or balconies stick out).
+   * Falls back to the nominal size when the pack does not have the model.
+   */
+  const fp = (asset, w, d) => {
+    const f = footprints[asset];
+    if (!f) return { w, d, cx: 0, cz: 0, front: d / 2 };
+    return { w: f.maxX - f.minX, d: f.maxZ - f.minZ, cx: (f.maxX + f.minX) / 2, cz: (f.maxZ + f.minZ) / 2, front: f.maxZ };
+  };
   const place = (list, asset, x, z, yaw, w, d, extra = {}) => {
-    const rect = { x, z, yaw, hw: w / 2, hd: d / 2 };
+    const f = fp(asset, w, d);
+    // Rect centre = origin + footprint offset in the item's own axes
+    const ca = Math.cos(yaw);
+    const sa = Math.sin(yaw);
+    const rx = x + ca * f.cx - sa * f.cz;
+    const rz = z + sa * f.cx + ca * f.cz;
+    const rect = { x: rx, z: rz, yaw, hw: f.w / 2, hd: f.d / 2 };
     if (!free(rect, extra.pad ?? 0.6)) return false;
     claim(rect, extra.collide !== false);
-    list.push({ asset, x, z, yaw, w, d, h: extra.h, tint: extra.tint ?? 0.94 + rng() * 0.12, variant: extra.variant ?? Math.floor(rng() * 4) });
+    list.push({ asset, x, z, yaw, w: f.w, d: f.d, h: extra.h, tint: extra.tint ?? 0.94 + rng() * 0.12, variant: extra.variant ?? Math.floor(rng() * 4) });
     return true;
   };
 
   // ------------------------------------------------------------ city plan
-  if (modern) planModern(layout, { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs });
-  else planFantasy(layout, { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, free });
+  if (modern) planModern(layout, { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, fp });
+  else planFantasy(layout, { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, free, fp });
 
   // Roads out of town to the edge of the disc, along the planet's route
   for (const e of exits) {
     const start = [Math.cos(e.angle) * edgeRadius(e.angle) * 0.92, Math.sin(e.angle) * edgeRadius(e.angle) * 0.92];
     const pts = [start];
+    // Out to the painted far ground, so the road visibly carries on past the disc
+    const reach = 1050;
     for (const p of e.path) {
-      if (Math.hypot(p[0], p[1]) > DIORAMA_R + 60) break;
+      if (Math.hypot(p[0], p[1]) > reach) break;
       if (Math.hypot(p[0], p[1]) < Math.hypot(...start) + 30) continue;
       pts.push(p);
     }
-    if (pts.length < 2) {
-      pts.push([Math.cos(e.angle) * (DIORAMA_R + 40), Math.sin(e.angle) * (DIORAMA_R + 40)]);
+    const last = pts[pts.length - 1];
+    if (Math.hypot(last[0], last[1]) < reach - 100) {
+      const a = pts.length > 1 ? Math.atan2(last[1] - pts[pts.length - 2][1], last[0] - pts[pts.length - 2][0]) : e.angle;
+      pts.push([last[0] + Math.cos(a) * (reach - Math.hypot(last[0], last[1])), last[1] + Math.sin(a) * (reach - Math.hypot(last[0], last[1]))]);
     }
     // Resample into a gentle curve
     const smoothPts = chaikin(chaikin(pts));
@@ -345,7 +367,7 @@ function chaikin(pts) {
 
 // ---------------------------------------------------------------- fantasy
 
-function planFantasy(L, { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, free }) {
+function planFantasy(L, { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, free, fp }) {
   const big = L.capital || L.size >= 5;
   const plazaR = L.capital ? 24 : L.size >= 3 ? 19 : 14;
   L.plaza = { x: 0, z: 0, r: plazaR };
@@ -482,7 +504,7 @@ function planFantasy(L, { rng, noise, at, inCity, edgeRadius, addStreet, streetC
     if (t < 0.75) return roll < 0.5 ? ['f_house', 8, 7] : roll < 0.8 ? ['f_house_tall', 7, 8] : ['f_townhouse', 6, 10];
     return roll < 0.6 ? ['f_house_small', 6, 6] : ['f_house', 8, 7];
   };
-  fillStreetFronts(L, { rng, inCity, streetClear, place, typeAt, cityTh: 0.5, list: L.buildings, kinds: ['main', 'ring', 'lane'] });
+  fillStreetFronts(L, { rng, inCity, streetClear, place, typeAt, cityTh: 0.5, list: L.buildings, kinds: ['main', 'ring', 'lane'], fp });
 
   // Back plots: houses, trees and sheds where no street reaches
   for (let i = 0; i < 180 + L.size * 70; i++) {
@@ -539,7 +561,7 @@ function planFantasy(L, { rng, noise, at, inCity, edgeRadius, addStreet, streetC
 }
 
 /** Line both sides of the given streets with building lots that face them. */
-function fillStreetFronts(L, { rng, inCity, streetClear, place, typeAt, cityTh, list, kinds }) {
+function fillStreetFronts(L, { rng, inCity, streetClear, place, typeAt, cityTh, list, kinds, fp }) {
   for (const s of L.streets) {
     if (!kinds.includes(s.kind)) continue;
     for (const side of [-1, 1]) {
@@ -552,8 +574,10 @@ function fillStreetFronts(L, { rng, inCity, streetClear, place, typeAt, cityTh, 
         const dz = (bz - az) / len;
         let t = carry;
         while (t < len) {
-          const [asset, w, d] = typeAt(Math.hypot(ax + dx * t, az + dz * t));
-          const off = s.w / 2 + 1.2 + d / 2;
+          const [asset, w0, d0] = typeAt(Math.hypot(ax + dx * t, az + dz * t));
+          const { w, d, front } = fp(asset, w0, d0);
+          // The model's front face sits a pavement's width from the street edge
+          const off = s.w / 2 + 1.1 + front;
           const x = ax + dx * t - dz * off * side;
           const z = az + dz * t + dx * off * side;
           // Frontage along the street, front (+Z) facing it
@@ -561,7 +585,7 @@ function fillStreetFronts(L, { rng, inCity, streetClear, place, typeAt, cityTh, 
           if (inCity(x, z, cityTh) && streetClear(x, z, 24, s) > d / 2 + 0.8) {
             place(list, asset, x, z, yaw, w, d, { pad: 0.35 });
           }
-          t += w + 0.6 + rng() * 1.8;
+          t += w + 0.5 + rng() * 1.6;
         }
         carry = t - len;
       }
@@ -593,7 +617,7 @@ function scatterAlong(L, kinds, every, fn, { side, rng }) {
 
 // ---------------------------------------------------------------- modern
 
-function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim }) {
+function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim, fp }) {
   const axis = rng() * Math.PI;
   const ca = Math.cos(axis);
   const sa = Math.sin(axis);
@@ -654,23 +678,38 @@ function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim }
         L.props.push({ asset: 'm_bench', x, z, yaw, w: 2, d: 0.8 });
         continue;
       }
-      // Lots: towers downtown, apartments around, houses at the edge
+      // Downtown towers stand alone; other blocks are lined around their edge,
+      // every building facing its street, sized by its real footprint
       const t = Math.hypot(x, z) / Math.max(80, L.cityR);
-      let lots;
       const downtown = L.capital || L.size >= 3;
-      if (downtown && ring === 1 && rng() < 0.7) lots = [[0, 0, rng() < 0.5 ? 'm_tower_a' : 'm_tower_b', 30, 30]];
-      else if ((downtown && ring <= 2) || t < 0.45) lots = [[-0.24, -0.24, 'm_office', 22, 22], [0.24, 0.24, 'm_office', 22, 22], [0.24, -0.24, 'm_apartment', 20, 16], [-0.24, 0.24, 'm_apartment', 20, 16]];
-      else if (t < 0.8) lots = [[-0.25, 0, 'm_apartment', 20, 16], [0.25, 0, 'm_apartment', 20, 16], [0, 0.32, 'm_shop', 14, 10], [0, -0.32, 'm_shop', 14, 10]];
-      else {
-        lots = [];
-        for (const du of [-0.3, 0, 0.3]) for (const dv of [-0.28, 0.28]) lots.push([du, dv, rng() < 0.8 ? 'm_house' : 'm_shop', 12, 10]);
+      if (downtown && ring === 1 && rng() < 0.7) {
+        place(L.buildings, rng() < 0.5 ? 'm_tower_a' : 'm_tower_b', x, z, yaw + Math.floor(rng() * 4) * (Math.PI / 2), 30, 30, { pad: 0.5 });
+        continue;
       }
-      for (const [du, dv, asset, w, d] of lots) {
-        const [bx, bz] = toWorld(i * pitch + du * inner, j * pitch + dv * inner);
-        if (!inCity(bx, bz, 0.5)) continue;
-        // Face the nearer outer edge of the block
-        const face = Math.abs(du) > Math.abs(dv) ? (du > 0 ? -Math.PI / 2 : Math.PI / 2) : dv > 0 ? 0 : Math.PI;
-        place(L.buildings, asset, bx, bz, yaw + face, w, d, { pad: 0.5 });
+      const pool =
+        (downtown && ring <= 2) || t < 0.45 ? [['m_office', 22, 22], ['m_apartment', 20, 16], ['m_shop', 14, 10]]
+        : t < 0.8 ? [['m_apartment', 20, 16], ['m_shop', 14, 10], ['m_apartment', 20, 16]]
+        : [['m_house', 12, 10], ['m_house', 12, 10], ['m_shop', 14, 10]];
+      const half = inner / 2;
+      for (let side = 0; side < 4; side++) {
+        const phi = axis + (side * Math.PI) / 2; // outward normal angle of this side
+        const nx = Math.cos(phi);
+        const nz = Math.sin(phi);
+        const tx = -nz;
+        const tz = nx;
+        let sAlong = -half + 1;
+        while (sAlong < half - 4) {
+          const [asset, w0, d0] = pool[Math.floor(rng() * pool.length)];
+          const f = fp(asset, w0, d0);
+          if (sAlong + f.w > half - 0.5) break;
+          // local X runs against the tangent here (yaw = phi - 90 deg), hence + cx
+          const c = sAlong + f.w / 2 + f.cx;
+          const inward = half - f.front;
+          const bx = x + nx * inward + tx * c;
+          const bz = z + nz * inward + tz * c;
+          if (inCity(bx, bz, 0.5)) place(L.buildings, asset, bx, bz, phi - Math.PI / 2, w0, d0, { pad: 0.4 });
+          sAlong += f.w + 1.5 + rng() * 2;
+        }
       }
     }
   }
@@ -701,7 +740,7 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
   // Farmland: long plots with crop rows in their own direction
   const fields = [];
   for (const t of local) {
-    if (!t.farm || t.city) continue;
+    if (!t.farm || t.city || Math.hypot(t.x, t.z) > DIORAMA_R - 60) continue;
     const plots = 2 + Math.floor(rng() * 2);
     for (let p = 0; p < plots; p++) {
       const x = t.x + (rng() - 0.5) * 80;

@@ -12,6 +12,7 @@
   --color-iron: #1f1f1f;
   --color-carbon: #000000;
   --color-iron-soft: #4a4a4a; /* secondary text, 6.2:1 on concrete */
+  --color-space: #070c19; /* backdrop behind the planet */
 
   /* Barlow Condensed stands in for KH Teka (condensed, grotesque, holds tight tracking) */
   --font-display: 'Barlow Condensed', 'Archivo Narrow', 'Roboto Condensed', ui-sans-serif, system-ui, sans-serif;
@@ -49,7 +50,8 @@ body {
 }
 
 body {
-  background: var(--color-concrete);
+  /* Deep space: a faint lift behind the planet so the globe separates from the void */
+  background: radial-gradient(ellipse at 50% 45%, #0e1a33 0%, var(--color-space) 58%, #04070e 100%);
   color: var(--color-iron);
   font-family: var(--font-display);
   font-size: var(--text-body);
@@ -93,6 +95,10 @@ output {
   flex-direction: column;
   pointer-events: none;
   user-select: none;
+}
+
+.wall-type {
+  color: var(--color-concrete);
 }
 
 .wall-type__label {
@@ -173,6 +179,29 @@ output {
 .hint {
   background: var(--color-concrete);
   padding: 2px 6px;
+}
+
+/* Header controls sit on the dark sky: concrete surfaces keep them legible */
+.topbar .pill {
+  border-color: var(--color-concrete);
+}
+
+.topbar .pill--ghost {
+  background: var(--color-concrete);
+}
+
+.topbar .pill--ghost:hover {
+  background: var(--color-iron);
+  color: var(--color-concrete);
+  border-color: var(--color-concrete);
+}
+
+.topbar .menu-circle {
+  background: var(--color-concrete);
+}
+
+.topbar .menu-circle span {
+  background: var(--color-iron);
 }
 
 /* ---------------------------------------------------------------- buttons */
@@ -674,6 +703,7 @@ input[type='range']::-moz-range-thumb {
 /* ---------------------------------------------------------------- toast */
 
 .toast {
+  border: 1px solid var(--color-concrete);
   position: fixed;
   left: 50%;
   bottom: var(--space-20);

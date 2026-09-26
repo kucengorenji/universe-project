@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-// One GLB pack generated in Blender (tools/blender/build_assets.py). Each asset
-// is a named node, Y-up, footprint radius ~1 = one hex tile. The pack ships
-// without normals or UVs; faceted normals are rebuilt here once at load.
-export const ASSET_PACK_URL = `${import.meta.env.BASE_URL}models/assets.glb`;
+// Asset packs generated in Blender (tools/blender/build_assets.py). Each asset
+// is an Empty named after the asset whose children are <name>_LOD0/1/2 meshes,
+// Y-up, footprint radius ~1 = one hex tile. Packs ship without normals or UVs;
+// faceted normals are rebuilt here once at load.
+export const ASSET_PACK_URL = `${import.meta.env.BASE_URL}models/assets.glb`; // LOD1 + LOD2
+export const ASSET_PACK_LOD0_URL = `${import.meta.env.BASE_URL}models/assets_lod0.glb`; // mid-poly, streamed later
 
 /** 3-step cel-shading ramp shared by every toon material. */
 let gradientMap = null;
@@ -25,16 +27,18 @@ export function createToonMaterial(params = {}) {
 }
 
 /**
- * Bake one asset node into a single non-indexed geometry with material colours
- * as vertex colours and flat face normals, so it can be drawn by one
- * InstancedMesh with the shared toon material.
+ * Bake one LOD node into a single non-indexed geometry with material colours
+ * as vertex colours and flat face normals, relative to the node itself (so
+ * the holder's layout position in the .blend does not leak in).
  */
 function bakeNode(root) {
   root.updateMatrixWorld(true);
+  const toLocal = root.matrixWorld.clone().invert();
   const parts = [];
+  const m = new THREE.Matrix4();
   root.traverse((node) => {
     if (!node.isMesh) return;
-    let geo = node.geometry.clone().applyMatrix4(node.matrixWorld);
+    let geo = node.geometry.clone().applyMatrix4(m.multiplyMatrices(toLocal, node.matrixWorld));
     if (geo.index) geo = geo.toNonIndexed();
     for (const key of Object.keys(geo.attributes)) {
       if (key !== 'position') geo.deleteAttribute(key);
@@ -53,14 +57,19 @@ function bakeNode(root) {
   return merged;
 }
 
-/** Resolves to { name: BufferGeometry }. Rejects if the pack cannot be loaded. */
-export async function loadAssetLibrary(url = ASSET_PACK_URL) {
+/** Resolves to { assetName: { 0?: BufferGeometry, 1?: ..., 2?: ... } }. Rejects if the pack cannot load. */
+export async function loadAssetPack(url) {
   const gltf = await new GLTFLoader().loadAsync(url);
-  const lib = {};
   gltf.scene.updateMatrixWorld(true);
-  for (const child of gltf.scene.children) {
-    const geo = bakeNode(child);
-    if (geo) lib[child.name] = geo;
+  const lib = {};
+  for (const holder of gltf.scene.children) {
+    for (const child of holder.children) {
+      const m = /_LOD(\d)/.exec(child.name);
+      if (!m) continue;
+      const geo = bakeNode(child);
+      if (!geo) continue;
+      (lib[holder.name] ||= {})[Number(m[1])] = geo;
+    }
   }
   return lib;
 }

@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BIOMES, isWater, mulberry32 } from '../map/mapGenerator.js';
 import { createNoise3D } from '../math/simplex3d.js';
-import { loadAssetLibrary, createToonMaterial } from './assetLibrary.js';
+import { loadAssetPack, ASSET_PACK_URL, ASSET_PACK_LOD0_URL, createToonMaterial } from './assetLibrary.js';
 import { buildMountainGeometry } from './mountainBuilder.js';
 
 // Cartoon (Civ VI-like) terrain palette
@@ -28,14 +28,10 @@ const LABEL_STYLE = {
 };
 const UP = new THREE.Vector3(0, 1, 0);
 const DETAIL_DISTANCE = 2.15; // detail props (grass, bushes, reeds, hay) only render closer than this x radius
-const LOD_DISTANCE = 1.8; // trees swap to their low-poly stand-ins beyond this x radius
-const FAR_LOD = {
-  tree_pine: 'tree_pine_lod',
-  tree_pine_b: 'tree_pine_lod',
-  tree_pine_snow: 'tree_pine_snow_lod',
-  tree_round: 'tree_round_lod',
-  tree_palm: 'tree_palm_lod'
-};
+// Per-chunk LOD by the chunk's distance from the camera (x planet radius):
+// LOD0 mid-poly up close, LOD1 in the middle distance, LOD2 far stand-ins
+const LOD0_RANGE = 0.35;
+const LOD1_RANGE = 1.1;
 
 // Vehicles per civilisation and travel mode
 export const VEHICLES = {
@@ -312,14 +308,33 @@ export class PlanetRenderer {
     this.propMaterial = createToonMaterial({ vertexColors: true, side: THREE.DoubleSide });
     this.sharedGeometries = new Set();
     this.sharedMaterials = new Set([this.propMaterial]);
-    this.assets = null;
+    this.assets = null; // name -> LOD1 geometry (what most placement code needs)
+    this.assetLods = {}; // name -> [LOD0 | undefined, LOD1, LOD2 | undefined]
+    this.lod0Ready = false;
     this.assetsState = 'loading';
-    this.assetsPromise = loadAssetLibrary()
-      .then((lib) => {
-        this.assets = lib;
-        Object.values(lib).forEach((g) => this.sharedGeometries.add(g));
+    const register = (pack) => {
+      for (const [name, lods] of Object.entries(pack)) {
+        const slot = (this.assetLods[name] ||= []);
+        for (const [lvl, geo] of Object.entries(lods)) {
+          slot[Number(lvl)] = geo;
+          this.sharedGeometries.add(geo);
+        }
+      }
+    };
+    this.assetsPromise = loadAssetPack(ASSET_PACK_URL)
+      .then((pack) => {
+        register(pack);
+        this.assets = Object.fromEntries(Object.entries(this.assetLods).map(([n, l]) => [n, l[1]]));
         this.setAssetsState('ready');
-        return lib;
+        // Mid-poly models stream in after the world is already on screen
+        loadAssetPack(ASSET_PACK_LOD0_URL)
+          .then((lod0) => {
+            register(lod0);
+            this.lod0Ready = true;
+            this.addLod0Meshes();
+          })
+          .catch((err) => console.warn('Mid-poly pack unavailable, staying on LOD1:', err));
+        return this.assets;
       })
       .catch((err) => {
         console.error('Asset pack failed to load:', err);
@@ -374,7 +389,7 @@ export class PlanetRenderer {
     out.width = src.width;
     out.height = src.height;
     const ctx = out.getContext('2d');
-    ctx.fillStyle = this.scene.background ? `#${this.scene.background.getHexString()}` : '#d9d9d9';
+    ctx.fillStyle = this.scene.background ? `#${this.scene.background.getHexString()}` : '#070c19';
     ctx.fillRect(0, 0, out.width, out.height);
     ctx.drawImage(src, 0, 0);
     return new Promise((resolve) =>
@@ -436,6 +451,7 @@ export class PlanetRenderer {
     this.planetGroup = new THREE.Group();
     this.scene.add(this.planetGroup);
 
+    this.createSpace();
     this.createAtmosphere();
     this.createCloudLayer();
 
@@ -485,6 +501,112 @@ export class PlanetRenderer {
     this.camera.add(sun);
     this.camera.add(sun.target);
     sun.target.position.set(0, 0, -30);
+  }
+
+  /**
+   * Deep-space backdrop: a procedural nebula sphere concentrated along a tilted
+   * galactic band, and a star field that is denser inside that band. Both live
+   * in world space, so orbiting the planet slowly reveals the sky around it.
+   */
+  createSpace() {
+    const noise = createNoise3D(7331);
+    const band = new THREE.Vector3(0.35, 1, 0.2).normalize(); // galactic pole
+    const W = 512;
+    const H = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const img = ctx.createImageData(W, H);
+    const deep = [27, 58, 107];
+    const teal = [31, 95, 110];
+    const dust = [70, 60, 96];
+    const d = new THREE.Vector3();
+    for (let y = 0; y < H; y++) {
+      const phi = (y / H) * Math.PI;
+      for (let x = 0; x < W; x++) {
+        const th = (x / W) * Math.PI * 2;
+        // Same mapping as SphereGeometry's UVs, so the texture has no seams
+        d.set(-Math.cos(th) * Math.sin(phi), Math.cos(phi), Math.sin(th) * Math.sin(phi));
+        const inBand = Math.exp(-Math.pow(d.dot(band) * 3.2, 2));
+        const n = noise.fbm(d.x * 2.2, d.y * 2.2, d.z * 2.2, 5, 2.0, 0.55) * 0.5 + 0.5;
+        const wisps = noise.fbm(d.x * 6 + 9, d.y * 6, d.z * 6, 3, 2.0, 0.5) * 0.5 + 0.5;
+        const a = THREE.MathUtils.clamp((n - 0.42) * 2.2, 0, 1) * (0.25 + inBand * 0.75) * (0.6 + wisps * 0.4);
+        const mix = THREE.MathUtils.clamp(wisps * 1.3 - 0.2, 0, 1);
+        const c = deep.map((v, i) => v + (teal[i] - v) * mix + (dust[i] - v) * inBand * 0.25 * (1 - mix));
+        const o = (y * W + x) * 4;
+        img.data[o] = c[0];
+        img.data[o + 1] = c[1];
+        img.data[o + 2] = c[2];
+        img.data[o + 3] = a * 150;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.nebula = new THREE.Mesh(
+      new THREE.SphereGeometry(300, 48, 24),
+      new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, transparent: true, depthWrite: false, toneMapped: false })
+    );
+    this.nebula.renderOrder = -2;
+    this.scene.add(this.nebula);
+
+    // Star field: denser along the band, a few bright ones, slight colour temperature spread
+    const rng = mulberry32(424242);
+    const count = 3200;
+    const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+    const size = new Float32Array(count);
+    const tmp = new THREE.Vector3();
+    const temps = [new THREE.Color(0xbcd4ff), new THREE.Color(0xffffff), new THREE.Color(0xfff1d6), new THREE.Color(0xffd9b0)];
+    for (let i = 0; i < count; i++) {
+      let accepted = false;
+      while (!accepted) {
+        const z = rng() * 2 - 1;
+        const t = rng() * Math.PI * 2;
+        tmp.set(Math.sqrt(1 - z * z) * Math.cos(t), z, Math.sqrt(1 - z * z) * Math.sin(t));
+        accepted = rng() < 0.35 + 0.65 * Math.exp(-Math.pow(tmp.dot(band) * 2.5, 2));
+      }
+      tmp.multiplyScalar(280);
+      pos.set([tmp.x, tmp.y, tmp.z], i * 3);
+      const c = temps[Math.floor(rng() * temps.length)];
+      const bright = rng() < 0.04;
+      const b = bright ? 1 : 0.45 + rng() * 0.4;
+      col.set([c.r * b, c.g * b, c.b * b], i * 3);
+      size[i] = bright ? 2.4 + rng() * 1.4 : 0.8 + rng() * 1.1;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.setAttribute('size', new THREE.BufferAttribute(size, 1));
+    this.stars = new THREE.Points(
+      g,
+      new THREE.ShaderMaterial({
+        uniforms: { uPixelRatio: { value: this.renderer.getPixelRatio() } },
+        vertexShader: `
+          attribute float size;
+          varying vec3 vColor;
+          uniform float uPixelRatio;
+          void main() {
+            vColor = color;
+            gl_PointSize = size * uPixelRatio;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vColor;
+          void main() {
+            float d = length(gl_PointCoord - 0.5);
+            gl_FragColor = vec4(vColor, 1.0 - smoothstep(0.2, 0.5, d));
+          }
+        `,
+        vertexColors: true,
+        transparent: true,
+        depthWrite: false
+      })
+    );
+    this.stars.renderOrder = -1;
+    this.scene.add(this.stars);
   }
 
   createAtmosphere() {
@@ -2083,33 +2205,44 @@ export class PlanetRenderer {
   }
 
   /**
-   * Collected transforms become InstancedMeshes split into 12 spatial chunks.
-   * Chunks behind the horizon, detail props when zoomed out, and full-detail
-   * trees when far away (their low-poly stand-ins draw instead) are skipped.
+   * Collected transforms become InstancedMeshes split into 32 spatial chunks
+   * (icosahedron vertices + face centres). Per chunk and asset there is one
+   * InstancedMesh per LOD; every frame each chunk shows exactly one LOD based
+   * on its distance from the camera, chunks behind the horizon are skipped,
+   * and small "detail" props only render up close.
    */
   flushProps(props) {
-    const phi = (1 + Math.sqrt(5)) / 2;
-    const dirs = [
-      [-1, phi, 0], [1, phi, 0], [-1, -phi, 0], [1, -phi, 0], [0, -1, phi], [0, 1, phi],
-      [0, -1, -phi], [0, 1, -phi], [phi, 0, -1], [phi, 0, 1], [-phi, 0, -1], [-phi, 0, 1]
-    ].map((d) => new THREE.Vector3(...d).normalize());
+    const ico = new THREE.IcosahedronGeometry(1, 0);
+    const p = ico.attributes.position;
+    const verts = [];
+    const dirs = [];
+    for (let i = 0; i < p.count; i++) {
+      const v = new THREE.Vector3().fromBufferAttribute(p, i).normalize();
+      if (!verts.some((u) => u.distanceTo(v) < 1e-4)) verts.push(v);
+    }
+    for (let f = 0; f < p.count; f += 3) {
+      dirs.push(new THREE.Vector3().fromBufferAttribute(p, f).add(new THREE.Vector3().fromBufferAttribute(p, f + 1)).add(new THREE.Vector3().fromBufferAttribute(p, f + 2)).normalize());
+    }
+    dirs.push(...verts);
+    ico.dispose();
 
     this.chunks = dirs.map((normal) => {
       const group = new THREE.Group();
-      const detail = new THREE.Group();
-      const near = new THREE.Group();
-      const far = new THREE.Group();
-      group.add(detail, near, far);
+      const levels = [0, 1, 2].map(() => {
+        const main = new THREE.Group();
+        const detail = new THREE.Group();
+        main.add(detail);
+        group.add(main);
+        return { main, detail };
+      });
       this.mapGroup.add(group);
-      return { normal, spread: 0, group, detail, near, far, buckets: new Map() };
+      return { normal, spread: 0, group, levels, buckets: new Map(), level: -1 };
     });
 
-    const dune = this.makeDuneGeometry();
-    const geoFor = (name) => (name === 'dune' ? dune : this.assets[name]);
+    this.duneGeo = this.makeDuneGeometry();
     const pos = new THREE.Vector3();
-
     for (const [name, items] of props.items) {
-      if (!geoFor(name)) continue;
+      if (!this.lodsOf(name)[1]) continue;
       for (const it of items) {
         pos.setFromMatrixPosition(it.m).normalize();
         let best = 0;
@@ -2132,26 +2265,46 @@ export class PlanetRenderer {
     for (const chunk of this.chunks) {
       for (const [key, items] of chunk.buckets) {
         const [name, detail] = key.split('|');
-        const make = (geo) => {
-          const inst = new THREE.InstancedMesh(geo, this.propMaterial, items.length);
-          items.forEach((it, i) => {
-            inst.setMatrixAt(i, it.m);
-            if (Array.isArray(it.tint)) _c.setRGB(it.tint[0], it.tint[1], it.tint[2]);
-            else _c.setScalar(it.tint);
-            inst.setColorAt(i, _c);
-          });
-          inst.instanceMatrix.needsUpdate = true;
-          inst.computeBoundingSphere();
-          return inst;
-        };
-        const lodGeo = this.assets[FAR_LOD[name]];
-        if (detail === '1') chunk.detail.add(make(geoFor(name)));
-        else if (lodGeo) {
-          chunk.near.add(make(geoFor(name)));
-          chunk.far.add(make(lodGeo));
-        } else chunk.group.add(make(geoFor(name)));
+        const lods = this.lodsOf(name);
+        for (const lvl of [0, 1, 2]) {
+          // Missing LOD2 reuses LOD1; LOD0 is added when the mid-poly pack arrives
+          const geo = lvl === 2 ? lods[2] || lods[1] : lods[lvl];
+          if (geo) this.addInstanced(chunk, lvl, detail === '1', geo, items);
+        }
       }
-      chunk.buckets = null;
+    }
+  }
+
+  lodsOf(name) {
+    return name === 'dune' ? [undefined, this.duneGeo, undefined] : this.assetLods[name] || [];
+  }
+
+  addInstanced(chunk, lvl, detail, geo, items) {
+    const inst = new THREE.InstancedMesh(geo, this.propMaterial, items.length);
+    items.forEach((it, i) => {
+      inst.setMatrixAt(i, it.m);
+      if (Array.isArray(it.tint)) _c.setRGB(it.tint[0], it.tint[1], it.tint[2]);
+      else _c.setScalar(it.tint);
+      inst.setColorAt(i, _c);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    inst.computeBoundingSphere();
+    (detail ? chunk.levels[lvl].detail : chunk.levels[lvl].main).add(inst);
+  }
+
+  /** Mid-poly pack arrived: add LOD0 meshes to every chunk and upgrade the vehicles. */
+  addLod0Meshes() {
+    for (const chunk of this.chunks || []) {
+      for (const [key, items] of chunk.buckets) {
+        const [name, detail] = key.split('|');
+        const geo = this.lodsOf(name)[0];
+        if (geo) this.addInstanced(chunk, 0, detail === '1', geo, items);
+      }
+      chunk.level = -1; // re-evaluate visibility next frame
+    }
+    for (const m of this.movers || []) {
+      const geo = this.assetLods[m.asset]?.[0];
+      if (geo) m.mesh.geometry = geo;
     }
   }
 
@@ -2211,7 +2364,7 @@ export class PlanetRenderer {
     const spawn = (mode, list, group, perRoute) => {
       for (const { curve, route, style } of list) {
         const spec = VEHICLES[mode][style] || VEHICLES[mode].fantasy;
-        const geo = this.assets[spec.asset];
+        const geo = this.assetLods[spec.asset]?.[0] || this.assets[spec.asset];
         if (!geo) continue;
         const length = curve.getLength();
         for (let i = 0; i < perRoute; i++) {
@@ -2227,6 +2380,7 @@ export class PlanetRenderer {
             mode,
             style,
             name: spec.name,
+            asset: spec.asset,
             from: cityName(route.from),
             to: cityName(route.to),
             cities: [route.from, route.to],
@@ -2293,6 +2447,8 @@ export class PlanetRenderer {
       // At ground level the thin atmosphere shell would show its edge: use a plain sky instead
       this.scene.background = new THREE.Color(0x9dc0e3);
       this.atmosphere.visible = false;
+      this.stars.visible = false;
+      this.nebula.visible = false;
       if (this.hoverIndicatorMesh) this.hoverIndicatorMesh.visible = false;
       this.hoveredTile = null;
       if (this.onTileHover) this.onTileHover(null);
@@ -2307,6 +2463,8 @@ export class PlanetRenderer {
     this.camera.updateProjectionMatrix();
     this.scene.background = null;
     this.atmosphere.visible = true;
+    this.stars.visible = true;
+    this.nebula.visible = true;
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
     const halfV = THREE.MathUtils.degToRad(this.camera.fov / 2);
@@ -2822,13 +2980,20 @@ export class PlanetRenderer {
     const camLocal = _v.copy(camWorld).applyQuaternion(_q.copy(this.planetGroup.quaternion).invert());
     const horizon = Math.acos(Math.min(1, this.radius / dist)) + 0.12;
     const showDetail = dist < this.radius * DETAIL_DISTANCE;
-    const close = dist < this.radius * LOD_DISTANCE;
+    const camPosLocal = _v4.copy(camLocal).multiplyScalar(dist);
     for (const chunk of this.chunks) {
       const angle = Math.acos(THREE.MathUtils.clamp(chunk.normal.dot(camLocal), -1, 1));
       chunk.group.visible = angle - chunk.spread < horizon;
-      chunk.detail.visible = showDetail;
-      chunk.near.visible = close;
-      chunk.far.visible = !close;
+      if (!chunk.group.visible) continue;
+      // Distance from the camera to the nearest part of the chunk
+      const d = Math.max(0, _v2.copy(chunk.normal).multiplyScalar(this.radius).distanceTo(camPosLocal) - chunk.spread * this.radius);
+      let level = d < this.radius * LOD0_RANGE ? 0 : d < this.radius * LOD1_RANGE ? 1 : 2;
+      if (level === 0 && !this.lod0Ready) level = 1;
+      if (level !== chunk.level) {
+        chunk.level = level;
+        chunk.levels.forEach((l, i) => (l.main.visible = i === level));
+      }
+      chunk.levels[level].detail.visible = showDetail;
     }
 
     const inPov = !!this.pov;

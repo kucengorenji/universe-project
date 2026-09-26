@@ -138,3 +138,13 @@ globe/
 - **Pantai**: tile di garis pantai dipotong dengan marching triangles di sepanjang kontur. Sudut darat yang menonjol dipangkas jadi laut, sudut yang menjorok diisi jadi darat. Tebing (mode relief), pita pasir, dan buih ombak (satu pita mulus) ikut lengkungan itu. Tile gunung tetap berbentuk hex, karena mesh gunungnya memang hex.
 - Props (pohon, rumah, baris ladang, alang-alang) tidak ditempatkan di sudut darat yang sudah jadi laut. Border, highlight, dan hover memakai tinggi permukaan yang sama.
 - Biaya: bangun ulang terrain sekitar 1,2 detik (saat load, acak dunia, atau toggle rata/tebing). Render tetap sekitar 76 fps.
+
+---
+
+## Update 7: aset mid-poly + LOD, latar luar angkasa
+
+- **Pipeline Blender profesional** (`tools/blender/build_assets.py`, disimpan juga sebagai `tools/blender/globe_assets.blend`): koleksi `GlobeAssets/` dengan sub-koleksi per kategori (Nature, Farm, Settlement_Fantasy, Settlement_Modern, Infrastructure, Vehicles). Setiap aset berupa Empty dengan anak `<aset>_LOD0/1/2`, dan material diambil dari satu palet `M_<warna>`.
+- **LOD0 mid-poly** (rata-rata sekitar 2,9x LOD1): segmen lebih banyak, semua tepi dibevel, dan detail kecil (jendela dan balok bubungan rumah, pucuk dan pangkal pinus, dedaunan tambahan). **LOD2**: model buatan tangan untuk pohon, hasil decimate untuk aset lain.
+- **Dua pack**: `assets.glb` (LOD1+LOD2, sekitar 290 KB) dimuat lebih dulu. `assets_lod0.glb` (sekitar 340 KB) menyusul, dan begitu tiba, props serta kendaraan otomatis naik ke LOD0.
+- **LOD per chunk**: props dibagi ke 32 chunk (titik dan pusat muka icosahedron). Tiap chunk menampilkan satu LOD sesuai jarak dari kamera: LOD0 di bawah 0,35R, LOD1 di bawah 1,1R, LOD2 selebihnya. Chunk di balik horizon dilewati.
+- **Luar angkasa**: latar CSS biru-hitam dengan vignette, bola nebula prosedural di sepanjang pita galaksi, dan sekitar 3.200 bintang dengan variasi ukuran dan warna. Kontrol header memakai permukaan concrete supaya terbaca di langit gelap.

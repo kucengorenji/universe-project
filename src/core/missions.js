@@ -48,7 +48,7 @@ export const MISSIONS = [
     items: [
       { id: 'boost', label: 'Pakai boost di luar angkasa', event: 'boost' },
       { id: 'hangar', label: 'Ganti kapal di hangar', event: 'hangar' },
-      { id: 'gas', label: 'Masuk orbit raksasa gas', event: 'orbit_gas' },
+      { id: 'orbit3', label: 'Parkir di orbit 3 planet berbeda', event: 'orbit', distinct: 3 },
       { id: 'rover', label: 'Nyetir rover 300 m di planet', event: 'rover_m', total: 300 }
     ]
   }
@@ -64,7 +64,10 @@ export class Missions {
 
   load() {
     try {
-      return JSON.parse(localStorage.getItem(KEY) || '{}');
+      const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
+      // Drop checklist items that no longer exist
+      const known = new Set(MISSIONS.flatMap((m) => m.items.map((it) => `${m.id}.${it.id}`)));
+      return Object.fromEntries(Object.entries(saved).filter(([k]) => known.has(k)));
     } catch {
       return {};
     }

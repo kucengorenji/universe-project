@@ -133,6 +133,7 @@ export default class SpaceMode {
     this.scene.add(ship.object);
     this.ship = ship;
     this.shipKey = key;
+    this.ctx.missions?.emit('hangar');
     try {
       localStorage.setItem(SHIP_KEY, key);
     } catch {
@@ -208,7 +209,7 @@ export default class SpaceMode {
       velocity: () => this.planetVelocity(i),
       look: () => this.planet(i).holder.position,
       onArrive: () => {
-        this.orbiting = i;
+        this.enterOrbit(i);
         this.refreshCard();
       },
       onCancel: () => {
@@ -247,6 +248,12 @@ export default class SpaceMode {
     let cities = 0;
     if (p.inhabited) cities = this.ctx.world.mapFor(p.index)?.cities?.length ?? 0;
     this.hud.showCard(p, { orbiting: this.orbiting === p.index, cities });
+  }
+
+  /** Parked in orbit around planet i (the pilot mission counts distinct planets). */
+  enterOrbit(i) {
+    this.orbiting = i;
+    this.ctx.missions?.emit('orbit', i);
   }
 
   land(i) {
@@ -401,6 +408,10 @@ export default class SpaceMode {
     cam.up.copy(UP);
     cam.lookAt(this.rig.look);
     const boost = this.ship.boostFx || 0;
+    if (boost > 0.6 && !this.boosted) {
+      this.boosted = true;
+      this.ctx.missions?.emit('boost');
+    }
     if (boost > 0.05 && !this.mapMode) {
       cam.position.x += (Math.random() - 0.5) * boost * 0.05;
       cam.position.y += (Math.random() - 0.5) * boost * 0.05;
@@ -461,7 +472,7 @@ export default class SpaceMode {
         // Not there yet: autopilot to orbit first, then descend
         this.park(i);
         this.ship.autopilot.onArrive = () => {
-          this.orbiting = i;
+          this.enterOrbit(i);
           descend();
         };
         this.ship.autopilot.onCancel = null;
@@ -556,7 +567,7 @@ export default class SpaceMode {
       this.ship.object.scale.setScalar(1);
       this.park(seq.i);
       this.ship.autopilot.arrived = true;
-      this.orbiting = seq.i;
+      this.enterOrbit(seq.i);
       this.refreshCard();
     }
   }

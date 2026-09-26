@@ -92,8 +92,10 @@ export default class PlanetMode {
     // Arrival: from orbit the globe is framed from the side we flew in on;
     // from a town the camera starts over that city.
     const a = this.arrival;
-    if (a?.dir) pr.viewFrom(new THREE.Vector3().fromArray(a.dir));
-    else pr.viewFrom(new THREE.Vector3(0, 0.35, 0.93));
+    if (a?.dir) {
+      pr.viewFrom(new THREE.Vector3().fromArray(a.dir));
+      this.ctx.missions?.emit('land', this.index);
+    } else pr.viewFrom(new THREE.Vector3(0, 0.35, 0.93));
     const city = a?.city ?? this.route.city;
     if (city !== null && city !== undefined && this.map.cities?.[city]) pr.focusOn({ type: 'city', index: city }, { animate: !a?.fromTown });
     if (a?.fromTown) this.riseFrom = city;
@@ -153,6 +155,12 @@ export default class PlanetMode {
       });
       this.rover.updateCamera(dt, this.pr.camera);
       this.pr.updateNearPlane();
+      // Mission distance, reported in chunks
+      this.roverAcc = (this.roverAcc || 0) + Math.abs(this.rover.car.speed) * Math.min(dt, 0.05);
+      if (this.roverAcc > 10) {
+        this.ctx.missions?.emit('rover_m', this.roverAcc);
+        this.roverAcc = 0;
+      }
     }
   }
 

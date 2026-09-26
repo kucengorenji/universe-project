@@ -3021,7 +3021,7 @@ export class PlanetRenderer {
       chunk.levels[level].detail.visible = showDetail;
     }
 
-    const inPov = !!this.pov;
+    const inPov = !!this.pov || !!this.driving;
     if (this.haze) this.haze.visible = !inPov && this.hasAir !== false;
 
     const focusedCity = this.focus?.spec.type === 'city' ? this.focus.spec.index : -1;
@@ -3033,7 +3033,7 @@ export class PlanetRenderer {
       }
       const facing = _v2.copy(normal).applyQuaternion(this.planetGroup.quaternion).dot(camWorld);
       // In POV the camera hugs the ground, so only nearby banners stay up
-      const o = this.pov
+      const o = this.pov || this.driving
         ? THREE.MathUtils.smoothstep(facing, 0.985, 0.995)
         : THREE.MathUtils.smoothstep(facing, 0.32, 0.5);
       sprite.material.opacity = o;
@@ -3058,7 +3058,7 @@ export class PlanetRenderer {
 
     this.applyInset(dt);
     if (this.camTween) this.updateCamTween(performance.now());
-    else if (!this.pov) {
+    else if (!this.pov && !this.driving) {
       this.controls.update();
       // Auto-rotate pauses while a spot is in focus, so the camera stays on it
       if (this.autoRotate && !this.focus?.flying) this.planetGroup.rotation.y += 0.002;

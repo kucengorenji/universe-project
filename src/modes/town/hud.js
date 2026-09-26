@@ -4,8 +4,8 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt
 const QUALITY_LABEL = { auto: 'Auto', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' };
 const HINTS = {
   diorama: 'Seret untuk memutar, klik kanan atau dua jari untuk menggeser, scroll untuk zoom. Tombol 2 jalan kaki, 3 nyetir.',
-  walk: 'WASD jalan, Shift lari, Spasi lompat. Seret untuk melihat sekeliling. Esc kembali ke diorama.',
-  drive: 'W gas, S rem dan mundur, A/D belok, Shift ngebut. Seret untuk melihat sekeliling. Esc kembali ke diorama.'
+  walk: 'WASD jalan, Shift lari, Spasi lompat, E masuk kendaraan. Seret untuk melihat sekeliling. Esc kembali ke diorama.',
+  drive: 'W gas, S rem/mundur, A/D belok, Spasi rem tangan (drift), Shift ngebut, E turun. Seret untuk melihat sekeliling.'
 };
 
 /** Touch joystick (left thumb) for walking and driving on phones. */
@@ -81,6 +81,7 @@ export class TownHud {
         </dl>
       </aside>
       <div class="town-hud" role="status"><span data-hint>${HINTS.diorama}</span></div>
+      <button type="button" class="interact-prompt" hidden><kbd data-key>E</kbd><span data-prompt></span></button>
       <div class="joystick" aria-hidden="true" hidden><span class="joystick__knob"></span></div>`;
     this.hint = root.querySelector('[data-hint]');
     this.buttons = [...root.querySelectorAll('[data-view]')];
@@ -91,6 +92,7 @@ export class TownHud {
       const b = e.target.closest('button');
       if (!b) return;
       if (b.dataset.view) this.on.view(b.dataset.view);
+      else if (b.classList.contains('interact-prompt')) this.on.interact?.();
       else if (b.dataset.act === 'liftoff') this.on.liftoff();
       else if (b.dataset.act === 'quality') {
         const order = ['auto', 'high', 'medium', 'low'];
@@ -106,6 +108,18 @@ export class TownHud {
     this.hint.textContent = HINTS[v];
     this.joyEl.hidden = !(this.touch && v !== 'diorama');
     this.root.classList.toggle('is-street', v !== 'diorama');
+  }
+
+  /** Contextual action hint, e.g. "E  Masuk kendaraan" (tap it on touch screens). */
+  setPrompt(text, key = 'E') {
+    if (text === this.promptText) return;
+    this.promptText = text;
+    const el = this.root.querySelector('.interact-prompt');
+    el.hidden = !text;
+    if (text) {
+      el.querySelector('[data-prompt]').textContent = text;
+      el.querySelector('[data-key]').textContent = key;
+    }
   }
 
   update() {}

@@ -11,6 +11,21 @@ import { Crowd, Pedestrians } from './crowd.js';
 import { Colliders } from './colliders.js';
 import { TownHud } from './hud.js';
 import { TownSky } from './sky.js';
+import { Fleet } from './fleet.js';
+import { Car, ChaseCamera } from './vehicle.js';
+
+// Which models drive which physics. Modern towns get cars, fantasy towns carts and caravans.
+const VEHICLES = {
+  modern: [
+    { asset: 'm_car', variant: 0, type: 'sedan' },
+    { asset: 'm_car', variant: 1, type: 'hatch' },
+    { asset: 'm_car', variant: 2, type: 'suv' },
+    { asset: 'm_car', variant: 3, type: 'sedan' },
+    { asset: 'm_car', variant: 4, type: 'sport' }
+  ],
+  fantasy: [{ asset: 'caravan', variant: 0, type: 'caravan' }]
+};
+const STREET_FOV = 55;
 
 // Inside a city: the diorama is the main view; from there you can walk the
 // streets (third person) or drive. Everything is built from the planet's map
@@ -114,7 +129,9 @@ export default class TownMode {
     const sp = this.layout.spawn;
     Object.assign(this.player, { x: sp.x, z: sp.z, y: this.builder.groundAt(sp.x, sp.z), yaw: sp.yaw, vy: 0, visible: false });
     if (character) this.setupAvatar(character, city.owner === 'system' ? 0xfa4d43 : 0x027b49, shadows);
-    this.buildTraffic(rng);
+    this.buildFleet(rng, shadows);
+    this.chase = new ChaseCamera(this.camera);
+    this.chase.baseFov = STREET_FOV;
 
     // Controls
     this.orbit = new OrbitControls(this.camera, engine.renderer.domElement);
@@ -131,7 +148,8 @@ export default class TownMode {
       quality,
       on: {
         liftoff: () => this.ctx.director.go({ mode: 'planet', planet: this.route.planet, city: this.route.city }),
-        view: (v) => this.setView(v)
+        view: (v) => this.setView(v),
+        interact: () => this.interact()
       }
     });
     this.ui.hidden = false;
@@ -186,33 +204,43 @@ export default class TownMode {
     this.tween = { from: { pos: this.camera.position.clone(), target: this.orbit.target.clone() }, to, t0: this.ctx.engine.time, dur, done };
   }
 
-  setView(v) {
+  setView(v, { fromTransfer = false } = {}) {
     if (this.tween && v !== 'diorama') return;
+    if (this.transfer && !fromTransfer) return;
     const prev = this.view;
+    if (v === 'drive' && !fromTransfer) {
+      // "Drive" means: get into the nearest vehicle (walk over to it first if needed)
+      if (prev === 'diorama') this.setView('walk');
+      const near = this.fleet.nearest(this.player.x, this.player.z, 3.2) || this.fleet.nearest(this.player.x, this.player.z, Infinity);
+      if (!near) return;
+      if (Math.hypot(near.car.x - this.player.x, near.car.z - this.player.z) > 12) {
+        const door = this.doorOf(near.car, near.spec);
+        this.placePlayer(door.x + 3, door.z + 3);
+      }
+      this.enterVehicle(near);
+      return;
+    }
+    if (v === 'walk' && prev === 'drive' && !fromTransfer) {
+      this.exitVehicle();
+      return;
+    }
     this.view = v;
     this.hud.setView(v);
     this.orbit.enabled = v === 'diorama' && !this.tween;
     this.player.visible = v === 'walk' && !this.avatar;
+    this.camera.fov = v === 'diorama' ? 40 : STREET_FOV;
+    this.camera.updateProjectionMatrix();
     if (v === 'walk') {
-      if (prev === 'drive' && this.car) {
-        // Step out next to the car
-        const side = this.car.yaw + Math.PI / 2;
-        this.placePlayer(this.car.x + Math.sin(side) * 2.4, this.car.z + Math.cos(side) * 2.4);
-      } else if (prev === 'diorama') {
+      if (prev === 'diorama') {
         // Drop in where the camera was looking, if it is free
         const t = this.orbit.target;
         if (Math.hypot(t.x, t.z) < DIORAMA_R - 30 && this.builder.heightAt(t.x, t.z) > WATER_Y + 0.2) this.placePlayer(t.x, t.z);
       }
       this.follow.dist = 6.5;
       this.follow.yaw = this.player.yaw + Math.PI;
-    } else if (v === 'drive') {
-      if (!this.car) this.spawnCar();
-      else if (prev === 'walk' && Math.hypot(this.car.x - this.player.x, this.car.z - this.player.z) > 30) this.spawnCar();
-      this.follow.dist = 13;
-      this.follow.yaw = this.car.yaw + Math.PI;
     } else if (v === 'diorama' && prev !== 'diorama') {
       // Rise out of the street to the table view around where we were
-      const focus = prev === 'drive' && this.car ? this.car : this.player;
+      const focus = prev === 'drive' && this.drive ? this.drive.car : this.player;
       const to = this.dioramaPose({});
       to.target.set(focus.x, 0, focus.z);
       to.pos.sub(new THREE.Vector3(this.layout.plaza?.x ?? 0, 0, this.layout.plaza?.z ?? 0)).multiplyScalar(0.55).add(to.target);
@@ -282,112 +310,157 @@ export default class TownMode {
 
   // ------------------------------------------------------------------ vehicles
 
-  vehicleMesh(name) {
-    const res = this.builder.resolve(name);
-    if (!res) return null;
-    const mesh = new THREE.Mesh(res.lods[0], this.builder.material);
+  /** Parked cars along the streets and traffic on the bigger ones; every one of them can be taken. */
+  buildFleet(rng, shadows) {
+    const L = this.layout;
+    const kinds = VEHICLES[L.modern ? 'modern' : 'fantasy'].filter((k) => this.builder.resolve(k.asset, k.variant));
+    this.fleet = new Fleet(this.builder, this.scene, { shadows });
+    if (!kinds.length) return;
+    const pick = () => kinds[Math.floor(rng() * kinds.length)];
+    // Parked: the layout's roadside spots (modern), or carts left by the main streets (fantasy)
+    for (const p of L.props) {
+      if (!p.parked) continue;
+      const k = pick();
+      this.fleet.add({ ...k, x: p.x, z: p.z, yaw: -p.yaw, mode: 'parked' });
+    }
+    const lines = L.driveGraph.filter((l) => l.pts.length >= 2);
+    if (!L.modern) {
+      const mains = L.streets.filter((st) => st.kind === 'main' || st.kind === 'road');
+      for (let i = 0; i < Math.min(6, mains.length * 2); i++) {
+        const st = mains[i % mains.length];
+        const k = Math.min(st.pts.length - 2, 2 + Math.floor(rng() * Math.max(1, st.pts.length - 4)));
+        if (k < 1) continue;
+        const [ax, az] = st.pts[k];
+        const [bx, bz] = st.pts[k + 1];
+        const len = Math.hypot(bx - ax, bz - az) || 1;
+        const off = st.w / 2 + 1.4;
+        const x = ax - ((bz - az) / len) * off;
+        const z = az + ((bx - ax) / len) * off;
+        if (this.colliders.resolve(x, z, 1.4).x !== x) continue;
+        this.fleet.add({ ...pick(), x, z, yaw: Math.atan2(bx - ax, bz - az), mode: 'parked' });
+      }
+    }
+    // Traffic
+    const n = Math.min(L.modern ? 22 : 8, lines.length * 3);
+    for (let i = 0; i < n; i++) {
+      const line = lines[i % lines.length];
+      const v = this.fleet.add({ ...pick(), x: line.pts[0].x, z: line.pts[0].z, yaw: 0, mode: 'traffic', line, s: rng() * 400, dir: rng() < 0.5 ? 1 : -1 });
+      if (!v) continue;
+      v.route.s = Math.min(v.route.total, v.route.s);
+      const p = this.fleet.routePose(v);
+      Object.assign(v.car, { x: p.x, z: p.z, yaw: p.yaw });
+    }
+    this.fleet.build();
+  }
+
+  /** The drivable model of a fleet vehicle, as its own mesh while the player drives it. */
+  vehicleObject(v) {
+    const mesh = new THREE.Mesh(v.res.lods[0] || v.res.lods[1], this.builder.material);
     mesh.matrixAutoUpdate = false;
-    mesh.matrix.copy(res.fix);
+    mesh.matrix.copy(v.res.fix);
     mesh.castShadow = true;
     const holder = new THREE.Group();
     holder.add(mesh);
+    this.scene.add(holder);
     return holder;
   }
 
-  spawnCar() {
-    const L = this.layout;
-    const name = L.modern ? 'm_car' : 'caravan';
-    if (!this.car) {
-      const obj = this.vehicleMesh(name);
-      if (!obj) return;
-      this.scene.add(obj);
-      this.car = { obj, x: 0, y: 0, z: 0, yaw: 0, speed: 0, steer: 0, top: L.modern ? 17 : 7.5, accel: L.modern ? 9 : 4 };
-    }
-    // Park on the street nearest to where you are
-    const from = this.view === 'walk' || this.player ? this.player : { x: 0, z: 0 };
-    let best = null;
-    let bestD = Infinity;
-    for (const line of L.driveGraph.length ? L.driveGraph : L.walkGraph) {
-      for (let i = 0; i + 1 < line.pts.length; i++) {
-        const a = line.pts[i];
-        const d = Math.hypot(a.x - from.x, a.z - from.z);
-        if (d < bestD) {
-          bestD = d;
-          best = { a, b: line.pts[i + 1] };
-        }
+  /** Door the player uses: the driver's side (left of the car). */
+  doorOf(car, spec) {
+    const lx = Math.cos(car.yaw);
+    const lz = -Math.sin(car.yaw);
+    const side = spec.width / 2 + 0.7;
+    const back = -spec.length * 0.08;
+    return { x: car.x + lx * side + Math.sin(car.yaw) * back, z: car.z + lz * side + Math.cos(car.yaw) * back };
+  }
+
+  /** Walk to the door, open it (and pull the driver out of traffic), get in. */
+  enterVehicle(v) {
+    if (this.transfer || !v) return;
+    const jack = v.mode === 'traffic';
+    if (jack) v.stopped = 1e9;
+    const p = this.player;
+    this.transfer = { kind: 'enter', v, t0: this.ctx.engine.time, dur: jack ? 1.5 : 0.95, from: { x: p.x, z: p.z }, jack, fled: false };
+    this.hud.setPrompt(null);
+  }
+
+  exitVehicle() {
+    const d = this.drive;
+    if (this.transfer || !d || d.car.speed > 4) return;
+    this.transfer = { kind: 'exit', v: d.v, t0: this.ctx.engine.time, dur: 0.7 };
+    this.hud.setPrompt(null);
+  }
+
+  updateTransfer(t) {
+    const tr = this.transfer;
+    const raw = Math.min(1, (t - tr.t0) / tr.dur);
+    const p = this.player;
+    if (tr.kind === 'enter') {
+      const car = tr.v.car;
+      const door = this.doorOf(car, tr.v.spec);
+      if (tr.jack && !tr.fled && raw > 0.3) {
+        // The driver jumps out and runs for it
+        tr.fled = true;
+        this.walkers.flee(door.x, door.z, p.x, p.z);
       }
-    }
-    const c = this.car;
-    if (best) {
-      c.x = best.a.x;
-      c.z = best.a.z;
-      c.yaw = Math.atan2(best.b.x - best.a.x, best.b.z - best.a.z);
+      const walkT = Math.min(1, raw / 0.55);
+      p.x = THREE.MathUtils.lerp(tr.from.x, door.x, walkT);
+      p.z = THREE.MathUtils.lerp(tr.from.z, door.z, walkT);
+      p.y = this.builder.groundAt(p.x, p.z);
+      p.speed = walkT < 1 ? 2.3 : 0;
+      const face = walkT < 1 ? Math.atan2(door.x - tr.from.x, door.z - tr.from.z) : car.yaw;
+      let dy = face - p.yaw;
+      dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+      p.yaw += dy * 0.25;
+      if (raw >= 1) {
+        this.transfer = null;
+        this.fleet.hide(tr.v);
+        tr.v.mode = 'player';
+        const drive = new Car(tr.v.spec, { x: car.x, z: car.z, yaw: car.yaw });
+        drive.y = car.y;
+        this.drive = { v: tr.v, car: drive, obj: this.vehicleObject(tr.v) };
+        drive.apply(this.drive.obj);
+        this.chase.reset(drive);
+        this.setView('drive', { fromTransfer: true });
+      }
     } else {
-      c.x = from.x + 3;
-      c.z = from.z;
-    }
-    c.speed = 0;
-    c.y = this.builder.groundAt(c.x, c.z);
-  }
-
-  /** Cars (modern) or caravans (fantasy) driving the bigger streets. */
-  buildTraffic(rng) {
-    const L = this.layout;
-    const name = L.modern ? 'm_car' : 'caravan';
-    const lines = L.driveGraph.filter((l) => l.pts.length >= 2);
-    const kinds = Math.max(1, this.builder.variants(name));
-    const n = Math.min(L.modern ? 24 : 10, lines.length * 3);
-    if (!lines.length || !this.builder.resolve(name)) return;
-    // One instanced mesh per model variant; each car keeps its slot in one of them
-    this.traffic = { groups: [], cars: [] };
-    for (let v = 0; v < kinds; v++) {
-      const res = this.builder.resolve(name, v);
-      const count = Math.ceil((n - v) / kinds);
-      if (!res || count <= 0) continue;
-      const inst = new THREE.InstancedMesh(res.lods[1], this.builder.material, count);
-      inst.frustumCulled = false;
-      inst.castShadow = this.ctx.engine.quality.settings.shadows;
-      inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      this.scene.add(inst);
-      this.traffic.groups.push({ inst, res, used: 0 });
-    }
-    for (let i = 0; i < n; i++) {
-      const line = lines[i % lines.length];
-      const lens = [0];
-      for (let k = 1; k < line.pts.length; k++) lens.push(lens[k - 1] + Math.hypot(line.pts[k].x - line.pts[k - 1].x, line.pts[k].z - line.pts[k - 1].z));
-      const g = this.traffic.groups[i % this.traffic.groups.length];
-      this.traffic.cars.push({ g, slot: g.used++, line, lens, total: lens[lens.length - 1], s: rng() * lens[lens.length - 1], dir: rng() < 0.5 ? 1 : -1, speed: L.modern ? 7 + rng() * 5 : 2.2 + rng() * 1.2, lane: L.modern ? line.w / 4 : 0 });
-    }
-  }
-
-  updateTraffic(dt) {
-    const tr = this.traffic;
-    if (!tr) return;
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    const e = new THREE.Euler();
-    const one = new THREE.Vector3(1, 1, 1);
-    tr.cars.forEach((car, i) => {
-      if (car.total < 5) return;
-      car.s += car.speed * car.dir * dt;
-      if (car.s > car.total || car.s < 0) {
-        car.dir *= -1;
-        car.s = THREE.MathUtils.clamp(car.s, 0, car.total);
+      const d = this.drive;
+      d.car.vx *= 0.8;
+      d.car.vz *= 0.8;
+      if (raw >= 1) {
+        this.transfer = null;
+        const door = this.doorOf(d.car, d.v.spec);
+        this.scene.remove(d.obj);
+        this.fleet.park(d.v, d.car);
+        this.drive = null;
+        this.placePlayer(door.x, door.z);
+        p.yaw = d.car.yaw + Math.PI / 2;
+        this.setView('walk', { fromTransfer: true });
       }
-      let k = 1;
-      while (k < car.lens.length - 1 && car.lens[k] < car.s) k++;
-      const a = car.line.pts[k - 1];
-      const b = car.line.pts[k];
-      const t = (car.s - car.lens[k - 1]) / (car.lens[k] - car.lens[k - 1] || 1);
-      const dx = (b.x - a.x) * car.dir;
-      const dz = (b.z - a.z) * car.dir;
-      const len = Math.hypot(dx, dz) || 1;
-      const x = a.x + (b.x - a.x) * t - (dz / len) * car.lane;
-      const z = a.z + (b.z - a.z) * t + (dx / len) * car.lane;
-      m.compose(_v.set(x, this.builder.groundAt(x, z), z), q.setFromEuler(e.set(0, Math.atan2(dx, dz), 0)), one).multiply(car.g.res.fix);
-      car.g.inst.setMatrixAt(car.slot, m);
-    });
-    tr.groups.forEach((g) => (g.inst.instanceMatrix.needsUpdate = true));
+    }
+  }
+
+  /** What the world looks like to the player's car. */
+  driveWorld() {
+    const exclude = this.drive?.v;
+    return {
+      heightAt: (x, z) => this.builder.groundAt(x, z),
+      resolve: (x, z, r) => {
+        const a = this.colliders.resolve(x, z, r);
+        return this.fleet.resolve(a.x, a.z, r, exclude);
+      },
+      blocked: (x, z) => this.builder.heightAt(x, z) < WATER_Y - 0.3 || Math.hypot(x, z) > DIORAMA_R - 8
+    };
+  }
+
+  updateDrive(dt) {
+    const d = this.drive;
+    if (!d) return;
+    const i = this.intent();
+    const input = this.transfer ? { forward: 0, right: 0 } : { forward: i.forward, right: i.right, handbrake: this.keys.has(' '), boost: i.run };
+    d.car.update(dt, input, this.driveWorld());
+    d.car.apply(d.obj);
+    this.driven = (this.driven || 0) + d.car.speed * dt;
   }
 
   // ------------------------------------------------------------------ input
@@ -401,6 +474,7 @@ export default class TownMode {
       else if (k === '2') this.setView('walk');
       else if (k === '3') this.setView('drive');
       else if (k === 'escape' && this.view !== 'diorama') this.setView('diorama');
+      else if (k === 'e' || k === 'f') this.interact();
       else if (k === ' ' && this.view === 'walk' && this.player.jump === 0 && !this.player.vy) this.player.vy = 4.4;
       this.keys.add(k);
       if (this.view !== 'diorama' && [' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
@@ -413,6 +487,7 @@ export default class TownMode {
     };
     this.onPointerMove = (e) => {
       if (!this.drag || e.pointerId !== this.drag.id) return;
+      if (this.view === 'drive') this.chase.look(e.clientX - this.drag.x, e.clientY - this.drag.y, this.ctx.engine.time);
       this.follow.yaw -= (e.clientX - this.drag.x) * 0.006;
       this.follow.pitch = THREE.MathUtils.clamp(this.follow.pitch + (e.clientY - this.drag.y) * 0.004, -0.15, 1.2);
       this.drag.x = e.clientX;
@@ -481,7 +556,8 @@ export default class TownMode {
     } else p.speed = THREE.MathUtils.lerp(p.speed, 0, 1 - Math.exp(-dt * 10));
     const nx = p.x + Math.sin(p.yaw) * p.speed * dt;
     const nz = p.z + Math.cos(p.yaw) * p.speed * dt;
-    const r = this.colliders.resolve(nx, nz, 0.42);
+    const r0 = this.colliders.resolve(nx, nz, 0.42);
+    const r = this.fleet.resolve(r0.x, r0.z, 0.42);
     // No wading into deep water, no stepping off the edge of the table
     const g = this.builder.heightAt(r.x, r.z);
     // Too steep to climb: stop at the foot of cliffs (going down is fine)
@@ -500,40 +576,32 @@ export default class TownMode {
     p.phase += dt * (p.speed * 3.1 + 0.6);
   }
 
-  updateDrive(dt) {
-    const c = this.car;
-    if (!c) return;
-    const i = this.intent();
-    const accel = i.forward > 0 ? c.accel * (i.run ? 1.5 : 1) : i.forward < 0 ? (c.speed > 0.5 ? -c.accel * 2.2 : -c.accel * 0.6) : -Math.sign(c.speed) * 2.2;
-    c.speed = THREE.MathUtils.clamp(c.speed + accel * dt, -c.top * 0.35, c.top * (i.run ? 1.35 : 1));
-    if (!i.forward && Math.abs(c.speed) < 0.3) c.speed = 0;
-    c.steer = THREE.MathUtils.lerp(c.steer, -i.right, 1 - Math.exp(-dt * 6));
-    c.yaw += c.steer * dt * THREE.MathUtils.clamp(c.speed / 6, -1, 1) * 1.6;
-    const nx = c.x + Math.sin(c.yaw) * c.speed * dt;
-    const nz = c.z + Math.cos(c.yaw) * c.speed * dt;
-    const r = this.colliders.resolve(nx, nz, 1.4);
-    const bumped = Math.hypot(r.x - nx, r.z - nz) > 0.05;
-    const g = this.builder.heightAt(r.x, r.z);
-    if (g > WATER_Y - 0.2 && Math.hypot(r.x, r.z) < DIORAMA_R - 8) {
-      c.x = r.x;
-      c.z = r.z;
-    } else c.speed *= -0.3;
-    if (bumped) c.speed *= 0.7;
-    // Sit on the ground and pitch with the slope
-    const y = this.builder.groundAt(c.x, c.z);
-    const ahead = this.builder.groundAt(c.x + Math.sin(c.yaw) * 1.8, c.z + Math.cos(c.yaw) * 1.8);
-    const pitch = Math.atan2(ahead - y, 1.8);
-    c.y = y;
-    c.obj.position.set(c.x, y, c.z);
-    c.obj.rotation.set(-pitch, c.yaw, 0, 'YXZ');
+  /** E / F: get in or out of a vehicle. */
+  interact() {
+    if (this.transfer) return;
+    if (this.view === 'walk') {
+      const v = this.fleet.nearest(this.player.x, this.player.z, 3.2);
+      if (v) this.enterVehicle(v);
+    } else if (this.view === 'drive') this.exitVehicle();
+  }
+
+  updatePrompt() {
+    let text = null;
+    if (!this.transfer) {
+      if (this.view === 'walk') {
+        const v = this.fleet.nearest(this.player.x, this.player.z, 3.2);
+        if (v) text = v.mode === 'traffic' ? 'Ambil kendaraan' : 'Masuk kendaraan';
+      } else if (this.view === 'drive' && this.drive && this.drive.car.speed < 4) text = 'Turun';
+    }
+    this.hud.setPrompt(text, 'E');
   }
 
   updateFollowCamera(dt, target, height) {
     const f = this.follow;
     const t = this.ctx.engine.time;
     // Swing back behind the direction of travel when the player lets go of the camera
-    const heading = this.view === 'drive' ? this.car.yaw : this.player.yaw;
-    const moving = this.view === 'drive' ? Math.abs(this.car.speed) > 1 : this.player.speed > 0.5;
+    const heading = this.player.yaw;
+    const moving = this.player.speed > 0.5;
     if (moving && t - (this.followInput || 0) > 2) {
       let d = heading + Math.PI - f.yaw;
       d = Math.atan2(Math.sin(d), Math.cos(d));
@@ -571,19 +639,27 @@ export default class TownMode {
       if (r > DIORAMA_R * 0.85) tg.multiplyScalar((DIORAMA_R * 0.85) / r);
       tg.y = Math.max(0, this.builder.groundAt(tg.x, tg.z));
     } else if (this.view === 'walk') {
-      this.updateWalk(dt);
+      if (this.transfer) this.updateTransfer(t);
+      else this.updateWalk(dt);
       this.updateFollowCamera(dt, this.player, 1.6);
+      this.updatePrompt();
     } else if (this.view === 'drive') {
+      if (this.transfer) this.updateTransfer(t);
       this.updateDrive(dt);
-      this.updateFollowCamera(dt, this.car, 2.2);
+      if (this.drive) this.chase.update(dt, t, this.drive.car, (x, z) => this.builder.groundAt(x, z), { dist: 5 + this.drive.v.spec.length * 0.55, height: 1.4 + this.drive.v.spec.length * 0.12 });
+      this.updatePrompt();
     }
+    const obstacles = [this.player];
+    if (this.drive) obstacles.push(this.drive.car);
+    this.fleet.update(dt, obstacles);
     const cam = this.camera.position;
     const near = (x, z) => Math.hypot(x - cam.x, z - cam.z) < 260 + cam.y;
-    this.walkers.update(dt, near);
+    // People jump out of the way of a car coming at them
+    const threat = this.drive && this.drive.car.speed > 5 ? this.drive.car : null;
+    this.walkers.update(dt, near, threat);
     if (this.avatar) this.player.visible = false;
     this.crowd.pose();
     this.updateAvatar(dt);
-    this.updateTraffic(dt);
     this.builder.update(this.camera);
     this.updateEnvironment(dt, t);
     this.hud.update(this);
@@ -614,7 +690,7 @@ export default class TownMode {
     fog.far = THREE.MathUtils.lerp(camDist + DIORAMA_R * 1.05, 3900, this.fogBlend);
 
     // Shadow box on the point of interest, snapped to whole shadow texels so it does not shimmer
-    const focus = this.view === 'walk' ? this.player : this.view === 'drive' && this.car ? this.car : this.orbit.target;
+    const focus = this.view === 'walk' ? this.player : this.view === 'drive' && this.drive ? this.drive.car : this.orbit.target;
     const sun = this.sun;
     const target = _v.set(focus.x, 0, focus.z);
     if (this.shadowExt) {
@@ -665,7 +741,8 @@ export default class TownMode {
     this.crowd.dispose();
     this.avatar?.materials.forEach((m) => m.dispose());
     this.avatar?.mixer.stopAllAction();
-    this.traffic?.groups.forEach((g) => g.inst.dispose());
+    this.fleet.dispose();
+    if (this.drive) this.scene.remove(this.drive.obj);
     this.sky.dispose();
     this.ctx.engine.renderer.shadowMap.enabled = false;
     this.sun.shadow.map?.dispose();

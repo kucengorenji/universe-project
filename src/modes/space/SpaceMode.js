@@ -67,6 +67,7 @@ export default class SpaceMode {
     this.ship = new Ship(lods);
     this.ownsShipGeometry = !pack?.ship_frigate;
     this.scene.add(this.ship.object);
+    this.buildStreaks();
 
     this.ui = document.getElementById('spaceUi');
     this.hud = new SpaceHud(this.ui, {
@@ -267,6 +268,7 @@ export default class SpaceMode {
       forward: axis('w', 's') || axis('arrowup', 'arrowdown'),
       turn: axis('d', 'a') || axis('arrowright', 'arrowleft'),
       lift: axis('r', 'f'),
+      strafe: axis('e', 'q'),
       boost: k.has('shift')
     };
   }
@@ -337,12 +339,18 @@ export default class SpaceMode {
       }
       this.chasePose(pos, look);
     }
-    const k = 1 - Math.exp(-dt * (this.mapMode ? 3 : 7));
+    // A little lag behind the ship: speed and turns show in the framing
+    const k = 1 - Math.exp(-dt * (this.mapMode ? 3 : 5.5));
     cam.position.lerp(pos, k);
-    this.rig.look.lerp(look, k);
+    this.rig.look.lerp(look, 1 - Math.exp(-dt * 9));
     cam.up.copy(UP);
     cam.lookAt(this.rig.look);
-    const fov = this.mapMode ? 45 : 55;
+    const boost = this.ship.boostFx || 0;
+    if (boost > 0.05 && !this.mapMode) {
+      cam.position.x += (Math.random() - 0.5) * boost * 0.05;
+      cam.position.y += (Math.random() - 0.5) * boost * 0.05;
+    }
+    const fov = this.mapMode ? 45 : 55 + Math.min(14, this.ship.speed * 0.18) + boost * 6;
     if (Math.abs(cam.fov - fov) > 0.05) {
       cam.fov += (fov - cam.fov) * k;
       cam.updateProjectionMatrix();
@@ -498,6 +506,46 @@ export default class SpaceMode {
     }
   }
 
+  /** Speed lines: short streaks in a box around the camera, stretched along the ship's motion. */
+  buildStreaks() {
+    const n = 260;
+    const pos = new Float32Array(n * 6);
+    this.streakPts = [];
+    for (let i = 0; i < n; i++) this.streakPts.push(new THREE.Vector3((Math.random() - 0.5) * 60, (Math.random() - 0.5) * 36, (Math.random() - 0.5) * 60));
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    this.streaks = new THREE.LineSegments(
+      g,
+      new THREE.LineBasicMaterial({ color: 0xcfe6ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    this.streaks.frustumCulled = false;
+    this.scene.add(this.streaks);
+  }
+
+  updateStreaks() {
+    const v = this.ship.velocity;
+    const speed = this.ship.speed;
+    const on = this.mapMode || this.sequence ? 0 : THREE.MathUtils.smoothstep(speed, 20, 55);
+    this.streaks.material.opacity = on * 0.55;
+    this.streaks.visible = on > 0.01;
+    if (!this.streaks.visible) return;
+    const c = this.camera.position;
+    const dir = _v2.copy(v).normalize();
+    const len = Math.min(6, speed * 0.07);
+    const arr = this.streaks.geometry.attributes.position.array;
+    this.streakPts.forEach((p, i) => {
+      // Points live in world space; wrap them around the camera
+      for (const ax of ['x', 'y', 'z']) {
+        const half = ax === 'y' ? 18 : 30;
+        const d = p[ax] - c[ax];
+        if (d > half) p[ax] -= half * 2;
+        else if (d < -half) p[ax] += half * 2;
+      }
+      arr.set([p.x, p.y, p.z, p.x - dir.x * len, p.y - dir.y * len, p.z - dir.z * len], i * 6);
+    });
+    this.streaks.geometry.attributes.position.needsUpdate = true;
+  }
+
   // ------------------------------------------------------------------ loop
 
   update(dt, t) {
@@ -519,6 +567,7 @@ export default class SpaceMode {
       this.keepClear();
       this.updateCamera(dt, t);
     }
+    this.updateStreaks();
     const { width, height } = this.ctx.engine.size;
     this.hud.updateLabels(this.camera, width, height, this.bodies, this.ship.position, this.mapMode);
     this.hud.setStatus(this.ship.speed, this.statusText());
@@ -566,6 +615,8 @@ export default class SpaceMode {
     stars.geometry.dispose();
     stars.material.dispose();
     if (this.ownsShipGeometry) this.ship.geometries.forEach((g) => g.dispose());
+    this.streaks.geometry.dispose();
+    this.streaks.material.dispose();
     this.ship.dispose();
     this.scene = null;
   }

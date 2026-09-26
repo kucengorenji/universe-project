@@ -53,7 +53,7 @@ export class SpaceHud {
       <div class="flight-hud" role="status">
         <span class="flight-hud__speed"><span data-speed>0</span><small>u/dtk</small></span>
         <span class="flight-hud__state" data-state>Terbang bebas</span>
-        <span class="flight-hud__keys">W/S dorong, A/D belok, R/F naik turun, Shift boost. Klik planet untuk autopilot.</span>
+        <span class="flight-hud__keys">W/S dorong, A/D belok, Q/E geser, R/F naik turun, Shift boost. Klik planet untuk autopilot.</span>
       </div>
       <div class="space-labels" aria-hidden="true">${system.planets
         .map((p) => `<button type="button" tabindex="-1" class="space-label" data-planet="${p.index}"><span class="space-label__name">${escapeHtml(p.name)}</span></button>`)

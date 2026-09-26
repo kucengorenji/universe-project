@@ -737,7 +737,7 @@ export class TownBuilder {
       bucket.get(res.key).items.push({ m: m.clone(), tint: item.tint ?? 1 });
     };
     for (const b of L.buildings) add(b, { scale: b.w / ((CATALOG[b.asset]?.size) || b.w) });
-    for (const p of L.props) add(p);
+    for (const p of L.props) if (!p.parked) add(p); // parked vehicles belong to the fleet (enterable)
     for (const t of L.trees) {
       // Layout sizes are canopy widths; trees in the catalogue are fitted by height (~5.5 m canopy)
       const spec = CATALOG[t.asset];

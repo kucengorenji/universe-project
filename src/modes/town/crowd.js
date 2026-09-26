@@ -168,10 +168,62 @@ export class Pedestrians {
     }
   }
 
-  update(dt, near) {
+  /** The walker nearest (x, z) becomes a startled driver: appears there and runs away from (fromX, fromZ). */
+  flee(x, z, fromX, fromZ) {
+    const people = this.crowd.people;
+    let best = null;
+    let bestD = Infinity;
+    for (const w of this.walkers) {
+      if (w.flee) continue;
+      const p = people[w.i];
+      const d = Math.hypot(p.x - x, p.z - z);
+      if (d < bestD) {
+        bestD = d;
+        best = w;
+      }
+    }
+    if (!best) return;
+    const p = people[best.i];
+    p.x = x;
+    p.z = z;
+    let ax = x - fromX;
+    let az = z - fromZ;
+    const l = Math.hypot(ax, az) || 1;
+    ax /= l;
+    az /= l;
+    best.flee = { t: 5, vx: ax * 5.2, vz: az * 5.2 };
+  }
+
+  update(dt, near, threat = null) {
     const people = this.crowd.people;
     for (const w of this.walkers) {
       const p = people[w.i];
+      if (w.flee) {
+        // Running off: straight away from trouble, then back to the usual stroll
+        const f = w.flee;
+        f.t -= dt;
+        p.x += f.vx * dt;
+        p.z += f.vz * dt;
+        p.y = this.heightAt(p.x, p.z);
+        p.yaw = Math.atan2(f.vx, f.vz);
+        p.speed = Math.hypot(f.vx, f.vz);
+        p.phase += dt * p.speed * 3.1;
+        p.visible = near ? near(p.x, p.z) : true;
+        if (f.t <= 0) w.flee = null;
+        continue;
+      }
+      if (threat) {
+        const dx = p.x - threat.x;
+        const dz = p.z - threat.z;
+        const ahead = (dx * threat.vx + dz * threat.vz) / (threat.speed || 1);
+        const side = Math.abs(dx * threat.vz - dz * threat.vx) / (threat.speed || 1);
+        if (ahead > 0 && ahead < 9 && side < 2.6) {
+          // Dive sideways, away from the car's path
+          const s = Math.sign(dx * threat.vz - dz * threat.vx) || 1;
+          w.flee = { t: 0.8, vx: (threat.vz / threat.speed) * s * 6, vz: (-threat.vx / threat.speed) * s * 6 };
+          continue;
+        }
+      }
       if (w.pause > 0) {
         w.pause -= dt;
         p.speed = 0;

@@ -132,7 +132,7 @@ export class Ship {
   update(dt, input) {
     let turnRate = 0;
     const ap = this.autopilot;
-    const manual = input.forward || input.turn || input.lift;
+    const manual = input.forward || input.turn || input.lift || input.strafe;
     if (ap && manual) this.cancelAutopilot();
 
     if (this.autopilot) {
@@ -157,20 +157,31 @@ export class Ship {
         ap.onArrive?.();
       }
     } else {
-      const boost = input.boost ? 1 : 0;
+      const boost = input.boost && input.forward > 0 ? 1 : 0;
       const top = boost ? this.boostSpeed : this.maxSpeed;
-      this.yaw -= input.turn * dt * 1.7;
-      turnRate = -input.turn;
+      // Turning has momentum: the nose swings in and settles
+      this.yawVel = THREE.MathUtils.lerp(this.yawVel || 0, -input.turn * 1.5, 1 - Math.exp(-dt * 3.5));
+      this.yaw += this.yawVel * dt;
+      turnRate = this.yawVel;
       this.pitch = THREE.MathUtils.lerp(this.pitch, input.lift * 0.35, 1 - Math.exp(-dt * 3));
       const fwd = this.forward(_v);
-      const accel = boost ? 60 : 24;
+      const right = _v2.set(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
+      const accel = boost ? 70 : 26;
       this.velocity.addScaledVector(fwd, input.forward * accel * dt);
+      this.velocity.addScaledVector(right, (input.strafe || 0) * 14 * dt);
       this.velocity.y += input.lift * 12 * dt;
-      // Arcade drag: settles when you let go, caps top speed
-      this.velocity.multiplyScalar(Math.exp(-dt * (input.forward ? 0.35 : 1.1)));
-      if (this.velocity.length() > top) this.velocity.setLength(THREE.MathUtils.lerp(this.velocity.length(), top, 1 - Math.exp(-dt * 3)));
+      // Flight assist: the sideways part of the velocity bleeds into the nose direction,
+      // so turns carve with a little drift instead of sliding forever
+      const along = this.velocity.dot(fwd);
+      const lateral = this.velocity.clone().addScaledVector(fwd, -along);
+      this.velocity.addScaledVector(lateral, -(1 - Math.exp(-dt * 1.6)));
+      this.velocity.addScaledVector(fwd, lateral.length() * (1 - Math.exp(-dt * 1.6)) * Math.sign(along || 1) * 0.6);
+      this.velocity.multiplyScalar(Math.exp(-dt * (input.forward ? 0.1 : 0.45)));
+      if (this.velocity.length() > top) this.velocity.setLength(THREE.MathUtils.lerp(this.velocity.length(), top, 1 - Math.exp(-dt * 2.5)));
       this.thrust = THREE.MathUtils.lerp(this.thrust, Math.max(0, input.forward) * (boost ? 1 : 0.6), 1 - Math.exp(-dt * 5));
+      turnRate += (input.strafe || 0) * -0.6;
     }
+    this.boostFx = THREE.MathUtils.lerp(this.boostFx || 0, input.boost && input.forward > 0 && !this.autopilot ? 1 : 0, 1 - Math.exp(-dt * 3));
 
     this.position.addScaledVector(this.velocity, dt);
     this.bank = THREE.MathUtils.lerp(this.bank, THREE.MathUtils.clamp(turnRate * 0.9, -0.6, 0.6), 1 - Math.exp(-dt * 3));

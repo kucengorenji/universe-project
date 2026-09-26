@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { PlanetRenderer } from '../../render/planetRenderer.js';
 import { MenuController } from '../../ui/menuController.js';
 import { typeOf } from '../../world/planetTypes.js';
+import { PlanetRover } from '../../render/planetRover.js';
+import { BIOMES } from '../../map/mapGenerator.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
 // created once and kept: leaving the planet suspends them (every per-planet
@@ -45,10 +47,22 @@ export default class PlanetMode {
     this.pr = this.state.pr;
     this.ui = document.getElementById('planetUi');
     this.orbitBtn = document.getElementById('orbitBtn');
+    this.roverBtn = document.getElementById('roverBtn');
     this.onOrbit = () => ctx.director.go({ mode: 'space', planet: this.index });
+    this.onRover = () => (this.rover ? this.stopRover() : this.startRover());
+    this.keys = new Set();
     this.onKey = (e) => {
-      if (e.key === 'o' && !e.target.matches?.('input, textarea')) this.onOrbit();
+      if (e.target.matches?.('input, textarea')) return;
+      const k = e.key.toLowerCase();
+      if (this.rover) {
+        if (k === 'escape') this.stopRover();
+        else this.keys.add(k);
+        if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
+        return;
+      }
+      if (k === 'o') this.onOrbit();
     };
+    this.onKeyUp = (e) => this.keys.delete(e.key.toLowerCase());
   }
 
   enter() {
@@ -66,7 +80,9 @@ export default class PlanetMode {
     this.ui.hidden = false;
     document.body.dataset.mode = 'planet';
     this.orbitBtn.addEventListener('click', this.onOrbit);
+    this.roverBtn.addEventListener('click', this.onRover);
     window.addEventListener('keydown', this.onKey);
+    window.addEventListener('keyup', this.onKeyUp);
 
     // Arrival: from orbit the globe is framed from the side we flew in on;
     // from a town the camera starts over that city.
@@ -121,6 +137,106 @@ export default class PlanetMode {
 
   update(dt, t, ts) {
     this.pr.update(ts);
+    if (this.rover) {
+      const k = this.keys;
+      const axis = (a, b, c, d) => (k.has(a) || k.has(c) ? 1 : 0) - (k.has(b) || k.has(d) ? 1 : 0);
+      this.rover.update(Math.min(dt, 0.05), {
+        forward: axis('w', 's', 'arrowup', 'arrowdown'),
+        right: axis('d', 'a', 'arrowright', 'arrowleft'),
+        handbrake: k.has(' '),
+        boost: k.has('shift')
+      });
+      this.rover.updateCamera(dt, this.pr.camera);
+      this.pr.updateNearPlane();
+    }
+  }
+
+  /** Where to put the rover: the focused city, else land under the middle of the screen. */
+  roverStart() {
+    const pr = this.pr;
+    const tiles = pr.hexasphere.tiles;
+    const q = pr.planetGroup.quaternion.clone().invert();
+    let dir = pr.focus ? pr.focus.dir.clone() : pr.camera.position.clone().applyQuaternion(q).normalize();
+    // Walk outward to the nearest dry, non-mountain tile
+    let tile = pr.locate(dir, tiles[0]);
+    const ok = (t) => t.biome !== BIOMES.MOUNTAIN && pr.isDry(t.center, t, 0.1);
+    if (!ok(tile)) {
+      const seen = new Set([tile.id]);
+      let frontier = [tile];
+      let found = null;
+      while (frontier.length && !found) {
+        const next = [];
+        for (const t of frontier) {
+          for (const id of t.neighbors) {
+            if (seen.has(id)) continue;
+            seen.add(id);
+            const nb = pr.hexasphere.tileMap.get(id);
+            if (ok(nb)) {
+              found = nb;
+              break;
+            }
+            next.push(nb);
+          }
+          if (found) break;
+        }
+        frontier = next;
+      }
+      if (!found) return null;
+      tile = found;
+    }
+    dir = tile.center.clone();
+    const road = tile.neighbors.map((id) => pr.hexasphere.tileMap.get(id)).find(ok);
+    const heading = road ? road.center.clone().sub(dir) : new THREE.Vector3(0, 1, 0);
+    return { dir, heading };
+  }
+
+  startRover() {
+    const pr = this.pr;
+    if (pr.pov) pr.exitPov(true, false);
+    // Start from the focused city (or the land in the middle of the screen)
+    const start = this.roverStart();
+    if (!start) return;
+    if (pr.focus) pr.clearFocus({ animate: false });
+    pr.camTween = null;
+    pr.autoRotate = false;
+    pr.driving = true;
+    pr.controls.enabled = false;
+    // Surface visuals: sky instead of space, like riding along
+    pr.camera.far = 120;
+    pr.camera.updateProjectionMatrix();
+    pr.scene.background = new THREE.Color(pr.look?.sky ?? 0x9dc0e3);
+    pr.atmosphere.visible = false;
+    pr.stars.visible = false;
+    pr.nebula.visible = false;
+    if (pr.onTileHover) pr.onTileHover(null);
+    this.rover = new PlanetRover(pr, start.dir, start.heading);
+    this.roverBtn.textContent = 'Keluar rover';
+    document.body.classList.add('is-rover');
+  }
+
+  stopRover() {
+    const pr = this.pr;
+    const dir = this.rover.pos.clone();
+    this.rover.dispose();
+    this.rover = null;
+    this.keys.clear();
+    pr.driving = false;
+    pr.camera.far = 400;
+    pr.camera.fov = 42;
+    pr.camera.updateProjectionMatrix();
+    pr.scene.background = null;
+    pr.atmosphere.visible = pr.hasAir !== false;
+    pr.stars.visible = true;
+    pr.nebula.visible = true;
+    // Back up to orbit over the spot where we parked
+    const { width, height } = this.ctx.engine.size;
+    const halfV = THREE.MathUtils.degToRad(pr.camera.fov / 2);
+    const halfH = Math.atan(Math.tan(halfV) * (width / height));
+    const d = pr.radius / Math.sin(0.91 * Math.min(halfV, halfH));
+    const worldDir = dir.applyQuaternion(pr.planetGroup.quaternion);
+    pr.flyTo({ pos: worldDir.multiplyScalar(d), target: new THREE.Vector3(), up: UP.clone() }, true, () => pr.releaseFocusControls());
+    this.roverBtn.textContent = 'Nyetir rover';
+    document.body.classList.remove('is-rover');
   }
 
   render() {
@@ -139,6 +255,8 @@ export default class PlanetMode {
 
   depart(route) {
     const pr = this.pr;
+    if (this.rover) this.stopRover();
+    pr.camTween = null;
     if (pr.pov) pr.exitPov(true, false);
     if (route.mode === 'town') {
       // Dive toward the city until the clouds close in
@@ -177,8 +295,16 @@ export default class PlanetMode {
   }
 
   exit() {
+    if (this.rover) {
+      this.rover.dispose();
+      this.rover = null;
+      this.pr.driving = false;
+      document.body.classList.remove('is-rover');
+    }
     this.orbitBtn.removeEventListener('click', this.onOrbit);
+    this.roverBtn.removeEventListener('click', this.onRover);
     window.removeEventListener('keydown', this.onKey);
+    window.removeEventListener('keyup', this.onKeyUp);
     this.pr.suspend();
     this.ui.hidden = true;
     document.body.classList.remove('has-card', 'is-pov');

@@ -1613,3 +1613,47 @@ body[data-mode='town'] #canvas-container {
     display: none;
   }
 }
+
+.interact-prompt {
+  position: fixed;
+  left: 50%;
+  bottom: 84px;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+  padding: var(--space-5) var(--space-15) var(--space-5) var(--space-5);
+  border: var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--color-concrete);
+  font-size: var(--text-body-lg);
+  letter-spacing: -0.01em;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.interact-prompt[hidden] {
+  display: none;
+}
+
+.interact-prompt kbd {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-iron);
+  color: var(--color-concrete);
+  font-family: var(--font-display);
+  font-size: var(--text-body-lg);
+}
+
+/* Driving the rover: the globe UI steps aside */
+body.is-rover .wall-type,
+body.is-rover .hint,
+body.is-rover .info-card,
+body.is-rover .topbar .cta-pair,
+body.is-rover #povEnterBtn,
+body.is-rover #screenshotBtn {
+  display: none;
+}

@@ -33,6 +33,7 @@ export class SpaceHud {
           <span class="wordmark">Sistem ${escapeHtml(system.name)}<span class="wordmark__meta">Bintang ${escapeHtml(star.label)}</span></span>
         </div>
         <div class="topbar__right">
+          <button class="pill pill--ghost" type="button" data-act="hangar">Hangar</button>
           <button class="pill pill--ghost" type="button" data-act="map" aria-pressed="false">Peta sistem</button>
           <button class="pill pill--ghost" type="button" data-act="quality">Grafis: <span data-quality></span></button>
         </div>
@@ -79,7 +80,9 @@ export class SpaceHud {
         const order = ['auto', 'high', 'medium', 'low'];
         quality.setPreset(order[(order.indexOf(quality.preset) + 1) % order.length]);
         this.el.qualityLabel.textContent = QUALITY_LABEL[quality.preset];
-      } else if (act === 'fly') this.on.fly(Number(b.dataset.index));
+      } else if (act === 'hangar') this.on.hangar();
+      else if (act === 'ship') this.on.pickShip(b.dataset.ship);
+      else if (act === 'fly') this.on.fly(Number(b.dataset.index));
       else if (act === 'land') this.on.land(Number(b.dataset.index));
       else if (act === 'close') this.on.select(null);
     };
@@ -127,6 +130,37 @@ export class SpaceHud {
         <dl class="facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
         ${p.landable ? '' : '<p class="target-card__note">Tidak ada permukaan padat. Bisa diorbit, tidak bisa didarati.</p>'}
         <div class="info-card__actions">${land}${fly}</div>
+      </div>`;
+    card.hidden = false;
+  }
+
+  /** Hangar card: the three ships with their handling, pick one to fly. */
+  showHangar(ships, current) {
+    const card = this.el.card;
+    this.selected = null;
+    this.el.rows.forEach((r) => r.classList.remove('is-selected'));
+    const bar = (v, max) => `<span class="stat-bar"><i style="transform:scaleX(${Math.min(1, v / max).toFixed(2)})"></i></span>`;
+    card.innerHTML = `
+      <header class="target-card__head" style="--swatch:#d9d9d9">
+        <span class="card-block__eyebrow">Hangar</span>
+        <h2 class="card-block__title">Pilih kapal</h2>
+        <button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="close" aria-label="Tutup"><span></span><span></span></button>
+      </header>
+      <div class="info-card__content">
+        ${Object.entries(ships)
+          .map(
+            ([key, s]) => `<section class="hangar-ship${key === current ? ' is-current' : ''}">
+              <h3 class="hangar-ship__name">${escapeHtml(s.name)}${key === current ? ' <small>dipakai</small>' : ''}</h3>
+              <p class="target-card__note">${escapeHtml(s.desc)}</p>
+              <dl class="facts facts--bars">
+                <dt>Kecepatan</dt><dd>${bar(s.maxSpeed, 30)}</dd>
+                <dt>Boost</dt><dd>${bar(s.boostSpeed, 95)}</dd>
+                <dt>Kelincahan</dt><dd>${bar(s.turn, 2.2)}</dd>
+              </dl>
+              ${key === current ? '' : `<button type="button" class="pill" data-act="ship" data-ship="${key}">Terbangkan</button>`}
+            </section>`
+          )
+          .join('')}
       </div>`;
     card.hidden = false;
   }

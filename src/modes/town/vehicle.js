@@ -14,8 +14,12 @@ export const VEHICLE_TYPES = {
   van: { top: 20, accel: 7.5, brake: 17, reverse: 5, grip: 6, drift: 1.1, wheelbase: 3.1, steer: 0.52, length: 5.0, width: 2.0, mass: 1.5 },
   bus: { top: 16, accel: 4.5, brake: 12, reverse: 3, grip: 5.5, drift: 1.0, wheelbase: 6.2, steer: 0.5, length: 11, width: 2.6, mass: 3 },
   sport: { top: 38, accel: 16, brake: 28, reverse: 8, grip: 9, drift: 1.8, wheelbase: 2.6, steer: 0.6, length: 4.4, width: 1.95, mass: 0.9 },
-  cart: { top: 8, accel: 3.2, brake: 7, reverse: 2, grip: 9, drift: 3, wheelbase: 2.2, steer: 0.7, length: 4.0, width: 1.8, mass: 1.2 },
-  caravan: { top: 7, accel: 2.8, brake: 6, reverse: 1.8, grip: 9, drift: 3, wheelbase: 2.6, steer: 0.62, length: 5.0, width: 2.0, mass: 1.6 }
+  pickup: { top: 25, accel: 10, brake: 19, reverse: 6, grip: 6.8, drift: 1.3, wheelbase: 3.2, steer: 0.55, length: 5.3, width: 1.95, mass: 1.3 },
+  police: { top: 34, accel: 14, brake: 26, reverse: 8, grip: 8.5, drift: 1.6, wheelbase: 2.7, steer: 0.62, length: 4.5, width: 1.85, mass: 1 },
+  // Horse-drawn: the horses walk ahead of the body, so the collision length covers them
+  cart: { top: 8, accel: 3.2, brake: 7, reverse: 2, grip: 9, drift: 3, wheelbase: 2.2, steer: 0.7, length: 6.2, width: 1.8, mass: 1.2 },
+  wagon: { top: 7.5, accel: 3, brake: 6.5, reverse: 1.8, grip: 9, drift: 3, wheelbase: 2.6, steer: 0.62, length: 7.0, width: 2.1, mass: 1.5 },
+  caravan: { top: 7, accel: 2.8, brake: 6, reverse: 1.8, grip: 9, drift: 3, wheelbase: 2.6, steer: 0.62, length: 7.2, width: 2.2, mass: 1.6 }
 };
 
 const _v = new THREE.Vector3();

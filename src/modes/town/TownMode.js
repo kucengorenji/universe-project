@@ -13,17 +13,45 @@ import { TownHud } from './hud.js';
 import { TownSky } from './sky.js';
 import { Fleet } from './fleet.js';
 import { Car, ChaseCamera } from './vehicle.js';
+import { RiggedPeople, makePerson, animatePerson } from './peopleRig.js';
 
 // Which models drive which physics. Modern towns get cars, fantasy towns carts and caravans.
 const VEHICLES = {
   modern: [
-    { asset: 'm_car', variant: 0, type: 'sedan' },
-    { asset: 'm_car', variant: 1, type: 'hatch' },
-    { asset: 'm_car', variant: 2, type: 'suv' },
-    { asset: 'm_car', variant: 3, type: 'sedan' },
-    { asset: 'm_car', variant: 4, type: 'sport' }
+    { asset: 'v_sedan', variant: 0, type: 'sedan' },
+    { asset: 'v_sedan', variant: 1, type: 'sedan' },
+    { asset: 'v_sedan', variant: 2, type: 'sedan' },
+    { asset: 'v_sedan', variant: 3, type: 'sedan' },
+    { asset: 'v_hatch', variant: 0, type: 'hatch' },
+    { asset: 'v_hatch', variant: 1, type: 'hatch' },
+    { asset: 'v_hatch', variant: 2, type: 'hatch' },
+    { asset: 'v_suv', variant: 0, type: 'suv' },
+    { asset: 'v_suv', variant: 1, type: 'suv' },
+    { asset: 'v_van', variant: 0, type: 'van' },
+    { asset: 'v_van', variant: 1, type: 'van' },
+    { asset: 'v_pickup', variant: 0, type: 'pickup' },
+    { asset: 'v_pickup', variant: 1, type: 'pickup' },
+    { asset: 'v_taxi', variant: 0, type: 'sedan' },
+    { asset: 'v_police', variant: 0, type: 'police' },
+    { asset: 'v_sport', variant: 0, type: 'sport' },
+    { asset: 'v_sport', variant: 1, type: 'sport' }
   ],
-  fantasy: [{ asset: 'caravan', variant: 0, type: 'caravan' }]
+  // Buses only run the main avenues
+  bus: [
+    { asset: 'v_bus', variant: 0, type: 'bus' },
+    { asset: 'v_bus', variant: 1, type: 'bus' }
+  ],
+  fantasy: [
+    { asset: 'v_cart', variant: 0, type: 'cart' },
+    { asset: 'v_cart', variant: 1, type: 'cart' },
+    { asset: 'v_wagon', variant: 0, type: 'wagon' },
+    { asset: 'v_caravan', variant: 0, type: 'caravan' }
+  ],
+  // Fallback models from the planet pack when the town pack is missing
+  legacy: {
+    modern: [{ asset: 'm_car', variant: 0, type: 'sedan' }],
+    fantasy: [{ asset: 'caravan', variant: 0, type: 'caravan' }]
+  }
 };
 const STREET_FOV = 55;
 
@@ -128,7 +156,11 @@ export default class TownMode {
     this.player = this.crowd.people[0];
     const sp = this.layout.spawn;
     Object.assign(this.player, { x: sp.x, z: sp.z, y: this.builder.groundAt(sp.x, sp.z), yaw: sp.yaw, vy: 0, visible: false });
-    if (character) this.setupAvatar(character, city.owner === 'system' ? 0xfa4d43 : 0x027b49, shadows);
+    if (character) {
+      this.setupAvatar(character, city.owner === 'system' ? 'explorer_red' : 'explorer', shadows);
+      const rigCount = { high: 24, medium: 14, low: 6 }[quality.tier];
+      this.rigged = new RiggedPeople(character, this.scene, { count: rigCount, modern: this.layout.modern, shadows, seed: this.layout.seed % 7 });
+    }
     this.buildFleet(rng, shadows);
     this.chase = new ChaseCamera(this.camera);
     this.chase.baseFov = STREET_FOV;
@@ -248,57 +280,26 @@ export default class TownMode {
     }
   }
 
-  /** Rigged explorer from the Blender pack (idle / walk / run), toon-shaded like the rest. */
-  setupAvatar(gltf, shirt, shadows) {
-    const root = cloneSkinned(gltf.scene);
-    const materials = [];
-    root.traverse((o) => {
-      if (!o.isMesh) return;
-      const src = o.material;
-      const color = src.name === 'M_shirt' ? new THREE.Color(shirt) : src.color.clone();
-      o.material = new THREE.MeshToonMaterial({ color, gradientMap: getToonGradient() });
-      materials.push(o.material);
-      o.castShadow = shadows;
-      o.frustumCulled = false;
-    });
-    const mixer = new THREE.AnimationMixer(root);
-    const actions = {};
-    for (const clip of gltf.animations) {
-      const a = mixer.clipAction(clip);
-      a.play();
-      a.setEffectiveWeight(0);
-      actions[clip.name] = a;
-    }
-    if (!actions.idle || !actions.walk || !actions.run) {
-      materials.forEach((m) => m.dispose());
-      return;
-    }
-    root.visible = false;
-    this.scene.add(root);
-    this.avatar = { root, mixer, actions, materials };
+  /** The player's rigged explorer (faction outfit), toon-shaded like the rest. */
+  setupAvatar(gltf, outfit, shadows) {
+    const person = makePerson(gltf, outfit, { shadows }) || makePerson(gltf, 'explorer', { shadows });
+    if (!person) return;
+    person.root.visible = false;
+    this.scene.add(person.root);
+    this.avatar = person;
   }
 
   updateAvatar(dt) {
     const av = this.avatar;
     if (!av) return;
     const p = this.player;
-    const on = this.view === 'walk';
-    av.root.visible = on;
+    const on = this.view === 'walk' || this.pose;
+    av.root.visible = !!on;
     this.crowd.people[0].visible = false; // the rig stands in for person #0
     if (!on) return;
-    av.root.position.set(p.x, p.y + p.jump, p.z);
+    av.root.position.set(p.x, p.y + p.jump + (this.pose?.lift || 0), p.z);
     av.root.rotation.y = p.yaw;
-    const sm = THREE.MathUtils.smoothstep;
-    const idle = 1 - sm(p.speed, 0.1, 0.9);
-    const run = sm(p.speed, 2.8, 4.6);
-    const walk = Math.max(0, 1 - idle - run);
-    av.actions.idle.setEffectiveWeight(idle);
-    av.actions.walk.setEffectiveWeight(walk);
-    av.actions.run.setEffectiveWeight(run);
-    // Match the cycle to the ground speed so the feet do not skate
-    av.actions.walk.setEffectiveTimeScale(Math.max(0.4, p.speed / 1.5));
-    av.actions.run.setEffectiveTimeScale(Math.max(0.6, p.speed / 5.2));
-    av.mixer.update(dt);
+    animatePerson(av, dt, p.speed, { pose: this.pose?.name || null });
   }
 
   placePlayer(x, z) {
@@ -313,7 +314,10 @@ export default class TownMode {
   /** Parked cars along the streets and traffic on the bigger ones; every one of them can be taken. */
   buildFleet(rng, shadows) {
     const L = this.layout;
-    const kinds = VEHICLES[L.modern ? 'modern' : 'fantasy'].filter((k) => this.builder.resolve(k.asset, k.variant));
+    const style = L.modern ? 'modern' : 'fantasy';
+    let kinds = VEHICLES[style].filter((k) => this.builder.townPack[`${k.asset}_v${k.variant}`] || this.builder.townPack[k.asset]);
+    if (!kinds.length) kinds = VEHICLES.legacy[style].filter((k) => this.builder.resolve(k.asset, k.variant));
+    const buses = L.modern ? VEHICLES.bus.filter((k) => this.builder.townPack[`${k.asset}_v${k.variant}`]) : [];
     this.fleet = new Fleet(this.builder, this.scene, { shadows });
     if (!kinds.length) return;
     const pick = () => kinds[Math.floor(rng() * kinds.length)];
@@ -342,9 +346,13 @@ export default class TownMode {
     }
     // Traffic
     const n = Math.min(L.modern ? 22 : 8, lines.length * 3);
+    const mains = lines.filter((l) => l.w >= 18);
     for (let i = 0; i < n; i++) {
-      const line = lines[i % lines.length];
-      const v = this.fleet.add({ ...pick(), x: line.pts[0].x, z: line.pts[0].z, yaw: 0, mode: 'traffic', line, s: rng() * 400, dir: rng() < 0.5 ? 1 : -1 });
+      // Every sixth vehicle on a main avenue is a bus
+      const bus = buses.length && mains.length && i % 6 === 0;
+      const line = bus ? mains[i % mains.length] : lines[i % lines.length];
+      const kind = bus ? buses[i % buses.length] : pick();
+      const v = this.fleet.add({ ...kind, x: line.pts[0].x, z: line.pts[0].z, yaw: 0, mode: 'traffic', line, s: rng() * 400, dir: rng() < 0.5 ? 1 : -1 });
       if (!v) continue;
       v.route.s = Math.min(v.route.total, v.route.s);
       const p = this.fleet.routePose(v);
@@ -657,6 +665,7 @@ export default class TownMode {
     // People jump out of the way of a car coming at them
     const threat = this.drive && this.drive.car.speed > 5 ? this.drive.car : null;
     this.walkers.update(dt, near, threat);
+    this.rigged?.update(dt, this.walkers.walkers, this.crowd.people, this.camera.position);
     if (this.avatar) this.player.visible = false;
     this.crowd.pose();
     this.updateAvatar(dt);
@@ -739,8 +748,8 @@ export default class TownMode {
     this.ui.hidden = true;
     this.builder.dispose();
     this.crowd.dispose();
-    this.avatar?.materials.forEach((m) => m.dispose());
     this.avatar?.mixer.stopAllAction();
+    this.rigged?.dispose();
     this.fleet.dispose();
     if (this.drive) this.scene.remove(this.drive.obj);
     this.sky.dispose();

@@ -80,8 +80,43 @@ function glowSprite(color, size) {
   return s;
 }
 
+/** Player ships in the hangar: model, handling and where the engines glow (model space, nose +Z). */
+export const SHIPS = {
+  frigate: {
+    asset: 'ship_frigate',
+    name: 'Fregat',
+    desc: 'Seimbang: cukup cepat, cukup lincah, nyaman untuk jelajah jauh.',
+    maxSpeed: 22,
+    boostSpeed: 70,
+    accel: 26,
+    turn: 1.5,
+    engines: [[-0.33, 0, -0.8, 0.5], [0.33, 0, -0.8, 0.5]]
+  },
+  interceptor: {
+    asset: 'ship_interceptor',
+    name: 'Interceptor',
+    desc: 'Ringan dan gesit. Boost paling kencang, belok paling tajam.',
+    maxSpeed: 30,
+    boostSpeed: 95,
+    accel: 36,
+    turn: 2.2,
+    engines: [[0, 0.03, -0.74, 0.55]]
+  },
+  freighter: {
+    asset: 'ship_freighter',
+    name: 'Freighter',
+    desc: 'Berat dan stabil. Lambat berbelok, tapi tenang dan tangguh.',
+    maxSpeed: 17,
+    boostSpeed: 48,
+    accel: 15,
+    turn: 0.95,
+    engines: [[-0.2, 0, -1.36, 0.4], [0.2, 0, -1.36, 0.4], [-0.2, 0.2, -1.36, 0.4], [0.2, 0.2, -1.36, 0.4]]
+  }
+};
+
 export class Ship {
-  constructor(lods) {
+  constructor(lods, cfg = SHIPS.frigate) {
+    this.cfg = cfg;
     this.object = new THREE.Group();
     this.material = createToonMaterial({ vertexColors: true });
     // lods: [geo LOD0, LOD1, LOD2] (any may be missing) -> THREE.LOD
@@ -91,9 +126,10 @@ export class Ship {
     levels.forEach((g, i) => lod.addLevel(new THREE.Mesh(g, this.material), dists[i]));
     this.model = lod;
     this.object.add(lod);
-    this.engines = [-0.28, 0.28].map((x) => {
-      const s = glowSprite(0x9fe8ff, 0.5);
-      s.position.set(x, -0.02, -0.9);
+    this.engines = cfg.engines.map(([x, y, z, size]) => {
+      const s = glowSprite(0x9fe8ff, size);
+      s.position.set(x, y, z);
+      s.userData.size = size;
       this.object.add(s);
       return s;
     });
@@ -105,8 +141,8 @@ export class Ship {
     this.bank = 0;
     this.thrust = 0;
     this.autopilot = null; // { target: fn -> Vector3, velocity: fn -> Vector3, done, arrived }
-    this.maxSpeed = 22;
-    this.boostSpeed = 70;
+    this.maxSpeed = cfg.maxSpeed;
+    this.boostSpeed = cfg.boostSpeed;
   }
 
   get position() {
@@ -160,13 +196,13 @@ export class Ship {
       const boost = input.boost && input.forward > 0 ? 1 : 0;
       const top = boost ? this.boostSpeed : this.maxSpeed;
       // Turning has momentum: the nose swings in and settles
-      this.yawVel = THREE.MathUtils.lerp(this.yawVel || 0, -input.turn * 1.5, 1 - Math.exp(-dt * 3.5));
+      this.yawVel = THREE.MathUtils.lerp(this.yawVel || 0, -input.turn * this.cfg.turn, 1 - Math.exp(-dt * 3.5));
       this.yaw += this.yawVel * dt;
       turnRate = this.yawVel;
       this.pitch = THREE.MathUtils.lerp(this.pitch, input.lift * 0.35, 1 - Math.exp(-dt * 3));
       const fwd = this.forward(_v);
       const right = _v2.set(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
-      const accel = boost ? 70 : 26;
+      const accel = this.cfg.accel * (boost ? 2.6 : 1);
       this.velocity.addScaledVector(fwd, input.forward * accel * dt);
       this.velocity.addScaledVector(right, (input.strafe || 0) * 14 * dt);
       this.velocity.y += input.lift * 12 * dt;
@@ -187,7 +223,7 @@ export class Ship {
     this.bank = THREE.MathUtils.lerp(this.bank, THREE.MathUtils.clamp(turnRate * 0.9, -0.6, 0.6), 1 - Math.exp(-dt * 3));
     this.object.quaternion.setFromEuler(new THREE.Euler(-this.pitch, this.yaw, this.bank, 'YXZ'));
     const flicker = 0.9 + Math.random() * 0.2;
-    this.engines.forEach((s) => s.scale.setScalar((0.25 + this.thrust * 0.75) * flicker * 0.7));
+    this.engines.forEach((s) => s.scale.setScalar((0.25 + this.thrust * 0.75) * flicker * s.userData.size * 1.4));
   }
 
   flyTo(opts) {

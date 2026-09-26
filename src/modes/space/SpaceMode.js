@@ -3,7 +3,8 @@ import { createSpaceBackdrop } from '../../render/spaceBackdrop.js';
 import { loadAssetPack } from '../../render/assetLibrary.js';
 import { bakeSystem } from './bake.js';
 import { SystemBodies } from './bodies.js';
-import { Ship, proceduralShipGeometry } from './ship.js';
+import { Ship, SHIPS, proceduralShipGeometry } from './ship.js';
+import { SpaceTraffic } from './traffic.js';
 import { SpaceHud } from './hud.js';
 
 // Star-system mode. The ship flies freely (WASD) or by autopilot (click a
@@ -15,6 +16,14 @@ let shipPack = null;
 const loadShipPack = () => (shipPack ||= loadAssetPack(SPACE_PACK_URL).catch(() => null));
 
 const UP = new THREE.Vector3(0, 1, 0);
+const SHIP_KEY = 'planet_globe_ship';
+const savedShip = () => {
+  try {
+    return SHIPS[localStorage.getItem(SHIP_KEY)] ? localStorage.getItem(SHIP_KEY) : 'frigate';
+  } catch {
+    return 'frigate';
+  }
+};
 const LAND_FOV = 42; // the planet view's field of view
 const _v = new THREE.Vector3();
 const _v2 = new THREE.Vector3();
@@ -63,10 +72,12 @@ export default class SpaceMode {
     this.scene.add(this.bodies.group);
     this.bodies.update(0, world.now(), engine.time);
 
-    const lods = pack?.ship_frigate ? [0, 1, 2].map((i) => pack.ship_frigate[i]) : [proceduralShipGeometry()];
-    this.ship = new Ship(lods);
-    this.ownsShipGeometry = !pack?.ship_frigate;
+    this.pack = pack;
+    this.shipKey = savedShip();
+    this.ship = this.makeShip(this.shipKey);
     this.scene.add(this.ship.object);
+    this.traffic = new SpaceTraffic(this, pack, { count: engine.quality.tier === 'low' ? 3 : 6, seed: this.system.seed });
+    this.scene.add(this.traffic.group);
     this.buildStreaks();
 
     this.ui = document.getElementById('spaceUi');
@@ -77,7 +88,9 @@ export default class SpaceMode {
         select: (i, { fly } = {}) => this.select(i, fly),
         fly: (i) => this.flyToPlanet(i),
         land: (i) => this.land(i),
-        toggleMap: () => this.setMap(!this.mapMode)
+        toggleMap: () => this.setMap(!this.mapMode),
+        hangar: () => this.hud.showHangar(SHIPS, this.shipKey),
+        pickShip: (key) => this.swapShip(key)
       }
     });
     this.ui.hidden = false;
@@ -92,6 +105,45 @@ export default class SpaceMode {
 
   arrived() {
     if (this.sequence?.kind === 'hold') this.sequence.release = true;
+  }
+
+  // ------------------------------------------------------------------ ships
+
+  makeShip(key) {
+    const cfg = SHIPS[key] || SHIPS.frigate;
+    const own = !this.pack?.[cfg.asset];
+    const lods = own ? [proceduralShipGeometry()] : [0, 1, 2].map((i) => this.pack[cfg.asset][i]);
+    const ship = new Ship(lods, cfg);
+    ship.ownsGeometry = own;
+    return ship;
+  }
+
+  /** Hangar: swap to another ship in place (same position, speed and autopilot). */
+  swapShip(key) {
+    if (this.sequence || key === this.shipKey) return;
+    const old = this.ship;
+    const ship = this.makeShip(key);
+    ship.position.copy(old.position);
+    ship.velocity.copy(old.velocity);
+    ship.yaw = old.yaw;
+    ship.pitch = old.pitch;
+    ship.autopilot = old.autopilot;
+    this.scene.remove(old.object);
+    this.disposeShip(old);
+    this.scene.add(ship.object);
+    this.ship = ship;
+    this.shipKey = key;
+    try {
+      localStorage.setItem(SHIP_KEY, key);
+    } catch {
+      /* optional */
+    }
+    this.hud.showHangar(SHIPS, key);
+  }
+
+  disposeShip(ship) {
+    if (ship.ownsGeometry) ship.geometries.forEach((g) => g.dispose());
+    ship.dispose();
   }
 
   // ------------------------------------------------------------------ planets
@@ -123,7 +175,10 @@ export default class SpaceMode {
 
   /** Target point that detours around the star instead of through it. */
   routeTo(target) {
-    const P = this.ship.position;
+    return this.routeToFrom(this.ship.position, target);
+  }
+
+  routeToFrom(P, target) {
     const d = _v2.copy(target).sub(P);
     const len2 = d.lengthSq() || 1;
     const t = THREE.MathUtils.clamp(-P.dot(d) / len2, 0, 1);
@@ -551,6 +606,7 @@ export default class SpaceMode {
   update(dt, t) {
     // Orbits and spins run on the world clock (shared with the town's time of day)
     this.bodies.update(dt, this.ctx.world.now(), t);
+    this.traffic.update(dt);
     const seq = this.sequence;
     if (seq?.kind === 'land') this.runLanding(seq, t);
     else if (seq?.kind === 'hold') {
@@ -614,10 +670,10 @@ export default class SpaceMode {
     nebula.material.dispose();
     stars.geometry.dispose();
     stars.material.dispose();
-    if (this.ownsShipGeometry) this.ship.geometries.forEach((g) => g.dispose());
+    this.disposeShip(this.ship);
+    this.traffic.dispose();
     this.streaks.geometry.dispose();
     this.streaks.material.dispose();
-    this.ship.dispose();
     this.scene = null;
   }
 }

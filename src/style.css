@@ -1657,3 +1657,47 @@ body.is-rover #povEnterBtn,
 body.is-rover #screenshotBtn {
   display: none;
 }
+
+.hangar-ship {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-bottom: var(--space-15);
+  border-bottom: 1px solid rgba(31, 31, 31, 0.2);
+}
+
+.hangar-ship:last-child {
+  border-bottom: none;
+}
+
+.hangar-ship__name {
+  font-size: var(--text-subheading);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.hangar-ship__name small {
+  font-family: var(--font-system);
+  font-size: var(--text-caption);
+  color: var(--color-the-green);
+}
+
+.facts--bars dd {
+  display: flex;
+  align-items: center;
+}
+
+.stat-bar {
+  display: block;
+  width: 140px;
+  height: 6px;
+  background: rgba(31, 31, 31, 0.15);
+}
+
+.stat-bar i {
+  display: block;
+  height: 100%;
+  background: var(--color-iron);
+  transform-origin: left;
+}

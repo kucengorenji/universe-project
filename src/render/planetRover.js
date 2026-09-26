@@ -30,9 +30,17 @@ export class PlanetRover {
     this.camLook = new THREE.Vector3();
 
     const tr = pr.tileRadius;
-    const geo = pr.assetLods.truck?.[0] || pr.assetLods.truck?.[1] || pr.assets?.truck;
-    this.mesh = new THREE.Mesh(geo, pr.propMaterial);
-    this.mesh.scale.setScalar(tr * 0.42);
+    const rover = pr.roverPack?.rover;
+    if (rover) {
+      // Six-wheeled rover from the space pack: nose +Z, so turn it to the planet-pack +X convention
+      this.mesh = new THREE.Mesh(rover[0] || rover[1], pr.propMaterial);
+      this.mesh.rotation.y = Math.PI / 2;
+      this.mesh.scale.setScalar(tr * 0.75);
+    } else {
+      const geo = pr.assetLods.truck?.[0] || pr.assetLods.truck?.[1] || pr.assets?.truck;
+      this.mesh = new THREE.Mesh(geo, pr.propMaterial);
+      this.mesh.scale.setScalar(tr * 0.42);
+    }
     this.mesh.castShadow = false;
     this.holder = new THREE.Group();
     this.holder.add(this.mesh);

@@ -514,7 +514,8 @@ function planFantasy(L, { rng, noise, at, inCity, edgeRadius, addStreet, streetC
     const z = Math.sin(a) * r;
     if (!inCity(x, z, 0.55) || streetClear(x, z, 16) < 5) continue;
     if (rng() < 0.4) {
-      if (place(L.trees, rng() < 0.7 ? 'tree_round' : 'tree_round_b', x, z, rng() * 6, 3.2, 3.2, { pad: 0.2, collide: false })) {
+      const garden = [['t_oak', 0], ['t_fruit', 0], ['t_fruit', 1], ['t_birch', 0]][Math.floor(rng() * 4)];
+      if (place(L.trees, garden[0], x, z, rng() * 6, 3.2, 3.2, { pad: 0.2, collide: false, variant: garden[1] })) {
         L.colliders.push({ type: 'circle', x, z, r: 0.7 });
       }
     } else place(L.buildings, 'f_house_small', x, z, rng() * 6, 6, 6);
@@ -665,7 +666,7 @@ function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim, 
         L.landmark = { asset: 'm_spire', x, z };
         for (const [du, dv] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
           const [tx, tz] = toWorld(i * pitch + du * inner * 0.38, j * pitch + dv * inner * 0.38);
-          place(L.trees, 'tree_round_b', tx, tz, rng() * 6, 4, 4, { collide: false });
+          place(L.trees, 't_cypress', tx, tz, rng() * 6, 4, 4, { collide: false, variant: 0 });
         }
         continue;
       }
@@ -673,7 +674,10 @@ function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim, 
         // Park block
         for (let t = 0; t < 14; t++) {
           const [tx, tz] = toWorld(i * pitch + (rng() - 0.5) * inner * 0.85, j * pitch + (rng() - 0.5) * inner * 0.85);
-          if (place(L.trees, rng() < 0.6 ? 'tree_round_b' : 'tree_round', tx, tz, rng() * 6, 4, 4, { collide: false })) L.colliders.push({ type: 'circle', x: tx, z: tz, r: 0.7 });
+          const park = [['t_oak', 0], ['t_oak', 1], ['t_birch', 0], ['t_fruit', 1], ['b_flowers', t % 3]][Math.floor(rng() * 5)];
+          if (place(L.trees, park[0], tx, tz, rng() * 6, park[0] === 'b_flowers' ? 1.8 : 4, park[0] === 'b_flowers' ? 1.8 : 4, { collide: false, variant: park[1] }) && park[0] !== 'b_flowers') {
+            L.colliders.push({ type: 'circle', x: tx, z: tz, r: 0.7 });
+          }
         }
         L.props.push({ asset: 'm_bench', x, z, yaw, w: 2, d: 0.8 });
         continue;
@@ -722,7 +726,7 @@ function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim, 
   }, { side: 5, rng });
   scatterAlong(L, ['main'], 14, (x, z) => {
     if (streetClear(x, z, 12) < 0.5) return;
-    if (place(L.trees, 'tree_round_b', x, z, rng() * 6, 3, 3, { collide: false, pad: 0.1 })) L.colliders.push({ type: 'circle', x, z, r: 0.6 });
+    if (place(L.trees, 't_birch', x, z, rng() * 6, 3, 3, { collide: false, pad: 0.1, variant: 0 })) L.colliders.push({ type: 'circle', x, z, r: 0.6 });
   }, { side: 7, rng });
   scatterAlong(L, ['grid'], 19, (x, z, yaw) => {
     if (rng() > 0.35) return;
@@ -776,48 +780,65 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
     if (streetClear(x, z, 20) < 3) continue;
     if (fields.some((f) => Math.hypot(f.x - x, f.z - z) < Math.max(f.w, f.d) * 0.55)) continue;
     const dens = noise.noise(x * 0.006, z * 0.006, 3) * 0.5 + 0.5;
+    // Stands of one kind of tree span many metres (smooth noise), autumn patches here and there
+    const stand = noise.noise(x * 0.008, z * 0.008, 9);
+    const autumn = noise.noise(x * 0.004, z * 0.004, 13) > 0.45;
     let asset = null;
+    let variant = 0;
     let size = 4;
+    const pick = (list) => list[Math.floor(rng() * list.length)];
     if (flora === 'none') {
       if (rng() < 0.18) {
-        asset = rng() < 0.5 ? 'rock' : 'rock_b';
+        asset = 'r_rock';
+        variant = Math.floor(rng() * 3);
         size = 2 + rng() * 5;
       }
     } else if (s.mountain > 0.5) {
       if (rng() < 0.25) {
-        asset = flora === 'snow' || s.mountain > 0.8 ? 'tree_pine_snow' : rng() < 0.6 ? 'tree_pine' : 'rock';
-        size = 4 + rng() * 3;
+        if (rng() < 0.2) {
+          asset = 'r_rock';
+          variant = Math.floor(rng() * 3);
+          size = 3 + rng() * 4;
+        } else {
+          asset = rng() < 0.5 ? 't_pine' : 't_spruce';
+          variant = flora === 'snow' || s.mountain > 0.8 ? 1 : 0;
+          size = 4 + rng() * 3;
+        }
       }
     } else if (s.forest > 0.45) {
       if (rng() < 0.55 + dens * 0.35) {
-        const pine = flora === 'snow' || Math.abs(noise.noise(x * 0.01, z * 0.01, 9)) > 0.25;
-        asset = flora === 'snow' ? 'tree_pine_snow' : flora === 'dry' ? (rng() < 0.5 ? 'tree_palm' : 'tree_acacia') : pine ? (rng() < 0.5 ? 'tree_pine' : 'tree_pine_b') : rng() < 0.6 ? 'tree_round' : 'tree_round_b';
         size = 4.5 + rng() * 2.5;
+        if (flora === 'snow') [asset, variant] = [rng() < 0.5 ? 't_pine' : 't_spruce', 1];
+        else if (flora === 'dry') [asset, variant] = pick([['t_acacia', 0], ['t_acacia', 1], ['t_palm', 0], ['t_cypress', 0]]);
+        else if (Math.abs(stand) > 0.25) [asset, variant] = [rng() < 0.5 ? 't_pine' : 't_spruce', 0];
+        else if (autumn) [asset, variant] = pick([['t_oak', 2], ['t_birch', 1], ['t_oak', 1]]);
+        else [asset, variant] = pick([['t_oak', 0], ['t_oak', 1], ['t_birch', 0], ['t_birch', 0], ['t_fruit', 0]]);
+      } else if (flora === 'green' && rng() < 0.2) {
+        [asset, variant, size] = ['b_bush', Math.floor(rng() * 2), 2];
       }
     } else if (s.desert > 0.5) {
       if (rng() < 0.05) {
         asset = rng() < 0.6 ? 'cactus' : 'rock_mesa';
         size = asset === 'cactus' ? 3 : 8 + rng() * 8;
-      }
+      } else if (rng() < 0.02) [asset, variant, size] = ['r_rock', Math.floor(rng() * 2), 2 + rng() * 3];
     } else if (s.tundra > 0.5) {
-      if (rng() < 0.06) asset = 'tree_pine_snow';
+      if (rng() < 0.06) [asset, variant] = ['t_spruce', 1];
     } else if (s.beach > 0.5) {
-      if (flora === 'green' && rng() < 0.03) asset = 'tree_palm';
+      if (flora === 'green' && rng() < 0.03) asset = 't_palm';
     } else {
-      // Open land: a scattering of trees, bushes and grass
+      // Open land: scattered trees, bushes, flower patches and the odd boulder
       const roll = rng();
-      if (roll < 0.035 + dens * 0.05) asset = flora === 'dry' ? 'tree_acacia' : flora === 'snow' ? 'tree_pine_snow' : rng() < 0.7 ? 'tree_round' : 'tree_pine';
-      else if (roll < 0.12 && flora !== 'snow') {
-        asset = rng() < 0.5 ? 'bush' : 'bush_b';
-        size = 2;
-      } else if (roll < 0.3 && flora === 'green') {
-        asset = 'grass_tuft';
-        size = 1.2;
-      }
+      if (roll < 0.035 + dens * 0.05) {
+        if (flora === 'dry') [asset, variant] = pick([['t_acacia', 0], ['t_cypress', 0]]);
+        else if (flora === 'snow') [asset, variant] = ['t_spruce', 1];
+        else [asset, variant] = pick([['t_oak', autumn ? 2 : 0], ['t_oak', 1], ['t_fruit', 0], ['t_fruit', 1], ['t_birch', 0], ['t_pine', 0]]);
+      } else if (roll < 0.12 && flora !== 'snow') [asset, variant, size] = ['b_bush', Math.floor(rng() * 2), 2];
+      else if (roll < 0.2 && flora === 'green') [asset, variant, size] = ['b_flowers', Math.floor(rng() * 3), 1.8];
+      else if (roll < 0.215) [asset, variant, size] = ['r_rock', Math.floor(rng() * 3), 1.5 + rng() * 2];
     }
     if (!asset) continue;
     const small = size < 2.5;
-    if (place(L.trees, asset, x, z, rng() * Math.PI * 2, size * 0.7, size * 0.7, { collide: false, pad: small ? -0.5 : 0.1 })) {
+    if (place(L.trees, asset, x, z, rng() * Math.PI * 2, size * 0.7, size * 0.7, { collide: false, pad: small ? -0.5 : 0.1, variant })) {
       if (!small) L.colliders.push({ type: 'circle', x, z, r: Math.min(1.2, size * 0.15) });
     }
   }

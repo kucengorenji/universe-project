@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PlanetRenderer } from '../../render/planetRenderer.js';
+import { loadAssetPack } from '../../render/assetLibrary.js';
 import { MenuController } from '../../ui/menuController.js';
 import { typeOf } from '../../world/planetTypes.js';
 import { PlanetRover } from '../../render/planetRover.js';
@@ -33,8 +34,12 @@ const UP = new THREE.Vector3(0, 1, 0);
 
 export default class PlanetMode {
   static prepare(ctx) {
-    // Asset packs are shared by all planets: start them early, once
-    return getShared(ctx).pr.assetsPromise;
+    // Asset packs are shared by all planets: start them early, once. The rover lives in the space pack.
+    const pr = getShared(ctx).pr;
+    const rover = loadAssetPack(`${import.meta.env.BASE_URL}models/space.glb`)
+      .then((pack) => (pr.roverPack = pack))
+      .catch(() => null);
+    return Promise.all([pr.assetsPromise, rover]);
   }
 
   constructor(ctx, route, arrival) {

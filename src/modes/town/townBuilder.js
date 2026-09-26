@@ -76,7 +76,19 @@ export const CATALOG = {
   rock: { fb: 'rock', fit: 'w', size: 3, natural: true },
   rock_b: { fb: 'rock_b', fit: 'w', size: 3, natural: true },
   rock_mesa: { fb: 'rock_mesa', fit: 'w', size: 14, natural: true },
-  cactus: { fb: 'cactus', fit: 'h', size: 4, natural: true }
+  cactus: { fb: 'cactus', fit: 'h', size: 4, natural: true },
+  // Town-pack nature (metre scale, several species with variants); fallbacks from the planet pack
+  t_oak: { fb: 'tree_round', fit: 'h', size: 9, natural: true },
+  t_birch: { fb: 'tree_round_b', fit: 'h', size: 9, natural: true },
+  t_pine: { fb: 'tree_pine', fit: 'h', size: 12, natural: true },
+  t_spruce: { fb: 'tree_pine_b', fit: 'h', size: 13, natural: true },
+  t_cypress: { fb: 'tree_pine_b', fit: 'h', size: 9, natural: true },
+  t_palm: { fb: 'tree_palm', fit: 'h', size: 9, natural: true },
+  t_fruit: { fb: 'tree_round', fit: 'h', size: 6, natural: true },
+  t_acacia: { fb: 'tree_acacia', fit: 'h', size: 7, natural: true },
+  b_bush: { fb: 'bush', fit: 'w', size: 2.2, natural: true },
+  b_flowers: { fb: 'grass_tuft', fit: 'w', size: 2, natural: true },
+  r_rock: { fb: 'rock', fit: 'w', size: 3, natural: true }
 };
 
 /**

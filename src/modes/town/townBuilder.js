@@ -32,8 +32,8 @@ export const CATALOG = {
   f_temple: { fb: 'temple', fit: 'w', size: 20 },
   f_castle: { fb: 'castle', fit: 'w', size: 46 },
   f_tower: { fb: 'tower', fit: 'h', size: 22 },
-  f_wall: { fb: 'wall_segment', fit: 'span', size: 8 },
-  f_palisade: { fb: 'fence_segment', fit: 'span', size: 3.2 },
+  f_wall: { fb: 'wall_segment', fit: 'span', size: 8, nativeSpan: 8 },
+  f_palisade: { fb: 'fence_segment', fit: 'span', size: 3.2, nativeSpan: 3 },
   f_wall_tower: { fb: 'wall_tower', fit: 'h', size: 13 },
   f_gate: { fb: 'wall_tower', fit: 'h', size: 15 },
   f_well: { proto: 'well' },
@@ -515,14 +515,29 @@ export class TownBuilder {
   // -------------------------------------------------------------- instances
 
   /** LOD geometries + the matrix that brings a pack model to town scale. */
-  resolve(name) {
-    if (this.fitCache.has(name)) return this.fitCache.get(name);
+  /** How many modelled variants the town pack has for an asset (<name>_v0, _v1, ...). */
+  variants(name) {
+    let n = 0;
+    while (this.townPack[`${name}_v${n}`]) n++;
+    return n;
+  }
+
+  resolve(name, variant = 0) {
+    const nv = this.variants(name);
+    const key = nv ? `${name}_v${variant % nv}` : name;
+    if (this.fitCache.has(key)) return this.fitCache.get(key);
     const spec = CATALOG[name] || { fb: name, fit: 'w', size: 4 };
     let lods = null;
     let native = false;
-    if (this.townPack[name]) {
-      lods = [0, 1, 2].map((l) => this.townPack[name][l]);
+    if (this.townPack[key]) {
+      lods = [0, 1, 2].map((l) => this.townPack[key][l]);
       native = true; // modelled in metres, front +Z, base at y=0
+      if (spec.nativeSpan) {
+        // Spans are modelled nativeSpan metres long along X: stretch per instance
+        const res = { lods, fix: new THREE.Matrix4(), span: true, spanLength: spec.nativeSpan, spanHeight: 1, native, spec, key };
+        this.fitCache.set(key, res);
+        return res;
+      }
     } else if (spec.proto) {
       if (!this.protoCache.has(spec.proto)) this.protoCache.set(spec.proto, this.track(protoGeometry(spec.proto)));
       const g = this.protoCache.get(spec.proto);
@@ -532,7 +547,7 @@ export class TownBuilder {
       lods = [0, 1, 2].map((l) => this.planetPack[spec.fb][l]);
     }
     if (!lods || !lods.some(Boolean)) {
-      this.fitCache.set(name, null);
+      this.fitCache.set(key, null);
       return null;
     }
     // Missing levels borrow the nearest one
@@ -553,14 +568,14 @@ export class TownBuilder {
       if (spec.fit === 'span') {
         // Spans are 1 unit long along X in the pack: X is scaled per instance
         fix.makeTranslation(0, -minY, 0);
-        this.fitCache.set(name, { lods, fix, span: true, spanHeight: spec.size / Math.max(size.y, 1e-3), spec });
-        return this.fitCache.get(name);
+        this.fitCache.set(key, { lods, fix, span: true, spanLength: 1, spanHeight: spec.size / Math.max(size.y, 1e-3), spec, key });
+        return this.fitCache.get(key);
       }
       // Scale to size, stand on y = 0, face +Z
       fix.makeScale(k, k, k).multiply(new THREE.Matrix4().makeTranslation(0, -minY, 0)).multiply(rot);
     }
-    const res = { lods, fix, spec };
-    this.fitCache.set(name, res);
+    const res = { lods, fix, spec, native, key };
+    this.fitCache.set(key, res);
     return res;
   }
 
@@ -588,20 +603,21 @@ export class TownBuilder {
     const v = new THREE.Vector3();
     const sc = new THREE.Vector3();
     const add = (item, { scale = 1, span = null, y = null, shadow = true } = {}) => {
-      const res = this.resolve(item.asset);
+      const res = this.resolve(item.asset, item.variant ?? 0);
       if (!res) return;
       const h = y ?? (item.floating ? WATER_Y : this.heightAt(item.x, item.z));
       q.setFromEuler(e.set(0, -item.yaw, 0));
       if (res.span) {
-        sc.set(span ?? item.len ?? 1, res.spanHeight, res.spanHeight);
+        sc.set((span ?? item.len ?? 1) / res.spanLength, res.spanHeight, res.spanHeight);
         m.compose(v.set(item.x, h, item.z), q, sc).multiply(res.fix);
       } else {
-        m.compose(v.set(item.x, h, item.z), q, sc.setScalar(scale)).multiply(res.fix);
+        // Town-pack models are authored at their layout size
+        m.compose(v.set(item.x, h, item.z), q, sc.setScalar(res.native && !res.spec.natural ? 1 : scale)).multiply(res.fix);
       }
       const k = chunkOf(item.x, item.z);
       const bucket = this.chunks[k].buckets;
-      if (!bucket.has(item.asset)) bucket.set(item.asset, { res, items: [], shadow });
-      bucket.get(item.asset).items.push({ m: m.clone(), tint: item.tint ?? 1 });
+      if (!bucket.has(res.key)) bucket.set(res.key, { res, items: [], shadow });
+      bucket.get(res.key).items.push({ m: m.clone(), tint: item.tint ?? 1 });
     };
     for (const b of L.buildings) add(b, { scale: b.w / ((CATALOG[b.asset]?.size) || b.w) });
     for (const p of L.props) add(p);

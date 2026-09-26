@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { loadAssetPack, ASSET_PACK_URL, ASSET_PACK_LOD0_URL } from '../../render/assetLibrary.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { loadAssetPack, ASSET_PACK_URL, ASSET_PACK_LOD0_URL, getToonGradient } from '../../render/assetLibrary.js';
 import { mulberry32 } from '../../map/mapGenerator.js';
 import { PLANET_TYPES } from '../../world/planetTypes.js';
 import { generateTownLayout, DIORAMA_R } from './townLayout.js';
@@ -14,11 +16,15 @@ import { TownHud } from './hud.js';
 // data, so the town you land in is the one you clicked on the globe.
 
 const TOWN_PACK_URL = `${import.meta.env.BASE_URL}models/town.glb`;
+const CHARACTER_URL = `${import.meta.env.BASE_URL}models/character.glb`;
+let characterGltf = null;
+const loadCharacter = () => (characterGltf ||= new GLTFLoader().loadAsync(CHARACTER_URL).catch(() => null));
 const packs = () =>
   Promise.all([
     loadAssetPack(ASSET_PACK_URL),
     loadAssetPack(ASSET_PACK_LOD0_URL).catch(() => null),
-    loadAssetPack(TOWN_PACK_URL).catch(() => null)
+    loadAssetPack(TOWN_PACK_URL).catch(() => null),
+    loadCharacter()
   ]);
 
 const SKY = {
@@ -108,7 +114,7 @@ export default class TownMode {
     const city = map.cities[this.route.city];
     this.planet = planet;
     this.city = city;
-    const [base, lod0, townPack] = await packs();
+    const [base, lod0, townPack, character] = await packs();
     const planetPack = {};
     for (const [name, lods] of Object.entries(base || {})) planetPack[name] = { ...lods };
     for (const [name, lods] of Object.entries(lod0 || {})) planetPack[name] = { ...(planetPack[name] || {}), ...lods };
@@ -163,6 +169,7 @@ export default class TownMode {
     this.player = this.crowd.people[0];
     const sp = this.layout.spawn;
     Object.assign(this.player, { x: sp.x, z: sp.z, y: this.builder.groundAt(sp.x, sp.z), yaw: sp.yaw, vy: 0, visible: false });
+    if (character) this.setupAvatar(character, city.owner === 'system' ? 0xfa4d43 : 0x027b49, shadows);
     this.buildTraffic(rng);
 
     // Controls
@@ -187,7 +194,6 @@ export default class TownMode {
     document.body.dataset.mode = 'town';
 
     // Arrival: high above the town (under the cloud cover), then swoop in
-    this.dioramaPose(this.poseA || (this.poseA = {}));
     this.camera.position.set(0.1, 950, 60);
     this.camera.lookAt(0, 0, 0);
     this.orbit.target.set(0, 0, 0);
@@ -203,10 +209,31 @@ export default class TownMode {
   dioramaPose(out) {
     const L = this.layout;
     const dist = Math.min(900, L.cityR * 2.3 + 110);
-    const az = 0.6 + (L.seed % 100) / 100;
     const polar = 0.92;
-    out.target = new THREE.Vector3(L.plaza?.x ?? 0, 0, L.plaza?.z ?? 0);
-    out.pos = new THREE.Vector3(Math.sin(polar) * Math.sin(az), Math.cos(polar), Math.sin(polar) * Math.cos(az)).multiplyScalar(dist).add(out.target);
+    const target = new THREE.Vector3(L.plaza?.x ?? 0, 0, L.plaza?.z ?? 0);
+    const dir = (az) => new THREE.Vector3(Math.sin(polar) * Math.sin(az), Math.cos(polar), Math.sin(polar) * Math.cos(az));
+    // Look from the side with the clearest line of sight (mountains block some views)
+    if (this.viewAz === undefined) {
+      let best = 0;
+      let bestScore = Infinity;
+      for (let k = 0; k < 12; k++) {
+        const az = (k / 12) * Math.PI * 2 + (L.seed % 100) / 200;
+        const d = dir(az);
+        let block = 0;
+        for (let t = 0.1; t <= 1; t += 0.05) {
+          const p = d.clone().multiplyScalar(dist * t).add(target);
+          block = Math.max(block, this.builder.groundAt(p.x, p.z) + 8 - p.y);
+        }
+        const score = block + (1 - Math.cos(az - 0.9)) * 2; // mild preference for a south-east view
+        if (score < bestScore) {
+          bestScore = score;
+          best = az;
+        }
+      }
+      this.viewAz = best;
+    }
+    out.target = target;
+    out.pos = dir(this.viewAz).multiplyScalar(dist).add(target);
     return out;
   }
 
@@ -221,7 +248,7 @@ export default class TownMode {
     this.view = v;
     this.hud.setView(v);
     this.orbit.enabled = v === 'diorama' && !this.tween;
-    this.player.visible = v === 'walk';
+    this.player.visible = v === 'walk' && !this.avatar;
     if (v === 'walk') {
       if (prev === 'drive' && this.car) {
         // Step out next to the car
@@ -247,6 +274,59 @@ export default class TownMode {
       to.pos.sub(new THREE.Vector3(this.layout.plaza?.x ?? 0, 0, this.layout.plaza?.z ?? 0)).multiplyScalar(0.55).add(to.target);
       this.flyCamera(to, 1.6, () => (this.orbit.enabled = true));
     }
+  }
+
+  /** Rigged explorer from the Blender pack (idle / walk / run), toon-shaded like the rest. */
+  setupAvatar(gltf, shirt, shadows) {
+    const root = cloneSkinned(gltf.scene);
+    const materials = [];
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      const src = o.material;
+      const color = src.name === 'M_shirt' ? new THREE.Color(shirt) : src.color.clone();
+      o.material = new THREE.MeshToonMaterial({ color, gradientMap: getToonGradient() });
+      materials.push(o.material);
+      o.castShadow = shadows;
+      o.frustumCulled = false;
+    });
+    const mixer = new THREE.AnimationMixer(root);
+    const actions = {};
+    for (const clip of gltf.animations) {
+      const a = mixer.clipAction(clip);
+      a.play();
+      a.setEffectiveWeight(0);
+      actions[clip.name] = a;
+    }
+    if (!actions.idle || !actions.walk || !actions.run) {
+      materials.forEach((m) => m.dispose());
+      return;
+    }
+    root.visible = false;
+    this.scene.add(root);
+    this.avatar = { root, mixer, actions, materials };
+  }
+
+  updateAvatar(dt) {
+    const av = this.avatar;
+    if (!av) return;
+    const p = this.player;
+    const on = this.view === 'walk';
+    av.root.visible = on;
+    this.crowd.people[0].visible = false; // the rig stands in for person #0
+    if (!on) return;
+    av.root.position.set(p.x, p.y + p.jump, p.z);
+    av.root.rotation.y = p.yaw;
+    const sm = THREE.MathUtils.smoothstep;
+    const idle = 1 - sm(p.speed, 0.1, 0.9);
+    const run = sm(p.speed, 2.8, 4.6);
+    const walk = Math.max(0, 1 - idle - run);
+    av.actions.idle.setEffectiveWeight(idle);
+    av.actions.walk.setEffectiveWeight(walk);
+    av.actions.run.setEffectiveWeight(run);
+    // Match the cycle to the ground speed so the feet do not skate
+    av.actions.walk.setEffectiveTimeScale(Math.max(0.4, p.speed / 1.5));
+    av.actions.run.setEffectiveTimeScale(Math.max(0.6, p.speed / 5.2));
+    av.mixer.update(dt);
   }
 
   placePlayer(x, z) {
@@ -310,25 +390,30 @@ export default class TownMode {
   buildTraffic(rng) {
     const L = this.layout;
     const name = L.modern ? 'm_car' : 'caravan';
-    const res = this.builder.resolve(name);
     const lines = L.driveGraph.filter((l) => l.pts.length >= 2);
-    if (!res || !lines.length) return;
+    const kinds = Math.max(1, this.builder.variants(name));
     const n = Math.min(L.modern ? 24 : 10, lines.length * 3);
-    const inst = new THREE.InstancedMesh(res.lods[1], this.builder.material, n);
-    inst.frustumCulled = false;
-    inst.castShadow = this.ctx.engine.quality.settings.shadows;
-    inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    const palette = [0xc4513a, 0x3f6fb0, 0xf2f2ee, 0x2f2f33, 0xe0b030, 0x3f8f5a];
-    const c = new THREE.Color();
-    this.traffic = { inst, res, cars: [] };
+    if (!lines.length || !this.builder.resolve(name)) return;
+    // One instanced mesh per model variant; each car keeps its slot in one of them
+    this.traffic = { groups: [], cars: [] };
+    for (let v = 0; v < kinds; v++) {
+      const res = this.builder.resolve(name, v);
+      const count = Math.ceil((n - v) / kinds);
+      if (!res || count <= 0) continue;
+      const inst = new THREE.InstancedMesh(res.lods[1], this.builder.material, count);
+      inst.frustumCulled = false;
+      inst.castShadow = this.ctx.engine.quality.settings.shadows;
+      inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.scene.add(inst);
+      this.traffic.groups.push({ inst, res, used: 0 });
+    }
     for (let i = 0; i < n; i++) {
       const line = lines[i % lines.length];
       const lens = [0];
       for (let k = 1; k < line.pts.length; k++) lens.push(lens[k - 1] + Math.hypot(line.pts[k].x - line.pts[k - 1].x, line.pts[k].z - line.pts[k - 1].z));
-      this.traffic.cars.push({ line, lens, total: lens[lens.length - 1], s: rng() * lens[lens.length - 1], dir: rng() < 0.5 ? 1 : -1, speed: L.modern ? 7 + rng() * 5 : 2.2 + rng() * 1.2, lane: L.modern ? line.w / 4 : 0 });
-      inst.setColorAt(i, L.modern ? c.set(palette[i % palette.length]) : c.setScalar(1));
+      const g = this.traffic.groups[i % this.traffic.groups.length];
+      this.traffic.cars.push({ g, slot: g.used++, line, lens, total: lens[lens.length - 1], s: rng() * lens[lens.length - 1], dir: rng() < 0.5 ? 1 : -1, speed: L.modern ? 7 + rng() * 5 : 2.2 + rng() * 1.2, lane: L.modern ? line.w / 4 : 0 });
     }
-    this.scene.add(inst);
   }
 
   updateTraffic(dt) {
@@ -355,10 +440,10 @@ export default class TownMode {
       const len = Math.hypot(dx, dz) || 1;
       const x = a.x + (b.x - a.x) * t - (dz / len) * car.lane;
       const z = a.z + (b.z - a.z) * t + (dx / len) * car.lane;
-      m.compose(_v.set(x, this.builder.groundAt(x, z), z), q.setFromEuler(e.set(0, Math.atan2(dx, dz), 0)), one).multiply(tr.res.fix);
-      tr.inst.setMatrixAt(i, m);
+      m.compose(_v.set(x, this.builder.groundAt(x, z), z), q.setFromEuler(e.set(0, Math.atan2(dx, dz), 0)), one).multiply(car.g.res.fix);
+      car.g.inst.setMatrixAt(car.slot, m);
     });
-    tr.inst.instanceMatrix.needsUpdate = true;
+    tr.groups.forEach((g) => (g.inst.instanceMatrix.needsUpdate = true));
   }
 
   // ------------------------------------------------------------------ input
@@ -549,7 +634,9 @@ export default class TownMode {
     const cam = this.camera.position;
     const near = (x, z) => Math.hypot(x - cam.x, z - cam.z) < 260 + cam.y;
     this.walkers.update(dt, near);
+    if (this.avatar) this.player.visible = false;
     this.crowd.pose();
+    this.updateAvatar(dt);
     this.updateTraffic(dt);
     this.builder.update(this.camera);
     if (this.clouds) this.clouds.rotation.y += dt * 0.004;
@@ -593,7 +680,9 @@ export default class TownMode {
     this.ui.hidden = true;
     this.builder.dispose();
     this.crowd.dispose();
-    this.traffic?.inst.dispose();
+    this.avatar?.materials.forEach((m) => m.dispose());
+    this.avatar?.mixer.stopAllAction();
+    this.traffic?.groups.forEach((g) => g.inst.dispose());
     this.sky.geometry.dispose();
     this.sky.material.dispose();
     this.clouds?.userData.dispose();

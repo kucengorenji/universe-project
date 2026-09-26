@@ -64,6 +64,8 @@ function bakeNode(root) {
     // Night glow: lamps and fires always, windows on some buildings (see town material)
     const glow = EMISSIVE[node.material?.name] ?? 0;
     geo.setAttribute('emissive', new THREE.BufferAttribute(new Float32Array(count).fill(glow), 1));
+    // Paint: surfaces the game tints per instance (vehicle bodies, horses)
+    geo.setAttribute('paint', new THREE.BufferAttribute(new Float32Array(count).fill(node.material?.name === 'M_paint' ? 1 : 0), 1));
     parts.push(geo);
   });
   if (!parts.length) return null;

@@ -16,45 +16,8 @@ import { Car, ChaseCamera } from './vehicle.js';
 import { RiggedPeople, makePerson, animatePerson } from './peopleRig.js';
 import { Interior, ENTERABLE } from './interior.js';
 import { Minimap, Speedo } from '../../ui/gauges.js';
+import { FLEETS, pickRecipe } from './vehicleKit.js';
 
-// Which models drive which physics. Modern towns get cars, fantasy towns carts and caravans.
-const VEHICLES = {
-  modern: [
-    { asset: 'v_sedan', variant: 0, type: 'sedan' },
-    { asset: 'v_sedan', variant: 1, type: 'sedan' },
-    { asset: 'v_sedan', variant: 2, type: 'sedan' },
-    { asset: 'v_sedan', variant: 3, type: 'sedan' },
-    { asset: 'v_hatch', variant: 0, type: 'hatch' },
-    { asset: 'v_hatch', variant: 1, type: 'hatch' },
-    { asset: 'v_hatch', variant: 2, type: 'hatch' },
-    { asset: 'v_suv', variant: 0, type: 'suv' },
-    { asset: 'v_suv', variant: 1, type: 'suv' },
-    { asset: 'v_van', variant: 0, type: 'van' },
-    { asset: 'v_van', variant: 1, type: 'van' },
-    { asset: 'v_pickup', variant: 0, type: 'pickup' },
-    { asset: 'v_pickup', variant: 1, type: 'pickup' },
-    { asset: 'v_taxi', variant: 0, type: 'sedan' },
-    { asset: 'v_police', variant: 0, type: 'police' },
-    { asset: 'v_sport', variant: 0, type: 'sport' },
-    { asset: 'v_sport', variant: 1, type: 'sport' }
-  ],
-  // Buses only run the main avenues
-  bus: [
-    { asset: 'v_bus', variant: 0, type: 'bus' },
-    { asset: 'v_bus', variant: 1, type: 'bus' }
-  ],
-  fantasy: [
-    { asset: 'v_cart', variant: 0, type: 'cart' },
-    { asset: 'v_cart', variant: 1, type: 'cart' },
-    { asset: 'v_wagon', variant: 0, type: 'wagon' },
-    { asset: 'v_caravan', variant: 0, type: 'caravan' }
-  ],
-  // Fallback models from the planet pack when the town pack is missing
-  legacy: {
-    modern: [{ asset: 'm_car', variant: 0, type: 'sedan' }],
-    fantasy: [{ asset: 'caravan', variant: 0, type: 'caravan' }]
-  }
-};
 const STREET_FOV = 55;
 
 // Inside a city: the diorama is the main view; from there you can walk the
@@ -541,13 +504,12 @@ export default class TownMode {
   /** Parked cars along the streets and traffic on the bigger ones; every one of them can be taken. */
   buildFleet(rng, shadows) {
     const L = this.layout;
+    // Modern towns get cars, fantasy towns carts and caravans, all assembled from the kit
     const style = L.modern ? 'modern' : 'fantasy';
-    let kinds = VEHICLES[style].filter((k) => this.builder.townPack[`${k.asset}_v${k.variant}`] || this.builder.townPack[k.asset]);
-    if (!kinds.length) kinds = VEHICLES.legacy[style].filter((k) => this.builder.resolve(k.asset, k.variant));
-    const buses = L.modern ? VEHICLES.bus.filter((k) => this.builder.townPack[`${k.asset}_v${k.variant}`]) : [];
-    this.fleet = new Fleet(this.builder, this.scene, { shadows });
-    if (!kinds.length) return;
-    const pick = () => kinds[Math.floor(rng() * kinds.length)];
+    this.fleet = new Fleet(this.builder, this.scene, { shadows, rng });
+    if (!this.builder.townPack.vb_sedan && !this.builder.townPack.vb_cart) return;
+    const pick = () => ({ type: pickRecipe(FLEETS[style], rng) });
+    const buses = L.modern ? [{ type: 'bus' }] : [];
     // Parked: the layout's roadside spots (modern), or carts left by the main streets (fantasy)
     for (const p of L.props) {
       if (!p.parked) continue;
@@ -567,7 +529,16 @@ export default class TownMode {
         const off = st.w / 2 + 1.4;
         const x = ax - ((bz - az) / len) * off;
         const z = az + ((bx - ax) / len) * off;
-        if (this.colliders.resolve(x, z, 1.4).x !== x) continue;
+        // The whole length must be clear, horses included (they stand ahead of the cart)
+        const tx = (bx - ax) / len;
+        const tz = (bz - az) / len;
+        const clear = [-3, 0, 3, 5].every((d) => {
+          const px = x + tx * d;
+          const pz = z + tz * d;
+          const r = this.colliders.resolve(px, pz, 1.3);
+          return r.x === px && r.z === pz;
+        });
+        if (!clear) continue;
         this.fleet.add({ ...pick(), x, z, yaw: Math.atan2(bx - ax, bz - az), mode: 'parked' });
       }
     }
@@ -588,14 +559,9 @@ export default class TownMode {
     this.fleet.build();
   }
 
-  /** The drivable model of a fleet vehicle, as its own mesh while the player drives it. */
-  vehicleObject(v) {
-    const mesh = new THREE.Mesh(v.res.lods[0] || v.res.lods[1], this.builder.material);
-    mesh.matrixAutoUpdate = false;
-    mesh.matrix.copy(v.res.fix);
-    mesh.castShadow = true;
+  /** A handle that follows the player's car (the fleet itself draws the car, wheels and all). */
+  vehicleObject() {
     const holder = new THREE.Group();
-    holder.add(mesh);
     this.scene.add(holder);
     return holder;
   }
@@ -652,10 +618,9 @@ export default class TownMode {
         this.transfer = null;
         this.ctx.audio?.sfx('carDoor');
         this.ctx.audio?.sfx('ignition');
-        this.fleet.hide(tr.v);
-        tr.v.mode = 'player';
         const drive = new Car(tr.v.spec, { x: car.x, z: car.z, yaw: car.yaw });
         drive.y = car.y;
+        this.fleet.drive(tr.v, drive);
         this.drive = { v: tr.v, car: drive, obj: this.vehicleObject(tr.v) };
         drive.apply(this.drive.obj);
         this.chase.reset(drive);

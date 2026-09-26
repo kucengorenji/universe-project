@@ -301,7 +301,9 @@ export class TownBuilder {
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uNight = u.uNight;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute float emissive;\nvarying float vEmissive;\nvarying float vLit;\nvarying vec3 vWin;')
+        .replace('#include <common>', '#include <common>\nattribute float emissive;\nattribute float paint;\nattribute vec3 aPaint;\nvarying float vEmissive;\nvarying float vLit;\nvarying vec3 vWin;')
+        // Paint: vehicle bodies and horses take their colour per instance (other models have paint = 0)
+        .replace('#include <color_vertex>', '#include <color_vertex>\nvColor.rgb *= mix(vec3(1.0), aPaint, paint);')
         .replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>

@@ -68,7 +68,7 @@ PALETTE = {
     'glass_blue': 0x5f8fb8, 'glass_teal': 0x4f9aa0, 'glass_dark': 0x2f4a66, 'steel': 0x9aa3ad, 'steel_dark': 0x5d6066,
     'brick': 0xb45a3c, 'brick_dark': 0x8f4430, 'asphalt': 0x4f5157, 'rubber': 0x222222, 'accent_green': 0x027b49,
     'accent_red': 0xfa4d43, 'accent_yellow': 0xfbb833, 'car_red': 0xc4513a, 'car_blue': 0x3f6fb0, 'car_white': 0xf2f2ee,
-    'car_black': 0x2f2f33, 'car_yellow': 0xe0b030, 'lamp': 0xfff3c4, 'grass': 0x7fb24a, 'wood_deck': 0x9a6a3e,
+    'car_black': 0x2f2f33, 'paint': 0xececea, 'car_yellow': 0xe0b030, 'lamp': 0xfff3c4, 'grass': 0x7fb24a, 'wood_deck': 0x9a6a3e,
     # space
     'hull': 0xe9ecef, 'hull_b': 0xcfd4da, 'hull_dark': 0x3a4150, 'engine': 0x9fe8ff, 'cockpit': 0x7fd6ff,
     # character
@@ -1554,10 +1554,259 @@ def v_caravan(v):
     horse(0.45, -2.0, 'horse_a')
 
 
+# ---- modular kit: bodies without wheels (paint = tinted per instance in the game),
+# unit wheels (radius 1, width 1, axis X, centred), accessories and horses at the
+# origin (base z = 0, front -Y). The game assembles vehicles from recipes.
+
+def vb_sedan(v):
+    car_body('paint', 4.5, 1.85, 0.25, 0.95, 0.9, 0.95, -0.6, 1.25, (-0.2, 0.85, 1.45))
+    car_lights(4.5, 1.85, 0.78, 0.82)
+
+
+def vb_hatch(v):
+    car_body('paint', 3.9, 1.78, 0.25, 0.95, 0.88, 1.0, -0.55, 1.7, (-0.15, 1.45, 1.5))
+    car_lights(3.9, 1.78, 0.78, 1.05)
+
+
+def vb_suv(v):
+    car_body('paint', 4.75, 1.98, 0.42, 1.2, 1.15, 1.2, -0.7, 2.05, (-0.3, 1.9, 1.85))
+    car_lights(4.75, 1.98, 1.0, 1.1)
+    if Q < 2:
+        box('rubber', (0, 0, 0.62), (2.0, 3.4, 0.12), bevel=0.02)  # cladding
+
+
+def vb_van(v):
+    L, W = 5.0, 2.0
+    box('paint', (0, 0.35, 1.25), (W, L - 0.7, 2.1), bevel=0.12)
+    hull('paint', [(-W / 2, -L / 2, 0.35), (W / 2, -L / 2, 0.35), (-W / 2, -L / 2 + 0.7, 0.35), (W / 2, -L / 2 + 0.7, 0.35),
+                   (-W / 2, -L / 2 + 0.1, 1.05), (W / 2, -L / 2 + 0.1, 1.05), (-W / 2 + 0.05, -L / 2 + 0.9, 2.2), (W / 2 - 0.05, -L / 2 + 0.9, 2.2)])
+    ny, nz = -0.72, 0.5
+    o = 0.03
+    slab('glass_dark', [(-W / 2 + 0.12, -L / 2 + 0.2 + ny * o, 1.2 + nz * o), (W / 2 - 0.12, -L / 2 + 0.2 + ny * o, 1.2 + nz * o),
+                        (W / 2 - 0.14, -L / 2 + 0.82 + ny * o, 2.08 + nz * o), (-W / 2 + 0.14, -L / 2 + 0.82 + ny * o, 2.08 + nz * o)], th=0.03)
+    for sx in (-1, 1):
+        box('glass_dark', (sx * (W / 2 + 0.005), -L / 2 + 1.1, 1.6), (0.02, 0.8, 0.6), bevel=0)
+    car_lights(L, W, 0.8, 1.2)
+    if Q < 2:
+        box('rubber', (0, 0.35, 0.4), (W + 0.02, L - 0.9, 0.12), bevel=0)  # rub strip
+
+
+def vb_pickup(v):
+    L, W = 5.3, 1.95
+    car_body('paint', L, W, 0.4, 1.15, 1.15, 1.15, -0.8, 0.55, (-0.35, 0.45, 1.8))
+    box('paint', (0, 1.6, 1.0), (W, 2.1, 0.3), bevel=0.03)
+    for sx in (-1, 1):
+        box('paint', (sx * (W / 2 - 0.06), 1.6, 1.35), (0.12, 2.1, 0.45), bevel=0.02)
+    box('paint', (0, 2.6, 1.35), (W, 0.12, 0.45), bevel=0.02)
+    car_lights(L, W, 1.0, 1.2)
+
+
+def vb_bus(v):
+    L, W, H = 11.0, 2.55, 3.1
+    box('paint', (0, 0, 0.45 + H / 2), (W, L, H), bevel=0.15)
+    box('car_white', (0, 0, 0.45 + H - 0.05), (W - 0.1, L - 0.3, 0.14), bevel=0.05)  # roof band
+    box('glass_dark', (0, -L / 2 - 0.01, 2.2), (W - 0.3, 0.05, 1.5), bevel=0)
+    n = 7 if Q < 2 else 1
+    for sx in (-1, 1):
+        if Q < 2:
+            for k in range(n):
+                box('glass_dark', (sx * (W / 2 + 0.005), -L / 2 + 1.6 + k * 1.3, 2.25), (0.03, 1.1, 1.1), bevel=0)
+        else:
+            box('glass_dark', (sx * (W / 2 + 0.005), 0, 2.25), (0.03, L - 2, 1.1), bevel=0)
+    box('glass_dark', (W / 2 + 0.005, -L / 2 + 0.8, 1.5), (0.03, 1.0, 2.2), bevel=0)
+    if Q == 0:
+        box('screen', (0, -L / 2 - 0.02, 3.2), (1.5, 0.04, 0.3), bevel=0)
+    car_lights(L, W, 0.9, 1.0)
+
+
+def vb_sport(v):
+    car_body('paint', 4.45, 1.98, 0.18, 0.75, 0.62, 0.8, -0.35, 1.0, (0.05, 0.6, 1.18), roof_mat='car_black')
+    car_lights(4.45, 1.98, 0.6, 0.7)
+    if Q < 2:
+        box('car_black', (0, -2.2, 0.28), (1.8, 0.2, 0.08), bevel=0)  # splitter
+
+
+def vb_cart(v):
+    box('wood', (0, 0.6, 1.0), (1.6, 2.2, 0.15), bevel=0.02)
+    for sx in (-1, 1):
+        box('wood', (sx * 0.78, 0.6, 1.3), (0.08, 2.2, 0.5), bevel=0)
+    box('wood', (0, 1.72, 1.3), (1.6, 0.08, 0.5), bevel=0)
+    for sx in (-0.35, 0.35):
+        box('wood', (sx, -0.9, 1.0), (0.07, 2.4, 0.07), bevel=0)  # shafts
+    box('wood_dark', (0, 0.6, 0.62), (1.95, 0.09, 0.09), bevel=0)  # axle
+
+
+def vb_wagon(v):
+    box('wood', (0, 0.8, 1.05), (1.8, 3.4, 0.18), bevel=0.02)
+    for sx in (-1, 1):
+        box('wood_light', (sx * 0.86, 0.8, 1.45), (0.1, 3.4, 0.62), bevel=0)
+    for y in (-0.4, 2.0):
+        box('wood_dark', (0, y, 0.55), (2.05, 0.09, 0.09), bevel=0)
+    for sx in (-0.4, 0.4):
+        box('wood', (sx, -1.2, 1.0), (0.07, 1.8, 0.07), bevel=0)  # pole
+
+
+def vb_caravan(v):
+    box('wood', (0, 0.9, 1.05), (1.9, 3.8, 0.2), bevel=0.02)
+    arc = 10 if Q == 0 else 6
+    prof = [(math.cos(math.pi * k / arc) * 1.0, 1.15 + math.sin(math.pi * k / arc) * 1.1) for k in range(arc + 1)]
+    verts = [(x, -0.1, z) for x, z in prof] + [(x, 2.7, z) for x, z in prof]
+    n = len(prof)
+    poly('canvas', verts, [[i, i + 1, n + i + 1, n + i] for i in range(n - 1)])
+    poly('canvas', verts, [[n + i, n + i + 1, i + 1, i] for i in range(n - 1)])
+    if Q == 0:
+        for yk in (0, 1, 2):
+            for k in range(arc):
+                am = math.pi * (k + 0.5) / arc
+                box('wood_dark', (math.cos(am) * 1.03, -0.1 + yk * 1.4, 1.15 + math.sin(am) * 1.13), (0.07, 0.08, math.pi * 1.08 / arc), ry=-am, bevel=0)
+    for y in (-0.2, 2.1):
+        box('wood_dark', (0, y, 0.6), (2.15, 0.09, 0.09), bevel=0)
+    for sx in (-0.4, 0.4):
+        box('wood', (sx, -1.3, 1.0), (0.07, 2.0, 0.07), bevel=0)
+
+
+def _wheel(tyre, rim, hub, spokes):
+    cyl(tyre, (-0.5, 0, 0), 1.0, 1.0, 20, ry=math.pi / 2)
+    if Q < 2:
+        for sx in (-1, 1):
+            x = 0.5 if sx > 0 else -0.56
+            cyl(rim, (x, 0, 0), 0.62, 0.06, 16, ry=math.pi / 2)
+            cyl(hub, (x + (0.04 if sx > 0 else -0.02), 0, 0), 0.2, 0.06, 10, ry=math.pi / 2)
+            # Spokes: without them a spinning wheel looks still
+            for k in range(spokes):
+                box(hub, (sx * 0.575, 0, 0), (0.04, 1.08, 0.14), rx=k * math.pi / spokes, bevel=0)
+
+
+def vw_road(v):
+    _wheel('rubber', 'chrome', 'steel_dark', 5)
+
+
+def vw_sport(v):
+    _wheel('rubber', 'car_black', 'chrome', 6)
+
+
+def vw_truck(v):
+    _wheel('rubber', 'steel', 'steel_dark', 4)
+
+
+def vw_wood(v):
+    if Q == 2:
+        cyl('wood_dark', (-0.5, 0, 0), 1.0, 1.0, 12, ry=math.pi / 2)
+        return
+    # Iron-shod rim as a ring of segments, spokes, hub
+    seg = 14 if Q == 0 else 10
+    for k in range(seg):
+        a = k * 2 * math.pi / seg
+        box('iron' if k % 2 else 'wood_dark', (0, math.cos(a) * 0.94, math.sin(a) * 0.94), (1.0, 0.44, 0.14), rx=a + math.pi / 2, bevel=0)
+    for k in range(6):
+        box('wood', (0, 0, 0), (0.5, 1.8, 0.1), rx=k * math.pi / 6, bevel=0)
+    cyl('wood_dark', (-0.6, 0, 0), 0.24, 1.2, 10, ry=math.pi / 2)
+
+
+def va_roof_rack(v):
+    for sx in (-0.5, 0.5):
+        box('steel_dark', (sx, 0, 0.1), (0.06, 1.0, 0.06), bevel=0)
+        for sy in (-0.45, 0.45):
+            box('steel_dark', (sx, sy, 0.05), (0.06, 0.06, 0.1), bevel=0)
+    for sy in (-0.3, 0.0, 0.3):
+        box('steel', (0, sy, 0.13), (1.06, 0.05, 0.04), bevel=0)
+
+
+def va_roof_box(v):
+    box('car_black', (0, 0, 0.22), (0.9, 1.7, 0.36), bevel=0.12)
+    va_roof_rack(v)
+
+
+def va_roof_rails(v):
+    for sx in (-0.5, 0.5):
+        box('steel', (sx, 0, 0.04), (0.06, 2.2, 0.06), bevel=0)
+
+
+def va_taxi_sign(v):
+    box('car_black', (0, 0, 0.1), (0.8, 0.3, 0.2), bevel=0.03)
+    box('lamp', (0, 0, 0.1), (0.6, 0.32, 0.12), bevel=0)
+
+
+def va_lightbar(v):
+    box('steel_dark', (0, 0, 0.05), (1.2, 0.26, 0.1), bevel=0)
+    box('accent_red', (-0.35, 0, 0.14), (0.45, 0.24, 0.14), bevel=0)
+    box('police_blue', (0.35, 0, 0.14), (0.45, 0.24, 0.14), bevel=0)
+
+
+def va_police_stripes(v):
+    for sx in (-1, 1):
+        box('police_blue', (sx * 0.935, 0, 0), (0.02, 3.2, 0.3), bevel=0)
+
+
+def va_spoiler(v):
+    for sx in (-0.7, 0.7):
+        box('car_black', (sx, 0, 0.1), (0.08, 0.2, 0.2), bevel=0)
+    box('car_black', (0, 0, 0.23), (1.7, 0.32, 0.06), bevel=0)
+
+
+def va_bullbar(v):
+    for sx in (-0.55, 0.55):
+        box('steel_dark', (sx, 0, 0.35), (0.07, 0.07, 0.7), bevel=0)
+    box('steel_dark', (0, 0, 0.68), (1.2, 0.07, 0.07), bevel=0)
+    box('steel_dark', (0, 0, 0.38), (1.3, 0.07, 0.07), bevel=0)
+
+
+def va_ladder(v):
+    for sx in (-0.22, 0.22):
+        box('steel', (sx, 0, 0.06), (0.05, 2.4, 0.05), bevel=0)
+    for k in range(9):
+        box('steel', (0, -1.1 + k * 0.275, 0.06), (0.44, 0.03, 0.03), bevel=0)
+
+
+def va_ac_unit(v):
+    box('steel_dark', (0, 0, 0.2), (1.6, 3.0, 0.4), bevel=0.05)
+    if Q < 2:
+        for k in range(3):
+            cyl('iron', (0, -0.9 + k * 0.9, 0.4), 0.3, 0.04, 12)
+
+
+def va_cargo(v):
+    box('canvas', (0, 0, 0.3), (1.6, 1.8, 0.55), bevel=0.15)
+    if Q < 2:
+        for sy in (-0.6, 0.0, 0.6):
+            box('wood_dark', (0, sy, 0.3), (1.65, 0.04, 0.58), bevel=0)
+
+
+def va_hay(v):
+    for k in range(3):
+        box('hay' if k % 2 else 'wood_light', (-0.35 + k * 0.35, 0, 0.22), (0.5, 0.9, 0.45), bevel=0.05)
+
+
+def va_barrels(v):
+    for k in range(4):
+        cyl('wood', (-0.4 + (k % 2) * 0.8, -0.65 + (k // 2) * 1.3, 0), 0.3, 0.8, 10)
+        if Q < 2:
+            cyl('iron', (-0.4 + (k % 2) * 0.8, -0.65 + (k // 2) * 1.3, 0.15), 0.31, 0.05, 10)
+            cyl('iron', (-0.4 + (k % 2) * 0.8, -0.65 + (k // 2) * 1.3, 0.6), 0.31, 0.05, 10)
+
+
+def va_crates(v):
+    for k, (x, y, z, s) in enumerate([(-0.35, -0.4, 0, 0.55), (0.35, -0.3, 0, 0.5), (0, 0.45, 0, 0.6), (-0.1, -0.35, 0.55, 0.42)]):
+        box('wood_light' if k % 2 else 'wood', (x, y, z + s / 2), (s, s, s), bevel=0.02)
+
+
+def va_stripe(v):
+    for sx in (-1, 1):
+        box('paint', (sx * 1.0, 0, 0), (0.02, 1.0, 0.3), bevel=0)
+
+
+def vh_horse(v):
+    horse(0, 0, 'paint')
+
+
 VEHICLES = {
-    'v_sedan': (v_sedan, 4), 'v_hatch': (v_hatch, 3), 'v_suv': (v_suv, 2), 'v_van': (v_van, 2), 'v_pickup': (v_pickup, 2),
-    'v_bus': (v_bus, 2), 'v_taxi': (v_taxi, 1), 'v_police': (v_police, 1), 'v_sport': (v_sport, 2),
-    'v_cart': (v_cart, 2), 'v_wagon': (v_wagon, 1), 'v_caravan': (v_caravan, 1),
+    'vb_sedan': (vb_sedan, 1), 'vb_hatch': (vb_hatch, 1), 'vb_suv': (vb_suv, 1), 'vb_van': (vb_van, 1), 'vb_pickup': (vb_pickup, 1),
+    'vb_bus': (vb_bus, 1), 'vb_sport': (vb_sport, 1), 'vb_cart': (vb_cart, 1), 'vb_wagon': (vb_wagon, 1), 'vb_caravan': (vb_caravan, 1),
+    'vw_road': (vw_road, 1), 'vw_sport': (vw_sport, 1), 'vw_truck': (vw_truck, 1), 'vw_wood': (vw_wood, 1),
+    'va_roof_rack': (va_roof_rack, 1), 'va_roof_box': (va_roof_box, 1), 'va_roof_rails': (va_roof_rails, 1), 'va_taxi_sign': (va_taxi_sign, 1),
+    'va_lightbar': (va_lightbar, 1), 'va_police_stripes': (va_police_stripes, 1), 'va_spoiler': (va_spoiler, 1), 'va_bullbar': (va_bullbar, 1),
+    'va_ladder': (va_ladder, 1), 'va_ac_unit': (va_ac_unit, 1), 'va_cargo': (va_cargo, 1), 'va_hay': (va_hay, 1), 'va_barrels': (va_barrels, 1),
+    'va_crates': (va_crates, 1), 'va_stripe': (va_stripe, 1), 'vh_horse': (vh_horse, 1),
 }
 
 

@@ -1,38 +1,55 @@
 import * as THREE from 'three';
 import { Car, VEHICLE_TYPES } from './vehicle.js';
+import { assemble } from './vehicleKit.js';
 
-// Every vehicle in town that the player is not driving: parked cars and carts,
-// and traffic running the streets. All drawn instanced (one mesh per model),
-// all enterable: the player can take any of them, traffic included.
+// Every vehicle in town: parked cars and carts, traffic running the streets,
+// and the one the player drives. Each is assembled from the kit (body,
+// wheels, accessories, horses) and every part is drawn instanced: one mesh per
+// model for the whole town, paint per instance. Wheels spin with the distance
+// travelled and the front ones steer. Every vehicle can be taken, traffic too.
 
 const _m = new THREE.Matrix4();
+const _base = new THREE.Matrix4();
+const _local = new THREE.Matrix4();
+const _rot = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
 const _v = new THREE.Vector3();
 const _s = new THREE.Vector3(1, 1, 1);
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+const WHITE = new THREE.Color(1, 1, 1);
+
+/** A geometry sharing a pack model's buffers, so an instanced attribute can be added without touching the pack. */
+function wrap(src) {
+  const g = new THREE.BufferGeometry();
+  for (const [k, a] of Object.entries(src.attributes)) g.setAttribute(k, a);
+  g.index = src.index;
+  g.boundingSphere = src.boundingSphere;
+  g.boundingBox = src.boundingBox;
+  return g;
+}
 
 export class Fleet {
-  constructor(builder, scene, { shadows }) {
+  constructor(builder, scene, { shadows, rng = Math.random }) {
     this.builder = builder;
     this.scene = scene;
     this.shadows = shadows;
+    this.rng = rng;
     this.vehicles = [];
-    this.groups = new Map(); // model key -> { inst, res, slots }
-    this.color = new THREE.Color();
+    this.meshes = [];
   }
 
   /**
-   * v: { asset, variant, type, x, z, yaw, mode: 'parked' | 'traffic', line?, tint? }
+   * v: { type (a kit recipe), x, z, yaw, mode: 'parked' | 'traffic', line?, s?, dir? }
    * Call build() once all vehicles are added.
    */
   add(v) {
-    const res = this.builder.resolve(v.asset, v.variant ?? 0);
-    if (!res) return null;
-    const spec = VEHICLE_TYPES[v.type] || VEHICLE_TYPES.sedan;
+    const kit = assemble(v.type, this.rng);
+    if (!this.builder.townPack[kit.body]) return null;
+    const spec = VEHICLE_TYPES[kit.physics] || VEHICLE_TYPES.sedan;
     const car = new Car(spec, v);
     car.y = this.builder.groundAt(v.x, v.z);
-    const vehicle = { ...v, res, spec, car, hidden: false, stopped: 0, id: this.vehicles.length };
+    const vehicle = { ...v, kit, spec, car, hidden: false, stopped: 0, id: this.vehicles.length, dist: 0, steerVis: 0, slots: [] };
     if (v.mode === 'traffic') this.initRoute(vehicle, v.line, v.s ?? 0, v.dir ?? 1);
     this.vehicles.push(vehicle);
     return vehicle;
@@ -42,43 +59,77 @@ export class Fleet {
     const lens = [0];
     for (let k = 1; k < line.pts.length; k++) lens.push(lens[k - 1] + Math.hypot(line.pts[k].x - line.pts[k - 1].x, line.pts[k].z - line.pts[k - 1].z));
     v.route = { line, lens, total: lens[lens.length - 1], s, dir, lane: line.w >= 10 ? line.w / 4 : 0 };
-    v.cruise = v.cruise ?? (v.type === 'caravan' || v.type === 'cart' ? 2.4 : 8 + Math.random() * 4);
+    v.cruise = v.cruise ?? (['caravan', 'cart', 'wagon'].includes(v.type) ? 2.4 : 8 + Math.random() * 4);
     v.speed = v.cruise;
   }
 
+  /** One instanced mesh per model, a slot in it for every use of that model. */
   build() {
+    const need = new Map();
+    const want = (asset, entry) => {
+      if (!this.builder.townPack[asset]) return;
+      if (!need.has(asset)) need.set(asset, []);
+      need.get(asset).push(entry);
+    };
     for (const v of this.vehicles) {
-      const key = v.res.key;
-      if (!this.groups.has(key)) this.groups.set(key, { res: v.res, slots: [] });
-      const g = this.groups.get(key);
-      v.slot = g.slots.length;
-      v.group = g;
-      g.slots.push(v);
+      const k = v.kit;
+      want(k.body, { v, local: null, paint: k.paint });
+      for (const w of k.wheels) want(w.kind, { v, wheel: w, paint: WHITE });
+      for (const p of k.parts) want(p.asset, { v, local: new THREE.Matrix4().compose(_v.set(p.x, p.y, p.z), _q.identity(), new THREE.Vector3(p.sx, p.sy, p.sz)), paint: p.paint });
+      for (const h of k.horses) want('vh_horse', { v, horse: h, paint: h.paint });
     }
-    for (const g of this.groups.values()) {
-      const inst = new THREE.InstancedMesh(g.res.lods[0] || g.res.lods[1], this.builder.material, g.slots.length);
+    for (const [asset, list] of need) {
+      const lods = this.builder.townPack[asset];
+      const geo = wrap(lods[0] || lods[1]);
+      const paint = new Float32Array(list.length * 3);
+      list.forEach((e, i) => e.paint.toArray(paint, i * 3));
+      geo.setAttribute('aPaint', new THREE.InstancedBufferAttribute(paint, 3));
+      const inst = new THREE.InstancedMesh(geo, this.builder.material, list.length);
       inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       inst.castShadow = this.shadows;
       inst.receiveShadow = this.shadows;
       inst.frustumCulled = false;
-      g.slots.forEach((v, i) => inst.setColorAt(i, this.color.setScalar(v.tint ?? 1)));
-      g.inst = inst;
+      inst.name = `fleet:${asset}`;
+      list.forEach((e, i) => e.v.slots.push({ inst, i, local: e.local, wheel: e.wheel, horse: e.horse }));
+      this.meshes.push({ inst, dirty: true });
       this.scene.add(inst);
     }
     this.writeAll();
   }
 
   write(v) {
-    const g = v.group;
-    if (!g?.inst) return;
-    if (v.hidden) g.inst.setMatrixAt(v.slot, ZERO);
-    else {
-      const c = v.car;
-      _q.setFromEuler(_e.set(-c.pitch, c.yaw, c.roll, 'YXZ'));
-      _m.compose(_v.set(c.x, c.y + c.bob, c.z), _q, _s).multiply(v.res.fix);
-      g.inst.setMatrixAt(v.slot, _m);
+    if (v.hidden) {
+      for (const s of v.slots) s.inst.setMatrixAt(s.i, ZERO);
+      this.markDirty(v);
+      return;
     }
-    g.dirty = true;
+    const c = v.car;
+    _q.setFromEuler(_e.set(-c.pitch, c.yaw, c.roll, 'YXZ'));
+    _base.compose(_v.set(c.x, c.y + c.bob, c.z), _q, _s.set(1, 1, 1));
+    const moving = Math.abs(c.forwardSpeed ?? 0) > 0.2 || (v.mode === 'traffic' && v.speed > 0.2);
+    for (const s of v.slots) {
+      if (s.wheel) {
+        const w = s.wheel;
+        // Spin with the distance rolled, steer the front ones
+        _local.makeTranslation(w.x, w.y, w.z);
+        if (w.steer) _local.multiply(_rot.makeRotationY(v.steerVis));
+        _local.multiply(_rot.makeRotationX(v.dist / w.r));
+        _local.multiply(_rot.makeScale(w.w, w.r, w.r));
+        _m.multiplyMatrices(_base, _local);
+      } else if (s.horse) {
+        // A trot: the horse bobs as it walks
+        const bob = moving ? Math.abs(Math.sin(v.dist * 1.9 + s.horse.x * 2)) * 0.07 : 0;
+        _local.makeTranslation(s.horse.x, bob, s.horse.z);
+        _m.multiplyMatrices(_base, _local);
+      } else if (s.local) _m.multiplyMatrices(_base, s.local);
+      else _m.copy(_base);
+      s.inst.setMatrixAt(s.i, _m);
+    }
+    this.markDirty(v);
+  }
+
+  markDirty(v) {
+    for (const s of v.slots) s.inst.userData.dirty = true;
   }
 
   writeAll() {
@@ -87,10 +138,10 @@ export class Fleet {
   }
 
   flush() {
-    for (const g of this.groups.values()) {
-      if (g.dirty && g.inst) {
-        g.inst.instanceMatrix.needsUpdate = true;
-        g.dirty = false;
+    for (const m of this.meshes) {
+      if (m.inst.userData.dirty) {
+        m.inst.instanceMatrix.needsUpdate = true;
+        m.inst.userData.dirty = false;
       }
     }
   }
@@ -119,8 +170,16 @@ export class Fleet {
    */
   update(dt, obstacles) {
     for (const v of this.vehicles) {
-      if (v.hidden || v.mode !== 'traffic') continue;
+      if (v.hidden) continue;
       const c = v.car;
+      if (v.mode === 'player') {
+        // The player's car: its physics runs in the mode, the fleet only draws it
+        v.dist += (c.forwardSpeed ?? 0) * dt;
+        v.steerVis = -c.steer;
+        this.write(v);
+        continue;
+      }
+      if (v.mode !== 'traffic') continue;
       // Brake for anything close ahead in our path, including other traffic
       const fx = Math.sin(c.yaw);
       const fz = Math.cos(c.yaw);
@@ -147,7 +206,12 @@ export class Fleet {
       // Smooth the heading so U-turns and corners swing instead of snapping
       let d = p.yaw - c.yaw;
       d = Math.atan2(Math.sin(d), Math.cos(d));
-      c.yaw += d * (1 - Math.exp(-dt * 6));
+      const turn = d * (1 - Math.exp(-dt * 6));
+      c.yaw += turn;
+      // Front wheels follow the turn the car is making
+      const yawRate = turn / Math.max(dt, 1e-3);
+      v.steerVis += (THREE.MathUtils.clamp(Math.atan((yawRate * v.spec.wheelbase) / Math.max(v.speed, 1.5)), -0.5, 0.5) - v.steerVis) * (1 - Math.exp(-dt * 8));
+      v.dist += v.speed * dt;
       c.vx = (p.x - c.x) / Math.max(dt, 1e-3);
       c.vz = (p.z - c.z) / Math.max(dt, 1e-3);
       c.x = p.x;
@@ -163,7 +227,7 @@ export class Fleet {
     let best = null;
     let bestD = reach;
     for (const v of this.vehicles) {
-      if (v.hidden) continue;
+      if (v.hidden || v.mode === 'player') continue;
       const d = Math.hypot(v.car.x - x, v.car.z - z) - v.spec.width * 0.5;
       if (d < bestD) {
         bestD = d;
@@ -203,6 +267,13 @@ export class Fleet {
     this.flush();
   }
 
+  /** The player takes a vehicle: from now on it follows their car. */
+  drive(v, car) {
+    v.car = car;
+    v.mode = 'player';
+    v.hidden = false;
+  }
+
   /** Put a vehicle back as parked where the player left it. */
   park(v, car) {
     v.car = car;
@@ -213,6 +284,10 @@ export class Fleet {
   }
 
   dispose() {
-    for (const g of this.groups.values()) g.inst?.dispose();
+    for (const m of this.meshes) {
+      this.scene.remove(m.inst);
+      m.inst.dispose();
+    }
+    this.meshes = [];
   }
 }

@@ -134,6 +134,7 @@ export default class SpaceMode {
     this.ship = ship;
     this.shipKey = key;
     this.ctx.missions?.emit('hangar');
+    this.ctx.audio?.sfx('clunk');
     try {
       localStorage.setItem(SHIP_KEY, key);
     } catch {
@@ -412,6 +413,9 @@ export default class SpaceMode {
       this.boosted = true;
       this.ctx.missions?.emit('boost');
     }
+    // Kick of air as the boost lights
+    if (boost > 0.3 && !this.boostKick) this.ctx.audio?.sfx('whoosh', { dur: 1.1, peak: 0.3 });
+    this.boostKick = boost > 0.3;
     if (boost > 0.05 && !this.mapMode) {
       cam.position.x += (Math.random() - 0.5) * boost * 0.05;
       cam.position.y += (Math.random() - 0.5) * boost * 0.05;
@@ -452,6 +456,7 @@ export default class SpaceMode {
         dirW.y = THREE.MathUtils.clamp(dirW.y, -0.45, 0.45);
         dirW.normalize();
         this.ship.cancelAutopilot();
+        this.ctx.audio?.sfx('land');
         this.sequence = {
           kind: 'land',
           i,
@@ -627,7 +632,10 @@ export default class SpaceMode {
         seq.release = false;
         seq.wait = t + 0.75;
       }
-      if (seq.wait && t >= seq.wait) this.sequence = { kind: 'takeoff', i: seq.i, dirW: seq.dirW, t0: t, dur: 3.2 };
+      if (seq.wait && t >= seq.wait) {
+        this.sequence = { kind: 'takeoff', i: seq.i, dirW: seq.dirW, t0: t, dur: 3.2 };
+        this.ctx.audio?.sfx('whoosh', { dur: 2.6, peak: 0.4 });
+      }
     } else if (seq?.kind === 'takeoff') this.runTakeoff(seq, t, dt);
     else {
       this.ship.update(dt, this.lockInput ? { forward: 0, turn: 0, lift: 0 } : this.input());
@@ -635,6 +643,8 @@ export default class SpaceMode {
       this.updateCamera(dt, t);
     }
     this.updateStreaks();
+    const sh = this.ship;
+    this.ctx.audio?.engine('ship', { speed01: Math.min(1, sh.speed / sh.boostSpeed), throttle: sh.thrust, boost: sh.boostFx || 0 });
     const { width, height } = this.ctx.engine.size;
     this.hud.updateLabels(this.camera, width, height, this.bodies, this.ship.position, this.mapMode);
     this.hud.setStatus(this.ship.speed, this.statusText());
@@ -661,7 +671,7 @@ export default class SpaceMode {
   }
 
   render() {
-    this.ctx.engine.renderer.render(this.scene, this.camera);
+    this.ctx.engine.draw(this.scene, this.camera);
   }
 
   resize(w, h) {

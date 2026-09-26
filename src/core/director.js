@@ -27,7 +27,7 @@ const LABELS = {
  *   exit()                      dispose everything
  */
 export class Director {
-  constructor({ engine, world, overlay, missions }) {
+  constructor({ engine, world, overlay, missions, audio, tips }) {
     this.engine = engine;
     this.world = world;
     this.overlay = overlay;
@@ -36,7 +36,7 @@ export class Director {
     this.route = null;
     this.busy = false;
     this.pending = null;
-    this.ctx = { engine, world, overlay, missions, director: this };
+    this.ctx = { engine, world, overlay, missions, audio, tips, director: this };
     window.addEventListener('hashchange', () => {
       if (this.ignoreHash === location.hash) {
         this.ignoreHash = null;
@@ -136,6 +136,8 @@ export class Director {
     }
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
     const mode = new mod.default(this.ctx, route, handoff?.arrival ?? null);
+    engine.post.configure(route.mode, { boost: 0 });
+    this.ctx.audio?.setScene(route.mode === 'town' ? null : route.mode); // the town sets its own bed (it knows the era)
     await mode.enter();
     this.mode = mode;
     engine.setMode(mode);
@@ -147,5 +149,8 @@ export class Director {
     const revealing = overlay.reveal();
     mode.arrived?.(); // arrival camera moves while the cover fades
     await revealing;
+    // First visit: the title card, then the tip for this place
+    this.ctx.tips?.intro();
+    this.ctx.tips?.show(route.mode);
   }
 }

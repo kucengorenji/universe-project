@@ -4,7 +4,7 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt
 const QUALITY_LABEL = { auto: 'Auto', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' };
 const HINTS = {
   diorama: 'Seret untuk memutar, klik kanan atau dua jari untuk menggeser, scroll untuk zoom. Tombol 2 jalan kaki, 3 nyetir.',
-  walk: 'WASD jalan, Shift lari, Spasi lompat, E masuk kendaraan. Seret untuk melihat sekeliling. Esc kembali ke diorama.',
+  walk: 'WASD jalan, Shift lari, Spasi lompat, E masuk kendaraan atau rumah. Seret untuk melihat sekeliling. Esc kembali ke diorama.',
   interior: 'WASD jalan, E pakai atau ambil barang, seret untuk memutar kamera, Esc keluar.',
   drive: 'W gas, S rem/mundur, A/D belok, Spasi rem tangan (drift), Shift ngebut, E turun. Seret untuk melihat sekeliling.'
 };
@@ -102,6 +102,9 @@ export class TownHud {
       }
     };
     root.addEventListener('click', this.onClick);
+    this.quality = quality;
+    this.onQuality = () => (root.querySelector('[data-quality]').textContent = QUALITY_LABEL[quality.preset]);
+    quality.listeners.add(this.onQuality);
   }
 
   setView(v) {
@@ -127,6 +130,7 @@ export class TownHud {
   update() {}
 
   dispose() {
+    this.quality.listeners.delete(this.onQuality);
     this.root.removeEventListener('click', this.onClick);
     this.root.innerHTML = '';
     this.root.classList.remove('is-street');

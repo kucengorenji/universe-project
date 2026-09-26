@@ -4,6 +4,7 @@ import { loadAssetPack } from '../../render/assetLibrary.js';
 import { MenuController } from '../../ui/menuController.js';
 import { typeOf } from '../../world/planetTypes.js';
 import { PlanetRover } from '../../render/planetRover.js';
+import { Speedo } from '../../ui/gauges.js';
 import { BIOMES } from '../../map/mapGenerator.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
@@ -155,6 +156,11 @@ export default class PlanetMode {
       });
       this.rover.updateCamera(dt, this.pr.camera);
       this.pr.updateNearPlane();
+      const car = this.rover.car;
+      const top = car.spec.top || 20;
+      const fs = car.forwardSpeed;
+      this.speedo.set(Math.abs(fs) * 3.6, Math.abs(fs) / (top * 1.25), fs < -0.5 ? 'R' : Math.abs(fs) < 0.3 ? 'N' : 'D');
+      this.ctx.audio?.engine('rover', { speed01: Math.min(1, car.speed / top), throttle: car.throttle, rpm: Math.min(1, 0.15 + (car.speed / top) * 0.8 + car.throttle * 0.1), skid: car.skid * Math.min(1, car.speed / 6) });
       // Mission distance, reported in chunks
       this.roverAcc = (this.roverAcc || 0) + Math.abs(this.rover.car.speed) * Math.min(dt, 0.05);
       if (this.roverAcc > 10) {
@@ -223,6 +229,10 @@ export default class PlanetMode {
     pr.nebula.visible = false;
     if (pr.onTileHover) pr.onTileHover(null);
     this.rover = new PlanetRover(pr, start.dir, start.heading);
+    this.ctx.audio?.sfx('ignition');
+    this.ctx.tips?.show('rover');
+    this.speedo ||= new Speedo(this.ui);
+    this.speedo.show(true);
     this.roverBtn.textContent = 'Keluar rover';
     document.body.classList.add('is-rover');
   }
@@ -230,6 +240,7 @@ export default class PlanetMode {
   stopRover() {
     const pr = this.pr;
     const dir = this.rover.pos.clone();
+    this.speedo?.show(false);
     this.rover.dispose();
     this.rover = null;
     this.keys.clear();
@@ -253,7 +264,7 @@ export default class PlanetMode {
   }
 
   render() {
-    this.pr.render();
+    this.ctx.engine.draw(this.pr.scene, this.pr.camera);
   }
 
   resize() {
@@ -308,6 +319,8 @@ export default class PlanetMode {
   }
 
   exit() {
+    this.speedo?.dispose();
+    this.speedo = null;
     if (this.rover) {
       this.rover.dispose();
       this.rover = null;

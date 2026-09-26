@@ -206,11 +206,12 @@ export class TownBuilder {
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uNight = u.uNight;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute float emissive;\nvarying float vEmissive;\nvarying float vLit;')
+        .replace('#include <common>', '#include <common>\nattribute float emissive;\nvarying float vEmissive;\nvarying float vLit;\nvarying vec3 vWin;')
         .replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>
           vEmissive = emissive;
+          vWin = transformed; // model space (metres): floors and window columns stay put per building
           #ifdef USE_INSTANCING
             // Some buildings keep their lights off: a stable hash of the instance position
             vLit = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453);
@@ -219,12 +220,25 @@ export class TownBuilder {
           #endif`
         );
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vEmissive;\nvarying float vLit;')
+        .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vEmissive;\nvarying float vLit;\nvarying vec3 vWin;')
         .replace(
           '#include <emissivemap_fragment>',
           `#include <emissivemap_fragment>
-          float glow = vEmissive >= 0.99 ? 1.0 : vEmissive * step(0.38, vLit);
-          totalEmissiveRadiance += vec3(1.0, 0.76, 0.42) * glow * uNight * 1.35;`
+          vec3 warm = vec3(1.0, 0.76, 0.42);
+          vec3 glowCol = warm;
+          float glow = 1.0;
+          if (vEmissive < 0.99) {
+            // Glass: a grid of rooms, some lit (warm or cool), most dark, varying per building
+            vec2 g = vec2((vWin.x + vWin.z) / 2.3, vWin.y / 3.1);
+            vec2 cell = floor(g);
+            vec2 f = fract(g);
+            float r = fract(sin(dot(cell + vLit * 37.0, vec2(12.9898, 78.233))) * 43758.5453);
+            float pane = step(0.12, f.x) * step(f.x, 0.9) * step(0.2, f.y) * step(f.y, 0.85);
+            float on = step(0.5, r) * pane;
+            glowCol = mix(warm, vec3(0.78, 0.88, 1.0), step(0.86, r));
+            glow = vEmissive * mix(0.04, 1.25, on) * step(0.25, vLit);
+          }
+          totalEmissiveRadiance += glowCol * glow * uNight * 1.35;`
         );
     };
     m.customProgramCacheKey = () => 'town-props';

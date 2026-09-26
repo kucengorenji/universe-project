@@ -15,6 +15,7 @@ import { Fleet } from './fleet.js';
 import { Car, ChaseCamera } from './vehicle.js';
 import { RiggedPeople, makePerson, animatePerson } from './peopleRig.js';
 import { Interior, ENTERABLE } from './interior.js';
+import { Minimap, Speedo } from '../../ui/gauges.js';
 
 // Which models drive which physics. Modern towns get cars, fantasy towns carts and caravans.
 const VEHICLES = {
@@ -122,6 +123,7 @@ export default class TownMode {
     this.layout = generateTownLayout({ map, hexasphere, cityIndex: this.route.city, planetType: planet.type, detail: quality.settings.detail, footprints: this.footprints });
     this.doors = this.findDoors();
     this.ctx.missions?.emit('visit_town');
+    this.ctx.audio?.setScene('town', { modern: this.layout.modern });
     this.builder = new TownBuilder(this.layout, { planetPack, townPack, quality, planetType: planet.type });
     this.colliders = new Colliders(this.layout.colliders);
 
@@ -202,6 +204,8 @@ export default class TownMode {
         interact: () => this.interact()
       }
     });
+    this.minimap = new Minimap(this.ui, { layout: this.layout, groundAt: (x, z) => this.builder.groundAt(x, z), waterY: WATER_Y, doors: this.doors });
+    this.speedo = new Speedo(this.ui);
     this.ui.hidden = false;
     document.body.dataset.mode = 'town';
 
@@ -281,6 +285,9 @@ export default class TownMode {
     }
     this.view = v;
     this.hud.setView(v);
+    this.minimap.show(v !== 'diorama');
+    this.speedo.show(v === 'drive');
+    if (v !== 'diorama') this.ctx.tips?.show(v);
     this.orbit.enabled = v === 'diorama' && !this.tween;
     this.player.visible = v === 'walk' && !this.avatar;
     this.camera.fov = v === 'diorama' ? 40 : STREET_FOV;
@@ -388,6 +395,11 @@ export default class TownMode {
     this.follow.dist = 7.5 * Math.max(1, Math.max(inside.W, inside.D * 1.3) / 10); // big rooms pull the camera back
     this.view = 'interior';
     this.hud.setView('interior');
+    this.ctx.engine.post.configure('interior', { boost: 0 });
+    this.ctx.audio?.setScene('interior');
+    this.ctx.tips?.show('interior');
+    this.minimap.show(false);
+    this.ctx.audio?.sfx('door');
     this.ui.classList.add('is-inside');
     this.fading = false;
     this.ctx.missions?.emit('enter_house');
@@ -412,6 +424,11 @@ export default class TownMode {
     this.follow.dist = 6.5;
     this.view = 'walk';
     this.hud.setView('walk');
+    this.ctx.engine.post.configure('town');
+    this.minimap.show(true);
+    this.ctx.audio?.stopRoom();
+    this.ctx.audio?.setScene('town', { modern: this.layout.modern });
+    this.ctx.audio?.sfx('door');
     this.ui.classList.remove('is-inside');
     this.fading = false;
     await overlay.reveal({ duration: 420 });
@@ -432,8 +449,16 @@ export default class TownMode {
     const r = inside.use(it, p);
     if (r.event) this.ctx.missions?.emit(r.event);
     if (r.action === 'exit') return this.exitBuilding();
-    if (r.action === 'radio_on') this.ctx.audio?.radio?.(true);
-    if (r.action === 'radio_off') this.ctx.audio?.radio?.(false);
+    const audio = this.ctx.audio;
+    if (r.action === 'radio_on') audio?.radio(true);
+    else if (r.action === 'radio_off') audio?.radio(false);
+    else if (it.kind === 'media') audio?.tv(it.on);
+    else if (it.kind === 'fire') audio?.fire(it.on);
+    else if (it.kind === 'light') audio?.sfx('switch');
+    else if (it.kind === 'door') audio?.sfx('door');
+    else if (r.action === 'hold') audio?.sfx('pickup');
+    else if (r.action === 'drop') audio?.sfx('drop');
+    else if (r.action === 'sit' || r.action === 'sleep') audio?.sfx('sit');
     if (r.action === 'sit') {
       this.pose = { name: 'sit', lift: 0, stand: { x: it.x + Math.sin(r.pose.yaw) * 0.6, z: it.z + Math.cos(r.pose.yaw) * 0.6 } };
       p.x = r.pose.x;
@@ -625,6 +650,8 @@ export default class TownMode {
       p.yaw += dy * 0.25;
       if (raw >= 1) {
         this.transfer = null;
+        this.ctx.audio?.sfx('carDoor');
+        this.ctx.audio?.sfx('ignition');
         this.fleet.hide(tr.v);
         tr.v.mode = 'player';
         const drive = new Car(tr.v.spec, { x: car.x, z: car.z, yaw: car.yaw });
@@ -640,6 +667,7 @@ export default class TownMode {
       d.car.vz *= 0.8;
       if (raw >= 1) {
         this.transfer = null;
+        this.ctx.audio?.sfx('carDoor');
         const door = this.doorOf(d.car, d.v.spec);
         this.scene.remove(d.obj);
         this.fleet.park(d.v, d.car);
@@ -671,10 +699,64 @@ export default class TownMode {
     const input = this.transfer ? { forward: 0, right: 0 } : { forward: i.forward, right: i.right, handbrake: this.keys.has(' '), boost: i.run };
     d.car.update(dt, input, this.driveWorld());
     d.car.apply(d.obj);
+    this.engineSound(d.car, ['cart', 'wagon', 'caravan'].includes(d.v.type));
     this.driveAcc = (this.driveAcc || 0) + d.car.speed * dt;
     if (this.driveAcc > 25) {
       this.ctx.missions?.emit('drive_m', this.driveAcc);
       this.driveAcc = 0;
+    }
+  }
+
+  /** Engine note with a fake gearbox: revs climb through each gear and drop on the shift. */
+  engineSound(car, horse) {
+    const audio = this.ctx.audio;
+    if (!audio) return;
+    const top = car.spec.top || 30;
+    const sp = Math.abs(car.forwardSpeed);
+    if (horse) {
+      // Carts are pulled: hooves instead of an engine
+      this.hoof = (this.hoof || 0) + sp * 0.016 * 1.6;
+      if (this.hoof > 1 && sp > 0.5) {
+        this.hoof = 0;
+        audio.sfx('step', { surface: 'wood' });
+      }
+      return;
+    }
+    const gears = 5;
+    const g = Math.min(gears - 1, Math.floor((sp / top) * gears));
+    const inGear = (sp / top) * gears - g;
+    const rpm = Math.min(1, 0.18 + inGear * 0.72 + car.throttle * (g === 0 ? 0.25 : 0.08));
+    audio.engine('car', { speed01: Math.min(1, sp / top), throttle: car.throttle, rpm, skid: car.skid * Math.min(1, car.speed / 6) });
+    if (car.impact > 0.25 && !this.lastImpact) audio.sfx('hit', { strength: Math.min(1, car.impact) });
+    this.lastImpact = car.impact > 0.25;
+  }
+
+  /** Minimap (every other frame) and the speedometer. */
+  updateGauges() {
+    if (this.view === 'diorama') return;
+    this.gaugeFrame = (this.gaugeFrame || 0) + 1;
+    const car = this.drive?.car;
+    if (car && this.view === 'drive') {
+      const top = car.spec.top || 30;
+      const sp = Math.abs(car.forwardSpeed);
+      const gear = car.forwardSpeed < -0.5 ? 'R' : sp < 0.3 ? 'N' : String(1 + Math.min(4, Math.floor((sp / top) * 5)));
+      this.speedo.set(sp * 3.6, sp / (top * 1.25), gear);
+    }
+    if (this.gaugeFrame % 2) return;
+    const dir = this.camera.getWorldDirection(_v);
+    const pos = car && this.view === 'drive' ? car : this.player;
+    const cars = [];
+    for (const v of this.fleet.vehicles) if (!v.hidden && v.mode === 'traffic') cars.push(v.car);
+    this.minimap.draw(pos, pos.yaw, { x: dir.x, z: dir.z }, cars, this.view === 'drive' ? 160 : 90, { doors: this.view === 'walk' });
+  }
+
+  /** A footstep on every half stride. */
+  footsteps(surface) {
+    const p = this.player;
+    const step = Math.floor(p.phase / Math.PI);
+    if (step !== this.lastStep) {
+      this.lastStep = step;
+      if (p.speed > 0.6 && !p.jump && !this.pose) this.ctx.audio?.sfx('step', { surface, run: p.speed > 3 });
     }
   }
 
@@ -850,6 +932,7 @@ export default class TownMode {
       // Inside: only the room runs and renders; the town waits outside
       this.updateInterior(dt, t);
       this.updateAvatar(dt);
+      this.footsteps('wood');
       return;
     }
     if (this.tween) {
@@ -884,6 +967,8 @@ export default class TownMode {
       if (this.drive) this.chase.update(dt, t, this.drive.car, (x, z) => this.builder.groundAt(x, z), { dist: 5 + this.drive.v.spec.length * 0.55, height: 1.4 + this.drive.v.spec.length * 0.12 });
       this.updatePrompt();
     }
+    if (this.view === 'walk') this.footsteps(this.layout.modern ? 'road' : 'grass');
+    this.updateGauges();
     const obstacles = [this.player];
     if (this.drive) obstacles.push(this.drive.car);
     this.fleet.update(dt, obstacles);
@@ -915,6 +1000,8 @@ export default class TownMode {
     this.ambient.intensity = L.ambient;
     this.builder.setEnvironment({ time: t, night: L.night, sunDir: this.sunVec, sunColor: L.sunColor, sunIntensity: L.sunIntensity, sky: L.fog });
     this.night = L.night;
+    this.ctx.audio?.setNight(L.night);
+    if (!this.interior) this.ctx.engine.post.setBoost(L.night * 0.5); // lit windows and lamps glow at night
 
     // Fog: from the table the world's edge melts into haze; at street level the horizon opens up
     const street = this.view !== 'diorama' && !this.tween ? 1 : 0;
@@ -943,7 +1030,7 @@ export default class TownMode {
   }
 
   render() {
-    this.ctx.engine.renderer.render(this.interior ? this.interior.scene : this.scene, this.camera);
+    this.ctx.engine.draw(this.interior ? this.interior.scene : this.scene, this.camera);
   }
 
   resize(w, h) {

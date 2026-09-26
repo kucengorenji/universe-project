@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Quality } from './quality.js';
+import { Post } from './post.js';
 
 /**
  * One WebGL context for the whole app, one render loop. Exactly one mode is
@@ -16,8 +17,9 @@ export class Engine {
     container.appendChild(this.renderer.domElement);
     this.quality = new Quality(this);
     this.renderer.setPixelRatio(this.quality.ratio);
+    this.post = new Post(this);
     this.mode = null;
-    this.time = 0;
+    this.time = performance.now() / 1000; // game clock: stops while paused
     this.last = 0;
     this.frameHooks = [];
     this.resize();
@@ -32,7 +34,13 @@ export class Engine {
   resize() {
     const { width, height } = this.size;
     this.renderer.setSize(width, height);
+    this.post?.resize();
     this.mode?.resize?.(width, height);
+  }
+
+  /** Draw a mode's scene, through the post-processing chain when it is on. */
+  draw(scene, camera) {
+    this.post.render(scene, camera);
   }
 
   setMode(mode) {
@@ -43,14 +51,22 @@ export class Engine {
   }
 
   frame(ts) {
-    const t = ts * 0.001;
-    const dt = Math.min(0.1, t - (this.last || t));
-    this.last = t;
-    this.time = t;
-    if (!this.mode) return;
-    this.mode.update(dt, t, ts);
+    const now = ts * 0.001;
+    const dt = Math.min(0.1, now - (this.last || now));
+    this.last = now;
+    if (!this.mode) {
+      this.time += dt;
+      return;
+    }
+    // Paused (menu open): the clock stops and the last frame stays on screen,
+    // unless someone is waiting for a frame
+    if (this.paused && !this.frameHooks.length) return;
+    this.time += this.paused ? 0 : dt;
+    const t = this.time;
+    this.mode.update(this.paused ? 0 : dt, t, t * 1000);
     this.mode.render();
     this.quality.sample(dt);
+    this.audio?.update();
     if (this.frameHooks.length) {
       const hooks = this.frameHooks;
       this.frameHooks = [];

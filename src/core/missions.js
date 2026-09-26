@@ -55,8 +55,9 @@ export const MISSIONS = [
 ];
 
 export class Missions {
-  constructor(root) {
+  constructor(root, audio = null) {
     this.root = root;
+    this.sound = audio;
     this.state = this.load();
     this.listeners = new Set();
     this.buildUi();
@@ -111,6 +112,13 @@ export class Missions {
       this.save();
       this.render();
     }
+  }
+
+  /** Start over (pause menu). */
+  reset() {
+    this.state = {};
+    this.save();
+    this.render();
   }
 
   missionDone(m) {
@@ -208,6 +216,7 @@ export class Missions {
       t.classList.add('is-out');
       setTimeout(() => (t.hidden = true), 400);
     }, 2600);
+    this.sound?.sfx('tick');
     this.listeners.forEach((fn) => fn('tick'));
   }
 
@@ -218,7 +227,8 @@ export class Missions {
     p.querySelector('[data-items]').innerHTML = m.items.map((it, i) => `<li style="animation-delay:${300 + i * 90}ms"><span class="mission__check is-on" aria-hidden="true"></span>${it.label}</li>`).join('');
     p.hidden = false;
     p.querySelector('[data-act="party-close"]').focus({ preventScroll: true });
-    this.fanfare();
+    if (this.sound) this.sound.fanfare();
+    else this.fanfare();
     this.confetti();
     this.listeners.forEach((fn) => fn('party'));
   }

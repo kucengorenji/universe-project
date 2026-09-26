@@ -70,6 +70,9 @@ export class SpaceHud {
       rows: [...root.querySelectorAll('.planet-row')]
     };
     this.el.qualityLabel.textContent = QUALITY_LABEL[quality.preset];
+    // The pause menu can change the preset too
+    this.onQuality = () => (this.el.qualityLabel.textContent = QUALITY_LABEL[quality.preset]);
+    quality.listeners.add(this.onQuality);
     this.onClick = (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -209,6 +212,7 @@ export class SpaceHud {
   }
 
   dispose() {
+    this.quality.listeners.delete(this.onQuality);
     this.root.removeEventListener('click', this.onClick);
     this.root.innerHTML = '';
   }

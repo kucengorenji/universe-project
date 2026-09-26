@@ -1,5 +1,5 @@
 import { BIOMES, STORAGE_KEY } from '../map/mapGenerator.js';
-import { BIOME_PALETTE } from '../render/planetRenderer.js';
+import { PLANET_TYPES } from '../world/planetTypes.js';
 
 const BIOME_NAMES = {
   [BIOMES.OCEAN_DEEP]: 'Laut dalam',
@@ -13,6 +13,15 @@ const BIOME_NAMES = {
   [BIOMES.TUNDRA]: 'Tundra salju'
 };
 
+// Same biome codes, different ground on other worlds
+const TYPE_BIOME_NAMES = {
+  ocean: {},
+  desert: { [BIOMES.PLAINS]: 'Stepa kering', [BIOMES.FOREST]: 'Oasis', [BIOMES.MOUNTAIN]: 'Mesa merah' },
+  ice: { [BIOMES.OCEAN]: 'Laut beku', [BIOMES.OCEAN_DEEP]: 'Laut beku dalam', [BIOMES.PLAINS]: 'Stepa beku', [BIOMES.FOREST]: 'Taiga salju', [BIOMES.DESERT]: 'Dataran es', [BIOMES.BEACH]: 'Pantai es' },
+  lava: { [BIOMES.OCEAN]: 'Lautan lava', [BIOMES.OCEAN_DEEP]: 'Inti lava', [BIOMES.COAST]: 'Kerak lava', [BIOMES.BEACH]: 'Pantai obsidian', [BIOMES.PLAINS]: 'Dataran basal', [BIOMES.DESERT]: 'Padang abu', [BIOMES.MOUNTAIN]: 'Gunung api' },
+  barren: { [BIOMES.PLAINS]: 'Regolit', [BIOMES.DESERT]: 'Padang debu', [BIOMES.MOUNTAIN]: 'Pegunungan batu', [BIOMES.TUNDRA]: 'Es kutub' }
+};
+
 const OWNER_NAMES = { player: 'New Babylon (pemain)', system: 'Aegis Citadel (sistem)' };
 const MODE_NAMES = { air: 'udara', land: 'darat', sea: 'laut' };
 const MODE_ORDER = ['land', 'sea', 'air'];
@@ -22,8 +31,10 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt
 const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
 
 export class MenuController {
-  constructor({ onRegenerate, onResetCamera, onToggleAutoRotate, mapData, renderer }) {
+  constructor({ onRegenerate, onResetCamera, onToggleAutoRotate, onLandCity, onFocus, mapData, renderer }) {
     this.onRegenerate = onRegenerate;
+    this.onLandCity = onLandCity;
+    this.onFocus = onFocus;
     this.onResetCamera = onResetCamera;
     this.onToggleAutoRotate = onToggleAutoRotate;
     this.mapData = mapData;
@@ -192,6 +203,7 @@ export class MenuController {
       const btn = e.target.closest('button');
       if (!btn) return;
       if (btn.dataset.action === 'close') this.renderer.clearFocus();
+      else if (btn.dataset.action === 'land') this.onLandCity?.(Number(btn.dataset.city));
       else if (btn.dataset.action === 'ride' && !this.renderer.povFromCity(Number(btn.dataset.city))) {
         this.flashStatus('Belum ada kendaraan yang melayani kota ini');
       } else if (btn.dataset.focusCity !== undefined) this.renderer.focusOn({ type: 'city', index: Number(btn.dataset.focusCity) });
@@ -200,7 +212,7 @@ export class MenuController {
     if (this.renderer.assetsState) this.setAssetStatus(this.renderer.assetsState);
 
     window.addEventListener('keydown', (e) => {
-      if (e.target.matches?.('input, textarea')) return;
+      if (this.renderer.suspended || e.target.matches?.('input, textarea')) return;
       if (e.key === 'Escape') {
         if (this.isOpen) this.closeSidebar();
         else if (this.renderer.pov) this.renderer.exitPov();
@@ -298,6 +310,9 @@ export class MenuController {
     this.seedManuallyEdited = false;
     if (!mapData) return;
     const el = this.el;
+    const type = PLANET_TYPES[mapData.planetType || 'terran'];
+    document.body.classList.toggle('is-colony', !!mapData.planetType && mapData.planetType !== 'terran');
+    document.body.classList.toggle('is-wild', !type?.inhabited);
 
     el.seedInput.value = mapData.seed;
     el.wallSeed.textContent = mapData.seed;
@@ -339,6 +354,7 @@ export class MenuController {
     const card = this.el.infoCard;
     const body = this.el.infoCardBody;
     document.body.classList.toggle('has-card', !!spec);
+    this.onFocus?.(spec);
     // On wide screens the globe re-centres into the space right of the card
     // The globe re-centres into the space the card leaves free (beside it on desktop, above it on phones)
     const inset = () =>
@@ -375,7 +391,8 @@ export class MenuController {
             ['Rute udara', `${air} rute${air ? (c.style === 'modern' ? ', pesawat' : ', balon udara') : ''}`]
           ])}
           <div class="info-card__actions">
-            <button type="button" class="pill" data-action="ride" data-city="${c.index}">Naik kendaraan dari sini</button>
+            <button type="button" class="pill" data-action="land" data-city="${c.index}">Mendarat di kota</button>
+            <button type="button" class="pill pill--ghost" data-action="ride" data-city="${c.index}">Naik kendaraan dari sini</button>
             <button type="button" class="pill pill--ghost" data-action="close">Kembali ke globe</button>
           </div>
         </div>`;
@@ -414,7 +431,7 @@ export class MenuController {
       html = `
         <header class="info-card__head">
           <span class="card-block__eyebrow">Tile ${tile.id}</span>
-          <h2 class="info-card__title">${this.swatch(tile)}${BIOME_NAMES[tile.biome] || 'Daratan'}</h2>
+          <h2 class="info-card__title">${this.swatch(tile)}${this.biomeName(tile.biome)}</h2>
           ${close}
         </header>
         <div class="info-card__content">
@@ -438,7 +455,11 @@ export class MenuController {
   }
 
   swatch(tile) {
-    return `<span class="swatch" style="background:${hex(BIOME_PALETTE[tile.biome] ?? 0x888888)}"></span>`;
+    return `<span class="swatch" style="background:${hex(this.renderer.palette?.[tile.biome] ?? 0x888888)}"></span>`;
+  }
+
+  biomeName(biome) {
+    return TYPE_BIOME_NAMES[this.mapData?.planetType]?.[biome] || BIOME_NAMES[biome] || 'Daratan';
   }
 
   handleTileHover(tile, x, y) {
@@ -459,7 +480,7 @@ export class MenuController {
       if (tile.hasRiver) parts.push('Sungai');
       if (tile.owner) parts.push(tile.owner === 'player' ? 'Wilayah pemain' : 'Wilayah sistem');
       tip.innerHTML = `
-        <div class="tooltip__title">${this.swatch(tile)}${BIOME_NAMES[tile.biome] || 'Daratan'}</div>
+        <div class="tooltip__title">${this.swatch(tile)}${this.biomeName(tile.biome)}</div>
         <div class="tooltip__meta">${parts.length ? parts.join(' / ') : 'Belum dihuni'}</div>`;
     }
     const w = tip.offsetWidth || 220;

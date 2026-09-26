@@ -21,7 +21,9 @@ const PALETTE = {
  * corner values and 3D position, neighbouring tiles stitch without cracks
  * and the silhouette follows the range shape instead of the hex grid.
  */
-export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, seed = 1, edgeMid = null }) {
+export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, seed = 1, edgeMid = null, palette = null }) {
+  // Planet types may recolour the rock (hex numbers, same keys as PALETTE)
+  const P = palette ? Object.fromEntries(Object.entries(PALETTE).map(([k, c]) => [k, palette[k] !== undefined ? new THREE.Color(palette[k]) : c])) : PALETTE;
   const { tiles, tileMap, globalCorners } = hexasphere;
   const isMtn = (t) => t.biome === BIOMES.MOUNTAIN;
   const mountains = tiles.filter(isMtn);
@@ -114,10 +116,10 @@ export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, see
     // Snow caps follow the massif core (depth) so they read as one cap, not speckles
     const snowy = dn > 1.55 - absLat * 0.9 && hn > 0.9 - absLat * 0.4;
 
-    if (snowy && slope < 0.8) faceColor.copy(PALETTE.snow);
-    else if (hn < 0.18) faceColor.copy(PALETTE.foothill).lerp(PALETTE.rock, hn / 0.18);
-    else faceColor.copy(PALETTE.rock).lerp(PALETTE.rockDark, Math.min(1, hn * 0.5));
-    if (slope > 0.6) faceColor.lerp(PALETTE.cliff, 0.45);
+    if (snowy && slope < 0.8) faceColor.copy(P.snow);
+    else if (hn < 0.18) faceColor.copy(P.foothill).lerp(P.rock, hn / 0.18);
+    else faceColor.copy(P.rock).lerp(P.rockDark, Math.min(1, hn * 0.5));
+    if (slope > 0.6) faceColor.lerp(P.cliff, 0.45);
 
     for (let v = 0; v < 3; v++) colors.push(faceColor.r, faceColor.g, faceColor.b);
   };

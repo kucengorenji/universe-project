@@ -171,6 +171,15 @@ export class MapGenerator {
       forestMoisture: options.forestMoisture ?? 0.08,
       noiseScale: options.noiseScale ?? 1.6,
       territorySize: options.territorySize ?? defaultTerritorySize,
+      // Planet archetype knobs (see world/planetTypes.js); defaults = the terran home world
+      planetType: 'terran',
+      moistureShift: 0,
+      desertMoisture: -0.1,
+      desertLat: 0.5,
+      tundraLat: 0.82,
+      inhabited: true,
+      rivers: true,
+      capitalNames: ['New Babylon', 'Aegis Citadel'],
       ...options
     };
 
@@ -182,7 +191,7 @@ export class MapGenerator {
     for (const tile of this.tiles) {
       const p = tile.center;
       const elev = elevNoise.fbm(p.x * opts.noiseScale, p.y * opts.noiseScale, p.z * opts.noiseScale, 5, 2.0, 0.52);
-      const moist = moistNoise.fbm((p.x + 3.5) * 1.7, (p.y + 7.1) * 1.7, (p.z + 1.2) * 1.7, 4, 2.0, 0.5);
+      const moist = moistNoise.fbm((p.x + 3.5) * 1.7, (p.y + 7.1) * 1.7, (p.z + 1.2) * 1.7, 4, 2.0, 0.5) + opts.moistureShift;
       // Ridged noise produces long chains -> mountain ranges instead of blobs
       const ridge = 1 - Math.abs(ridgeNoise.fbm(p.x * 2.2, p.y * 2.2, p.z * 2.2, 3, 2.0, 0.5));
 
@@ -203,14 +212,14 @@ export class MapGenerator {
         tile.biome = BIOMES.OCEAN_DEEP;
       } else if (tile.elevation < opts.seaLevel) {
         tile.biome = BIOMES.OCEAN;
-      } else if (absLat > 0.82) {
+      } else if (absLat > opts.tundraLat) {
         tile.biome = BIOMES.TUNDRA;
       } else if (
         tile.elevation > opts.mountainThreshold ||
-        (tile.elevation > opts.seaLevel + 0.12 && ridge > 0.94)
+        (tile.elevation > (opts.ridgeFloor ?? opts.seaLevel + 0.12) && ridge > 0.94)
       ) {
         tile.biome = BIOMES.MOUNTAIN;
-      } else if (tile.moisture < -0.1 && absLat < 0.5) {
+      } else if (tile.moisture < opts.desertMoisture && absLat < opts.desertLat) {
         tile.biome = BIOMES.DESERT;
       } else if (tile.moisture > opts.forestMoisture && absLat < 0.78) {
         tile.biome = BIOMES.FOREST;
@@ -237,14 +246,14 @@ export class MapGenerator {
     }
 
     // 3. Rivers
-    const riverPaths = this.generateRivers(opts.seaLevel);
+    const riverPaths = opts.rivers ? this.generateRivers(opts.seaLevel) : [];
 
-    // 4. Faction capitals & territory
-    const playerInfo = this.claimTerritory('player', opts.territorySize, opts.seaLevel);
-    const systemInfo = this.claimTerritory('system', opts.territorySize, opts.seaLevel, playerInfo?.capitalId);
+    // 4. Faction capitals & territory (uninhabited worlds stay wild)
+    const playerInfo = opts.inhabited ? this.claimTerritory('player', opts.territorySize, opts.seaLevel) : null;
+    const systemInfo = opts.inhabited ? this.claimTerritory('system', opts.territorySize, opts.seaLevel, playerInfo?.capitalId) : null;
 
     // 5. Cities, road network & sea lanes
-    const cities = this.placeCities(playerInfo, systemInfo);
+    const cities = opts.inhabited ? this.placeCities(playerInfo, systemInfo, opts.capitalNames) : [];
     this.assignCityStyles(cities);
     this.growCityFootprints(cities);
     const farms = this.placeFarms(cities);
@@ -254,6 +263,7 @@ export class MapGenerator {
 
     return {
       seed: finalSeed,
+      planetType: opts.planetType,
       timestamp: Date.now(),
       subdivision: this.hexasphere.subdivision,
       options: opts,
@@ -508,7 +518,7 @@ export class MapGenerator {
   }
 
   /** Capitals + spaced-out towns that favour coasts, rivers and grassland. */
-  placeCities(playerInfo, systemInfo) {
+  placeCities(playerInfo, systemInfo, capitalNames = ['New Babylon', 'Aegis Citadel']) {
     const cities = [];
     const addCity = (tile, props) => {
       tile.cityIndex = cities.length;
@@ -520,8 +530,8 @@ export class MapGenerator {
       });
     };
 
-    if (playerInfo) addCity(this.tileMap.get(playerInfo.capitalId), { name: 'New Babylon', type: 'capital', owner: 'player' });
-    if (systemInfo) addCity(this.tileMap.get(systemInfo.capitalId), { name: 'Aegis Citadel', type: 'capital', owner: 'system' });
+    if (playerInfo) addCity(this.tileMap.get(playerInfo.capitalId), { name: capitalNames[0], type: 'capital', owner: 'player' });
+    if (systemInfo) addCity(this.tileMap.get(systemInfo.capitalId), { name: capitalNames[1], type: 'capital', owner: 'system' });
 
     const townCount = { 2: 4, 3: 7, 4: 10, 5: 14 }[this.hexasphere.subdivision] || 10;
     // Minimum angular spacing between cities, scaled from the tile spacing

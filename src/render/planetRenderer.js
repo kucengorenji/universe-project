@@ -5,19 +5,11 @@ import { BIOMES, isWater, mulberry32 } from '../map/mapGenerator.js';
 import { createNoise3D } from '../math/simplex3d.js';
 import { loadAssetPack, ASSET_PACK_URL, ASSET_PACK_LOD0_URL, createToonMaterial } from './assetLibrary.js';
 import { buildMountainGeometry } from './mountainBuilder.js';
+import { PLANET_TYPES, TERRAN_PALETTE } from '../world/planetTypes.js';
+import { createSpaceBackdrop } from './spaceBackdrop.js';
 
-// Cartoon (Civ VI-like) terrain palette
-export const BIOME_PALETTE = {
-  [BIOMES.OCEAN_DEEP]: 0x1c4f9c,
-  [BIOMES.OCEAN]: 0x2479c9,
-  [BIOMES.COAST]: 0x3fc2d6,
-  [BIOMES.BEACH]: 0xefd690,
-  [BIOMES.PLAINS]: 0x93c24c,
-  [BIOMES.FOREST]: 0x62993a,
-  [BIOMES.DESERT]: 0xe8bf5f,
-  [BIOMES.MOUNTAIN]: 0x8f8a5a,
-  [BIOMES.TUNDRA]: 0xeaf2f7
-};
+// Cartoon (Civ VI-like) terrain palette (lives with the planet types, shared with the space baker)
+export const BIOME_PALETTE = TERRAN_PALETTE;
 const GROUND = { fantasy: 0xcbb68c, modern: 0xa9a8a0, wheat: 0xc9a650, crop: 0x7f9a45, riverbank: 0x6fae3f };
 // The1 identity colours: The Green = player, The Red = system
 const FACTION = { player: 0x027b49, system: 0xfa4d43 };
@@ -265,7 +257,13 @@ class ContourField {
 }
 
 export class PlanetRenderer {
-  constructor(containerElement, hexasphere) {
+  /**
+   * options.renderer: shared WebGLRenderer (the app's engine owns canvas + size)
+   * options.externalLoop: the caller drives update()/render() instead of our own RAF
+   */
+  constructor(containerElement, hexasphere, options = {}) {
+    this.options = options;
+    this.suspended = false;
     this.container = containerElement;
     this.hexasphere = hexasphere;
     this.radius = hexasphere.radius;
@@ -429,12 +427,16 @@ export class PlanetRenderer {
     this.camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 400);
     this.scene.add(this.camera);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
-    this.container.appendChild(this.renderer.domElement);
+    if (this.options.renderer) {
+      this.renderer = this.options.renderer;
+    } else {
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      this.renderer.setSize(width, height);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.05;
+      this.container.appendChild(this.renderer.domElement);
+    }
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -463,16 +465,73 @@ export class PlanetRenderer {
 
     this.createHoverIndicator();
 
-    window.addEventListener('resize', this.onWindowResize.bind(this));
+    // The canvas may be shared with other modes: ignore input while suspended
+    window.addEventListener('resize', () => !this.suspended && this.onWindowResize());
     const el = this.renderer.domElement;
-    el.addEventListener('pointermove', (e) => (this.pendingPointer = e));
-    el.addEventListener('pointerleave', () => (this.pendingPointer = { leave: true }));
+    el.addEventListener('pointermove', (e) => !this.suspended && (this.pendingPointer = e));
+    el.addEventListener('pointerleave', () => !this.suspended && (this.pendingPointer = { leave: true }));
     // Select on click only, not at the start of a drag-to-rotate
-    el.addEventListener('pointerdown', (e) => (this.pressAt = { x: e.clientX, y: e.clientY }));
-    el.addEventListener('pointerup', this.onPointerUp.bind(this));
+    el.addEventListener('pointerdown', (e) => !this.suspended && (this.pressAt = { x: e.clientX, y: e.clientY }));
+    el.addEventListener('pointerup', (e) => !this.suspended && this.onPointerUp(e));
 
     this.animate = this.animate.bind(this);
-    requestAnimationFrame(this.animate);
+    if (!this.options.externalLoop) requestAnimationFrame(this.animate);
+  }
+
+  /** Leave the planet: free every per-planet mesh, stop reacting to input. */
+  suspend() {
+    if (this.pov) this.exitPov(true, false);
+    if (this.focus) this.clearFocus({ animate: false });
+    this.camTween = null;
+    this.buildId++; // cancels a prop build still waiting for assets
+    this.clearPlanet();
+    this.mapData = null;
+    this.pendingPointer = null;
+    this.pressAt = null;
+    this.suspended = true;
+    this.controls.enabled = false;
+  }
+
+  resume() {
+    this.suspended = false;
+    this.controls.enabled = true;
+    this.planetGroup.rotation.set(0, 0, 0);
+  }
+
+  /** Whole-globe framing seen from a direction in planet space (arrival from orbit). */
+  viewFrom(dir) {
+    const { clientWidth: w, clientHeight: h } = this.container;
+    this.camTween = null;
+    this.setControlsUp(UP);
+    this.controls.target.set(0, 0, 0);
+    this.controls.minDistance = this.radius * 1.12;
+    this.controls.maxPolarAngle = Math.PI;
+    this.camera.position.copy(dir).normalize();
+    this.frameGlobe(w || window.innerWidth, h || window.innerHeight);
+    this.controls.enabled = true;
+  }
+
+  /** Per-type colours: palette, shore colours, mountains, water, sky, air and clouds. */
+  applyLook(typeKey) {
+    const look = PLANET_TYPES[typeKey]?.look || {};
+    this.look = look;
+    this.palette = { ...BIOME_PALETTE, ...(look.palette || {}) };
+    const atmo = look.atmosphere === undefined ? [0x8cccff, 0x408cf2] : look.atmosphere;
+    this.atmosphere.visible = !!atmo;
+    this.haze.visible = !!atmo;
+    if (atmo) {
+      this.atmosphere.material.uniforms.uInner.value.set(atmo[0]);
+      this.atmosphere.material.uniforms.uOuter.value.set(atmo[1]);
+      this.haze.material.uniforms.uColor.value.set(look.haze ?? 0x9ed1ff);
+    }
+    this.hasAir = !!atmo;
+    const clouds = look.clouds === undefined ? { count: 70 } : look.clouds;
+    this.cloudsMesh.visible = !!clouds;
+    if (clouds) {
+      const n = Math.min(this.cloudOffsets.length - 1, clouds.count ?? 70);
+      this.cloudsMesh.geometry.setDrawRange(0, this.cloudOffsets[n]);
+      this.cloudsMesh.material.uniforms.uTint.value.set(clouds.color ?? 0xffffff);
+    }
   }
 
   /** Default view: whole planet in frame, ~91% of the shorter screen axis, seen slightly from above. */
@@ -503,117 +562,20 @@ export class PlanetRenderer {
     sun.target.position.set(0, 0, -30);
   }
 
-  /**
-   * Deep-space backdrop: a procedural nebula sphere concentrated along a tilted
-   * galactic band, and a star field that is denser inside that band. Both live
-   * in world space, so orbiting the planet slowly reveals the sky around it.
-   */
+  /** Deep-space backdrop (shared with the space mode, see spaceBackdrop.js). */
   createSpace() {
-    const noise = createNoise3D(7331);
-    const band = new THREE.Vector3(0.35, 1, 0.2).normalize(); // galactic pole
-    const W = 512;
-    const H = 256;
-    const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext('2d');
-    const img = ctx.createImageData(W, H);
-    const deep = [27, 58, 107];
-    const teal = [31, 95, 110];
-    const dust = [70, 60, 96];
-    const d = new THREE.Vector3();
-    for (let y = 0; y < H; y++) {
-      const phi = (y / H) * Math.PI;
-      for (let x = 0; x < W; x++) {
-        const th = (x / W) * Math.PI * 2;
-        // Same mapping as SphereGeometry's UVs, so the texture has no seams
-        d.set(-Math.cos(th) * Math.sin(phi), Math.cos(phi), Math.sin(th) * Math.sin(phi));
-        const inBand = Math.exp(-Math.pow(d.dot(band) * 3.2, 2));
-        const n = noise.fbm(d.x * 2.2, d.y * 2.2, d.z * 2.2, 5, 2.0, 0.55) * 0.5 + 0.5;
-        const wisps = noise.fbm(d.x * 6 + 9, d.y * 6, d.z * 6, 3, 2.0, 0.5) * 0.5 + 0.5;
-        const a = THREE.MathUtils.clamp((n - 0.42) * 2.2, 0, 1) * (0.25 + inBand * 0.75) * (0.6 + wisps * 0.4);
-        const mix = THREE.MathUtils.clamp(wisps * 1.3 - 0.2, 0, 1);
-        const c = deep.map((v, i) => v + (teal[i] - v) * mix + (dust[i] - v) * inBand * 0.25 * (1 - mix));
-        const o = (y * W + x) * 4;
-        img.data[o] = c[0];
-        img.data[o + 1] = c[1];
-        img.data[o + 2] = c[2];
-        img.data[o + 3] = a * 150;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    this.nebula = new THREE.Mesh(
-      new THREE.SphereGeometry(300, 48, 24),
-      new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, transparent: true, depthWrite: false, toneMapped: false })
-    );
-    this.nebula.renderOrder = -2;
-    this.scene.add(this.nebula);
-
-    // Star field: denser along the band, a few bright ones, slight colour temperature spread
-    const rng = mulberry32(424242);
-    const count = 3200;
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    const size = new Float32Array(count);
-    const tmp = new THREE.Vector3();
-    const temps = [new THREE.Color(0xbcd4ff), new THREE.Color(0xffffff), new THREE.Color(0xfff1d6), new THREE.Color(0xffd9b0)];
-    for (let i = 0; i < count; i++) {
-      let accepted = false;
-      while (!accepted) {
-        const z = rng() * 2 - 1;
-        const t = rng() * Math.PI * 2;
-        tmp.set(Math.sqrt(1 - z * z) * Math.cos(t), z, Math.sqrt(1 - z * z) * Math.sin(t));
-        accepted = rng() < 0.35 + 0.65 * Math.exp(-Math.pow(tmp.dot(band) * 2.5, 2));
-      }
-      tmp.multiplyScalar(280);
-      pos.set([tmp.x, tmp.y, tmp.z], i * 3);
-      const c = temps[Math.floor(rng() * temps.length)];
-      const bright = rng() < 0.04;
-      const b = bright ? 1 : 0.45 + rng() * 0.4;
-      col.set([c.r * b, c.g * b, c.b * b], i * 3);
-      size[i] = bright ? 2.4 + rng() * 1.4 : 0.8 + rng() * 1.1;
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    g.setAttribute('size', new THREE.BufferAttribute(size, 1));
-    this.stars = new THREE.Points(
-      g,
-      new THREE.ShaderMaterial({
-        uniforms: { uPixelRatio: { value: this.renderer.getPixelRatio() } },
-        vertexShader: `
-          attribute float size;
-          varying vec3 vColor;
-          uniform float uPixelRatio;
-          void main() {
-            vColor = color;
-            gl_PointSize = size * uPixelRatio;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          varying vec3 vColor;
-          void main() {
-            float d = length(gl_PointCoord - 0.5);
-            gl_FragColor = vec4(vColor, 1.0 - smoothstep(0.2, 0.5, d));
-          }
-        `,
-        vertexColors: true,
-        transparent: true,
-        depthWrite: false
-      })
-    );
-    this.stars.renderOrder = -1;
-    this.scene.add(this.stars);
+    const { nebula, stars } = createSpaceBackdrop({ radius: 300, pixelRatio: this.renderer.getPixelRatio() });
+    this.nebula = nebula;
+    this.stars = stars;
+    this.scene.add(nebula, stars);
   }
 
   createAtmosphere() {
-    const shell = (radius, side, fragment) =>
+    const shell = (radius, side, fragment, uniforms) =>
       new THREE.Mesh(
         new THREE.SphereGeometry(radius, 96, 64),
         new THREE.ShaderMaterial({
+          uniforms,
           vertexShader: `
             varying vec3 vNormal;
             varying vec3 vPosition;
@@ -624,6 +586,9 @@ export class PlanetRenderer {
             }
           `,
           fragmentShader: `
+            uniform vec3 uInner;
+            uniform vec3 uOuter;
+            uniform vec3 uColor;
             varying vec3 vNormal;
             varying vec3 vPosition;
             void main() {
@@ -641,13 +606,15 @@ export class PlanetRenderer {
       this.radius * 1.09,
       THREE.BackSide,
       `float glow = pow(1.0 - fresnel, 1.6);
-       gl_FragColor = vec4(mix(vec3(0.55, 0.8, 1.0), vec3(0.25, 0.55, 0.95), glow), glow * 0.85);`
+       gl_FragColor = vec4(mix(uInner, uOuter, glow), glow * 0.85);`,
+      { uInner: { value: new THREE.Color(0x8cccff) }, uOuter: { value: new THREE.Color(0x408cf2) }, uColor: { value: new THREE.Color() } }
     );
     // Haze over the terrain near the limb: the planet's edge looks wrapped in air
     this.haze = shell(
       this.radius * 1.075,
       THREE.FrontSide,
-      `gl_FragColor = vec4(0.62, 0.82, 1.0, pow(fresnel, 2.4) * 0.6);`
+      `gl_FragColor = vec4(uColor, pow(fresnel, 2.4) * 0.6);`,
+      { uInner: { value: new THREE.Color() }, uOuter: { value: new THREE.Color() }, uColor: { value: new THREE.Color(0x9ed1ff) } }
     );
     this.haze.renderOrder = 7;
     this.scene.add(this.atmosphere, this.haze);
@@ -663,7 +630,8 @@ export class PlanetRenderer {
     const R = this.radius;
     const clusters = [];
     const m = new THREE.Matrix4();
-    for (let c = 0; c < 70; c++) {
+    // Enough clusters for the cloudiest planet type; each type draws a prefix (setDrawRange)
+    for (let c = 0; c < 110; c++) {
       const z = rng() * 1.7 - 0.85; // keep clear of the poles
       const phi = rng() * Math.PI * 2;
       const dir = new THREE.Vector3(Math.sqrt(1 - z * z) * Math.cos(phi), z, Math.sqrt(1 - z * z) * Math.sin(phi));
@@ -689,10 +657,12 @@ export class PlanetRenderer {
       clusters.push(cluster);
     }
     const geo = mergeGeometries(clusters, false);
+    this.cloudOffsets = [0];
+    for (const g of clusters) this.cloudOffsets.push(this.cloudOffsets[this.cloudOffsets.length - 1] + (g.index ? g.index.count : g.attributes.position.count));
     clusters.forEach((g) => g.dispose());
     geo.computeVertexNormals();
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uNear: { value: R * 0.1 }, uFar: { value: R * 0.26 } },
+      uniforms: { uNear: { value: R * 0.1 }, uFar: { value: R * 0.26 }, uTint: { value: new THREE.Color(0xffffff) } },
       vertexShader: `
         varying vec3 vNormal;
         varying float vDepth;
@@ -706,13 +676,14 @@ export class PlanetRenderer {
       fragmentShader: `
         uniform float uNear;
         uniform float uFar;
+        uniform vec3 uTint;
         varying vec3 vNormal;
         varying float vDepth;
         void main() {
           // Two-step toon shading lit from the upper left, like the terrain
           float ndl = dot(normalize(vNormal), normalize(vec3(-0.45, 0.65, 0.6)));
           vec3 col = ndl > 0.25 ? vec3(1.0) : ndl > -0.25 ? vec3(0.9, 0.93, 0.97) : vec3(0.78, 0.84, 0.92);
-          gl_FragColor = vec4(col, 0.86 * smoothstep(uNear, uFar, vDepth));
+          gl_FragColor = vec4(col * uTint, 0.86 * smoothstep(uNear, uFar, vDepth));
         }
       `,
       transparent: true,
@@ -877,6 +848,7 @@ export class PlanetRenderer {
     // A new world invalidates the focused city/faction
     if (this.focus && this.mapData && mapData.seed !== this.mapData.seed) this.clearFocus();
     this.clearPlanet();
+    this.applyLook(mapData.planetType);
     const buildId = ++this.buildId;
     const tiles = this.hexasphere.tiles;
     const R = this.radius;
@@ -1037,7 +1009,7 @@ export class PlanetRenderer {
   }
 
   tileBaseColor(tile) {
-    let hexColor = BIOME_PALETTE[tile.biome] ?? BIOME_PALETTE[BIOMES.PLAINS];
+    let hexColor = this.palette[tile.biome] ?? this.palette[BIOMES.PLAINS];
     if (this.isCity(tile)) hexColor = GROUND[this.cityByIndex.get(tile.cityIndex)?.style === 'modern' ? 'modern' : 'fantasy'];
     else if (this.isFarm(tile)) hexColor = GROUND[this.mapData?.farms?.[tile.farmIndex]?.crop] ?? GROUND.wheat;
     const c = new THREE.Color(hexColor);
@@ -1142,10 +1114,11 @@ export class PlanetRenderer {
       shallows: new THREE.Color(0x74dbe2),
       foothill: new THREE.Color(0x8e9a5a),
       verge: new THREE.Color(0x7fae47),
-      deep: new THREE.Color(BIOME_PALETTE[BIOMES.OCEAN_DEEP]),
-      ocean: new THREE.Color(BIOME_PALETTE[BIOMES.OCEAN]),
-      coastal: new THREE.Color(BIOME_PALETTE[BIOMES.COAST])
+      deep: new THREE.Color(this.palette[BIOMES.OCEAN_DEEP]),
+      ocean: new THREE.Color(this.palette[BIOMES.OCEAN]),
+      coastal: new THREE.Color(this.palette[BIOMES.COAST])
     };
+    for (const [k, v] of Object.entries(this.look.col || {})) this.col[k] = new THREE.Color(v);
     // Rounded contours for the coastline and the depth bands
     this.landField = new ContourField(this, (t) => !isWater(t));
     // Depth bands only colour the water, so a coarser outline is plenty
@@ -1185,8 +1158,8 @@ export class PlanetRenderer {
       buf.nrm.push(n.x, n.y, n.z);
       buf.col.push(c.r, c.g, c.b);
     };
-    const skirtColor = new THREE.Color(0x9b7a52);
-    const skirtDark = new THREE.Color(0x7a5c3c);
+    const skirtColor = new THREE.Color(this.look.skirt?.[0] ?? 0x9b7a52);
+    const skirtDark = new THREE.Color(this.look.skirt?.[1] ?? 0x7a5c3c);
     const skirtMidR = (this.landR + this.skirtR) / 2;
 
     // Vertical quad facing `out` (outward normal), from top edge t1-t2 down to b1-b2
@@ -1323,22 +1296,18 @@ export class PlanetRenderer {
     };
 
     this.mapGroup.add(
-      new THREE.Mesh(new THREE.SphereGeometry(this.skirtR * 0.999, 48, 32), new THREE.MeshBasicMaterial({ color: 0x0d3b6e }))
+      new THREE.Mesh(new THREE.SphereGeometry(this.skirtR * 0.999, 48, 32), new THREE.MeshBasicMaterial({ color: this.look.core ?? 0x0d3b6e }))
     );
     const landMesh = new THREE.Mesh(makeGeo(land), createToonMaterial({ vertexColors: true }));
     landMesh.name = 'landMesh';
     this.mapGroup.add(landMesh);
+    // In flat mode the sea shares the land's level: push it back in depth at the shore
+    const offset = { polygonOffset: !relief, polygonOffsetFactor: 1, polygonOffsetUnits: 1 };
     const waterMesh = new THREE.Mesh(
       makeGeo(water),
-      new THREE.MeshPhongMaterial({
-        vertexColors: true,
-        shininess: 28,
-        specular: 0x2a4a66,
-        // In flat mode the sea shares the land's level: push it back in depth at the shore
-        polygonOffset: !relief,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1
-      })
+      this.look.water?.unlit
+        ? new THREE.MeshBasicMaterial({ vertexColors: true, ...offset }) // lava glows on its own
+        : new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 28, specular: 0x2a4a66, ...offset })
     );
     waterMesh.name = 'oceanMesh';
     this.mapGroup.add(waterMesh);
@@ -1367,7 +1336,7 @@ export class PlanetRenderer {
       g.setAttribute('position', new THREE.Float32BufferAttribute(fpos, 3));
       g.setAttribute('uv', new THREE.Float32BufferAttribute(fuv, 2));
       g.setIndex(fidx);
-      const foamMat = bandMaterial(0xffffff, { outer: 0.75, inner: 0, fade: true });
+      const foamMat = bandMaterial(this.look.foam ?? 0xffffff, { outer: 0.75, inner: 0, fade: true });
       foamMat.side = THREE.DoubleSide;
       const foamMesh = new THREE.Mesh(g, foamMat);
       foamMesh.renderOrder = 1;
@@ -1401,8 +1370,8 @@ export class PlanetRenderer {
       this.mapGroup.add(mesh);
     };
     // Soft warm grey on land, a lighter blue-grey on water
-    addLines(landLines, 0x5b5d52, 0.32);
-    addLines(waterLines, 0x9fb9cc, 0.22);
+    addLines(landLines, this.look.grid?.[0] ?? 0x5b5d52, 0.32);
+    addLines(waterLines, this.look.grid?.[1] ?? 0x9fb9cc, 0.22);
   }
 
   /**
@@ -1464,7 +1433,8 @@ export class PlanetRenderer {
       landRadius: this.landR,
       tileSpacing: this.tileSpacing,
       seed: mapData.seed || 1,
-      edgeMid: (a, b) => this.edgeMid(a, b)
+      edgeMid: (a, b) => this.edgeMid(a, b),
+      palette: this.look.mountain
     });
     if (!result) return null;
     this.mapGroup.add(new THREE.Mesh(result.geometry, createToonMaterial({ vertexColors: true })));
@@ -1870,11 +1840,19 @@ export class PlanetRenderer {
       return true;
     };
     const pick = (a, b, pB) => (rng() < pB ? b : a);
+    // green (terran/ocean), dry (desert world), snow (ice world), none (lava, barren)
+    const flora = this.look.flora || 'green';
+    const floes = this.look.floes || 0;
 
     for (const tile of this.hexasphere.tiles) {
       if (this.isCity(tile) || this.isFarm(tile)) continue;
       const absLat = Math.abs(tile.center.y);
       const dens = density(tile.center);
+
+      if (flora !== 'green') {
+        this.scatterAlien(flora, tile, { put, pick, rng, dens, tr, floes });
+        continue;
+      }
 
       switch (tile.biome) {
         case BIOMES.FOREST: {
@@ -1949,7 +1927,7 @@ export class PlanetRenderer {
     }
 
     // Sand strips along the sea get palms in the warm belt, driftwood-grey rocks elsewhere
-    for (const tile of this.hexasphere.tiles) {
+    for (const tile of flora === 'green' ? this.hexasphere.tiles : []) {
       if (isWater(tile) || this.isCity(tile) || this.isFarm(tile)) continue;
       if (tile.biome === BIOMES.BEACH || tile.biome === BIOMES.MOUNTAIN || tile.biome === BIOMES.TUNDRA) continue;
       const shore = this.tileEdges(tile).filter((e) => e.nb && isWater(e.nb));
@@ -1965,16 +1943,63 @@ export class PlanetRenderer {
     }
 
     // Pines climbing the lower flanks of mountain ranges
-    for (const spot of foothills) {
+    for (const spot of flora === 'green' || flora === 'snow' ? foothills : []) {
       if (rng() > 0.3) continue;
       const dir = spot.p.clone().normalize();
-      const snowy = Math.abs(dir.y) > 0.6 || spot.hn > 0.35;
+      const snowy = flora === 'snow' || Math.abs(dir.y) > 0.6 || spot.hn > 0.35;
       props.add(
         snowy ? 'tree_pine_snow' : pick('tree_pine', 'tree_pine_b', 0.4),
         this.onSphere(dir, spot.p.length() - 0.004, tr * (0.42 + rng() * 0.24), rng() * Math.PI * 2),
         { tint: tintFor('foliage') }
       );
     }
+  }
+
+  /** Props for non-terran worlds: the same asset kit, picked for the climate. */
+  scatterAlien(flora, tile, { put, pick, rng, dens, tr, floes }) {
+    const wet = isWater(tile);
+    if (wet) {
+      if (floes && rng() < floes * (tile.biome === BIOMES.COAST ? 1.6 : 1)) put('ice_block', tile, tr * (0.5 + rng() * 0.3), { radius: this.waterR - 0.02, wet: true });
+      return;
+    }
+    if (flora === 'snow') {
+      if (tile.biome === BIOMES.FOREST) {
+        for (let i = 0, n = Math.round(6 + dens * 3); i < n; i++) put(pick('tree_pine_snow', 'tree_pine_b', 0.15), tile, tr * 0.54, { kind: 'foliage', lean: 0.05, maxFrac: 0.9 });
+      } else if (tile.biome === BIOMES.TUNDRA || tile.biome === BIOMES.PLAINS) {
+        if (rng() < 0.18 + dens * 0.1) put('tree_pine_snow', tile, tr * 0.5, { kind: 'foliage' });
+        if (rng() < 0.12) put('ice_block', tile, tr * 0.45);
+      }
+      if (rng() < 0.08) put(pick('rock', 'rock_b', 0.5), tile, tr * 0.4);
+      return;
+    }
+    if (flora === 'dry') {
+      switch (tile.biome) {
+        case BIOMES.FOREST: // oasis scrub
+          for (let i = 0, n = Math.round(3 + dens * 2); i < n; i++) put(pick('tree_palm', 'tree_acacia', 0.5), tile, tr * 0.58, { kind: 'foliage', lean: 0.15, maxFrac: 0.85 });
+          if (rng() < 0.6) put('bush_b', tile, tr * 0.45, { detail: true, kind: 'foliage' });
+          break;
+        case BIOMES.PLAINS:
+          if (rng() < 0.2 + dens * 0.1) put('tree_acacia', tile, tr * 0.55, { kind: 'foliage', maxFrac: 0.9 });
+          if (rng() < 0.2) put('cactus', tile, tr * 0.5, { lean: 0.1 });
+          if (rng() < 0.3) put('bush_b', tile, tr * 0.4, { detail: true, kind: 'foliage', maxFrac: 0.9 });
+          break;
+        case BIOMES.DESERT:
+          if (rng() < 0.6 + dens * 0.2) for (let i = 0, n = 1 + Math.floor(rng() * 3); i < n; i++) put('dune', tile, tr * (0.26 + rng() * 0.16), { maxFrac: 0.55 });
+          if (rng() < 0.18) put('cactus', tile, tr * 0.6, { lean: 0.1 });
+          if (rng() < 0.16) put('rock_mesa', tile, tr * 0.6, { maxFrac: 0.35 });
+          break;
+        case BIOMES.BEACH:
+          if (rng() < 0.3) put('tree_palm', tile, tr * 0.6, { kind: 'foliage', lean: 0.25, maxFrac: 0.85 });
+          break;
+        default:
+          if (rng() < 0.1) put('rock', tile, tr * 0.4);
+      }
+      return;
+    }
+    // Lifeless rock (lava, barren): boulders, mesas and ash dunes only
+    if (tile.biome === BIOMES.DESERT && rng() < 0.4) put('dune', tile, tr * (0.24 + rng() * 0.14), { maxFrac: 0.55 });
+    if (rng() < 0.16 + dens * 0.08) put(pick('rock', 'rock_b', 0.5), tile, tr * (0.4 + rng() * 0.2));
+    if (rng() < 0.06) put('rock_mesa', tile, tr * 0.5, { maxFrac: 0.4 });
   }
 
   buildSettlements(mapData, props) {
@@ -2196,7 +2221,7 @@ export class PlanetRenderer {
     g.scale(1, 0.4, 0.38);
     g.deleteAttribute('uv');
     g.deleteAttribute('normal');
-    const color = new THREE.Color(0xd9a94c);
+    const color = new THREE.Color(this.look?.dune ?? 0xd9a94c);
     const cols = new Float32Array(g.attributes.position.count * 3);
     for (let i = 0; i < g.attributes.position.count; i++) color.toArray(cols, i * 3);
     g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
@@ -2445,7 +2470,7 @@ export class PlanetRenderer {
       this.camera.far = 120;
       this.camera.updateProjectionMatrix();
       // At ground level the thin atmosphere shell would show its edge: use a plain sky instead
-      this.scene.background = new THREE.Color(0x9dc0e3);
+      this.scene.background = new THREE.Color(this.look?.sky ?? 0x9dc0e3);
       this.atmosphere.visible = false;
       this.stars.visible = false;
       this.nebula.visible = false;
@@ -2462,7 +2487,7 @@ export class PlanetRenderer {
     this.camera.far = 400;
     this.camera.updateProjectionMatrix();
     this.scene.background = null;
-    this.atmosphere.visible = true;
+    this.atmosphere.visible = this.hasAir !== false;
     this.stars.visible = true;
     this.nebula.visible = true;
     const width = this.container.clientWidth || window.innerWidth;
@@ -2953,7 +2978,7 @@ export class PlanetRenderer {
     const height = this.container.clientHeight || window.innerHeight;
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    if (!this.options.renderer) this.renderer.setSize(width, height);
     if (!this.pov && !this.focus?.flying && !this.camTween) this.frameGlobe(width, height);
   }
 
@@ -2997,7 +3022,7 @@ export class PlanetRenderer {
     }
 
     const inPov = !!this.pov;
-    if (this.haze) this.haze.visible = !inPov;
+    if (this.haze) this.haze.visible = !inPov && this.hasAir !== false;
 
     const focusedCity = this.focus?.spec.type === 'city' ? this.focus.spec.index : -1;
     for (const { sprite, normal, city } of this.labels) {
@@ -3018,6 +3043,15 @@ export class PlanetRenderer {
 
   animate(timestamp) {
     requestAnimationFrame(this.animate);
+    this.update(timestamp);
+    this.render();
+  }
+
+  render() {
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  update(timestamp) {
     const t = (this.animTime = timestamp * 0.001);
     const dt = Math.min(0.1, t - (this.lastFrame || t));
     this.lastFrame = t;
@@ -3042,8 +3076,6 @@ export class PlanetRenderer {
     // Air route lines are a map overlay: shown from orbit, hidden up close and while riding
     if (this.airLines) this.airLines.visible = !this.pov && this.camera.position.length() > this.radius * 1.45;
     this.updateVisibility();
-
-    this.renderer.render(this.scene, this.camera);
   }
 
   resetCamera() {

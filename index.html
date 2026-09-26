@@ -4,29 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planet Globe</title>
+  <meta name="theme-color" content="#070c19" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body>
+  <div id="canvas-container" aria-label="Dunia 3D"></div>
+
+  <!-- ============================================================ PLANET MODE -->
+  <div id="planetUi" class="mode-ui" hidden>
   <!-- Seed number as wall type, hung behind the globe -->
   <div class="wall-type" aria-hidden="true">
     <span class="wall-type__label">Seed</span>
     <span id="wallSeed" class="wall-type__seed">000000</span>
   </div>
 
-  <div id="canvas-container" aria-label="Globe 3D. Seret untuk memutar, scroll untuk zoom."></div>
-
   <header class="topbar">
-    <span class="wordmark">Planet Globe</span>
+    <div class="crumbs">
+      <button id="orbitBtn" class="pill pill--ghost crumbs__back" type="button" aria-label="Lepas landas ke orbit">
+        <span class="arrow-up" aria-hidden="true"></span>Ke orbit
+      </button>
+      <span class="wordmark"><span id="planetName">Planet</span><span id="planetType" class="wordmark__meta">Terran</span></span>
+    </div>
     <div class="topbar__right">
-      <span id="storageStatusBadge" class="topbar__status">Tersimpan di browser</span>
-      <span class="cta-pair">
+      <span id="storageStatusBadge" class="topbar__status home-only">Tersimpan di browser</span>
+      <span class="cta-pair home-only">
         <span class="cta-pair__question">Dunia lain?</span>
         <button id="quickRegenerateBtn" class="pill" type="button">Acak dunia</button>
       </span>
-      <button id="povEnterBtn" class="pill pill--ghost" type="button">Naik kendaraan</button>
+      <button id="povEnterBtn" class="pill pill--ghost inhabited-only" type="button">Naik kendaraan</button>
       <button id="screenshotBtn" class="pill pill--ghost" type="button">Simpan gambar</button>
       <button id="menuToggleBtn" class="menu-circle" type="button" aria-label="Buka pengaturan" aria-expanded="false" aria-controls="sidebarDrawer">
         <span></span><span></span><span></span>
@@ -69,7 +77,7 @@
     </div>
 
     <div class="panel__body">
-      <section class="panel__section" aria-labelledby="secWorld">
+      <section class="panel__section home-only" aria-labelledby="secWorld">
         <div class="panel__heading-row">
           <h3 id="secWorld" class="panel__heading">Dunia</h3>
           <label class="switch-inline">
@@ -116,7 +124,7 @@
         </div>
       </section>
 
-      <section class="panel__section panel__section--flush" aria-labelledby="secFaction">
+      <section class="panel__section panel__section--flush inhabited-only" aria-labelledby="secFaction">
         <h3 id="secFaction" class="panel__heading panel__heading--inset">Faksi</h3>
         <div class="blocks">
           <button type="button" class="block block--green" data-focus-faction="player" aria-label="Fokus ke wilayah New Babylon">
@@ -133,13 +141,13 @@
         <p id="settlementSummary" class="panel__note panel__note--inset">Belum ada pemukiman.</p>
       </section>
 
-      <section class="panel__section" aria-labelledby="secCities">
+      <section class="panel__section inhabited-only" aria-labelledby="secCities">
         <h3 id="secCities" class="panel__heading">Kota</h3>
         <p class="panel__note">Pilih kota untuk terbang ke sana.</p>
         <ul id="cityList" class="city-list"></ul>
       </section>
 
-      <section class="panel__section" aria-labelledby="secRoutes">
+      <section class="panel__section inhabited-only" aria-labelledby="secRoutes">
         <h3 id="secRoutes" class="panel__heading">Jalur</h3>
         <label class="switch-row">
           <span class="switch-row__text">
@@ -195,6 +203,24 @@
   </aside>
 
   <div id="tileTooltip" class="tooltip" role="tooltip"></div>
+  </div>
+
+  <!-- ============================================================ SPACE MODE -->
+  <div id="spaceUi" class="mode-ui" hidden></div>
+
+  <!-- ============================================================ TOWN MODE -->
+  <div id="townUi" class="mode-ui" hidden></div>
+
+  <!-- Cover between modes: last frame / clouds / dark, with a loading line -->
+  <div id="cover" class="cover is-on" data-kind="fade">
+    <canvas class="cover__snap" aria-hidden="true"></canvas>
+    <div class="cover__fx" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="cover__loading is-visible" role="status">
+      <span class="cover__spinner" aria-hidden="true"></span>
+      <span class="cover__label">Memuat</span>
+      <span class="cover__bar" aria-hidden="true"><i></i></span>
+    </div>
+  </div>
 
   <script type="module" src="./src/main.js"></script>
 </body>

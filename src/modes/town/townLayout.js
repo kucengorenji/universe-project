@@ -1,5 +1,6 @@
 import { BIOMES, isWater, mulberry32 } from '../../map/mapGenerator.js';
 import { createNoise3D } from '../../math/simplex3d.js';
+import { planWards, planRivers, planBridges, fillBlock, farmStrips, riverDistance } from './townPlan.js';
 
 // Town layout: a city and its surroundings, cut out of the planet's hex map
 // and unrolled onto a flat, metre-scale disc (a tabletop diorama). Pure data:
@@ -326,12 +327,21 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   };
 
   // ------------------------------------------------------------ city plan
-  if (modern) planModern(layout, { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, fp });
-  else planFantasy(layout, { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, free, fp });
+  planRivers(layout, byId, local, chaikin);
+  const K = { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, free, fp };
+  if (modern) planModern(layout, K);
+  else if (planWards(layout, K)) {
+    // Torch posts along the arteries
+    scatterAlong(layout, ['main'], 26, (x, z, yaw) => {
+      if (streetClear(x, z, 10) < 0.3) return;
+      layout.props.push({ asset: 'f_lamp', x, z, yaw, w: 0.6, d: 0.6 });
+      layout.colliders.push({ type: 'circle', x, z, r: 0.3 });
+    }, { side: 4.2, rng });
+  } else planFantasy(layout, K);
 
   // Roads out of town to the edge of the disc, along the planet's route
   for (const e of exits) {
-    const start = [Math.cos(e.angle) * edgeRadius(e.angle) * 0.92, Math.sin(e.angle) * edgeRadius(e.angle) * 0.92];
+    const start = e.gate ? [e.gate.x, e.gate.z] : [Math.cos(e.angle) * edgeRadius(e.angle) * 0.92, Math.sin(e.angle) * edgeRadius(e.angle) * 0.92];
     const pts = [start];
     // Out to the painted far ground, so the road visibly carries on past the disc
     const reach = 1050;
@@ -350,6 +360,7 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     addStreet(smoothPts, modern ? 10 : 5.5, 'road');
   }
 
+  planBridges(layout);
   planSurroundings(layout, { rng, noise, at, place, streetClear, claim, local, modern, planetType, detail });
   buildGraphs(layout);
   return layout;
@@ -620,7 +631,8 @@ function scatterAlong(L, kinds, every, fn, { side, rng }) {
 
 // ---------------------------------------------------------------- modern
 
-function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim, fp }) {
+function planModern(L, K) {
+  const { rng, at, inCity, addStreet, streetClear, place, claim } = K;
   const axis = rng() * Math.PI;
   const ca = Math.cos(axis);
   const sa = Math.sin(axis);
@@ -692,31 +704,20 @@ function planModern(L, { rng, at, inCity, addStreet, streetClear, place, claim, 
         place(L.buildings, rng() < 0.5 ? 'm_tower_a' : 'm_tower_b', x, z, yaw + Math.floor(rng() * 4) * (Math.PI / 2), 30, 30, { pad: 0.5 });
         continue;
       }
-      const pool =
-        (downtown && ring <= 2) || t < 0.45 ? [['m_office', 22, 22], ['m_apartment', 20, 16], ['m_shop', 14, 10]]
-        : t < 0.8 ? [['m_apartment', 20, 16], ['m_shop', 14, 10], ['m_apartment', 20, 16]]
-        : [['m_house', 12, 10], ['m_house', 12, 10], ['m_shop', 14, 10]];
+      // Zoning: offices and towers downtown, then shops and flats, then
+      // houses with gardens; blocks on the water are the port's warehouses
+      const nearWater = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([du, dv]) => {
+        const [wx, wz] = toWorld(i * pitch + du * pitch * 0.6, j * pitch + dv * pitch * 0.6);
+        return at(wx, wz).land < 0.5;
+      });
+      const zone = nearWater && ring > 1 ? 'industrial' : (downtown && ring <= 2) || t < 0.35 ? 'cbd' : t < 0.6 ? 'commercial' : t < 0.85 ? 'residential' : 'suburb';
+      // Block corners (CCW) in world space; every edge faces a street
       const half = inner / 2;
-      for (let side = 0; side < 4; side++) {
-        const phi = axis + (side * Math.PI) / 2; // outward normal angle of this side
-        const nx = Math.cos(phi);
-        const nz = Math.sin(phi);
-        const tx = -nz;
-        const tz = nx;
-        let sAlong = -half + 1;
-        while (sAlong < half - 4) {
-          const [asset, w0, d0] = pool[Math.floor(rng() * pool.length)];
-          const f = fp(asset, w0, d0);
-          if (sAlong + f.w > half - 0.5) break;
-          // local X runs against the tangent here (yaw = phi - 90 deg), hence + cx
-          const c = sAlong + f.w / 2 + f.cx;
-          const inward = half - f.front;
-          const bx = x + nx * inward + tx * c;
-          const bz = z + nz * inward + tz * c;
-          if (inCity(bx, bz, 0.5)) place(L.buildings, asset, bx, bz, phi - Math.PI / 2, w0, d0, { pad: 0.4 });
-          sAlong += f.w + 1.5 + rng() * 2;
-        }
-      }
+      const block = [[-half, -half], [half, -half], [half, half], [-half, half]].map(([du, dv]) => {
+        const [bx, bz] = toWorld(i * pitch + du, j * pitch + dv);
+        return { x: bx, z: bz, e: -1 };
+      });
+      fillBlock(L, block, zone, K, { setback: 1.2, keep: (bx, bz) => inCity(bx, bz, 0.45) && at(bx, bz).land > 0.6 });
     }
   }
 
@@ -745,7 +746,34 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
   const flora = { ice: 'snow', desert: 'dry', lava: 'none', barren: 'none' }[planetType] || 'green';
   // Farmland: long plots with crop rows in their own direction
   const fields = [];
-  for (const t of local) {
+  // Ward-planned towns: the countryside cells near town (and on farm tiles) are
+  // cut into parallel strips, each its own crop, with a barn by the road
+  const S0 = {};
+  for (const c of L.farmCells || []) {
+    const s = at(c.x, c.z, S0);
+    const fertile = s.land > 0.8 && s.forest < 0.4 && s.mountain < 0.3 && s.desert < 0.5 && s.tundra < 0.5;
+    if (!fertile || !(s.farm > 0.25 || (c.nearTown && rng() < 0.65))) continue;
+    if (riverDistance(L, c.x, c.z) < 12) continue;
+    const dry = (f) => {
+      // Every corner and the middle on dry land, away from rivers
+      const ca = Math.cos(f.yaw);
+      const sa = Math.sin(f.yaw);
+      return [[0, 0], [-1, -1], [1, -1], [1, 1], [-1, 1]].every(([u, v]) => {
+        const x = f.x + (u * f.w * ca - v * f.d * sa) / 2;
+        const z = f.z + (u * f.w * sa + v * f.d * ca) / 2;
+        return at(x, z, S0).land > 0.78 && riverDistance(L, x, z) > 4;
+      });
+    };
+    const strips = farmStrips(c, rng).filter((f) => streetClear(f.x, f.z, 40) > Math.min(f.w, f.d) / 2 + 3 && dry(f));
+    fields.push(...strips);
+    if (strips.length && rng() < 0.55) {
+      const f = strips[0];
+      const bx = f.x + Math.cos(f.yaw) * (f.w / 2 + 9);
+      const bz = f.z + Math.sin(f.yaw) * (f.w / 2 + 9);
+      if (streetClear(bx, bz, 20) > 6) place(L.buildings, rng() < 0.8 ? 'barn' : 'windmill', bx, bz, f.yaw + Math.PI / 2, 14, 10);
+    }
+  }
+  for (const t of L.farmCells ? [] : local) {
     if (!t.farm || t.city || Math.hypot(t.x, t.z) > L.dioramaR - 60) continue;
     const plots = 2 + Math.floor(rng() * 2);
     for (let p = 0; p < plots; p++) {

@@ -347,7 +347,7 @@ export default class TownMode {
     this.layout.buildings.forEach((b, i) => {
       if (!ENTERABLE[b.asset] || !this.furniture) return;
       const f = this.footprints[b.asset];
-      const front = f ? f.maxZ : b.d / 2;
+      const front = (f ? f.maxZ : b.d / 2) * (b.sz ?? 1); // lots stretch houses a little
       const fx = -Math.sin(b.yaw);
       const fz = Math.cos(b.yaw);
       doors.push({ b, i, x: b.x + fx * (front + 0.9), z: b.z + fz * (front + 0.9), outYaw: Math.atan2(fx, fz) });

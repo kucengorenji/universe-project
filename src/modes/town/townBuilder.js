@@ -177,7 +177,9 @@ export class TownBuilder {
     this.chunks = [];
     this.uniforms = { uNight: { value: 0 }, uTime: { value: 0 } };
     this.setupGroundColors();
+    this.indexRivers();
     this.buildHeights();
+    this.bridges = [];
     const detail = quality.settings.detail;
     this.paint = new GroundPaint(layout, { res: detail >= 1 ? 2048 : detail >= 0.75 ? 1536 : 1024, farRes: detail >= 0.75 ? 1024 : 512 });
     this.disposables.push(this.paint);
@@ -189,6 +191,86 @@ export class TownBuilder {
     this.buildWater();
     this.buildFieldRows();
     this.buildInstances();
+    this.buildBridges();
+  }
+
+  // -------------------------------------------------------------- rivers and bridges
+
+  /** River segments in a coarse grid, for fast distance queries while carving. */
+  indexRivers() {
+    this.riverGrid = new Map();
+    this.riverCell = 40;
+    const c = this.riverCell;
+    for (const r of this.L.rivers || []) {
+      for (let i = 0; i + 1 < r.pts.length; i++) {
+        const [ax, az] = r.pts[i];
+        const [bx, bz] = r.pts[i + 1];
+        const seg = { ax, az, bx, bz, hw: r.w / 2 };
+        const pad = r.w / 2 + 12;
+        for (let gi = Math.floor((Math.min(ax, bx) - pad) / c); gi <= Math.floor((Math.max(ax, bx) + pad) / c); gi++) {
+          for (let gj = Math.floor((Math.min(az, bz) - pad) / c); gj <= Math.floor((Math.max(az, bz) + pad) / c); gj++) {
+            const k = `${gi},${gj}`;
+            if (!this.riverGrid.has(k)) this.riverGrid.set(k, []);
+            this.riverGrid.get(k).push(seg);
+          }
+        }
+      }
+    }
+  }
+
+  /** Distance to the nearest river bank (< 0 in the water), Infinity when far from any. */
+  riverDist(x, z) {
+    const segs = this.riverGrid.get(`${Math.floor(x / this.riverCell)},${Math.floor(z / this.riverCell)}`);
+    if (!segs) return Infinity;
+    let best = Infinity;
+    for (const s of segs) {
+      const dx = s.bx - s.ax;
+      const dz = s.bz - s.az;
+      const t = Math.max(0, Math.min(1, ((x - s.ax) * dx + (z - s.az) * dz) / (dx * dx + dz * dz || 1)));
+      best = Math.min(best, Math.hypot(x - s.ax - dx * t, z - s.az - dz * t) - s.hw);
+    }
+    return best;
+  }
+
+  /** Bridges where streets cross rivers: a deck and parapets, stone or concrete. */
+  buildBridges() {
+    const geos = [];
+    const colors = this.L.modern ? { deck: 0xb9b6ad, side: 0xd5d2ca, pier: 0x9d9a92 } : { deck: 0x9c8f7a, side: 0xb5a88f, pier: 0x8a7e6a };
+    const box = (cx, cy, cz, sx, sy, sz, yaw, hex) => {
+      const g = new THREE.BoxGeometry(sx, sy, sz);
+      g.rotateY(-yaw);
+      g.translate(cx, cy, cz);
+      const n = g.attributes.position.count;
+      const col = new Float32Array(n * 3);
+      const c = new THREE.Color(hex);
+      for (let i = 0; i < n; i++) c.toArray(col, i * 3);
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      g.setAttribute('emissive', new THREE.BufferAttribute(new Float32Array(n), 1));
+      g.deleteAttribute('uv');
+      geos.push(g);
+    };
+    for (const b of this.L.bridges || []) {
+      const c = Math.cos(b.yaw);
+      const s = Math.sin(b.yaw);
+      const ends = [-1, 1].map((k) => this.heightAt(b.x + c * k * b.len * 0.5, b.z + s * k * b.len * 0.5));
+      const y = Math.max(ends[0], ends[1], WATER_Y + 0.9) + 0.12;
+      this.bridges.push({ x: b.x, z: b.z, c, s, hl: b.len / 2, hw: b.w / 2, y });
+      // Deck, parapets along both sides, a pier in the middle
+      box(b.x, y - 0.3, b.z, b.len, 0.6, b.w, b.yaw, colors.deck);
+      for (const side of [-1, 1]) {
+        const ox = -s * side * (b.w / 2 - 0.2);
+        const oz = c * side * (b.w / 2 - 0.2);
+        box(b.x + ox, y + 0.4, b.z + oz, b.len, 0.8, 0.35, b.yaw, colors.side);
+      }
+      box(b.x, (y + WATER_Y - 2) / 2, b.z, 1.6, y - WATER_Y + 2, b.w * 0.8, b.yaw, colors.pier);
+    }
+    if (!geos.length) return;
+    const merged = this.track(mergeGeometries(geos));
+    geos.forEach((g) => g.dispose());
+    const mesh = new THREE.Mesh(merged, this.material);
+    mesh.castShadow = this.quality.settings.shadows;
+    mesh.receiveShadow = this.quality.settings.shadows;
+    this.group.add(mesh);
   }
 
   track(o) {
@@ -323,6 +405,10 @@ export class TownBuilder {
     let h = 1.3 + gentle * (1 - town) + mountain * (1 - town);
     h = THREE.MathUtils.lerp(-4 - s.deep * 7 + gentle * 0.5, h, land);
     h = THREE.MathUtils.lerp(h, 1.1, town * land);
+    // River channel: a bed below the water line and banks that ease back up
+    const rd = this.riverDist(x, z);
+    const bank = rd < 8 ? 1 - smooth(rd, -1, 8) : 0;
+    if (rd < 8) h = Math.min(h, THREE.MathUtils.lerp(h, WATER_Y - 1.7, smooth(-rd, -8, 3)));
     if (!c) return h;
     // Beach tiles are 170 m across: only the strip by the water is sand
     const shore = 1 - smooth(h, WATER_Y + 1.2, WATER_Y + 3.5);
@@ -347,6 +433,7 @@ export class TownBuilder {
       tmp.copy(pal.coast).lerp(pal.ocean, depth).lerp(pal.ocean_deep, smooth(WATER_Y - h, 5, 10));
       c.lerp(tmp, Math.min(1, 0.35 + depth));
     } else if (h < WATER_Y + 1.6 && s.land < 0.75) c.lerp(pal.beach, 0.6);
+    if (bank > 0 && h >= WATER_Y + 0.4) c.lerp(soil, bank * 0.55); // muddy banks
     c.offsetHSL(0, 0, noise.noise(x * 0.03, z * 0.03, 5) * 0.035);
     return h;
   }
@@ -415,7 +502,14 @@ export class TownBuilder {
   }
 
   groundAt(x, z) {
-    return Math.max(this.heightAt(x, z), WATER_Y);
+    const g = Math.max(this.heightAt(x, z), WATER_Y);
+    // Bridge decks carry walkers and cars over the river
+    for (const b of this.bridges) {
+      const dx = x - b.x;
+      const dz = z - b.z;
+      if (Math.abs(dx * b.c + dz * b.s) < b.hl && Math.abs(-dx * b.s + dz * b.c) < b.hw) return Math.max(g, b.y);
+    }
+    return g;
   }
 
   // -------------------------------------------------------------- terrain
@@ -785,21 +879,23 @@ export class TownBuilder {
     const add = (item, { scale = 1, span = null, y = null, shadow = true } = {}) => {
       const res = this.resolve(item.asset, item.variant ?? 0);
       if (!res) return;
-      const h = y ?? (item.floating ? WATER_Y : this.heightAt(item.x, item.z));
-      q.setFromEuler(e.set(0, -item.yaw, 0));
+      const h = (y ?? (item.floating ? WATER_Y : this.heightAt(item.x, item.z))) - (item.sink ?? 0);
+      // Tilt (rocks tumble on every axis), then the heading
+      q.setFromEuler(e.set(item.tiltX ?? 0, -item.yaw, item.tiltZ ?? 0, 'YXZ'));
       if (res.span) {
         sc.set((span ?? item.len ?? 1) / res.spanLength, res.spanHeight, res.spanHeight);
         m.compose(v.set(item.x, h, item.z), q, sc).multiply(res.fix);
       } else {
-        // Town-pack models are authored at their layout size
-        m.compose(v.set(item.x, h, item.z), q, sc.setScalar(res.native && !res.spec.natural ? 1 : scale)).multiply(res.fix);
+        // Town-pack models are authored at their layout size; lots stretch them a little per axis
+        const s = res.native && !res.spec.natural ? 1 : scale;
+        m.compose(v.set(item.x, h, item.z), q, sc.set(s * (item.sx ?? 1), s * (item.sy ?? 1), s * (item.sz ?? 1))).multiply(res.fix);
       }
       const k = chunkOf(item.x, item.z);
       const bucket = this.chunks[k].buckets;
       if (!bucket.has(res.key)) bucket.set(res.key, { res, items: [], shadow });
       bucket.get(res.key).items.push({ m: m.clone(), tint: item.tint ?? 1 });
     };
-    for (const b of L.buildings) add(b, { scale: b.w / ((CATALOG[b.asset]?.size) || b.w) });
+    for (const b of L.buildings) add(b, { scale: b.w / (b.sx ?? 1) / ((CATALOG[b.asset]?.size) || b.w) });
     for (const p of L.props) if (!p.parked) add(p); // parked vehicles belong to the fleet (enterable)
     for (const t of L.trees) {
       // Layout sizes are canopy widths; trees in the catalogue are fitted by height (~5.5 m canopy)

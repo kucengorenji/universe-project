@@ -91,6 +91,20 @@ export class GroundPaint {
     };
 
     if (detail) this.paintFields(ctx, m);
+    // Ward ground: packed earth in the slums, paving by the merchants, grass in the rich quarter
+    if (detail && L.wards) {
+      const WARD_GROUND = { slum: ['#9a8763', 0.32], craftsmen: ['#a59676', 0.2], merchant: ['#b0a58f', 0.26], gate: ['#a8987a', 0.24], docks: ['#9d937d', 0.3], military: ['#a0957c', 0.28] };
+      for (const w of L.wards) {
+        const g = WARD_GROUND[w.ward];
+        if (!g) continue;
+        ctx.globalAlpha = g[1];
+        ctx.fillStyle = g[0];
+        path(w.poly);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
 
     // Streets: kerb / pavement pass first for every street, then the surfaces,
     // so junctions merge into one clean shape.
@@ -139,12 +153,28 @@ export class GroundPaint {
     }
     if (detail && L.modern) this.paintMarkings(ctx, streets, m);
 
-    // Plaza
+    // Rivers over the streets they cross (bridges carry the streets): muddy banks, dark bed
+    for (const r of L.rivers || []) {
+      path(r.pts);
+      ctx.strokeStyle = '#7c6a4c';
+      ctx.lineWidth = r.w + 9;
+      ctx.stroke();
+      path(r.pts);
+      ctx.strokeStyle = '#4e6f7a';
+      ctx.lineWidth = r.w;
+      ctx.stroke();
+    }
+
+    // Plaza (a polygon in ward-planned towns, a disc otherwise)
     if (L.plaza) {
       const p = L.plaza;
       ctx.save();
       ctx.beginPath();
-      ctx.arc(p.x, p.z, p.r, 0, Math.PI * 2);
+      if (p.poly?.length > 2) {
+        ctx.moveTo(p.poly[0][0], p.poly[0][1]);
+        for (let i = 1; i < p.poly.length; i++) ctx.lineTo(p.poly[i][0], p.poly[i][1]);
+        ctx.closePath();
+      } else ctx.arc(p.x, p.z, p.r, 0, Math.PI * 2);
       ctx.fillStyle = L.modern ? '#d4d0c6' : '#b3a792';
       ctx.fill();
       if (detail) {
@@ -154,7 +184,7 @@ export class GroundPaint {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
       ctx.restore();
-      if (detail) {
+      if (detail && !p.poly) {
         // A darker ring of stones around the plaza edge
         ctx.beginPath();
         ctx.arc(p.x, p.z, p.r - 0.4, 0, Math.PI * 2);

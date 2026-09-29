@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mulberry32 } from '../../map/mapGenerator.js';
+import { mulberry32 } from '../../math/random.js';
 import { PLANET_TYPES } from '../../world/planetTypes.js';
 import { toTexture } from './bake.js';
 

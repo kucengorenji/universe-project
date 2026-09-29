@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWalkNetwork, edgePoint, townWalkable, walkRoute } from '../src/modes/town/walkNetwork.js';
-import { Pedestrians } from '../src/modes/town/pedestrianRoutes.js';
-import { mulberry32, MapGenerator } from '../src/map/mapGenerator.js';
+import { createWalkNetwork, edgePoint, townWalkable, walkRoute } from '../src/modes/town/navigation/walkNetwork.js';
+import { Pedestrians } from '../src/modes/town/navigation/pedestrianRoutes.js';
+import { MapGenerator } from '../src/map/mapGenerator.js';
+import { mulberry32 } from '../src/math/random.js';
 import { generateHexasphere } from '../src/math/hexasphere.js';
-import { generateTownLayout } from '../src/modes/town/townLayout.js';
+import { generateTownLayout } from '../src/modes/town/layout/townLayout.js';
 import { describeBuilding } from '../src/world/buildingBlueprint.js';
 
 const line = (pts, kind = 'street', w = 4) => ({ pts: pts.map(([x,z]) => ({ x,z })), kind, w });

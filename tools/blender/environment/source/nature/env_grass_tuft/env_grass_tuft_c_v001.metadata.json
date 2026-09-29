@@ -1,0 +1,72 @@
+{
+  "assetId": "env_grass_tuft",
+  "variantId": "env_grass_tuft_c",
+  "lods": {
+    "0": {
+      "triangles": 56,
+      "vertices": 42,
+      "boundsBlender": {
+        "min": [
+          -0.25,
+          -0.25,
+          0.0
+        ],
+        "max": [
+          0.25001,
+          0.24999,
+          0.35
+        ]
+      },
+      "materialSlots": 4,
+      "uv": true,
+      "ceiling": 300,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 40,
+      "vertices": 30,
+      "boundsBlender": {
+        "min": [
+          -0.15804,
+          -0.25,
+          0.0
+        ],
+        "max": [
+          0.25001,
+          0.24999,
+          0.33667
+        ]
+      },
+      "materialSlots": 4,
+      "uv": true,
+      "ceiling": 120,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 24,
+      "vertices": 18,
+      "boundsBlender": {
+        "min": [
+          -0.08466,
+          -0.15179,
+          0.0
+        ],
+        "max": [
+          0.25001,
+          0.24999,
+          0.31151
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 30,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 2,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated"
+}

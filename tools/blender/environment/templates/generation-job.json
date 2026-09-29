@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "template": true,
+  "jobId": "ENV-JOB-0001",
+  "status": "planned",
+  "assetId": "env_tree_oak",
+  "variantId": "env_tree_oak_a",
+  "referenceIds": [
+    "REF-01",
+    "REF-06"
+  ],
+  "referenceUsage": "style-and-shape-guidance-only",
+  "artDirection": "docs/ART_DIRECTION.md",
+  "brief": "docs/art-direction/environment-v1/STYLE_GUIDE.md",
+  "tool": {
+    "name": null,
+    "version": null,
+    "model": null,
+    "seed": null,
+    "seedSupported": null,
+    "providerJobId": null
+  },
+  "parameters": {
+    "units": "metres",
+    "targetDimensionsM": [
+      8,
+      9,
+      8
+    ],
+    "batch": "B1",
+    "paletteSource": "src/art/palette.js",
+    "paletteSourceSha256": null
+  },
+  "prompt": null,
+  "sourceInputs": [],
+  "expectedOutputs": [
+    "source .blend",
+    "parameters and generator script when procedural",
+    "3 LOD candidate GLB",
+    "per-variant metadata",
+    "QA render and report"
+  ],
+  "actualOutputs": [],
+  "startedAt": null,
+  "completedAt": null,
+  "review": {
+    "decision": "pending",
+    "evidence": [],
+    "notes": []
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "status": "pixel diagnostics; not automatic seamless approval",
+  "maps": {
+    "stone_rock": {
+      "resolution": [
+        1254,
+        1254
+      ],
+      "channels": 4,
+      "sha256": "6429fb73e9e9ef4f43c42ab4caaf0e697d6e1a71a8ad1c90eba9fbad920db855",
+      "meanRGBLinear": 0.7583496570587158,
+      "seamMeanAbsoluteErrorLinear": {
+        "u": 0.029039636254310608,
+        "v": 0.03023632802069187
+      },
+      "seamToInteriorGradientRatio": {
+        "u": 1.4480378925206445,
+        "v": 1.1068458047604515
+      },
+      "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+      "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+    },
+    "ground_dirt": {
+      "resolution": [
+        1254,
+        1254
+      ],
+      "channels": 4,
+      "sha256": "61e19e3e7fcf8033b7994d2f1dd4ef9cbcd2f86268feac0788088067da27f165",
+      "meanRGBLinear": 0.7600521445274353,
+      "seamMeanAbsoluteErrorLinear": {
+        "u": 0.026872456073760986,
+        "v": 0.024952320381999016
+      },
+      "seamToInteriorGradientRatio": {
+        "u": 2.3000179989819176,
+        "v": 1.937751907350169
+      },
+      "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+      "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+    },
+    "wood_bark": {
+      "resolution": [
+        1254,
+        1254
+      ],
+      "channels": 4,
+      "sha256": "34c34ac2628fd45ff670bd9619fc44f0ce6e2aae11f9abec0cd07b628ca3fe38",
+      "meanRGBLinear": 0.6854982972145081,
+      "seamMeanAbsoluteErrorLinear": {
+        "u": 0.09338797628879547,
+        "v": 0.030988948419690132
+      },
+      "seamToInteriorGradientRatio": {
+        "u": 2.9670531579816983,
+        "v": 2.0017879697669474
+      },
+      "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+      "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+    },
+    "ground_grass": {
+      "resolution": [
+        1254,
+        1254
+      ],
+      "channels": 4,
+      "sha256": "9855ec84e5e4343378e69b69c1132ad567b376ebabc14274eee9f019f053502b",
+      "meanRGBLinear": 0.7397748231887817,
+      "seamMeanAbsoluteErrorLinear": {
+        "u": 0.025842541828751564,
+        "v": 0.031174499541521072
+      },
+      "seamToInteriorGradientRatio": {
+        "u": 2.025612097162917,
+        "v": 2.7798474916494613
+      },
+      "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+      "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+    },
+    "modern_trim": {
+      "resolution": [
+        1254,
+        1254
+      ],
+      "channels": 4,
+      "sha256": "9bd048f5eb01742974d2eca37f0beaea74ddb8cc092a0c95876c6664f609ea26",
+      "meanRGBLinear": 0.7043874263763428,
+      "seamMeanAbsoluteErrorLinear": {
+        "u": 0.029063602909445763,
+        "v": 0.123411625623703
+      },
+      "seamToInteriorGradientRatio": {
+        "u": 1.6683695650546817,
+        "v": 4.052414630992724
+      },
+      "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+      "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+    },
+    "wood_trim": {
+      "resolution": [
+        1254,
+        1254
+      ],
+      "channels": 4,
+      "sha256": "1c82238af585221a5419566279f7d84b0ebec0159aab972923b4cbd8b331acc6",
+      "meanRGBLinear": 0.7743583917617798,
+      "seamMeanAbsoluteErrorLinear": {
+        "u": 0.02532549388706684,
+        "v": 0.016682827845215797
+      },
+      "seamToInteriorGradientRatio": {
+        "u": 1.4164020911027502,
+        "v": 4.936059497634106
+      },
+      "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+      "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+    },
+    "stone_cobble": {
+      "resolution": [
+        1254,
+        1254
+      ],
+      "channels": 4,
+      "sha256": "d51477f8d8e47b631871a9f3d3384e0508bf3956491a7e7dc47c79475c5f0a14",
+      "meanRGBLinear": 0.7067981958389282,
+      "seamMeanAbsoluteErrorLinear": {
+        "u": 0.018749944865703583,
+        "v": 0.01783887855708599
+      },
+      "seamToInteriorGradientRatio": {
+        "u": 1.6880462436430796,
+        "v": 1.1033796071478152
+      },
+      "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+      "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+    },
+    "architecture_trim": {
+      "resolution": [
+        1254,
+        1254
+      ],
+      "channels": 4,
+      "sha256": "7472b8459463875ccccadfcad6d067d196d163e63202b1b02ef4ce8ca4d22bf7",
+      "meanRGBLinear": 0.6980279684066772,
+      "seamMeanAbsoluteErrorLinear": {
+        "u": 0.04378876835107803,
+        "v": 0.27123039960861206
+      },
+      "seamToInteriorGradientRatio": {
+        "u": 3.2858481457233926,
+        "v": 15.668836143071598
+      },
+      "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+      "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+    }
+  }
+}

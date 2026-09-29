@@ -2,7 +2,7 @@
 
 Peta sistem untuk orang yang baru masuk ke repo ini. Isinya menjelaskan bagaimana game dirangkai, di mana data tinggal, dan aturan yang harus dijaga saat menambah fitur. Status fitur per milestone ada di [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md); daftar file aset ada di [ASSETS.md](ASSETS.md).
 
-Diperbarui 29 September 2026 dari pembacaan source di working tree branch `feat/space-planet-town`. Angka baris berasal dari `wc -l` pada tanggal itu.
+Diperbarui 29 September 2026 dari pembacaan source di working tree branch `feat/space-planet-town`, setelah restrukturisasi Fase 1 (lihat §13). Angka baris berasal dari `wc -l` pada tanggal itu.
 
 ## 1. Gambaran besar
 
@@ -15,13 +15,23 @@ Diperbarui 29 September 2026 dari pembacaan source di working tree branch `feat/
 src/
   main.js            boot: Engine, Audio, World, Overlay, Missions, Tips, PauseMenu, Director
   core/              engine, director + router, post, quality, audio, missions, tips, overlay, pauseMenu, firebase
+  art/               palette.js: token warna bersama (atap per tipe planet, peta 2D)
   world/             data kanonik tanpa three.js: World, clock, state store, identity, blueprint, planet types, tata surya
-  map/               mapGenerator (biome, sungai, kota, ladang, rute) — juga masih menampung RNG mulberry32
-  math/              hexasphere (Goldberg polyhedron), simplex3d
-  render/            renderer globe, gunung, rover, backdrop space, loader aset v1/v2, surface atlas
+  map/               mapGenerator (biome, sungai, kota, ladang, rute)
+  math/              hexasphere (Goldberg polyhedron), simplex3d, random (mulberry32)
+  render/            renderer globe, gunung, terbang di planet, backdrop space, loader aset v1/v2, surface atlas, assetManifest (semua URL aset)
   modes/space/       SpaceMode + bodies, ship, traffic, bake tekstur orbit, hud
   modes/planet/      PlanetMode (membungkus planetRenderer + menuController)
-  modes/town/        TownMode + 29 modul layout, render, orang, kendaraan, interior (flat, satu folder)
+  modes/town/        TownMode.js, scale.js (konstanta skala), dan subfolder:
+    layout/          data murni: townLayout, townPlan, wards, neighbourhoodPlan, vegetation, townGreenery,
+                     streetJunctions, streetLightPlan, roofPlan
+    navigation/      walkNetwork, pedestrianRoutes, trafficRoute, colliders
+    render/          townBuilder, groundPaint, groundCover, farTrees, roadMarkings, streetLighting, sky
+    people/          crowd, peopleRig, peopleAppearance, peopleMotion, personLifecycle
+    vehicles/        vehicle, vehicleKit, fleet
+    interior/        interior, interiorLayout
+    planner/         townPlanner (UI tata kota 2D), townMapRenderer (peta gaya Watabou)
+    ui/              hud
   ui/                menuController (planet), gauges (minimap, speedometer), cityNavigation
   style.css          seluruh UI (2.505 baris, 26 CSS custom property)
 ```
@@ -72,9 +82,9 @@ Kunci penyimpanan browser: `planet_globe_map_v5`, `planet_globe_prefs`, `planet_
 
 ## 5. Level planet
 
-- `map/mapGenerator.js` membuat biome, sungai, kota, faksi, ladang, rute darat (A*) dan rute laut dari hexasphere.
+- `map/mapGenerator.js` membuat biome, sungai, kota, faksi, ladang, rute darat (A*) dan rute laut dari hexasphere. RNG deterministik ada di `math/random.js`.
 - `render/planetRenderer.js` (**3.105 baris**) menggambar terrain hex dengan kontur membulat, gunung (`mountainBuilder.js`), border faksi, props instanced per chunk dengan LOD, jalan/sungai/rute, awan, kamera fokus, dan POV kendaraan. File ini adalah kandidat pemecahan terbesar.
-- `modes/planet/PlanetMode.js` membungkus renderer, `ui/menuController.js`, rover (`render/planetRover.js`), dan transisi ke space/town.
+- `modes/planet/PlanetMode.js` membungkus renderer, `ui/menuController.js`, terbang di langit planet dengan kapal space (`render/planetFlight.js`), dan transisi ke space/town.
 
 ## 6. Level space
 
@@ -85,11 +95,12 @@ Kunci penyimpanan browser: `planet_globe_map_v5`, `planet_globe_prefs`, `planet_
 ### 7.1 Pipeline
 
 ```text
-map + cityIndex + footprints (bbox dari town.glb)
-  └─ generateTownLayout()            townLayout.js  → data murni, tanpa three.js
-       ├─ townPlan.js, wards.js, neighbourhoodPlan.js   jalan, ward, lot (fantasy v2 / modern v2)
-       ├─ vegetation.js, townGreenery.js                hutan, batu, taman, halaman
-       └─ planStreetLights()                            dari streetLighting.js
+map + cityIndex + footprints (bbox dari town.glb) + variant + options.density
+  └─ generateTownLayout()            layout/townLayout.js → data murni, tanpa three.js
+       ├─ townPlan, wards, neighbourhoodPlan   jalan, ward, lot (fantasy v2 / modern v2)
+       ├─ vegetation, townGreenery             hutan, batu, taman, halaman
+       ├─ streetLightPlan                      tiang lampu
+       └─ roofPlan                             warna atap dari art/palette.js (b.roof)
   → layout { tiles, streets, buildings, props, trees, parks, paths, walls, docks,
              colliders, walkGraph, driveGraph, rivers, wards, farmCells, bridges, relief, spawn }
 
@@ -102,8 +113,11 @@ TownMode.enter()
   ├─ Fleet + Car + ChaseCamera       fleet.js, vehicle.js, vehicleKit.js, trafficRoute.js
   ├─ Colliders                       colliders.js
   ├─ Interior (saat masuk pintu)     interior.js + interiorLayout.js
-  └─ TownHud, Minimap, Speedo        hud.js, ui/gauges.js, ui/cityNavigation.js
+  ├─ TownHud, Minimap, Speedo        ui/hud.js, ui/gauges.js, ui/cityNavigation.js
+  └─ TownPlanner (tombol Tata kota)  planner/: peta 2D, acak ulang, kepadatan; Terapkan membangun ulang mode
 ```
+
+Pilihan rencana kota (`variant`, `density`) disimpan per kota di `town-layout:<planet>:<seed>` (`world/townGeneration.js`). Varian 0 dengan kepadatan 1 adalah kota asli. Relief memakai seed dasar kota, sehingga reroll tidak memindahkan bukit. Detail: [TOWN_GENERATION_PLAN.md](TOWN_GENERATION_PLAN.md).
 
 View di dalam town: `diorama` (OrbitControls), `walk` (orang ketiga), `drive` (chase camera), dan `interior`. Tombol 1/2/3 berpindah view; Esc kembali ke diorama.
 
@@ -111,7 +125,7 @@ View di dalam town: `diorama` (OrbitControls), `walk` (orang ketiga), `drive` (c
 
 | Tanpa three.js (bisa diuji di Node) | Memakai three.js |
 |---|---|
-| `townLayout`, `townPlan`, `wards`, `neighbourhoodPlan`, `vegetation`, `townGreenery`, `walkNetwork`, `pedestrianRoutes`, `trafficRoute`, `streetJunctions`, `colliders`, `interiorLayout`, `personLifecycle` | `TownMode`, `townBuilder`, `groundPaint`, `groundCover`, `farTrees`, `roadMarkings`, `streetLighting`, `sky`, `crowd`, `peopleRig`, `peopleAppearance`, `peopleMotion`, `fleet`, `vehicle`, `vehicleKit`, `interior` |
+| `layout/*` (termasuk `streetLightPlan`, `roofPlan`), `navigation/*`, `interiorLayout`, `personLifecycle` | `TownMode`, `townBuilder`, `groundPaint`, `groundCover`, `farTrees`, `roadMarkings`, `streetLighting`, `sky`, `crowd`, `peopleRig`, `peopleAppearance`, `peopleMotion`, `fleet`, `vehicle`, `vehicleKit`, `interior` |
 
 `hud.js` tidak memakai three.js, tetapi membutuhkan DOM.
 
@@ -131,9 +145,9 @@ Urutan ini menyebabkan tiga gaya aset tampil dalam satu scene. Detailnya ada di 
 ## 8. Material dan loader
 
 - **Loader v1** `render/assetLibrary.js`: node `_LOD0/1/2` di-bake menjadi geometry non-indexed dengan warna material sebagai vertex color, flat normal, atribut `emissive`, `paint`, dan koordinat `surface`. Dipakai `assets*.glb`, `town.glb`, `furniture.glb`, `space.glb`.
-- **Loader v2** `render/texturedAssetLibrary.js`: mempertahankan UV, index, smooth normal, dan material glTF. Saat ini hanya dipakai `scenery.glb`.
+- **Loader v2** `render/texturedAssetLibrary.js`: mempertahankan UV, index, smooth normal, dan texture map; material PBR glTF dikonversi ke ramp toon bersama. Saat ini hanya dipakai `scenery.glb`.
 - Satu gradient toon tiga langkah (`getToonGradient`: 110/185/255) dipakai `MeshToonMaterial` untuk bangunan, props, terrain, dan orang.
-- Material props town (`TownBuilder.makePropMaterial`): toon + vertex color + modulasi atlas `town_surfaces.png` + jendela malam prosedural. Material ground (`makeTerrainMaterial`): toon + paint map + grain + tile atlas. Foliage scenery: material glTF yang di-clone, alpha test 0,45, dan angin di vertex shader.
+- Material props town (`TownBuilder.makePropMaterial`): toon + vertex color + modulasi atlas `town_surfaces.png` + jendela malam prosedural. Atap (`roof` dari loader) diwarnai per instance dengan `aRoof` dari `b.roof`; kaca lebih gelap di siang hari dan curtain wall mendapat mullion. Material ground (`makeTerrainMaterial`): toon + paint map + grain + tile atlas. Foliage scenery: material glTF yang di-clone, alpha test 0,45, dan angin di vertex shader.
 - `render/townSurfaces.js` memetakan nama material `M_*` ke tile atlas (plaster, brick, timber, stone, roof, slate, metal, bark, cloth, concrete).
 
 ## 9. Audio
@@ -150,19 +164,19 @@ Scene audio diatur Director (`setScene`), sedangkan town memilih bed sesuai era.
 
 ## 10. UI
 
-Markup ada di `index.html`, gaya di `src/style.css` (arah "The1": permukaan concrete, Barlow Condensed, pill, blok warna faksi, tanpa glow). Panel per mode: `ui/menuController.js` (planet), `modes/town/hud.js`, `modes/space/hud.js`. Komponen bersama: `ui/gauges.js`, `ui/cityNavigation.js`, `core/pauseMenu.js`, `core/tips.js`, `core/missions.js`, `core/overlay.js`. Semua teks UI berbahasa Indonesia dan ditulis langsung di JS/HTML.
+Markup ada di `index.html`, gaya di `src/style.css` (arah "The1": permukaan concrete, Barlow Condensed, pill, blok warna faksi, tanpa glow). Panel per mode: `ui/menuController.js` (planet), `modes/town/ui/hud.js`, `modes/space/hud.js`. Komponen bersama: `ui/gauges.js`, `ui/cityNavigation.js`, `core/pauseMenu.js`, `core/tips.js`, `core/missions.js`, `core/overlay.js`. Semua teks UI berbahasa Indonesia dan ditulis langsung di JS/HTML.
 
 ## 11. Konvensi
 
 - **Satuan:** globe beradius 10 unit. Town dalam meter. Space memakai unit sistem sendiri. Jangan menganggap ketiganya setara.
 - **Sumbu town:** +Y ke atas, depan model +Z, `rotation.y = -yaw`. Frame U/N/V town diturunkan dari titik kota di planet.
-- **Seed:** `seedFor(seed, 'domain')` untuk stream terpisah (layout, vegetasi, dekorasi, penghuni). RNG deterministik memakai `mulberry32`. `Math.random()` hanya untuk efek sementara.
+- **Seed:** `seedFor(seed, 'domain')` untuk stream terpisah (layout, vegetasi, dekorasi, penghuni, atap). RNG deterministik memakai `mulberry32` dari `math/random.js`. Opsi generator baru hanya boleh mengambil angka acak bila nilainya bukan default, supaya kota lama tidak bergeser. `Math.random()` hanya untuk efek sementara.
 - **Aset:** `<asset>_LOD0|1|2` di bawah Empty bernama aset; varian `<asset>_v<n>`; material `M_<nama>`; prefix town `f_` (fantasy), `m_` (modern), `t_` (pohon), `b_` (understory), `g_` (taman), `va_/vb_/vw_/vh_` (kit kendaraan), `fu_/it_` (furnitur/barang).
 - **Debug:** di mode dev, `window.__globe = { engine, world, director, missions, audio, three }`.
 
 ## 12. Test dan QA
 
-- `npm test`: 24 test unit/regresi (29 September 2026).
+- `npm test`: 30 test unit/regresi (29 September 2026), termasuk manifest aset dan planner kota.
 - `GLOBE_SWEEP_SEEDS=100 node --test tests/town-generation.test.js`: sweep layout multi-seed.
 - `npm run build`: build produksi.
 - Harness browser: `/tests/browser/index.html` (interior, IndexedDB, 20 siklus) dan `/tests/browser/living-town.html` (overview, close-up, galeri aset, profil, navigasi, lifecycle).
@@ -172,13 +186,13 @@ Markup ada di `index.html`, gaya di `src/style.css` (arah "The1": permukaan conc
 
 | Temuan | Bukti | Dampak |
 |---|---|---|
+| ~~`modes/town/` datar~~ | Selesai 29 September: 30 file dikelompokkan ke 7 subfolder | — |
+| ~~RNG di tempat yang salah~~ | Selesai: `math/random.js`, 18 import diperbarui | — |
+| ~~Import sirkular `townBuilder` ↔ `farTrees`~~ | Selesai: konstanta di `modes/town/scale.js` | — |
+| ~~Data mengimpor modul render~~ | Selesai: `layout/streetLightPlan.js` dipisah dari `render/streetLighting.js` | — |
+| ~~URL aset tersebar~~ | Selesai: `render/assetManifest.js` + test | — |
 | File sangat besar | `planetRenderer.js` 3.105, `TownMode.js` 1.286, `townBuilder.js` 1.097, `style.css` 2.505 baris | Sulit direview, konflik merge, onboarding lambat. |
-| `modes/town/` datar | 30 file dalam satu folder tanpa pengelompokan | Batas layout/render/orang/kendaraan/interior tidak terlihat dari struktur. |
-| RNG di tempat yang salah | `mulberry32` di-import dari `map/mapGenerator.js` oleh 17 modul | Modul town dan space bergantung pada generator peta planet. |
-| Import sirkular | `townBuilder.js` ↔ `farTrees.js` (hanya untuk `WATER_Y`, `HORIZON_R`) | Rawan urutan inisialisasi. |
-| Data mengimpor modul render | `townLayout.js` mengambil `planStreetLights` dari `streetLighting.js`, yang juga berisi renderer three.js | Lapisan data ikut menarik three.js. |
-| URL aset tersebar | Konstanta URL ada di `TownMode.js`, `PlanetMode.js`, `SpaceMode.js`, `assetLibrary.js` | Tidak ada satu daftar aset runtime di kode. |
-| Warna hard-coded | 601 literal warna (454 unik) di 28 file JS, 337 di `modes/town/` | Palet tidak bisa diatur dari satu tempat. |
+| Warna hard-coded | 601 literal warna (454 unik) di 28 file JS, 337 di `modes/town/` | Palet baru mulai terpusat di `art/palette.js` (atap, peta 2D); sisanya dimigrasi bertahap (ART_DIRECTION AD-1). |
 | Dua loader aset | v1 (flat, vertex color) dan v2 (glTF bertekstur) berjalan bersamaan | Dua model shading dalam satu scene. |
 | Misi global | `planet_globe_missions` tidak dipisah per dunia | Tercatat sebagai sisa WB-01. |
 
@@ -189,4 +203,5 @@ Urutan perbaikan yang disarankan ada di [REVIEW_2026_09_29.md](REVIEW_2026_09_29
 - **Sistem town baru:** taruh logika data di modul tanpa three.js yang dipanggil dari `generateTownLayout`, lalu buat renderer terpisah yang membaca data itu di `TownMode.enter()`. Tambah test Node untuk data dan pastikan hasilnya sama di semua tier kualitas.
 - **Aset baru:** ikuti [ASSETS.md](ASSETS.md) §5. Generator Blender di `tools/blender/`, output runtime di `public/`, dan catat file serta pemakainya di registry.
 - **Tipe planet baru:** tambah entri di `PLANET_TYPES` (`gen` dan `look`), lalu periksa bake orbit, globe, dan town.
-- **Warna baru:** jangan tambah literal hex baru di modul render. Selama palet terpusat belum ada ([ART_DIRECTION.md](ART_DIRECTION.md) AD-1), taruh warna di `planetTypes.js` atau di tabel palet modul, bukan di dalam fungsi.
+- **Warna baru:** jangan tambah literal hex baru di modul render. Tambahkan token di `src/art/palette.js` ([ART_DIRECTION.md](ART_DIRECTION.md)).
+- **Opsi generator kota:** teruskan lewat `options` di `generateTownLayout`, simpan di `world/townGeneration.js`, tampilkan di `planner/townPlanner.js`, dan pastikan nilai default menghasilkan kota asli ([TOWN_GENERATION_PLAN.md](TOWN_GENERATION_PLAN.md) §4).

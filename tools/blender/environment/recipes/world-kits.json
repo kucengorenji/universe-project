@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "scope": "declarative design recipes; not runtime generator",
+  "kits": [
+    {
+      "id": "meadow_village",
+      "assetIds": [
+        "env_tree_oak",
+        "env_shrub_round",
+        "env_grass_tuft",
+        "env_rock_boulder",
+        "env_wall_door",
+        "env_wall_solid",
+        "env_wall_window",
+        "env_roof_gable",
+        "env_fence_straight"
+      ],
+      "materialSetIds": [
+        "ground_grass",
+        "ground_dirt",
+        "stone_cobble",
+        "architecture_trim"
+      ],
+      "placement": "moderate moisture; gentle slopes; gaps around entrances",
+      "readyBatch": "B2",
+      "status": "planned-not-runtime",
+      "seedNamespace": "environment.meadow_village"
+    },
+    {
+      "id": "conifer_ridge",
+      "assetIds": [
+        "env_tree_pine",
+        "env_rock_slab",
+        "env_rock_boulder",
+        "env_cliff_straight",
+        "env_cliff_corner",
+        "env_log_fallen"
+      ],
+      "materialSetIds": [
+        "stone_rock",
+        "wood_bark",
+        "ground_grass"
+      ],
+      "placement": "rock anchors; reduced understory; preserve view gaps",
+      "readyBatch": "B2",
+      "status": "planned-not-runtime",
+      "seedNamespace": "environment.conifer_ridge"
+    },
+    {
+      "id": "river_farm",
+      "assetIds": [
+        "env_river_bank",
+        "env_reeds",
+        "env_bridge_deck",
+        "env_bridge_ramp",
+        "env_crop_row",
+        "env_fence_straight",
+        "env_barn"
+      ],
+      "materialSetIds": [
+        "ground_dirt",
+        "ground_tilled",
+        "crop_cards",
+        "water_ripple"
+      ],
+      "placement": "wet band for reeds; crop rows only field masks; bridge connects path graph",
+      "readyBatch": "B3",
+      "status": "planned-not-runtime",
+      "seedNamespace": "environment.river_farm"
+    },
+    {
+      "id": "coastal_hamlet",
+      "assetIds": [
+        "env_shore_strip",
+        "env_rock_boulder",
+        "env_dock_straight",
+        "env_crate",
+        "env_barrel",
+        "env_boat_row"
+      ],
+      "materialSetIds": [
+        "sand",
+        "wood_trim",
+        "foam",
+        "water_ripple"
+      ],
+      "placement": "shore distance and water depth; dock deck above local water; navigable water remains clear",
+      "readyBatch": "B3",
+      "status": "planned-not-runtime",
+      "seedNamespace": "environment.coastal_hamlet"
+    },
+    {
+      "id": "civic_edge",
+      "assetIds": [
+        "env_modern_facade",
+        "env_bench",
+        "env_lamp_post",
+        "env_curb",
+        "env_tree_oak"
+      ],
+      "materialSetIds": [
+        "modern_trim",
+        "stone_paving",
+        "prop_trim"
+      ],
+      "placement": "planned frontage; street graph; accessible walkways; no random lamps",
+      "readyBatch": "B3",
+      "status": "planned-not-runtime",
+      "seedNamespace": "environment.civic_edge"
+    }
+  ],
+  "overlays": {
+    "autumn": "species-appropriate palette and leaf litter; one seasonal state per region",
+    "dry": "reduced groundcover + dry grass material; preserve species identity",
+    "snow": "up-facing caps and ground mask; snow_cap geometry only after B4"
+  },
+  "constraints": {
+    "preserveGameplayLayout": true,
+    "clearance": "use authored footprint, collider and canopy envelope; reserve roads/doors/walkways first",
+    "attemptLimit": 16,
+    "onPlacementFailure": "skip optional decoration and log; never force overlap",
+    "variantSelection": "deterministic independent seed streams; no per-frame randomization",
+    "materialPalette": "resolve shared src/art/palette.js tokens through a versioned build snapshot"
+  }
+}

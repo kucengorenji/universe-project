@@ -37,7 +37,7 @@
         <button id="quickRegenerateBtn" class="pill" type="button">Acak dunia</button>
       </span>
       <button id="povEnterBtn" class="pill pill--ghost inhabited-only" type="button">Naik kendaraan</button>
-      <button id="roverBtn" class="pill pill--ghost" type="button">Nyetir rover</button>
+      <button id="flyBtn" class="pill pill--ghost" type="button">Terbang</button>
       <button id="screenshotBtn" class="pill pill--ghost" type="button">Simpan gambar</button>
       <button id="menuToggleBtn" class="menu-circle" type="button" aria-label="Buka pengaturan" aria-expanded="false" aria-controls="sidebarDrawer">
         <span></span><span></span><span></span>
@@ -48,6 +48,16 @@
   <p id="assetStatus" class="asset-status" role="status">Memuat model 3D</p>
 
   <p class="hint">Seret untuk memutar. Scroll untuk zoom. Klik kota atau tile untuk detail, klik kendaraan untuk ikut naik.</p>
+
+  <!-- Flying the ship over the planet -->
+  <div id="planetFlightHud" class="flight-hud flight-hud--planet" role="status" hidden>
+    <span class="flight-hud__speed"><span data-speed>0</span><small>km/j</small></span>
+    <span class="flight-hud__state" data-state>Terbang</span>
+    <span class="flight-hud__keys">W/S dorong, A/D belok, R/F naik turun, Shift boost, seret untuk melihat sekeliling.</span>
+    <button class="menu-circle menu-circle--close flight-hud__close" type="button" data-act="stop" aria-label="Selesai terbang">
+      <span></span><span></span>
+    </button>
+  </div>
 
   <!-- Ride-along (POV) controls, shown while following a vehicle -->
   <section id="povHud" class="pov" aria-label="Mode POV kendaraan" hidden>

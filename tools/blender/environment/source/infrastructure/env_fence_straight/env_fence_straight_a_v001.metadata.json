@@ -1,0 +1,84 @@
+{
+  "assetId": "env_fence_straight",
+  "variantId": "env_fence_straight_a",
+  "lods": {
+    "0": {
+      "triangles": 288,
+      "vertices": 160,
+      "boundsBlender": {
+        "min": [
+          -1.0,
+          -0.128,
+          0.0
+        ],
+        "max": [
+          1.0,
+          0.09,
+          1.1
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 4000,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 48,
+      "vertices": 32,
+      "boundsBlender": {
+        "min": [
+          -1.0,
+          -0.09,
+          0.0
+        ],
+        "max": [
+          1.0,
+          0.09,
+          1.1
+        ]
+      },
+      "materialSlots": 2,
+      "uv": true,
+      "ceiling": 1200,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 48,
+      "vertices": 32,
+      "boundsBlender": {
+        "min": [
+          -1.0,
+          -0.09,
+          0.0
+        ],
+        "max": [
+          1.0,
+          0.09,
+          1.1
+        ]
+      },
+      "materialSlots": 2,
+      "uv": true,
+      "ceiling": 300,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 0,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated",
+  "sockets": {
+    "left": [
+      -1,
+      0,
+      0
+    ],
+    "right": [
+      1,
+      0,
+      0
+    ]
+  }
+}

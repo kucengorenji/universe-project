@@ -1,0 +1,142 @@
+{
+  "created": "2026-09-29",
+  "status": "generated; texture tiling QA pending",
+  "jobs": [
+    {
+      "id": "b1-nature-board",
+      "kind": "concept",
+      "prompt": "Use case: stylized-concept. Art direction for a warm painted-diorama 3D exploration game. Mid-poly readable geometry, selected soft bevels, large matte color planes, restrained hand-painted detail, clustered asymmetrical tree crowns, warm gray faceted rocks, olive/sage foliage, terracotta roofs, cream plaster, warm timber. Soft clear illumination, opaque ivory background, no dark background, no glossy clay, no photographic microtexture, no brands, no watermarks. Show original assets inspired by a coherent modular village-and-forest world. Make a wide landscape model reference setup sheet of exactly 7 nature masters, each on its own labeled region: OAK large tree with branching trunk and grouped irregular leaf masses, PINE layered lobed conifer, BOULDER broad warm-gray bevelled stone, SLAB tall chipped stone, GRASS five broad curved blades in a tuft, SHRUB dense asymmetrical leaf-mass bush, CLIFF modular 4m-wide stratified rock ledge with flat top. Each region shows one large three-quarter view and a smaller front silhouette. Tree foliage is geometric volume, not a cloud of individual leaves; rock plants separate. Clear empty gaps, complete silhouettes visible, include a tiny neutral 1.8m human ruler by large items. Trees ~8-10m tall, slab 3m, boulder 1.5m, shrub 1m. Designed for procedural rebuilding in Blender. Layout professional, shapes specific and attractive.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-81657849-1dfd-4503-beee-7ba8168e6276.png",
+      "workspacePaths": [
+        "tools/blender/environment/concepts/b1/b1-nature-board.png"
+      ],
+      "sha256": "a458065592218a7b8f1fc09118c4b934068507f7ea9180d738326bf5f79a892f"
+    },
+    {
+      "id": "b1-modular-board",
+      "kind": "concept",
+      "prompt": "Use case: stylized-concept. Art direction for a warm painted-diorama 3D exploration game. Mid-poly readable geometry, selected soft bevels, large matte color planes, restrained hand-painted detail, clustered asymmetrical tree crowns, warm gray faceted rocks, olive/sage foliage, terracotta roofs, cream plaster, warm timber. Soft clear illumination, opaque ivory background, no dark background, no glossy clay, no photographic microtexture, no brands, no watermarks. Show original assets inspired by a coherent modular village-and-forest world. Make a wide landscape production reference setup board with exactly five prominently separated modules in labeled panels: FENCE (2m timber rail fence with chunky posts), DOCK (2m square timber platform with visible joists and four posts), WALL-DOOR (2m wide 3m tall cream plaster/timber wall section with 1m wide 2.1m high empty door opening, no door leaf), GABLE ROOF (4m square terracotta roof cap, two sloped surfaces with thick eaves and readable large tile courses), MODERN FACADE (2m wide 3m tall warm-neutral facade module with recessed blue-gray glass window and substantial mullions). Each panel front, small side and three-quarter views, simple measurement annotations. Make pieces physically coherent, same art direction and material roughness. All modules isolated, no assembled buildings or foliage. Clearly show join edges and slab thickness. Opaque warm-white backdrop.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-e763010e-e92d-4d2b-a2f7-64665432ff73.png",
+      "workspacePaths": [
+        "tools/blender/environment/concepts/b1/b1-modular-board.png"
+      ],
+      "sha256": "1141534094b3821882aa23557d0ece83213dac290be50d52a2bc6b1aaf3e709f"
+    },
+    {
+      "id": "ground_grass",
+      "kind": "texture",
+      "type": "tile",
+      "prompt": "Use case: stylized-concept. Asset type: original game material texture master, single square image. Generate quiet meadow grass surface, tiny broad painted grass strokes woven into subdued organic turf patches, no individual grass objects or flowers. Full image is a flat orthographic material scan, edge-to-edge, no perspective. Warm painted diorama art style but completely neutral grayscale RGB to multiply by a game color palette. Values mostly light gray to off-white (roughly 75 to 95 percent brightness); gentle low contrast; darker joints no lower than medium gray. Uniform flat ambient illumination, no directional highlights, no cast shadows, no vignette, no object silhouettes or frame. Perfect seamless repeat across opposite left/right and top/bottom edges; pattern continues across boundaries. No letters, labels, watermark, contact sheet borders, measurement marks, grid gutters, or color swatches. This is a usable texture candidate, not a rendered sphere or material preview. Square at high resolution.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-ee2dfac1-6100-4e29-8a11-49434d3932e9.png",
+      "workspacePaths": [
+        "tools/blender/environment/textures/generated/ground_grass/b1-job-001/output.png",
+        "tools/blender/environment/textures/masters/ground_grass/ground_grass_v001.png"
+      ],
+      "sha256": "9855ec84e5e4343378e69b69c1132ad567b376ebabc14274eee9f019f053502b"
+    },
+    {
+      "id": "ground_dirt",
+      "kind": "texture",
+      "type": "tile",
+      "prompt": "Use case: stylized-concept. Asset type: original game material texture master, single square image. Generate compacted dirt path surface with subtle soft mottling and a few tiny embedded grains, mostly calm smooth areas, no cracks dominating the image. Full image is a flat orthographic material scan, edge-to-edge, no perspective. Warm painted diorama art style but completely neutral grayscale RGB to multiply by a game color palette. Values mostly light gray to off-white (roughly 75 to 95 percent brightness); gentle low contrast; darker joints no lower than medium gray. Uniform flat ambient illumination, no directional highlights, no cast shadows, no vignette, no object silhouettes or frame. Perfect seamless repeat across opposite left/right and top/bottom edges; pattern continues across boundaries. No letters, labels, watermark, contact sheet borders, measurement marks, grid gutters, or color swatches. This is a usable texture candidate, not a rendered sphere or material preview. Square at high resolution.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-fde49d0b-f42f-4dc8-a8aa-91114301afab.png",
+      "workspacePaths": [
+        "tools/blender/environment/textures/generated/ground_dirt/b1-job-001/output.png",
+        "tools/blender/environment/textures/masters/ground_dirt/ground_dirt_v001.png"
+      ],
+      "sha256": "61e19e3e7fcf8033b7994d2f1dd4ef9cbcd2f86268feac0788088067da27f165"
+    },
+    {
+      "id": "stone_cobble",
+      "kind": "texture",
+      "type": "tile",
+      "prompt": "Use case: stylized-concept. Asset type: original game material texture master, single square image. Generate small rounded rectangular cobblestones in staggered running bond, stones varying slightly in size, shallow thin mortar gaps, no black cartoon outlines. Full image is a flat orthographic material scan, edge-to-edge, no perspective. Warm painted diorama art style but completely neutral grayscale RGB to multiply by a game color palette. Values mostly light gray to off-white (roughly 75 to 95 percent brightness); gentle low contrast; darker joints no lower than medium gray. Uniform flat ambient illumination, no directional highlights, no cast shadows, no vignette, no object silhouettes or frame. Perfect seamless repeat across opposite left/right and top/bottom edges; pattern continues across boundaries. No letters, labels, watermark, contact sheet borders, measurement marks, grid gutters, or color swatches. This is a usable texture candidate, not a rendered sphere or material preview. Square at high resolution.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-abe38e77-3371-46fd-87c3-2d013421d699.png",
+      "workspacePaths": [
+        "tools/blender/environment/textures/generated/stone_cobble/b1-job-001/output.png",
+        "tools/blender/environment/textures/masters/stone_cobble/stone_cobble_v001.png"
+      ],
+      "sha256": "d51477f8d8e47b631871a9f3d3384e0508bf3956491a7e7dc47c79475c5f0a14"
+    },
+    {
+      "id": "stone_rock",
+      "kind": "texture",
+      "type": "tile",
+      "prompt": "Use case: stylized-concept. Asset type: original game material texture master, single square image. Generate warm limestone rock surface with a few wide subtle strata and tiny worn mineral variations, no separate boulders, no cast shadows, no deep cracks. Full image is a flat orthographic material scan, edge-to-edge, no perspective. Warm painted diorama art style but completely neutral grayscale RGB to multiply by a game color palette. Values mostly light gray to off-white (roughly 75 to 95 percent brightness); gentle low contrast; darker joints no lower than medium gray. Uniform flat ambient illumination, no directional highlights, no cast shadows, no vignette, no object silhouettes or frame. Perfect seamless repeat across opposite left/right and top/bottom edges; pattern continues across boundaries. No letters, labels, watermark, contact sheet borders, measurement marks, grid gutters, or color swatches. This is a usable texture candidate, not a rendered sphere or material preview. Square at high resolution.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-0c6a7ff5-48be-459e-ac1d-c084342e736c.png",
+      "workspacePaths": [
+        "tools/blender/environment/textures/generated/stone_rock/b1-job-001/output.png",
+        "tools/blender/environment/textures/masters/stone_rock/stone_rock_v001.png"
+      ],
+      "sha256": "6429fb73e9e9ef4f43c42ab4caaf0e697d6e1a71a8ad1c90eba9fbad920db855"
+    },
+    {
+      "id": "wood_trim",
+      "kind": "texture",
+      "type": "trim",
+      "prompt": "Use case: stylized-concept. Asset type: original game material texture master, single square image. Generate four equal vertical seamless bands of sawn wooden planks separated by narrow shallow joints, broad restrained grain running vertically, no nails, no objects. Full image is a flat orthographic material scan, edge-to-edge, no perspective. Warm painted diorama art style but completely neutral grayscale RGB to multiply by a game color palette. Values mostly light gray to off-white (roughly 75 to 95 percent brightness); gentle low contrast; darker joints no lower than medium gray. Uniform flat ambient illumination, no directional highlights, no cast shadows, no vignette, no object silhouettes or frame. Trim sheet: clear band layout as described, repeat along each band's stated grain/length axis. No letters, labels, watermark, contact sheet borders, measurement marks, grid gutters, or color swatches. This is a usable texture candidate, not a rendered sphere or material preview. Square at high resolution.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-15699861-b157-4b7b-9ba4-e82db6a28588.png",
+      "workspacePaths": [
+        "tools/blender/environment/textures/generated/wood_trim/b1-job-001/output.png",
+        "tools/blender/environment/textures/masters/wood_trim/wood_trim_v001.png"
+      ],
+      "sha256": "1c82238af585221a5419566279f7d84b0ebec0159aab972923b4cbd8b331acc6"
+    },
+    {
+      "id": "wood_bark",
+      "kind": "texture",
+      "type": "trim",
+      "prompt": "Use case: stylized-concept. Asset type: original game material texture master, single square image. Generate four equal vertical bands of stylized broadleaf bark with long broad gently meandering raised ridges, restrained shallow crevices, no moss. Full image is a flat orthographic material scan, edge-to-edge, no perspective. Warm painted diorama art style but completely neutral grayscale RGB to multiply by a game color palette. Values mostly light gray to off-white (roughly 75 to 95 percent brightness); gentle low contrast; darker joints no lower than medium gray. Uniform flat ambient illumination, no directional highlights, no cast shadows, no vignette, no object silhouettes or frame. Trim sheet: clear band layout as described, repeat along each band's stated grain/length axis. No letters, labels, watermark, contact sheet borders, measurement marks, grid gutters, or color swatches. This is a usable texture candidate, not a rendered sphere or material preview. Square at high resolution.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-aaed65e4-9c90-4848-8fdf-a77a49386794.png",
+      "workspacePaths": [
+        "tools/blender/environment/textures/generated/wood_bark/b1-job-001/output.png",
+        "tools/blender/environment/textures/masters/wood_bark/wood_bark_v001.png"
+      ],
+      "sha256": "34c34ac2628fd45ff670bd9619fc44f0ce6e2aae11f9abec0cd07b628ca3fe38"
+    },
+    {
+      "id": "architecture_trim",
+      "kind": "texture",
+      "type": "trim",
+      "prompt": "Use case: stylized-concept. Asset type: original game material texture master, single square image. Generate four equal horizontal bands, top quarter softly mottled plaster, second quarter running bond brick with thin light mortar, third quarter overlapping terracotta roof tiles in rows, bottom quarter simple flat stone blocks. All neutral grayscale and same scale of detail. Each band repeats left-right, exact quarter heights, no labels, no border. Full image is a flat orthographic material scan, edge-to-edge, no perspective. Warm painted diorama art style but completely neutral grayscale RGB to multiply by a game color palette. Values mostly light gray to off-white (roughly 75 to 95 percent brightness); gentle low contrast; darker joints no lower than medium gray. Uniform flat ambient illumination, no directional highlights, no cast shadows, no vignette, no object silhouettes or frame. Trim sheet: clear band layout as described, repeat along each band's stated grain/length axis. No letters, labels, watermark, contact sheet borders, measurement marks, grid gutters, or color swatches. This is a usable texture candidate, not a rendered sphere or material preview. Square at high resolution.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-b8e014e3-1948-4d7d-99a9-460a5bf088cb.png",
+      "workspacePaths": [
+        "tools/blender/environment/textures/generated/architecture_trim/b1-job-001/output.png",
+        "tools/blender/environment/textures/masters/architecture_trim/architecture_trim_v001.png"
+      ],
+      "sha256": "7472b8459463875ccccadfcad6d067d196d163e63202b1b02ef4ce8ca4d22bf7"
+    },
+    {
+      "id": "modern_trim",
+      "kind": "texture",
+      "type": "trim",
+      "prompt": "Use case: stylized-concept. Asset type: original game material texture master, single square image. Generate four equal horizontal bands, top quarter smooth fine concrete, second quarter large flat facade panels with thin joints, third quarter narrow brushed metal strips, bottom quarter flat rooftop membrane. Neutral grayscale only, calm broad forms, exact quarter heights, each band repeats left-right, no labels, no border. Full image is a flat orthographic material scan, edge-to-edge, no perspective. Warm painted diorama art style but completely neutral grayscale RGB to multiply by a game color palette. Values mostly light gray to off-white (roughly 75 to 95 percent brightness); gentle low contrast; darker joints no lower than medium gray. Uniform flat ambient illumination, no directional highlights, no cast shadows, no vignette, no object silhouettes or frame. Trim sheet: clear band layout as described, repeat along each band's stated grain/length axis. No letters, labels, watermark, contact sheet borders, measurement marks, grid gutters, or color swatches. This is a usable texture candidate, not a rendered sphere or material preview. Square at high resolution.",
+      "tool": "image_gen.imagegen",
+      "seed": null,
+      "generatedFile": "/Users/mikelrisyad/.codex/generated_images/01a0ecc1-0f01-7963-8314-4e80043103c1/exec-89994786-76ce-40ee-b3d4-0c965c9f19cc.png",
+      "workspacePaths": [
+        "tools/blender/environment/textures/generated/modern_trim/b1-job-001/output.png",
+        "tools/blender/environment/textures/masters/modern_trim/modern_trim_v001.png"
+      ],
+      "sha256": "9bd048f5eb01742974d2eca37f0beaea74ddb8cc092a0c95876c6664f609ea26"
+    }
+  ]
+}

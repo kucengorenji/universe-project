@@ -15,6 +15,8 @@ Diperbarui 29 September 2026. Ukuran dalam byte dari file di disk, sebelum kompr
 
 File `*.blend1` (backup otomatis Blender) diabaikan git. Jangan menaruh sumber, referensi, atau hasil antara di `public/`, karena Vite menyalin seluruh isinya ke build.
 
+Di kode, semua URL runtime ada di satu tempat: `src/render/assetManifest.js` (`ASSETS`, `ASSET_FILES`). `tests/asset-manifest.test.js` memeriksa bahwa setiap entri ada di `public/` dan bahwa `public/` tidak berisi file yang tidak dimuat game.
+
 ## 2. File runtime
 
 | File | Byte | Isi | Dibuat oleh | Dimuat oleh | Loader |
@@ -23,15 +25,19 @@ File `*.blend1` (backup otomatis Blender) diabaikan git. Jangan menaruh sumber, 
 | `models/assets_lod0.glb` | 338.924 | LOD0 untuk 50 aset yang sama, dimuat belakangan | `build_assets.py` | sama seperti di atas | v1 |
 | `models/town.glb` | 2.002.156 | 99 aset skala meter (bangunan fantasy/modern, kit kendaraan, kuda, pohon/semak/batu lama), 91 material, 140.752 triangle total LOD, hanya `POSITION` | `build_town_space.py` | `TownMode.js`; `PlanetMode.js` saat tiba lewat jalan dari kota (kit mobil yang sama) | v1 |
 | `models/character.glb` | 1.379.572 | Rig `PeopleRig`, 1 skin, 10 outfit vertex color, 7 klip (`idle, walk, run, sit, sleep, drive, panic`) | `build_town_space.py` | `TownMode.js` (GLTFLoader langsung) → `peopleRig.js` | GLTFLoader |
-| `models/furniture.glb` | 226.880 | 40 aset `fu_*`/`it_*`, 33 material | `build_town_space.py` | `TownMode.js` saat masuk kota → `interior.js` | v1 |
-| `models/space.glb` | 411.588 | 6 aset: `rover`, `ship_cargo`, `ship_freighter`, `ship_frigate`, `ship_interceptor`, `ship_patrol` | `build_town_space.py` | `SpaceMode.js`, `PlanetMode.js` (rover) | v1 |
+| `models/furniture.glb` | 801.628 | 45 aset `fu_*`/`it_*` gaya chunky (bevel tebal, palet ROOM dari referensi dapur diorama), termasuk dekor dinding `fu_window`, `fu_wall_shelf`, `fu_picture_v0/v1`, `fu_clock`; hanya LOD0, 67.992 triangle, satu material per token palet, hanya `POSITION` | `build_furniture.py` (`chunky/props.py`) | `TownMode.js` saat masuk kota → `interior.js` | v1 + `crease` (normal halus dibangun saat load) + peta `glow` |
+| `models/space.glb` | 411.588 | 6 aset: `rover`, `ship_cargo`, `ship_freighter`, `ship_frigate`, `ship_interceptor`, `ship_patrol` | `build_town_space.py` | `SpaceMode.js`, `PlanetMode.js` (kapal terbang di planet) | v1 |
 | `models/scenery.glb` | 1.244.892 | 20 aset × 3 LOD (8 spesies pohon + 4 varian, semak, bunga, bangku, planter, pergola, 2 dermaga, peti), 2 material, 2 tekstur tertanam, normal + UV + index | `build_scenery.py` | `TownMode.js` | v2 |
+| `models/environment.glb` | 3.355.532 | Kit environment B1: 25 varian × 3 LOD (oak ×3, pine ×3, boulder ×4, slab ×3, grass tuft ×3, shrub ×3, cliff, fence, dock, wall, gable roof, modern facade), 18 material palet, 5 tekstur netral tertanam | `tools/blender/environment/scripts/build_b1.py` (salinan `exports/staging/b1/environment_b1_v001.glb`) | `TownMode.js` → `loadTexturedPack(..., { mergeShades: true })`; pemetaan nama layout di `render/environmentKit.js` | v2 + gabung shade |
+| `models/npc.glb` | 338.792 | NPC v1 C01 (gaya chunky, ±1,76 m): 36 mesh kaku di bawah 18 pivot, 20 material flat, tanpa skin/klip | `docs/art-direction/npc-v1/blender/c01_overcooked.py` | `TownMode.js` → `people/chunkyPeople.js` (digabung jadi 1 SkinnedMesh rigid, pose dari kode) | GLTFLoader |
 | `models/scenery.manifest.json` | 26.386 | Laporan build: hash, byte, bounds, triangle per LOD | `report_scenery.mjs` | `tests/scenery-assets.test.js` (tidak di-fetch game) | — |
-| `textures/interior_atlas.jpg` | 375.272 | Atlas 4×4 lantai/dinding hasil render node material | `build_town_space.py` | `TownMode.js` saat masuk kota → `interior.js` | TextureLoader |
+| `textures/interior_atlas.jpg` | 375.272 | Atlas 4×4 lantai/dinding hasil render node material | `build_town_space.py` | `TownMode.js` saat masuk kota; sejak 30 September tidak dibaca `interior.js` (lantai dan dinding prosedural di `roomShell.js`), kandidat untuk dihapus dari pipeline | TextureLoader |
 | `textures/town_surfaces.png` | 107.856 | 512² grayscale, 16 tile modulasi netral | `paint_living_surfaces.py` | `render/townSurfaces.js` | TextureLoader |
 | `favicon.svg` | 501 | Ikon tab | manual | `index.html` | — |
 
 Total `public/` **6.406.399 byte** (≈6,1 MiB) setelah dua tekstur antara dipindahkan (§4).
+
+Dengan `environment.glb` dan `npc.glb` (29 September 2026, layout v3) total bertambah 3.694.324 byte menjadi **10.100.723 byte** (≈9,6 MiB). Keduanya dimuat bersama pack town lain; bila salah satu gagal dimuat, town jatuh kembali ke `scenery.glb`/`town.glb` dan ke `character.glb`.
 
 ### Beban saat masuk kota
 
@@ -42,7 +48,8 @@ Total `public/` **6.406.399 byte** (≈6,1 MiB) setelah dua tekstur antara dipin
 | Script | Output | Sumber `.blend` | Cara menjalankan |
 |---|---|---|---|
 | `tools/blender/build_assets.py` (736 baris) | `assets.glb`, `assets_lod0.glb` | `globe_assets.blend` | Lewat Blender MCP: `exec(open('tools/blender/build_assets.py').read(), globals())` |
-| `tools/blender/build_town_space.py` (2.815 baris) | `town.glb`, `space.glb`, `furniture.glb`, `character.glb`, `interior_atlas.jpg` | `town_space_assets.blend` | Lewat Blender MCP, dengan pola yang sama |
+| `tools/blender/build_town_space.py` (2.815 baris) | `town.glb`, `space.glb`, `character.glb`, `interior_atlas.jpg` (koleksi Furniture lama masih dibangun, tidak diekspor lagi) | `town_space_assets.blend` | Lewat Blender MCP, dengan pola yang sama |
+| `tools/blender/build_furniture.py` + `tools/blender/chunky/` | `furniture.glb`; `--preview` juga merender `tools/blender/qa/furniture_lineup.png` | — (dibangun dari kode) | `GLOBE_ROOT=<root> blender -b --factory-startup --python tools/blender/build_furniture.py [-- --preview]` |
 | `tools/blender/paint_living_surfaces.py` | `public/textures/town_surfaces.png`, `tools/blender/textures/flora_cards.png` | — | `python3 tools/blender/paint_living_surfaces.py` (butuh Pillow; Python sistem di mesin ini belum punya Pillow) |
 | `tools/blender/build_scenery.py` | `scenery.glb`, `tools/blender/textures/scenery_atlas.png` | `scenery_assets.blend` | `blender --background --python tools/blender/build_scenery.py` (proses Blender baru, karena script menghapus semua objek scene) |
 | `tools/blender/report_scenery.mjs` | `public/models/scenery.manifest.json` | — | `node tools/blender/report_scenery.mjs` |
@@ -62,9 +69,9 @@ Sebelum dipindah, keduanya ikut tersalin ke `dist/textures/` padahal tidak perna
 
 1. Tulis atau perluas generator di `tools/blender/`. Simpan `.blend` sumbernya dan gunakan seed tetap.
 2. Ikuti konvensi penamaan: Empty `<asset>`, anak `<asset>_LOD0|1|2`, varian `<asset>_v<n>`, material `M_<nama>`. Model town dibuat dalam meter, depan +Z, dan alas di y = 0.
-3. Pilih warna material dari palet yang disepakati di [ART_DIRECTION.md](ART_DIRECTION.md). Jangan memakai ulang nama material dengan warna berbeda (§7).
+3. Pilih warna material dari palet di `src/art/palette.js` ([ART_DIRECTION.md](ART_DIRECTION.md)). Jangan memakai ulang nama material dengan warna berbeda (§7). Atap rumah fantasy (`M_roof_*`) diwarnai ulang oleh palet kota lewat atribut `roof`; warna authored di Blender hanya menjadi fallback.
 4. Output runtime ditaruh di `public/`, sedangkan hasil antara di `tools/blender/textures/`.
-5. Catat file baru di tabel §2 beserta modul yang memuatnya. Untuk pack v2, buat manifest dan tambahkan test ukuran/hash seperti `tests/scenery-assets.test.js`.
+5. Daftarkan file runtime baru di `src/render/assetManifest.js` dan catat di tabel §2 beserta modul yang memuatnya. Untuk pack v2, buat manifest dan tambahkan test ukuran/hash seperti `tests/scenery-assets.test.js`.
 6. Periksa di harness `/tests/browser/living-town.html` (tombol *Asset gallery*) dengan lighting game, lalu jalankan `npm test` dan `npm run build`.
 
 ## 6. Utang aset yang terukur
@@ -76,7 +83,9 @@ Sebelum dipindah, keduanya ikut tersalin ke `dist/textures/` padahal tidak perna
 | Aset skala tile hex dipakai di town lewat `CATALOG` | Di Aegis Citadel: `barn` ×4, `windmill` ×1, `container_ship` ×3, `crop_row` ×203, `wheat_row` ×216. Kode layout juga memasang `boat` (dermaga fantasy), `rock_mesa`, dan `cactus` (gurun). | Buat versi town-scale di `town.glb` atau scenery, lalu hentikan pemuatan pack planet di town. |
 | Loader v1 membuang UV dan normal | 4 dari 5 pack GLB | Migrasi bertahap ke v2 (AA-01), dimulai dari bangunan town. |
 | Belum ada manifest untuk pack v1 | Hanya `scenery.glb` yang punya manifest dan test | Buat manifest per pack (ID, bounds, footprint, LOD, material). |
-| Gedung kaca `m_office_v1` terbaca sebagai kotak polos di siang hari | Kaca berupa satu box `M_glass_teal` (24 vertex) tanpa mullion; pola jendela hanya muncul lewat shader malam | Tambahkan mullion/panel ke model atau pola jendela siang di shader. |
+| Toko modern `m_shop_v1` terbaca sebagai kotak putih dari samping/belakang | Sisi ±X: ±141 m² dinding dan ±2 m² kaca, tinggi 12,7 m | Tambahkan jendela samping/belakang dan pintu servis di `build_town_space.py`, lalu ekspor ulang `town.glb`. (Versi awal dokumen ini salah menyebut `m_office_v1`.) |
+| Kit environment B1 lebih berat dari scenery lama | Oak B1 LOD0 5.132 triangle (scenery `t_oak` 1.348). Shade digabung per gambar saat load: oak 2 draw call, batu 1. | Ukur frame time di kota hutan pada tier medium; bila perlu, bake LOD0 yang lebih ringan (target ≤2.500) di `build_b1.py` v002. |
+| NPC v1 baru satu karakter (C01) | 18.994 triangle per orang, pool 24/14/6. Variasi dari warna 7 slot + 4 aksesori + crown rambut. | Bangun C02–C10 dari `catalog.json` dengan script yang sama; turunkan triangle kepala/tangan untuk LOD pool. |
 | Interior dimuat terlalu awal | `furniture.glb` + `interior_atlas.jpg` = 602.152 byte saat masuk kota | Muat saat pemain mendekati pintu atau saat pertama kali masuk bangunan. |
 
 ## 7. Palet material di pack
@@ -99,13 +108,13 @@ Tekstur berikut tidak ada sebagai file. Semuanya dibuat saat runtime dengan canv
 
 | Modul | Tekstur | Catatan |
 |---|---|---|
-| `modes/town/groundPaint.js` | Paint map dekat (1536² atau 2048²) dan jauh (512² atau 1024²), mask permukaan, dan noise detail 256² | Layer dekat mencakup hingga 1.240 m (≈0,6 m per texel pada kota besar), layer jauh 2.200 m. |
-| `modes/town/groundCover.js` | Atlas sprite rumput, pakis, alang-alang, bunga, dan kerikil | 14k/36k/72k instance menurut `detail`. |
-| `modes/town/farTrees.js` | Atlas billboard pohon jauh | 7k/14k instance; mati di tier low. |
-| `modes/town/sky.js` | Tekstur awan 1024×512 | Langit, matahari, dan bintang lewat shader. |
-| `modes/town/streetLighting.js` | Sprite genangan cahaya 64² | Satu mesh gabungan per kota. |
-| `modes/town/peopleAppearance.js` | Atlas wajah 256×320 | Dipakai bersama semua NPC dekat. |
-| `modes/town/townBuilder.js` | Depth map air (dekat dan jauh) | Shader air, props `proto`, dan jembatan juga dibuat di modul ini. |
+| `modes/town/render/groundPaint.js` | Paint map dekat (1536² atau 2048²) dan jauh (512² atau 1024²), mask permukaan, dan noise detail 256² | Layer dekat mencakup hingga 1.240 m (≈0,6 m per texel pada kota besar), layer jauh 2.200 m. |
+| `modes/town/render/groundCover.js` | Atlas sprite rumput, pakis, alang-alang, bunga, dan kerikil | 14k/36k/72k instance menurut `detail`. Sejak v3 disebar per rumpun (pusat + anggota Gaussian) dan berderet di kaki hedge/pagar; di kota hanya di tepi halaman. |
+| `modes/town/render/farTrees.js` | Atlas billboard pohon jauh | 7k/14k instance; mati di tier low. |
+| `modes/town/render/sky.js` | Tekstur awan 1024×512 | Langit, matahari, dan bintang lewat shader. |
+| `modes/town/render/streetLighting.js` | Sprite genangan cahaya 64² | Satu mesh gabungan per kota. |
+| `modes/town/people/peopleAppearance.js` | Atlas wajah 256×320 | Dipakai bersama semua NPC dekat. |
+| `modes/town/render/townBuilder.js` | Depth map air (dekat dan jauh) | Shader air, props `proto`, dan jembatan juga dibuat di modul ini. |
 | `render/assetLibrary.js` | Gradient toon 3×1 (110/185/255) | Dipakai semua `MeshToonMaterial`. |
 | `render/spaceBackdrop.js` | Nebula 1024×512, 4.200 titik bintang | |
 | `modes/space/bake.js` + `world/planetBake.worker.js` | Tekstur planet di orbit | Dari peta tile yang sama dengan globe. |

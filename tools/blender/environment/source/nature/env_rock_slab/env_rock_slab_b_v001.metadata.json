@@ -1,0 +1,72 @@
+{
+  "assetId": "env_rock_slab",
+  "variantId": "env_rock_slab_b",
+  "lods": {
+    "0": {
+      "triangles": 156,
+      "vertices": 80,
+      "boundsBlender": {
+        "min": [
+          -0.8,
+          -0.6,
+          0.0
+        ],
+        "max": [
+          0.8,
+          0.6,
+          3.0
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 1500,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 52,
+      "vertices": 28,
+      "boundsBlender": {
+        "min": [
+          -0.65586,
+          -0.64366,
+          0.0
+        ],
+        "max": [
+          0.7702,
+          0.60428,
+          3.12971
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 500,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 44,
+      "vertices": 24,
+      "boundsBlender": {
+        "min": [
+          -0.72186,
+          -0.59478,
+          0.0
+        ],
+        "max": [
+          0.87055,
+          0.55703,
+          3.13811
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 100,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 1,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated"
+}

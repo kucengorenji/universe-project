@@ -906,9 +906,10 @@ button.block:hover .block__name {
 
 .pov {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: var(--space-20);
+  right: var(--space-20);
+  /* Above the mission and menu buttons in the bottom corners */
+  bottom: 80px;
   z-index: 15;
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -916,7 +917,8 @@ button.block:hover .block__name {
   gap: var(--space-20);
   padding: var(--space-15) var(--space-20);
   background: var(--color-concrete);
-  border-top: var(--hairline);
+  border: var(--hairline);
+  border-radius: 16px;
 }
 
 .pov[hidden] {
@@ -1031,6 +1033,9 @@ body.is-pov #povEnterBtn {
   }
 
   .pov {
+    left: var(--space-15);
+    right: var(--space-15);
+    bottom: 72px;
     grid-template-columns: 1fr;
     gap: var(--space-10);
     padding: var(--space-15);
@@ -1424,6 +1429,26 @@ body.is-wild .inhabited-only {
   text-overflow: ellipsis;
 }
 
+.flight-hud[hidden] {
+  display: none;
+}
+
+/* Planet flight: clear of the mission and menu buttons in the bottom corners */
+.flight-hud--planet {
+  max-width: calc(100vw - 240px);
+  padding-right: var(--space-5);
+}
+
+.flight-hud--planet .flight-hud__keys {
+  min-width: 0;
+}
+
+.flight-hud__close {
+  flex: none;
+  width: 36px;
+  height: 36px;
+}
+
 .space-labels {
   position: fixed;
   inset: 0;
@@ -1596,6 +1621,9 @@ body[data-mode='space'] #canvas-container:active {
 
 body[data-mode='town'] #canvas-container {
   touch-action: none;
+  /* The town sky covers the whole view. Cut-out foliage (alpha-to-coverage) still
+     writes partial alpha; over black the premultiplied composite shows its true colour. */
+  background: #000;
 }
 
 @media (max-width: 720px) {
@@ -1648,13 +1676,14 @@ body[data-mode='town'] #canvas-container {
   font-size: var(--text-body-lg);
 }
 
-/* Driving the rover: the globe UI steps aside */
-body.is-rover .wall-type,
-body.is-rover .hint,
-body.is-rover .info-card,
-body.is-rover .topbar .cta-pair,
-body.is-rover #povEnterBtn,
-body.is-rover #screenshotBtn {
+/* Flying over the planet: the globe UI steps aside */
+body.is-flying .wall-type,
+body.is-flying .hint,
+body.is-flying .info-card,
+body.is-flying .topbar .cta-pair,
+body.is-flying #povEnterBtn,
+body.is-flying #screenshotBtn,
+body.is-flying .asset-status {
   display: none;
 }
 
@@ -2502,4 +2531,138 @@ body.is-rover #screenshotBtn {
   .town-card .facts { display: none; }
   .town-card .city-navigation { margin: 0; padding: 0; border: 0; }
   .town-card .city-navigation__list { max-height: 100px; }
+}
+
+/* ---------------------------------------------------------------- town planner (2D plan, Watabou style) */
+
+.planner {
+  position: fixed;
+  inset: 0;
+  z-index: 40; /* under the mode cover (50), so applying fades straight into the rebuilt town */
+  display: flex;
+  gap: var(--space-20);
+  padding: var(--space-20);
+  background: #2c3130;
+  color: var(--color-iron);
+}
+
+.planner__map {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.planner__canvas {
+  display: block;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.planner__busy {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  padding: var(--space-10) var(--space-20);
+  border-radius: var(--radius-pill);
+  background: var(--color-concrete);
+  transform: translate(-50%, -50%);
+}
+
+.planner__busy[hidden] {
+  display: none;
+}
+
+.planner__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-15);
+  width: 300px;
+  flex: none;
+  padding: var(--space-20);
+  background: var(--color-concrete);
+  overflow-y: auto;
+}
+
+.planner__eyebrow {
+  font-size: var(--text-caption);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-iron-soft);
+}
+
+.planner__title {
+  font-size: var(--text-subheading);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.planner__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.planner__label {
+  font-size: var(--text-body);
+  color: var(--color-iron-soft);
+}
+
+.planner__panel .seg {
+  border-color: var(--color-iron);
+  align-self: flex-start;
+}
+
+.planner__row,
+.planner__actions {
+  display: flex;
+  gap: var(--space-10);
+}
+
+.planner__row .pill,
+.planner__actions .pill {
+  flex: 1;
+}
+
+.planner__actions {
+  margin-top: auto;
+}
+
+.planner__note {
+  font-size: var(--text-body);
+  line-height: 1.35;
+  padding: var(--space-10);
+  border: var(--hairline);
+}
+
+.planner__keys {
+  font-size: var(--text-caption);
+  color: var(--color-iron-soft);
+}
+
+.planner__keys kbd {
+  font-family: var(--font-system);
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .planner {
+    flex-direction: column;
+    padding: var(--space-10);
+    gap: var(--space-10);
+  }
+
+  .planner__panel {
+    width: auto;
+    max-height: 45vh;
+  }
+
+  .planner__keys {
+    display: none;
+  }
 }

@@ -1,0 +1,72 @@
+{
+  "assetId": "env_roof_gable",
+  "variantId": "env_roof_gable_a",
+  "lods": {
+    "0": {
+      "triangles": 924,
+      "vertices": 1048,
+      "boundsBlender": {
+        "min": [
+          -2.095,
+          -2.05,
+          -0.19
+        ],
+        "max": [
+          2.095,
+          2.05,
+          2.15
+        ]
+      },
+      "materialSlots": 5,
+      "uv": true,
+      "ceiling": 12000,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 268,
+      "vertices": 336,
+      "boundsBlender": {
+        "min": [
+          -2.095,
+          -2.05,
+          -0.19
+        ],
+        "max": [
+          2.095,
+          2.05,
+          2.15
+        ]
+      },
+      "materialSlots": 5,
+      "uv": true,
+      "ceiling": 4000,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 64,
+      "vertices": 42,
+      "boundsBlender": {
+        "min": [
+          -2.095,
+          -2.05,
+          -0.19
+        ],
+        "max": [
+          2.095,
+          2.05,
+          2.14413
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 800,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 0,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated"
+}

@@ -18,7 +18,7 @@ controls.onclick=async()=>{
   t.setView('diorama');t.tween=null;
   for(let i=0;i<80;i++)t.onWheel({deltaY:1000});
   if(app.director.mode!==t||t.view!=='diorama')throw Error('Zoom left town');
-  const {Car,VEHICLE_TYPES}=await import('/src/modes/town/vehicle.js');
+  const {Car,VEHICLE_TYPES}=await import('/src/modes/town/vehicles/vehicle.js');
   const street=t.layout.driveGraph.find(s=>s.pts.length>2),a=street.pts[0],b=street.pts[1];
   const car=new Car(VEHICLE_TYPES.sedan,{x:a.x,z:a.z,yaw:Math.atan2(b.x-a.x,b.z-a.z)}),world=t.driveWorld();
   const start={x:car.x,z:car.z};
@@ -35,7 +35,7 @@ controls.onclick=async()=>{
 const motion=document.createElement('button');motion.textContent='Walk / run preview';document.querySelector('nav').append(motion);
 motion.onclick=async()=>{
  await ready();restore();const THREE=app.three,t=app.director.mode;
- const {makePerson,animatePerson,disposePerson}=await import('/src/modes/town/peopleRig.js');
+ const {makePerson,animatePerson,disposePerson}=await import('/src/modes/town/people/peopleRig.js');
  const scene=new THREE.Scene();scene.background=new THREE.Color('#b5c8c7');scene.add(new THREE.HemisphereLight(0xffffff,0x565d4f,2));
  const sun=new THREE.DirectionalLight(0xffecd1,2.2);sun.position.set(-4,8,5);scene.add(sun);
  const people=['explorer','peasant','casual_m','guard'].map((name,i)=>{const p=makePerson(t.character,name);p.root.position.x=(i-1.5)*2.2;p.root.rotation.y=.2;scene.add(p.root);return p;});
@@ -48,7 +48,7 @@ const navigation=document.createElement('button');navigation.textContent='Naviga
 navigation.onclick=async()=>{
  const snapshots=[];await ready();const original=app.engine.quality.preset;
  try{
-  const {townWalkable}=await import('/src/modes/town/walkNetwork.js');
+  const {townWalkable}=await import('/src/modes/town/navigation/walkNetwork.js');
   const signatures=new Map();
   for(const tier of ['high','low'])for(const modern of [false,true]){
    app.engine.quality.setPreset(tier,false);await show(modern);

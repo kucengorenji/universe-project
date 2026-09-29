@@ -87,6 +87,8 @@ export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, see
   const positions = [];
   // Low, gentle spots on the massif flanks: the renderer grows pines there
   const foothills = [];
+  // Highest point per mountain tile: fliers keep above it
+  const peaks = new Map();
   const colors = [];
   const tmp = new THREE.Vector3();
   const vertex = (C, A, B, vC, vA, vB, i, j) => {
@@ -154,6 +156,7 @@ export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, see
           for (let j = 0; j <= k - i; j++) {
             const g = vertex(C, A, B, vC, vA, vB, i, j);
             grid[i][j] = g;
+            if (g.h > (peaks.get(tile.id) ?? 0)) peaks.set(tile.id, g.h);
             const hn = g.h / tileSpacing;
             // interior grid points only (skip shared edge points so they are not doubled)
             if (hn > 0.06 && hn < 0.45 && i > 0 && j > 0 && i + j < k) foothills.push({ p: g.p, hn });
@@ -173,5 +176,5 @@ export function buildMountainGeometry(hexasphere, { landRadius, tileSpacing, see
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geo.computeVertexNormals(); // non-indexed -> faceted low-poly normals
-  return { geometry: geo, foothills };
+  return { geometry: geo, foothills, peaks };
 }

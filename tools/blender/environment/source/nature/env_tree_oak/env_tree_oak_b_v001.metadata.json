@@ -1,0 +1,72 @@
+{
+  "assetId": "env_tree_oak",
+  "variantId": "env_tree_oak_b",
+  "lods": {
+    "0": {
+      "triangles": 5132,
+      "vertices": 2774,
+      "boundsBlender": {
+        "min": [
+          -4.0,
+          -4.0,
+          -0.0
+        ],
+        "max": [
+          4.0,
+          4.0,
+          9.0
+        ]
+      },
+      "materialSlots": 5,
+      "uv": true,
+      "ceiling": 6000,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 1444,
+      "vertices": 790,
+      "boundsBlender": {
+        "min": [
+          -3.93936,
+          -3.96219,
+          -0.0
+        ],
+        "max": [
+          3.94505,
+          3.91797,
+          8.96084
+        ]
+      },
+      "materialSlots": 5,
+      "uv": true,
+      "ceiling": 2000,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 368,
+      "vertices": 214,
+      "boundsBlender": {
+        "min": [
+          -3.75611,
+          -3.75628,
+          0.00852
+        ],
+        "max": [
+          3.8085,
+          3.68187,
+          8.96084
+        ]
+      },
+      "materialSlots": 5,
+      "uv": true,
+      "ceiling": 400,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 1,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated"
+}

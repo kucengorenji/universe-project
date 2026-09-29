@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BIOMES, isWater, mulberry32 } from '../map/mapGenerator.js';
+import { BIOMES, isWater } from '../map/mapGenerator.js';
+import { mulberry32 } from '../math/random.js';
 import { createNoise3D } from '../math/simplex3d.js';
-import { loadAssetPack, ASSET_PACK_URL, ASSET_PACK_LOD0_URL, createToonMaterial } from './assetLibrary.js';
+import { loadAssetPack, createToonMaterial } from './assetLibrary.js';
+import { ASSETS } from './assetManifest.js';
 import { buildMountainGeometry } from './mountainBuilder.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../world/planetTypes.js';
 import { createSpaceBackdrop } from './spaceBackdrop.js';
@@ -281,6 +283,8 @@ export class PlanetRenderer {
     this.chunks = [];
     this.animatedMaterials = [];
     this.pov = null;
+    // Ride-along camera offsets the player sets by dragging (yaw, pitch) and scrolling (zoom)
+    this.povRig = { yaw: 0, pitch: 0, zoom: 1, lastInput: 0 };
     this.focus = null;
     this.camTween = null;
     this.onFocusChange = null;
@@ -319,13 +323,13 @@ export class PlanetRenderer {
         }
       }
     };
-    this.assetsPromise = loadAssetPack(ASSET_PACK_URL)
+    this.assetsPromise = loadAssetPack(ASSETS.planetPack)
       .then((pack) => {
         register(pack);
         this.assets = Object.fromEntries(Object.entries(this.assetLods).map(([n, l]) => [n, l[1]]));
         this.setAssetsState('ready');
         // Mid-poly models stream in after the world is already on screen
-        loadAssetPack(ASSET_PACK_LOD0_URL)
+        loadAssetPack(ASSETS.planetPackLod0)
           .then((lod0) => {
             register(lod0);
             this.lod0Ready = true;
@@ -471,8 +475,32 @@ export class PlanetRenderer {
     el.addEventListener('pointermove', (e) => !this.suspended && (this.pendingPointer = e));
     el.addEventListener('pointerleave', () => !this.suspended && (this.pendingPointer = { leave: true }));
     // Select on click only, not at the start of a drag-to-rotate
-    el.addEventListener('pointerdown', (e) => !this.suspended && (this.pressAt = { x: e.clientX, y: e.clientY }));
-    el.addEventListener('pointerup', (e) => !this.suspended && this.onPointerUp(e));
+    el.addEventListener('pointerdown', (e) => {
+      if (this.suspended) return;
+      this.pressAt = { x: e.clientX, y: e.clientY };
+      this.povDrag = { x: e.clientX, y: e.clientY };
+    });
+    el.addEventListener('pointerup', (e) => {
+      this.povDrag = null;
+      if (!this.suspended) this.onPointerUp(e);
+    });
+    // Riding along: drag looks around the vehicle, the wheel moves the camera in and out
+    el.addEventListener('pointermove', (e) => {
+      if (this.suspended || !this.pov || !this.povDrag || !e.buttons) return;
+      const rig = this.povRig;
+      rig.yaw -= (e.clientX - this.povDrag.x) * 0.006;
+      rig.pitch = THREE.MathUtils.clamp(rig.pitch + (e.clientY - this.povDrag.y) * 0.004, -0.5, 1.1);
+      rig.lastInput = performance.now();
+      this.povDrag = { x: e.clientX, y: e.clientY };
+    });
+    el.addEventListener(
+      'wheel',
+      (e) => {
+        if (this.suspended || !this.pov) return;
+        this.povRig.zoom = THREE.MathUtils.clamp(this.povRig.zoom * Math.exp(e.deltaY * 0.0012), 0.55, 3);
+      },
+      { passive: true }
+    );
 
     this.animate = this.animate.bind(this);
     if (!this.options.externalLoop) requestAnimationFrame(this.animate);
@@ -883,6 +911,7 @@ export class PlanetRenderer {
     this.computeFarmPlots(mapData);
     this.buildTerrain(tiles);
     const mountains = this.buildMountains(mapData);
+    this.mountainPeaks = mountains?.peaks || new Map();
     this.buildTerritoryBorders();
     this.buildRivers(mapData.riverPaths || []);
     this.buildRoutes(mapData);
@@ -2463,7 +2492,10 @@ export class PlanetRenderer {
     const wasActive = !!this.pov;
     // Every change of vehicle flies over the surface (never through the planet)
     const lookFrom = this.pov?.look?.clone() ?? this.controls.target.clone();
-    this.pov = { mover, pos: null, look: null, blend: { pos: this.camera.position.clone(), look: lookFrom, up: this.camera.up.clone(), t0: performance.now() } };
+    this.pov = { mover, pos: null, look: null, heading: null, blend: { pos: this.camera.position.clone(), look: lookFrom, up: this.camera.up.clone(), t0: performance.now() } };
+    // A new vehicle starts from behind it (the zoom is kept)
+    this.povRig.yaw = 0;
+    this.povRig.pitch = 0;
     if (!wasActive) {
       this.povReturn = this.camera.position.clone();
       this.controls.enabled = false;
@@ -2537,11 +2569,33 @@ export class PlanetRenderer {
     const fwd = _v3.setFromMatrixColumn(m.mesh.matrixWorld, 0).normalize();
     fwd.addScaledVector(up, -fwd.dot(up)).normalize();
 
-    const desired = p.clone().addScaledVector(fwd, -back * tr).addScaledVector(up, above * tr);
+    // Heading eases toward the direction of travel: a vehicle turning round at the end of
+    // its route swings the camera around it instead of pulling it through the vehicle
+    const pov = this.pov;
+    if (!pov.heading || pov.blend) pov.heading = fwd.clone();
+    else {
+      const h = pov.heading.addScaledVector(up, -pov.heading.dot(up)).normalize();
+      const ang = Math.atan2(_v4.crossVectors(h, fwd).dot(up), h.dot(fwd));
+      h.applyAxisAngle(up, ang * (1 - Math.exp(-dt * 3)));
+    }
+    const heading = pov.heading;
+    const side = _v4.crossVectors(heading, up).normalize();
+    // Drag offsets: yaw around the vehicle, pitch up or down; both settle back when left alone
+    const rig = this.povRig;
+    if (performance.now() - rig.lastInput > 3000) {
+      rig.yaw *= Math.exp(-dt * 1.2);
+      rig.pitch *= Math.exp(-dt * 1.2);
+    }
+    const dist = Math.hypot(back, above) * rig.zoom;
+    const elev = THREE.MathUtils.clamp(Math.atan2(above, back) + rig.pitch, 0.04, 1.35);
+    const around = heading.clone().multiplyScalar(-Math.cos(rig.yaw)).addScaledVector(side, Math.sin(rig.yaw));
+    const desired = p.clone().addScaledVector(around, Math.cos(elev) * dist * tr).addScaledVector(up, Math.sin(elev) * dist * tr);
     // Never dip below the ground (or sea) under the camera
     const floor = this.landR + tr * 0.25;
     if (desired.length() < floor) desired.setLength(floor);
-    const look = p.clone().addScaledVector(fwd, ahead * tr).addScaledVector(up, tr * 0.15);
+    // Look ahead of the vehicle when behind it, at the vehicle when looking from the side
+    const lead = Math.max(0, Math.cos(rig.yaw)) * ahead;
+    const look = p.clone().addScaledVector(heading, lead * tr).addScaledVector(up, tr * 0.15);
 
     const blend = this.pov.blend;
     if (blend) {
@@ -2560,9 +2614,8 @@ export class PlanetRenderer {
       this.camera.up.copy(blend.up).lerp(up, e).normalize();
       if (raw >= 1) this.pov.blend = null;
     } else {
-      const k = 1 - Math.exp(-dt * 4.5);
-      this.pov.pos.lerp(desired, k);
-      this.pov.look.lerp(look, k);
+      this.pov.pos.lerp(desired, 1 - Math.exp(-dt * 4.5));
+      this.pov.look.lerp(look, 1 - Math.exp(-dt * 7));
       this.camera.up.copy(up);
     }
     this.camera.position.copy(this.pov.pos);
@@ -2643,6 +2696,7 @@ export class PlanetRenderer {
   onPointerUp(e) {
     const press = this.pressAt;
     this.pressAt = null;
+    if (this.driving) return;
     if (!press || Math.hypot(e.clientX - press.x, e.clientY - press.y) > 5) return;
     // Clicking a vehicle rides along with it; otherwise the click inspects a tile
     const mover = this.pickMover(e.clientX, e.clientY);
@@ -2932,6 +2986,7 @@ export class PlanetRenderer {
       this.setHovered(null);
       return;
     }
+    if (this.driving) return;
     canvas.style.cursor = this.pickMover(event.clientX, event.clientY) ? 'pointer' : '';
     if (this.pov) return;
     const rect = canvas.getBoundingClientRect();

@@ -18,8 +18,8 @@ const POST = [
 ];
 const CONTROLS = [
   ['Luar angkasa', [['W / S', 'Dorong, mundur'], ['A / D', 'Belok'], ['Q / E', 'Geser'], ['R / F', 'Naik, turun'], ['Shift', 'Boost'], ['L', 'Mendarat'], ['Klik', 'Autopilot ke planet'], ['M', 'Peta sistem']]],
-  ['Planet', [['Seret', 'Putar planet'], ['Klik kota', 'Lihat kota'], ['Rover', 'WASD nyetir, Esc keluar'], ['O', 'Kembali ke orbit']]],
-  ['Kota', [['1 2 3', 'Diorama, jalan, nyetir'], ['WASD', 'Jalan atau nyetir'], ['Shift', 'Lari, ngebut'], ['Spasi', 'Lompat, drift'], ['E', 'Masuk, pakai barang'], ['Esc', 'Keluar, diorama']]],
+  ['Planet', [['Seret', 'Putar planet'], ['Klik kota', 'Lihat kota'], ['Terbang', 'WASD, R/F naik turun, L mendarat'], ['O', 'Kembali ke orbit']]],
+  ['Kota', [['1 2 3', 'Diorama, jalan, nyetir'], ['WASD', 'Geser diorama, jalan, nyetir'], ['Shift', 'Lari, ngebut'], ['Spasi', 'Lompat, drift'], ['E', 'Masuk, pakai barang'], ['Esc', 'Keluar, diorama']]],
   ['Umum', [['J', 'Daftar misi'], ['P', 'Menu jeda'], ['B', 'Bisukan suara']]]
 ];
 

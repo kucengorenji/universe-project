@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {Car,VEHICLE_TYPES} from '../src/modes/town/vehicle.js';
-import {trafficPose,advanceTraffic} from '../src/modes/town/trafficRoute.js';
+import {Car,VEHICLE_TYPES} from '../src/modes/town/vehicles/vehicle.js';
+import {trafficPose,advanceTraffic} from '../src/modes/town/navigation/trafficRoute.js';
 import {buildingApproach,townToLocal} from '../src/world/buildingBlueprint.js';
-import {townGenerationVersion} from '../src/world/townGeneration.js';
-import {locomotionClips,animatePerson} from '../src/modes/town/peopleMotion.js';
-import {streetJunctions} from '../src/modes/town/streetJunctions.js';
+import {townGenerationVersion,TOWN_LAYOUT_VERSION} from '../src/world/townGeneration.js';
+import {locomotionClips,animatePerson} from '../src/modes/town/people/peopleMotion.js';
+import {streetJunctions} from '../src/modes/town/layout/streetJunctions.js';
 
 test('organic road markings identify T junctions without counting parallel roads',()=>{
  const streets=[{w:12,pts:[[-20,0],[20,0]]},{w:8,pts:[[0,0],[0,20]]},{w:8,pts:[[-20,30],[20,30]]}];
@@ -55,7 +55,7 @@ test('door approaches clear measured porches and saved rooms pin their original 
  const records=new Map([['interior:2:town:99:building:old',{cabinet:true}]]);
  const state={records,get:k=>records.get(k),set:(k,v)=>records.set(k,v)};
  assert.equal(townGenerationVersion(state,2,99),1);
- assert.equal(townGenerationVersion(state,2,100),2);
+ assert.equal(townGenerationVersion(state,2,100),TOWN_LAYOUT_VERSION);
  assert.deepEqual(records.get('interior:2:town:99:building:old'),{cabinet:true});
  assert.equal(townGenerationVersion(state,2,99),1);
 });

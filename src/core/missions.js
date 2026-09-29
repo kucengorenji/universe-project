@@ -44,12 +44,12 @@ export const MISSIONS = [
   {
     id: 'pilot',
     title: 'Pilot',
-    blurb: 'Kuasai kapal, orbit, dan rover.',
+    blurb: 'Kuasai kapal, orbit, dan langit planet.',
     items: [
       { id: 'boost', label: 'Pakai boost di luar angkasa', event: 'boost' },
       { id: 'hangar', label: 'Ganti kapal di hangar', event: 'hangar' },
       { id: 'orbit3', label: 'Parkir di orbit 3 planet berbeda', event: 'orbit', distinct: 3 },
-      { id: 'rover', label: 'Nyetir rover 300 m di planet', event: 'rover_m', total: 300 }
+      { id: 'rover', label: 'Terbang 1 km di langit planet', event: 'rover_m', total: 1000 }
     ]
   }
 ];

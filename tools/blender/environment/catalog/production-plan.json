@@ -1,0 +1,2896 @@
+{
+  "schemaVersion": 1,
+  "created": "2026-09-29",
+  "status": "B1 exported candidate; B2-B4 planned; world integration pending",
+  "authoritativeStyle": "docs/ART_DIRECTION.md",
+  "scope": "environment only; NPC work owned by parallel Claude task",
+  "runtimePaletteSource": "src/art/palette.js",
+  "units": "town metres; planet proxy separate tile-local units",
+  "batchOrder": [
+    "B0",
+    "B1",
+    "B2",
+    "B3",
+    "B4"
+  ],
+  "families": {
+    "nature": {
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "note": "Tree maximum; rocks 1500/500/100, tufts 300/120/30"
+    },
+    "terrain": {
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ]
+    },
+    "architecture": {
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "note": "Complete house ceiling; wall panels target 800/300/80; landmark exception needs measured review"
+    },
+    "infrastructure": {
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ]
+    },
+    "props": {
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ]
+    },
+    "biomes": {
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ]
+    }
+  },
+  "assets": [
+    {
+      "assetId": "env_tree_oak",
+      "family": "nature",
+      "batch": "B1",
+      "label": "oak clustered canopy",
+      "status": "exported",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        8,
+        9,
+        8
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_bark",
+        "foliage_volume"
+      ],
+      "referenceIds": [
+        "REF-01",
+        "REF-06"
+      ],
+      "existingCandidate": "t_oak",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_tree_oak",
+      "variantNaming": "env_tree_oak_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_tree_oak_a_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_tree_oak_b_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_tree_oak_c_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_tree_oak-hero.png"
+      ],
+      "actualVariants": [
+        "env_tree_oak_a",
+        "env_tree_oak_b",
+        "env_tree_oak_c"
+      ]
+    },
+    {
+      "assetId": "env_tree_pine",
+      "family": "nature",
+      "batch": "B1",
+      "label": "tiered asymmetric pine",
+      "status": "exported",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        4,
+        10,
+        4
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_bark",
+        "foliage_volume"
+      ],
+      "referenceIds": [
+        "REF-01",
+        "REF-06"
+      ],
+      "existingCandidate": "t_pine",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_tree_pine",
+      "variantNaming": "env_tree_pine_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_tree_pine_a_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_tree_pine_b_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_tree_pine_c_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_tree_pine-hero.png"
+      ],
+      "actualVariants": [
+        "env_tree_pine_a",
+        "env_tree_pine_b",
+        "env_tree_pine_c"
+      ]
+    },
+    {
+      "assetId": "env_rock_boulder",
+      "family": "nature",
+      "batch": "B1",
+      "label": "broad bevelled boulder",
+      "status": "exported",
+      "variantTarget": 4,
+      "sizeTargetM": [
+        2,
+        1.5,
+        1.6
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock"
+      ],
+      "referenceIds": [
+        "REF-03",
+        "REF-06"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_rock_boulder",
+      "variantNaming": "env_rock_boulder_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        1500,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_rock_boulder_a_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_rock_boulder_b_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_rock_boulder_c_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_rock_boulder_d_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_rock_boulder-hero.png"
+      ],
+      "actualVariants": [
+        "env_rock_boulder_a",
+        "env_rock_boulder_b",
+        "env_rock_boulder_c",
+        "env_rock_boulder_d"
+      ]
+    },
+    {
+      "assetId": "env_rock_slab",
+      "family": "nature",
+      "batch": "B1",
+      "label": "upright chipped slab",
+      "status": "exported",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        1.6,
+        3,
+        1.2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock"
+      ],
+      "referenceIds": [
+        "REF-03"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_rock_slab",
+      "variantNaming": "env_rock_slab_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        1500,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_rock_slab_a_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_rock_slab_b_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_rock_slab_c_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_rock_slab-hero.png"
+      ],
+      "actualVariants": [
+        "env_rock_slab_a",
+        "env_rock_slab_b",
+        "env_rock_slab_c"
+      ]
+    },
+    {
+      "assetId": "env_grass_tuft",
+      "family": "nature",
+      "batch": "B1",
+      "label": "sparse broad-blade tuft",
+      "status": "exported",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        0.5,
+        0.35,
+        0.5
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "foliage_volume"
+      ],
+      "referenceIds": [
+        "REF-03",
+        "REF-06"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_grass_tuft",
+      "variantNaming": "env_grass_tuft_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "none",
+      "lodTriangleCeilings": [
+        300,
+        120,
+        30
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_grass_tuft_a_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_grass_tuft_b_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_grass_tuft_c_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_grass_tuft-hero.png"
+      ],
+      "actualVariants": [
+        "env_grass_tuft_a",
+        "env_grass_tuft_b",
+        "env_grass_tuft_c"
+      ]
+    },
+    {
+      "assetId": "env_shrub_round",
+      "family": "nature",
+      "batch": "B1",
+      "label": "clustered ground shrub",
+      "status": "exported",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        1.5,
+        1.1,
+        1.2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "foliage_volume"
+      ],
+      "referenceIds": [
+        "REF-01",
+        "REF-06"
+      ],
+      "existingCandidate": "b_bush",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_shrub_round",
+      "variantNaming": "env_shrub_round_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_shrub_round_a_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_shrub_round_b_v001.glb",
+        "tools/blender/environment/exports/staging/b1/env_shrub_round_c_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_shrub_round-hero.png"
+      ],
+      "actualVariants": [
+        "env_shrub_round_a",
+        "env_shrub_round_b",
+        "env_shrub_round_c"
+      ]
+    },
+    {
+      "assetId": "env_cliff_straight",
+      "family": "terrain",
+      "batch": "B1",
+      "label": "4m stratified cliff edge",
+      "status": "exported",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        4,
+        2,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/terrain/env_cliff_straight",
+      "variantNaming": "env_cliff_straight_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_cliff_straight_a_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_cliff_straight-hero.png"
+      ],
+      "actualVariants": [
+        "env_cliff_straight_a"
+      ]
+    },
+    {
+      "assetId": "env_fence_straight",
+      "family": "infrastructure",
+      "batch": "B1",
+      "label": "2m timber fence",
+      "status": "exported",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        1.1,
+        0.15
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-02",
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/infrastructure/env_fence_straight",
+      "variantNaming": "env_fence_straight_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_fence_straight_a_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_fence_straight-hero.png"
+      ],
+      "actualVariants": [
+        "env_fence_straight_a"
+      ]
+    },
+    {
+      "assetId": "env_dock_straight",
+      "family": "infrastructure",
+      "batch": "B1",
+      "label": "2m square timber deck",
+      "status": "exported",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        0.4,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-02",
+        "REF-07"
+      ],
+      "existingCandidate": "f_dock",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/infrastructure/env_dock_straight",
+      "variantNaming": "env_dock_straight_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_dock_straight_a_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_dock_straight-hero.png"
+      ],
+      "actualVariants": [
+        "env_dock_straight_a"
+      ]
+    },
+    {
+      "assetId": "env_wall_door",
+      "family": "architecture",
+      "batch": "B1",
+      "label": "2m wall with entrance",
+      "status": "exported",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        3,
+        0.2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim"
+      ],
+      "referenceIds": [
+        "REF-02",
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_wall_door",
+      "variantNaming": "env_wall_door_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "lower-left-front socket origin",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        800,
+        300,
+        80
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_wall_door_a_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_wall_door-hero.png"
+      ],
+      "actualVariants": [
+        "env_wall_door_a"
+      ]
+    },
+    {
+      "assetId": "env_roof_gable",
+      "family": "architecture",
+      "batch": "B1",
+      "label": "4m gable roof cap",
+      "status": "exported",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        4,
+        2,
+        4
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim"
+      ],
+      "referenceIds": [
+        "REF-02",
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_roof_gable",
+      "variantNaming": "env_roof_gable_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_roof_gable_a_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_roof_gable-hero.png"
+      ],
+      "actualVariants": [
+        "env_roof_gable_a"
+      ]
+    },
+    {
+      "assetId": "env_modern_facade",
+      "family": "architecture",
+      "batch": "B1",
+      "label": "2m neutral modern window panel",
+      "status": "exported",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        3,
+        0.2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "modern_trim"
+      ],
+      "referenceIds": [
+        "REF-04"
+      ],
+      "existingCandidate": "m_shop_v1",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_modern_facade",
+      "variantNaming": "env_modern_facade_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "lower-left-front socket origin",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        800,
+        300,
+        80
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [
+        "tools/blender/environment/exports/staging/b1/env_modern_facade_a_v001.glb"
+      ],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-export.json",
+        "tools/blender/environment/qa/renders/b1/env_modern_facade-hero.png"
+      ],
+      "actualVariants": [
+        "env_modern_facade_a"
+      ]
+    },
+    {
+      "assetId": "env_wall_solid",
+      "family": "architecture",
+      "batch": "B2",
+      "label": "2m solid wall",
+      "status": "planned",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        3,
+        0.2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_wall_solid",
+      "variantNaming": "env_wall_solid_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "lower-left-front socket origin",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        800,
+        300,
+        80
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_wall_window",
+      "family": "architecture",
+      "batch": "B2",
+      "label": "2m window wall",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        2,
+        3,
+        0.2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim"
+      ],
+      "referenceIds": [
+        "REF-02",
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_wall_window",
+      "variantNaming": "env_wall_window_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "lower-left-front socket origin",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        800,
+        300,
+        80
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_wall_corner",
+      "family": "architecture",
+      "batch": "B2",
+      "label": "external/internal corner pair",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        0.2,
+        3,
+        0.2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_wall_corner",
+      "variantNaming": "env_wall_corner_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        800,
+        300,
+        80
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_foundation",
+      "family": "architecture",
+      "batch": "B2",
+      "label": "4m raised stone plinth",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        4,
+        0.5,
+        4
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_foundation",
+      "variantNaming": "env_foundation_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_floor_panel",
+      "family": "architecture",
+      "batch": "B2",
+      "label": "2m floor / ceiling panel",
+      "status": "planned",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        0.2,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_floor_panel",
+      "variantNaming": "env_floor_panel_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_roof_ridge",
+      "family": "architecture",
+      "batch": "B2",
+      "label": "2m ridge and end cap",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        2,
+        0.3,
+        0.4
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_roof_ridge",
+      "variantNaming": "env_roof_ridge_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_door_leaf",
+      "family": "architecture",
+      "batch": "B2",
+      "label": "hinged timber door",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        1,
+        2.1,
+        0.08
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_door_leaf",
+      "variantNaming": "env_door_leaf_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "hinge-bottom",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_window_shutter",
+      "family": "architecture",
+      "batch": "B2",
+      "label": "window and shutter pair",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        1,
+        1.2,
+        0.1
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_window_shutter",
+      "variantNaming": "env_window_shutter_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_bridge_deck",
+      "family": "infrastructure",
+      "batch": "B2",
+      "label": "2m modular bridge span",
+      "status": "planned",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        0.4,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-02",
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/infrastructure/env_bridge_deck",
+      "variantNaming": "env_bridge_deck_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_bridge_ramp",
+      "family": "infrastructure",
+      "batch": "B2",
+      "label": "2m rise 0.5m approach",
+      "status": "planned",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        0.5,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-02"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/infrastructure/env_bridge_ramp",
+      "variantNaming": "env_bridge_ramp_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_fence_corner",
+      "family": "infrastructure",
+      "batch": "B2",
+      "label": "fence corner and termination",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        0.2,
+        1.1,
+        0.2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-02"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/infrastructure/env_fence_corner",
+      "variantNaming": "env_fence_corner_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_fence_gate",
+      "family": "infrastructure",
+      "batch": "B2",
+      "label": "2m gate with hinge socket",
+      "status": "planned",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        2,
+        1.1,
+        0.15
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-02"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/infrastructure/env_fence_gate",
+      "variantNaming": "env_fence_gate_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_cliff_corner",
+      "family": "terrain",
+      "batch": "B2",
+      "label": "outer and inner cliff corner",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        2,
+        2,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/terrain/env_cliff_corner",
+      "variantNaming": "env_cliff_corner_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_cliff_cap",
+      "family": "terrain",
+      "batch": "B2",
+      "label": "cliff end and top transition",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        2,
+        2,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/terrain/env_cliff_cap",
+      "variantNaming": "env_cliff_cap_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_river_bank",
+      "family": "terrain",
+      "batch": "B2",
+      "label": "4m local river bank profile",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        4,
+        1,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "ground_dirt",
+        "sand"
+      ],
+      "referenceIds": [
+        "REF-02"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/terrain/env_river_bank",
+      "variantNaming": "env_river_bank_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_shore_strip",
+      "family": "terrain",
+      "batch": "B2",
+      "label": "4m dry/wet shore profile",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        4,
+        0.3,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "sand",
+        "foam"
+      ],
+      "referenceIds": [
+        "REF-02"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/terrain/env_shore_strip",
+      "variantNaming": "env_shore_strip_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_reeds",
+      "family": "nature",
+      "batch": "B2",
+      "label": "shore reed clump",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        0.8,
+        1.3,
+        0.8
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "foliage_volume"
+      ],
+      "referenceIds": [
+        "REF-06"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_reeds",
+      "variantNaming": "env_reeds_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "none",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_log_fallen",
+      "family": "nature",
+      "batch": "B2",
+      "label": "fallen log with cut end",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        3,
+        0.7,
+        0.7
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_bark",
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-06"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_log_fallen",
+      "variantNaming": "env_log_fallen_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_stump",
+      "family": "nature",
+      "batch": "B2",
+      "label": "root flare stump",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        1.1,
+        0.8,
+        1.1
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_bark",
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-01",
+        "REF-06"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_stump",
+      "variantNaming": "env_stump_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_crate",
+      "family": "props",
+      "batch": "B2",
+      "label": "timber goods crate",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": "g_crate",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/props/env_crate",
+      "variantNaming": "env_crate_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_barrel",
+      "family": "props",
+      "batch": "B2",
+      "label": "barrel with thick bands",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        0.7,
+        1,
+        0.7
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/props/env_barrel",
+      "variantNaming": "env_barrel_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_lamp_post",
+      "family": "props",
+      "batch": "B2",
+      "label": "warm village street lantern",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        0.5,
+        3,
+        0.5
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "prop_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/props/env_lamp_post",
+      "variantNaming": "env_lamp_post_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_bench",
+      "family": "props",
+      "batch": "B2",
+      "label": "seated-scale timber bench",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        1.8,
+        0.9,
+        0.6
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": "m_bench",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/props/env_bench",
+      "variantNaming": "env_bench_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_tree_birch",
+      "family": "nature",
+      "batch": "B3",
+      "label": "slender light-bark broadleaf",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        5,
+        9,
+        5
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_bark",
+        "foliage_volume"
+      ],
+      "referenceIds": [
+        "REF-01"
+      ],
+      "existingCandidate": "t_birch",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_tree_birch",
+      "variantNaming": "env_tree_birch_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_tree_fruit",
+      "family": "nature",
+      "batch": "B3",
+      "label": "orchard canopy with optional fruit",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        5,
+        5,
+        5
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_bark",
+        "foliage_volume"
+      ],
+      "referenceIds": [
+        "REF-01"
+      ],
+      "existingCandidate": "t_fruit",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_tree_fruit",
+      "variantNaming": "env_tree_fruit_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_tree_dead",
+      "family": "nature",
+      "batch": "B3",
+      "label": "branch silhouette dead tree",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        3,
+        7,
+        3
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_bark"
+      ],
+      "referenceIds": [
+        "REF-01",
+        "REF-06"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_tree_dead",
+      "variantNaming": "env_tree_dead_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "simplified trunk or rock hull; canopy excluded",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_fern",
+      "family": "nature",
+      "batch": "B3",
+      "label": "broad readable fern",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        0.8,
+        0.6,
+        0.8
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "foliage_cards"
+      ],
+      "referenceIds": [
+        "REF-06"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_fern",
+      "variantNaming": "env_fern_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "none",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_flowers",
+      "family": "nature",
+      "batch": "B3",
+      "label": "small flower cluster",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "foliage_cards"
+      ],
+      "referenceIds": [
+        "REF-06"
+      ],
+      "existingCandidate": "b_flowers",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_flowers",
+      "variantNaming": "env_flowers_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "none",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_pebbles",
+      "family": "nature",
+      "batch": "B3",
+      "label": "loose pebble cluster",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        0.8,
+        0.15,
+        0.8
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock"
+      ],
+      "referenceIds": [
+        "REF-03"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_pebbles",
+      "variantNaming": "env_pebbles_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "none",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_crop_row",
+      "family": "nature",
+      "batch": "B3",
+      "label": "2m farm row with growth stages",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        2,
+        1,
+        0.8
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "crop_cards",
+        "ground_tilled"
+      ],
+      "referenceIds": [
+        "REF-02"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/nature/env_crop_row",
+      "variantNaming": "env_crop_row_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "none",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_market_stall",
+      "family": "architecture",
+      "batch": "B3",
+      "label": "modular awning stall",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        3,
+        3,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim",
+        "prop_trim"
+      ],
+      "referenceIds": [
+        "REF-02",
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_market_stall",
+      "variantNaming": "env_market_stall_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_barn",
+      "family": "architecture",
+      "batch": "B3",
+      "label": "assembled village barn",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        8,
+        7,
+        6
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim",
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-02"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_barn",
+      "variantNaming": "env_barn_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_windmill",
+      "family": "architecture",
+      "batch": "B3",
+      "label": "landmark windmill; pivoted sails",
+      "status": "planned",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        8,
+        14,
+        8
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim",
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-02"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_windmill",
+      "variantNaming": "env_windmill_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_watchtower",
+      "family": "architecture",
+      "batch": "B3",
+      "label": "stone lookout landmark",
+      "status": "planned",
+      "variantTarget": 1,
+      "sizeTargetM": [
+        5,
+        12,
+        5
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock",
+        "architecture_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/architecture/env_watchtower",
+      "variantNaming": "env_watchtower_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        12000,
+        4000,
+        800
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_quay",
+      "family": "infrastructure",
+      "batch": "B3",
+      "label": "4m stone harbor edge",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        4,
+        2,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock",
+        "modern_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": "m_dock",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/infrastructure/env_quay",
+      "variantNaming": "env_quay_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_curb",
+      "family": "infrastructure",
+      "batch": "B3",
+      "label": "2m curb / corner / ramp kit",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        2,
+        0.15,
+        0.3
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_paving"
+      ],
+      "referenceIds": [
+        "REF-04"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/infrastructure/env_curb",
+      "variantNaming": "env_curb_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        4000,
+        1200,
+        300
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_boat_row",
+      "family": "props",
+      "batch": "B3",
+      "label": "town-scale rowing boat",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        1.6,
+        0.8,
+        4
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/props/env_boat_row",
+      "variantNaming": "env_boat_row_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_cart",
+      "family": "props",
+      "batch": "B3",
+      "label": "cart with wheel pivots",
+      "status": "planned",
+      "variantTarget": 2,
+      "sizeTargetM": [
+        1.5,
+        1.4,
+        2.5
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim",
+        "prop_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/props/env_cart",
+      "variantNaming": "env_cart_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_signpost",
+      "family": "props",
+      "batch": "B3",
+      "label": "hanging shop sign blank",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        1,
+        2.6,
+        0.3
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_trim",
+        "prop_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/props/env_signpost",
+      "variantNaming": "env_signpost_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_banner",
+      "family": "props",
+      "batch": "B3",
+      "label": "palette-controlled faction banner",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        1,
+        2,
+        0.08
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "prop_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/props/env_banner",
+      "variantNaming": "env_banner_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        2000,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_rock_desert",
+      "family": "biomes",
+      "batch": "B4",
+      "label": "ochre mesa rock family",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        3,
+        3,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "stone_rock"
+      ],
+      "referenceIds": [
+        "REF-03",
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/biomes/env_rock_desert",
+      "variantNaming": "env_rock_desert_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        1500,
+        500,
+        100
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_tree_palm",
+      "family": "biomes",
+      "batch": "B4",
+      "label": "coastal palm",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        5,
+        9,
+        5
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "wood_bark",
+        "foliage_cards"
+      ],
+      "referenceIds": [
+        "REF-01"
+      ],
+      "existingCandidate": "t_palm",
+      "existingAction": "audit-reuse-or-refine-before-rebuild",
+      "sourceDirectory": "tools/blender/environment/source/biomes/env_tree_palm",
+      "variantNaming": "env_tree_palm_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_snow_cap",
+      "family": "biomes",
+      "batch": "B4",
+      "label": "optional upward-facing snow shell",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": [
+        2,
+        0.25,
+        2
+      ],
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "snow"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/biomes/env_snow_cap",
+      "variantNaming": "env_snow_cap_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "assetId": "env_planet_proxy",
+      "family": "biomes",
+      "batch": "B4",
+      "label": "coordinated town landmark proxy",
+      "status": "planned",
+      "variantTarget": 3,
+      "sizeTargetM": null,
+      "sizeStatus": "design-target-not-measured",
+      "materialSets": [
+        "architecture_trim"
+      ],
+      "referenceIds": [
+        "REF-07"
+      ],
+      "existingCandidate": null,
+      "existingAction": "new-or-audit-legacy-pack",
+      "sourceDirectory": "tools/blender/environment/source/biomes/env_planet_proxy",
+      "variantNaming": "env_planet_proxy_a (then _b, _c); root children suffix _LOD0, _LOD1, _LOD2",
+      "pivotPolicy": "tile-anchor",
+      "colliderPolicy": "authored gameplay collider independent of LOD",
+      "lodTriangleCeilings": [
+        6000,
+        2000,
+        400
+      ],
+      "requiredGates": [
+        "blockout-scale",
+        "material-lighting",
+        "lod-silhouette",
+        "collision-sockets",
+        "runtime-qa"
+      ],
+      "exportedFiles": [],
+      "qaEvidence": []
+    }
+  ],
+  "textures": [
+    {
+      "materialSetId": "ground_grass",
+      "batch": "B1",
+      "type": "tile",
+      "status": "generated-candidate",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-06"
+      ],
+      "previousPlanIds": "TX-01",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/ground_grass",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-textures.json"
+      ],
+      "actualMasterResolution": [
+        1254,
+        1254
+      ],
+      "actualMasterPath": "tools/blender/environment/textures/masters/ground_grass/ground_grass_v001.png",
+      "actualRuntimeContract": "sRGB grayscale RGB albedo multiplied by linear palette baseColorFactor; not the scalar NoColorSpace legacy town atlas"
+    },
+    {
+      "materialSetId": "ground_dirt",
+      "batch": "B1",
+      "type": "tile",
+      "status": "generated-candidate",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-02"
+      ],
+      "previousPlanIds": "TX-01/TX-04",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/ground_dirt",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-textures.json"
+      ],
+      "actualMasterResolution": [
+        1254,
+        1254
+      ],
+      "actualMasterPath": "tools/blender/environment/textures/masters/ground_dirt/ground_dirt_v001.png",
+      "actualRuntimeContract": "sRGB grayscale RGB albedo multiplied by linear palette baseColorFactor; not the scalar NoColorSpace legacy town atlas"
+    },
+    {
+      "materialSetId": "stone_cobble",
+      "batch": "B1",
+      "type": "tile",
+      "status": "generated-candidate",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-04"
+      ],
+      "previousPlanIds": "TX-04",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/stone_cobble",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-textures.json"
+      ],
+      "actualMasterResolution": [
+        1254,
+        1254
+      ],
+      "actualMasterPath": "tools/blender/environment/textures/masters/stone_cobble/stone_cobble_v001.png",
+      "actualRuntimeContract": "sRGB grayscale RGB albedo multiplied by linear palette baseColorFactor; not the scalar NoColorSpace legacy town atlas"
+    },
+    {
+      "materialSetId": "stone_rock",
+      "batch": "B1",
+      "type": "tile",
+      "status": "generated-candidate",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-03"
+      ],
+      "previousPlanIds": "TX-03",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/stone_rock",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-textures.json"
+      ],
+      "actualMasterResolution": [
+        1254,
+        1254
+      ],
+      "actualMasterPath": "tools/blender/environment/textures/masters/stone_rock/stone_rock_v001.png",
+      "actualRuntimeContract": "sRGB grayscale RGB albedo multiplied by linear palette baseColorFactor; not the scalar NoColorSpace legacy town atlas"
+    },
+    {
+      "materialSetId": "wood_trim",
+      "batch": "B1",
+      "type": "trim",
+      "status": "generated-candidate",
+      "masterResolution": 1024,
+      "worldSpanM": 4,
+      "referenceIds": [
+        "REF-07"
+      ],
+      "previousPlanIds": "TX-13/TX-15",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "document repeat axis per band; padding at target mips",
+      "sourceDirectory": "tools/blender/environment/textures/masters/wood_trim",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-textures.json"
+      ],
+      "actualMasterResolution": [
+        1254,
+        1254
+      ],
+      "actualMasterPath": "tools/blender/environment/textures/masters/wood_trim/wood_trim_v001.png",
+      "actualRuntimeContract": "sRGB grayscale RGB albedo multiplied by linear palette baseColorFactor; not the scalar NoColorSpace legacy town atlas"
+    },
+    {
+      "materialSetId": "wood_bark",
+      "batch": "B1",
+      "type": "trim",
+      "status": "generated-candidate",
+      "masterResolution": 1024,
+      "worldSpanM": 4,
+      "referenceIds": [
+        "REF-01",
+        "REF-06"
+      ],
+      "previousPlanIds": "TX-08",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "document repeat axis per band; padding at target mips",
+      "sourceDirectory": "tools/blender/environment/textures/masters/wood_bark",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-textures.json"
+      ],
+      "actualMasterResolution": [
+        1254,
+        1254
+      ],
+      "actualMasterPath": "tools/blender/environment/textures/masters/wood_bark/wood_bark_v001.png",
+      "actualRuntimeContract": "sRGB grayscale RGB albedo multiplied by linear palette baseColorFactor; not the scalar NoColorSpace legacy town atlas"
+    },
+    {
+      "materialSetId": "architecture_trim",
+      "batch": "B1",
+      "type": "trim",
+      "status": "generated-candidate",
+      "masterResolution": 1024,
+      "worldSpanM": 4,
+      "referenceIds": [
+        "REF-02",
+        "REF-05",
+        "REF-07"
+      ],
+      "previousPlanIds": "TX-13",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "document repeat axis per band; padding at target mips",
+      "sourceDirectory": "tools/blender/environment/textures/masters/architecture_trim",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-textures.json"
+      ],
+      "actualMasterResolution": [
+        1254,
+        1254
+      ],
+      "actualMasterPath": "tools/blender/environment/textures/masters/architecture_trim/architecture_trim_v001.png",
+      "actualRuntimeContract": "sRGB grayscale RGB albedo multiplied by linear palette baseColorFactor; not the scalar NoColorSpace legacy town atlas"
+    },
+    {
+      "materialSetId": "modern_trim",
+      "batch": "B1",
+      "type": "trim",
+      "status": "generated-candidate",
+      "masterResolution": 1024,
+      "worldSpanM": 4,
+      "referenceIds": [
+        "REF-04"
+      ],
+      "previousPlanIds": "TX-14",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "document repeat axis per band; padding at target mips",
+      "sourceDirectory": "tools/blender/environment/textures/masters/modern_trim",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/reports/b1-textures.json"
+      ],
+      "actualMasterResolution": [
+        1254,
+        1254
+      ],
+      "actualMasterPath": "tools/blender/environment/textures/masters/modern_trim/modern_trim_v001.png",
+      "actualRuntimeContract": "sRGB grayscale RGB albedo multiplied by linear palette baseColorFactor; not the scalar NoColorSpace legacy town atlas"
+    },
+    {
+      "materialSetId": "sand",
+      "batch": "B2",
+      "type": "tile",
+      "status": "planned",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-02"
+      ],
+      "previousPlanIds": "TX-02",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/sand",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "foam",
+      "batch": "B2",
+      "type": "mask",
+      "status": "planned",
+      "masterResolution": 512,
+      "worldSpanM": null,
+      "referenceIds": [
+        "REF-02"
+      ],
+      "previousPlanIds": "TX-12",
+      "runtimeContract": "scalar mask; shader binding must be verified",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "not globally tileable",
+      "sourceDirectory": "tools/blender/environment/textures/masters/foam",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "water_ripple",
+      "batch": "B2",
+      "type": "normal",
+      "status": "planned",
+      "masterResolution": 256,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-02"
+      ],
+      "previousPlanIds": "TX-11",
+      "runtimeContract": "water shader data; binding must be verified",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/water_ripple",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "prop_trim",
+      "batch": "B2",
+      "type": "trim",
+      "status": "planned",
+      "masterResolution": 1024,
+      "worldSpanM": 4,
+      "referenceIds": [
+        "REF-07"
+      ],
+      "previousPlanIds": "TX-19",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "document repeat axis per band; padding at target mips",
+      "sourceDirectory": "tools/blender/environment/textures/masters/prop_trim",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "foliage_volume",
+      "batch": "B1",
+      "type": "vertex-palette",
+      "status": "authored",
+      "masterResolution": null,
+      "worldSpanM": null,
+      "referenceIds": [
+        "REF-01",
+        "REF-06"
+      ],
+      "previousPlanIds": "TX-06 alternative: opaque volume first",
+      "runtimeContract": "shared toon + palette; no image",
+      "colorSpace": "palette sRGB tokens",
+      "tileValidation": "not globally tileable",
+      "sourceDirectory": "tools/blender/environment/textures/masters/foliage_volume",
+      "exportedFiles": [],
+      "qaEvidence": [
+        "tools/blender/environment/qa/renders/b1/env_tree_oak-hero.png"
+      ]
+    },
+    {
+      "materialSetId": "foliage_cards",
+      "batch": "B3",
+      "type": "cutout-atlas",
+      "status": "planned",
+      "masterResolution": 1024,
+      "worldSpanM": null,
+      "referenceIds": [
+        "REF-01",
+        "REF-06"
+      ],
+      "previousPlanIds": "TX-06/TX-07/TX-09",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "RGB intent must be recorded: sRGB albedo or NoColorSpace modulation; alpha linear",
+      "tileValidation": "not globally tileable",
+      "sourceDirectory": "tools/blender/environment/textures/masters/foliage_cards",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "stone_paving",
+      "batch": "B3",
+      "type": "tile",
+      "status": "planned",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-04"
+      ],
+      "previousPlanIds": "TX-04",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/stone_paving",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "brick_bond",
+      "batch": "B3",
+      "type": "tile",
+      "status": "planned",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-05"
+      ],
+      "previousPlanIds": "TX-13",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/brick_bond",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "ground_tilled",
+      "batch": "B3",
+      "type": "tile",
+      "status": "planned",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-02"
+      ],
+      "previousPlanIds": "TX-01",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/ground_tilled",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "crop_cards",
+      "batch": "B3",
+      "type": "cutout-atlas",
+      "status": "planned",
+      "masterResolution": 1024,
+      "worldSpanM": null,
+      "referenceIds": [
+        "REF-02"
+      ],
+      "previousPlanIds": "TX-10",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "RGB intent must be recorded: sRGB albedo or NoColorSpace modulation; alpha linear",
+      "tileValidation": "not globally tileable",
+      "sourceDirectory": "tools/blender/environment/textures/masters/crop_cards",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "plaza_circle",
+      "batch": "B3",
+      "type": "decal",
+      "status": "planned",
+      "masterResolution": 1024,
+      "worldSpanM": 4,
+      "referenceIds": [
+        "REF-04"
+      ],
+      "previousPlanIds": "TX-19",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "RGB intent must be recorded: sRGB albedo or NoColorSpace modulation; alpha linear",
+      "tileValidation": "not globally tileable",
+      "sourceDirectory": "tools/blender/environment/textures/masters/plaza_circle",
+      "exportedFiles": [],
+      "qaEvidence": []
+    },
+    {
+      "materialSetId": "snow",
+      "batch": "B4",
+      "type": "tile",
+      "status": "planned",
+      "masterResolution": 512,
+      "worldSpanM": 2,
+      "referenceIds": [
+        "REF-07"
+      ],
+      "previousPlanIds": "TX-22",
+      "runtimeContract": "neutral modulation + palette through explicit material adapter",
+      "colorSpace": "NoColorSpace for data/modulation; colored display previews separate",
+      "tileValidation": "offset-wrap + 4x4 repeat + mip/distance review",
+      "sourceDirectory": "tools/blender/environment/textures/masters/snow",
+      "exportedFiles": [],
+      "qaEvidence": []
+    }
+  ],
+  "lastProduction": {
+    "batch": "B1",
+    "delivery": "tools/blender/environment/B1_DELIVERY.md",
+    "execution": "Blender 5.1.2 headless CLI, not MCP",
+    "variants": 25,
+    "lodMeshes": 75,
+    "packBytes": 3355532,
+    "packSha256": "1ee6d09dede62759b454a485ebf4746cbf9ef9382d22808aaa6d5b9014e9fb00"
+  }
+}

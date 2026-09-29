@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { disposePerson } from '../src/modes/town/personLifecycle.js';
+import { disposePerson } from '../src/modes/town/people/personLifecycle.js';
 
 test('disposing a person frees bone textures while preserving shared outfit and face resources',()=>{
  const geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial();

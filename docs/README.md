@@ -22,7 +22,8 @@ npm run build    # build produksi ke dist/
 |---|---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Peta sistem inti | Aktif; perbarui saat menambah modul atau mode |
 | [ASSETS.md](ASSETS.md) | Registry aset runtime, sumber, tekstur prosedural, audio | Aktif; perbarui setiap kali aset berubah |
-| [ART_DIRECTION.md](ART_DIRECTION.md) | Diagnosis visual dan kontrak tampilan | Usulan; menunggu keputusan AD-0 |
+| [ART_DIRECTION.md](ART_DIRECTION.md) | Diagnosis visual, kontrak tampilan, status migrasi | Aktif; arah disetujui 29 September |
+| [TOWN_GENERATION_PLAN.md](TOWN_GENERATION_PLAN.md) | Planner kota 2D, reroll, kepadatan, usulan generator ala Watabou (TG-1–6) | Aktif |
 | [WORLD_BUILDING_ROADMAP.md](WORLD_BUILDING_ROADMAP.md) | Milestone WB-00–08 | Roadmap aktif |
 | [ASSET_ART_AUDIO_PLAN.md](ASSET_ART_AUDIO_PLAN.md) | Milestone AA-00–09, budget, pipeline Blender, musik | Roadmap aktif; arah visual §1 mengikuti ART_DIRECTION setelah disetujui |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Status aktual per milestone dan hasil verifikasi | Sumber kebenaran status |

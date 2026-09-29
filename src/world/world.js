@@ -2,6 +2,9 @@ import { generateHexasphere } from '../math/hexasphere.js';
 import { MapGenerator } from '../map/mapGenerator.js';
 import { generateSystem } from './solarSystem.js';
 import { typeOf } from './planetTypes.js';
+import { WorldStateStore } from './stateStore.js';
+import { WorldClock } from './worldClock.js';
+import { GENERATOR_VERSIONS } from './identity.js';
 
 const CLOCK_KEY = 'planet_globe_clock_offset';
 const CLOCK_EPOCH = 1790000000; // keeps the clock's numbers small
@@ -24,6 +27,10 @@ export class World {
     } catch {
       /* optional */
     }
+    this.clock = new WorldClock({ offset: this.clockOffset, epoch: CLOCK_EPOCH, save: offset => {
+      this.clockOffset = offset;
+      try { localStorage.setItem(CLOCK_KEY, String(offset)); } catch { /* optional */ }
+    } });
     this.subdivision = subdivision;
     this.hexasphere = generateHexasphere(subdivision, radius);
     this.mapGenerator = new MapGenerator(this.hexasphere);
@@ -40,6 +47,19 @@ export class World {
       this.applied = this.homeMap;
     }
     this.system = generateSystem(this.homeMap.seed);
+    this.openState();
+  }
+
+  openState() {
+    this.worldId = `world:${this.homeMap.seed}:grid:${this.subdivision}`;
+    this.state = new WorldStateStore(this.worldId);
+    const state = this.state;
+    this.ready = state.ready.then(() => {
+      if (!state.get('manifest')) return state.set('manifest', {
+        worldId: this.worldId, rootSeed: this.homeMap.seed, generatorVersions: GENERATOR_VERSIONS,
+        clockPolicy: 'real-time-offline-menu-pause', schemaVersion: 1
+      });
+    });
   }
 
   /**
@@ -47,16 +67,11 @@ export class World {
    * while the tab is closed; sleeping in a bed skips ahead (offset, saved).
    */
   now() {
-    return Date.now() / 1000 - CLOCK_EPOCH + this.clockOffset;
+    return this.clock.now();
   }
 
   skipTime(seconds) {
-    this.clockOffset += seconds;
-    try {
-      localStorage.setItem(CLOCK_KEY, String(this.clockOffset));
-    } catch {
-      /* optional */
-    }
+    this.clock.skip(seconds);
   }
 
   get homeIndex() {
@@ -142,6 +157,7 @@ export class World {
     this.mapGenerator.saveToStorage(this.homeMap);
     this.system = generateSystem(this.homeMap.seed);
     this.cache.clear();
+    this.openState();
     return this.homeMap;
   }
 }

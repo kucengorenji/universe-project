@@ -1,7 +1,13 @@
 import { BIOMES, isWater, mulberry32 } from '../../map/mapGenerator.js';
+import { dryFootprint, footprintSamples } from '../../world/landUsePlan.js';
+import { buildingId, seedFor } from '../../world/identity.js';
+import { describeRelief } from '../../world/townRelief.js';
 import { createNoise3D } from '../../math/simplex3d.js';
 import { planWards, planRivers, planBridges, fillBlock, farmStrips, riverDistance } from './townPlan.js';
 import { planVegetation } from './vegetation.js';
+import { planTownGreenery } from './townGreenery.js';
+import { planNeighbourhoods } from './neighbourhoodPlan.js';
+import { planStreetLights } from './streetLighting.js';
 
 // Town layout: a city and its surroundings, cut out of the planet's hex map
 // and unrolled onto a flat, metre-scale disc (a tabletop diorama). Pure data:
@@ -140,7 +146,7 @@ class Fields {
  *   map: planet map data, hexasphere: tiles with that map applied,
  *   cityIndex, planetType, seed
  */
-export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 'terran', detail = 1, footprints = {} }) {
+export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 'terran', detail = 1, footprints = {}, layoutVersion = 2 }) {
   const city = map.cities[cityIndex];
   const tileMap = hexasphere.tileMap;
   const seed = ((map.seed || 1) * 131 + cityIndex * 977) >>> 0;
@@ -236,12 +242,14 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     if (!firstOut) continue;
     const angle = Math.atan2(firstOut.z, firstOut.x);
     if (exits.some((e) => Math.abs(Math.atan2(Math.sin(e.angle - angle), Math.cos(e.angle - angle))) < 0.5)) continue;
-    exits.push({ angle, path: pts.filter((t) => !t.city).map((t) => [t.x, t.z]), to: map.cities[r.from === cityIndex ? r.to : r.from]?.name });
+    const toIndex = r.from === cityIndex ? r.to : r.from;
+    exits.push({ angle, path: pts.filter((t) => !t.city).map((t) => [t.x, t.z]), to: map.cities[toIndex]?.name, toIndex });
   }
 
   const layout = {
     frame: { N, U, V }, // town x = U, y = N (up), z = V on the planet
     seed,
+    layoutVersion,
     name: city.name,
     style: city.style,
     modern,
@@ -254,10 +262,13 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     dioramaR: Math.min(DIORAMA_MAX, Math.max(400, Math.round(cityR * 1.7 + 220))),
     tiles: local,
     fields,
+    relief: describeRelief(local, cityR, seed),
     streets: [],
     buildings: [],
     props: [],
     trees: [],
+    parks: [],
+    paths: [],
     walls: [],
     fields2: null,
     docks: [],
@@ -314,24 +325,32 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     return { w: f.maxX - f.minX, d: f.maxZ - f.minZ, cx: (f.maxX + f.minX) / 2, cz: (f.maxZ + f.minZ) / 2, front: f.maxZ };
   };
   const place = (list, asset, x, z, yaw, w, d, extra = {}) => {
-    const f = fp(asset, w, d);
+    const f = list===layout.trees ? { w, d, cx:0, cz:0 } : fp(asset, w, d);
     // Rect centre = origin + footprint offset in the item's own axes
     const ca = Math.cos(yaw);
     const sa = Math.sin(yaw);
     const rx = x + ca * f.cx - sa * f.cz;
     const rz = z + sa * f.cx + ca * f.cz;
-    const rect = { x: rx, z: rz, yaw, hw: f.w / 2, hd: f.d / 2 };
+    const trunk = list===layout.trees && /^(t_|tree_)/.test(asset);
+    const rect = { x: rx, z: rz, yaw, hw: trunk ? Math.min(.8,f.w/2) : f.w / 2, hd: trunk ? Math.min(.8,f.d/2) : f.d / 2 };
+    if (layoutVersion>=2 && list===layout.buildings && layout.parks.some(p=>{
+      const xs=p.poly.map(v=>v.x),zs=p.poly.map(v=>v.z),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
+      return obbOverlap(rect,{x:(minX+maxX)/2,z:(minZ+maxZ)/2,hw:(maxX-minX)/2,hd:(maxZ-minZ)/2,yaw:0},.7);
+    })) return false;
+    if (!dryFootprint(rect, at, (px, pz) => riverDistance(layout, px, pz))) return false;
     if (!free(rect, extra.pad ?? 0.6)) return false;
     claim(rect, extra.collide !== false);
-    list.push({ asset, x, z, yaw, w: f.w, d: f.d, h: extra.h, tint: extra.tint ?? 0.94 + rng() * 0.12, variant: extra.variant ?? Math.floor(rng() * 4) });
+    list.push({ ...extra, asset, x, z, yaw, w: f.w, d: f.d, h: extra.h, tint: extra.tint ?? 0.94 + rng() * 0.12, variant: extra.variant ?? Math.floor(rng() * 4) });
     return true;
   };
 
   // ------------------------------------------------------------ city plan
   planRivers(layout, byId, local, chaikin);
-  const K = { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, free, fp };
-  if (modern) planModern(layout, K);
-  else if (planWards(layout, K)) {
+  const buildable = rect => dryFootprint(rect, at, (x, z) => riverDistance(layout, x, z));
+  const K = { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, free, fp, footprints, buildable };
+  if (modern && layoutVersion >= 2) planNeighbourhoods(layout, K, fillStreetFronts);
+  else if (modern) planModern(layout, K);
+  else if (planWards(layout, K, fillStreetFronts)) {
     // Torch posts along the arteries
     scatterAlong(layout, ['main'], 26, (x, z, yaw) => {
       if (streetClear(x, z, 10) < 0.3) return;
@@ -358,11 +377,14 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     }
     // Resample into a gentle curve
     const smoothPts = chaikin(chaikin(pts));
-    addStreet(smoothPts, modern ? 10 : 5.5, 'road');
+    e.road = addStreet(smoothPts, modern ? 10 : 5.5, 'road');
   }
 
   planBridges(layout);
-  planSurroundings(layout, { rng, noise, at, place, streetClear, claim, local, modern, planetType, detail });
+  planSurroundings(layout, { rng: mulberry32(seedFor(seed, 'surroundings')), noise, at, place, streetClear, claim, free, local, modern, planetType, detail });
+  for (const b of layout.buildings) b.id = buildingId(seed, b);
+  planTownGreenery(layout, K);
+  planStreetLights(layout, K);
   buildGraphs(layout);
   return layout;
 }
@@ -589,7 +611,7 @@ function fillStreetFronts(L, { rng, inCity, streetClear, place, typeAt, cityTh, 
         const dz = (bz - az) / len;
         let t = carry;
         while (t < len) {
-          const [asset, w0, d0] = typeAt(Math.hypot(ax + dx * t, az + dz * t));
+          const [asset, w0, d0] = typeAt(Math.hypot(ax + dx * t, az + dz * t), ax + dx*t, az + dz*t);
           const { w, d, front } = fp(asset, w0, d0);
           // The model's front face sits a pavement's width from the street edge
           const off = s.w / 2 + 1.1 + front;
@@ -634,11 +656,18 @@ function scatterAlong(L, kinds, every, fn, { side, rng }) {
 
 function planModern(L, K) {
   const { rng, at, inCity, addStreet, streetClear, place, claim } = K;
-  const axis = rng() * Math.PI;
+  // Regional access anchors the district; bounded warping and unequal blocks
+  // keep modern street hierarchy without reproducing the medieval grammar.
+  const axis = L.exits.length ? L.exits[0].angle : rng() * Math.PI;
   const ca = Math.cos(axis);
   const sa = Math.sin(axis);
-  const toWorld = (u, v) => [u * ca - v * sa, u * sa + v * ca];
   const pitch = L.size <= 2 ? 50 : 62; // road centre to road centre
+  const phase=rng()*6.28;
+  const toWorld = (u,v) => {
+    const a=u+Math.sin(u/pitch*1.7+phase)*pitch*.12+Math.sin(v/(pitch*3)+phase)*pitch*.15;
+    const b=v+Math.sin(v/pitch*1.3+phase+2)*pitch*.12;
+    return [a*ca-b*sa,a*sa+b*ca];
+  };
   const road = 12;
   const n = Math.ceil((L.cityR + pitch) / pitch);
   const lineInCity = (u0, v0, u1, v1, w, kind) => {
@@ -648,7 +677,7 @@ function planModern(L, K) {
       const u = u0 + ((u1 - u0) * i) / steps;
       const v = v0 + ((v1 - v0) * i) / steps;
       const [x, z] = toWorld(u, v);
-      if (inCity(x, z, 0.42)) run.push([x, z]);
+      if (inCity(x, z, 0.42) && at(x,z).land>.58) run.push([x, z]);
       else {
         if (run.length > 2) addStreet(run, w, kind);
         run = [];
@@ -662,7 +691,11 @@ function planModern(L, K) {
     lineInCity(i * pitch - pitch / 2, -n * pitch, i * pitch - pitch / 2, n * pitch, w, kind);
     lineInCity(-n * pitch, i * pitch - pitch / 2, n * pitch, i * pitch - pitch / 2, i === 0 ? 18 : road, kind);
   }
-  L.grid = { axis, pitch, road };
+  L.grid = { axis, pitch, road, organic:true, junctions:[] };
+  for(let i=-n;i<=n;i++)for(let j=-n;j<=n;j++){
+    const [x,z]=toWorld((i-.5)*pitch,(j-.5)*pitch);
+    if(inCity(x,z,.5)&&at(x,z).land>.8)L.grid.junctions.push({x,z,w:i===0||j===0?18:road});
+  }
 
   // Blocks
   const inner = pitch - road - 4; // buildable block size (with sidewalks)
@@ -686,15 +719,9 @@ function planModern(L, K) {
         continue;
       }
       if (rng() < 0.1 && ring > 0) {
-        // Park block
-        for (let t = 0; t < 14; t++) {
-          const [tx, tz] = toWorld(i * pitch + (rng() - 0.5) * inner * 0.85, j * pitch + (rng() - 0.5) * inner * 0.85);
-          const park = [['t_oak', 0], ['t_oak', 1], ['t_birch', 0], ['t_fruit', 1], ['b_flowers', t % 3]][Math.floor(rng() * 5)];
-          if (place(L.trees, park[0], tx, tz, rng() * 6, park[0] === 'b_flowers' ? 1.8 : 4, park[0] === 'b_flowers' ? 1.8 : 4, { collide: false, variant: park[1] }) && park[0] !== 'b_flowers') {
-            L.colliders.push({ type: 'circle', x: tx, z: tz, r: 0.7 });
-          }
-        }
-        L.props.push({ asset: 'm_bench', x, z, yaw, w: 2, d: 0.8 });
+        const half=inner*.45;
+        const poly=[[-half,-half],[half,-half],[half,half],[-half,half]].map(([u,v])=>{const p=toWorld(i*pitch+u,j*pitch+v);return{x:p[0],z:p[1]};});
+        L.parks.push({x,z,poly,style:'public'});
         continue;
       }
       // Downtown towers stand alone; other blocks are lined around their edge,
@@ -743,7 +770,7 @@ function planModern(L, K) {
 
 // ---------------------------------------------------------------- outside the walls
 
-function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern, planetType, detail }) {
+function planSurroundings(L, { rng, noise, at, place, streetClear, claim, free, local, modern, planetType, detail }) {
   const flora = { ice: 'snow', desert: 'dry', lava: 'none', barren: 'none' }[planetType] || 'green';
   // Farmland: long plots with crop rows in their own direction
   const fields = [];
@@ -795,10 +822,15 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
       if (streetClear(x, z, 20) > 6) place(L.buildings, 'windmill', x, z, rng() * 6, 9, 9);
     }
   }
-  L.fields2 = fields;
+  L.fields2 = fields.filter(f => {
+    const rect = { x: f.x, z: f.z, hw: f.w / 2, hd: f.d / 2, yaw: f.yaw };
+    if (!free(rect, 1) || !dryFootprint(rect, at, (x, z) => riverDistance(L, x, z), 4)) return false;
+    if (!footprintSamples(rect).every(p => streetClear(p.x, p.z, 8) > 2)) return false;
+    claim(rect, false);
+    return true;
+  });
 
   // Trees in clumps, flower patches, rock groups
-  planVegetation(L, { rng, noise, at, place, streetClear, fields, flora, detail });
   const S = {};
 
   // Harbour: docks and boats where the town meets the water
@@ -817,25 +849,37 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, local, modern
   }
   const docks = shore.filter((_, i) => i % 4 === 0).slice(0, L.capital ? 4 : 2);
   for (const d of docks) {
+    const dockRect = { x:d.x,z:d.z,yaw:d.a-Math.PI/2,hw:modern?3.5:2,hd:modern?17:11 };
+    if (!free(dockRect, 2)) continue;
+    claim(dockRect, false);
     L.docks.push({ asset: modern ? 'm_dock' : 'f_dock', x: d.x, z: d.z, yaw: d.a - Math.PI / 2, len: modern ? 34 : 22 });
+    for(const along of [-.25,.25]){
+      const x=d.x+Math.cos(d.a)*along*(modern?34:22)-Math.sin(d.a)*(modern?2.3:1.1);
+      const z=d.z+Math.sin(d.a)*along*(modern?34:22)+Math.cos(d.a)*(modern?2.3:1.1);
+      L.props.push({asset:'g_crate',x,z,yaw:d.a,w:1.2,d:1.2,variant:0,tint:1,deck:true});
+      L.colliders.push({type:'box',x,z,hw:.6,hd:.6,yaw:d.a});
+    }
     const bx = d.x + Math.cos(d.a) * (modern ? 26 : 16) + Math.cos(d.a + Math.PI / 2) * 8;
     const bz = d.z + Math.sin(d.a) * (modern ? 26 : 16) + Math.sin(d.a + Math.PI / 2) * 8;
-    L.props.push({ asset: modern ? 'container_ship' : 'boat', x: bx, z: bz, yaw: d.a, w: modern ? 10 : 5, d: modern ? 40 : 12, floating: true });
+    const shipRect = { x:bx,z:bz,yaw:d.a,hw:modern?5:2.5,hd:modern?20:6 };
+    if (footprintSamples(shipRect).every(p=>at(p.x,p.z).land<0.45)) L.props.push({ asset: modern ? 'container_ship' : 'boat', x: bx, z: bz, yaw: d.a, w: modern ? 10 : 5, d: modern ? 40 : 12, floating: true });
   }
-  L.isPort = docks.length > 0;
+  L.isPort = L.docks.length > 0;
+  planVegetation(L, { rng: mulberry32(seedFor(L.seed, 'vegetation')), noise, at, place, streetClear, fields: L.fields2, flora, detail });
 }
 
 // ---------------------------------------------------------------- navigation graphs
 
-/** Street polylines as a node/edge graph (pedestrians walk it, cars drive the wider ones). */
+/** Source polylines; the pedestrian network splits these at real junctions. */
 function buildGraphs(L) {
   const walk = [];
   const drive = [];
   for (const s of L.streets) {
     const line = s.pts.map(([x, z]) => ({ x, z }));
-    walk.push({ pts: line, w: s.w });
+    walk.push({ pts: line, w: s.w, kind: 'street', id: `street:${walk.length}` });
     if (s.w >= (L.modern ? 10 : 5.5)) drive.push({ pts: line, w: s.w });
   }
+  for(const path of L.paths||[])walk.push({pts:path.pts.map(([x,z])=>({x,z})),w:path.w,kind:path.kind,id:path.id});
   L.walkGraph = walk;
   L.driveGraph = drive;
 }

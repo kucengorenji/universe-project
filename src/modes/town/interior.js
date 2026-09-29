@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import { mulberry32 } from '../../map/mapGenerator.js';
 import { createToonMaterial } from '../../render/assetLibrary.js';
 import { Colliders } from './colliders.js';
-import { makePerson, animatePerson } from './peopleRig.js';
+import { makePerson, animatePerson, disposePerson } from './peopleRig.js';
+import { generateInteriorLayout, measureFurnitureBounds } from './interiorLayout.js';
+import { seedFor } from '../../world/identity.js';
+import { assignInteractionIds, captureInterior, restoreInterior } from '../../world/interiorState.js';
 
 // Inside a building: a room (or a few, split by half walls) generated from the
 // building's type and seed, furnished from furniture.glb, textured from the
@@ -81,7 +84,7 @@ function slab(x0, x1, y0, y1, z0, z1) {
 }
 
 export class Interior {
-  constructor({ building, pack, atlas, character, modern, seed, night, shadows }) {
+  constructor({ building, pack, atlas, character, modern, seed, night, shadows, state = null, floor = 0, layoutVersion = 2 }) {
     this.building = building;
     this.info = ENTERABLE[building.asset];
     this.kind = this.info.kind;
@@ -97,17 +100,29 @@ export class Interior {
     this.lamps = [];
     this.material = createToonMaterial({ vertexColors: true });
     this.disposables.push(this.material);
-    const [W, D] = SIZES[this.kind];
+    this.floor = floor;
+    this.layoutVersion = layoutVersion;
+    if (layoutVersion === 2) {
+      const bounds = measureFurnitureBounds(this.pack);
+      this.blueprint=generateInteriorLayout({building,kind:this.kind,seed,floor,bounds});
+    }
+    const [W, D] = this.blueprint ? [this.blueprint.W,this.blueprint.D] : SIZES[this.kind];
     this.W = W;
     this.D = D;
-    this.door = { x: 0, z: D / 2 - 0.3 };
-    this.spawn = { x: 0, z: D / 2 - 1.3, yaw: Math.PI };
+    this.door = { x: this.blueprint?.doorX || 0, z: D / 2 - 0.3 };
+    this.spawn = this.blueprint?.spawn || { x: 0, z: D / 2 - 1.3, yaw: Math.PI };
     this.buildRoom(atlas, night);
+    if(this.blueprint)this.buildPartitionsAndStairs();
     this.furnish();
+    assignInteractionIds(this.interactables);
     this.colliders = new Colliders(this.rects.map((r) => ({ type: 'box', ...r })));
     this.setupLights(night);
-    if (character) this.addResident(character, shadows);
+    this.residentSeed=seedFor(seed,'resident');
+    if (character && (!this.blueprint || (floor===0 && this.residentSeed%3!==0))) this.addResident(character, shadows);
+    restoreInterior(this, state);
   }
+
+  snapshot() { return captureInterior(this); }
 
   track(o) {
     this.disposables.push(o);
@@ -141,12 +156,16 @@ export class Interior {
     wall(slab(-W / 2 - t, W / 2 + t, 0, WALL_H, -D / 2 - t, -D / 2), 0, -1);
     wall(slab(-W / 2 - t, -W / 2, 0, WALL_H, -D / 2, D / 2), -1, 0);
     wall(slab(W / 2, W / 2 + t, 0, WALL_H, -D / 2, D / 2), 1, 0);
-    const dw = 1.2;
-    wall(slab(-W / 2 - t, -dw / 2, 0, WALL_H, D / 2, D / 2 + t), 0, 1);
-    wall(slab(dw / 2, W / 2 + t, 0, WALL_H, D / 2, D / 2 + t), 0, 1);
-    wall(slab(-dw / 2, dw / 2, 2.25, WALL_H, D / 2, D / 2 + t), 0, 1);
+    const dw = 1.2, dx = this.door.x;
+    if(this.floor===0){
+      wall(slab(-W / 2 - t, dx - dw / 2, 0, WALL_H, D / 2, D / 2 + t), 0, 1);
+      wall(slab(dx + dw / 2, W / 2 + t, 0, WALL_H, D / 2, D / 2 + t), 0, 1);
+      wall(slab(dx - dw / 2, dx + dw / 2, 2.25, WALL_H, D / 2, D / 2 + t), 0, 1);
+    } else wall(slab(-W/2-t,W/2+t,0,WALL_H,D/2,D/2+t),0,1);
     this.rects.push({ x: 0, z: -D / 2 - 0.2, hw: W / 2 + 1, hd: 0.25, yaw: 0 }, { x: -W / 2 - 0.2, z: 0, hw: 0.25, hd: D / 2 + 1, yaw: 0 }, { x: W / 2 + 0.2, z: 0, hw: 0.25, hd: D / 2 + 1, yaw: 0 });
-    this.rects.push({ x: -W / 4 - dw / 4 - 0.15, z: D / 2 + 0.2, hw: W / 4 - dw / 4 + 0.3, hd: 0.25, yaw: 0 }, { x: W / 4 + dw / 4 + 0.15, z: D / 2 + 0.2, hw: W / 4 - dw / 4 + 0.3, hd: 0.25, yaw: 0 });
+    if(this.floor===0)this.rects.push({x:(-W/2+dx-dw/2)/2,z:D/2+.2,hw:(dx-dw/2+W/2)/2,hd:.25,yaw:0},
+      {x:(W/2+dx+dw/2)/2,z:D/2+.2,hw:(W/2-dx-dw/2)/2,hd:.25,yaw:0});
+    else this.rects.push({x:0,z:D/2+.2,hw:W/2+t,hd:.25,yaw:0});
     // Outside light through the doorway and windows (sky colour by time of day)
     const skyCol = new THREE.Color(night > 0.5 ? 0x1b2a48 : 0xcfe4f4);
     this.windowMat = this.track(new THREE.MeshBasicMaterial({ color: skyCol }));
@@ -161,16 +180,36 @@ export class Interior {
       wallMesh.add(m);
       this.panes.push({ mesh: m, x, z });
     };
-    pane(frontL, dw, 2.25, 0, 1.125, D / 2 + t + 0.01, Math.PI);
+    if(this.floor===0)pane(frontL, dw, 2.25, dx, 1.125, D / 2 + t + 0.01, Math.PI);
+    else for(const x of [-W/3,W/3])pane(frontL,1.2,1.2,x,1.6,D/2-.01,Math.PI);
     for (const x of [-W / 3, W / 3]) pane(back, 1.2, 1.2, x, 1.6, -D / 2 + 0.01, 0);
     for (const z of [-D / 5, D / 5]) {
       pane(left, 1.1, 1.2, -W / 2 + 0.01, 1.6, z, Math.PI / 2);
       pane(right, 1.1, 1.2, W / 2 - 0.01, 1.6, z, -Math.PI / 2);
     }
     // Door frame
-    const frame = this.track(slab(-dw / 2 - 0.1, dw / 2 + 0.1, 2.25, 2.4, D / 2 - 0.05, D / 2 + t + 0.05));
-    this.walls[5].add(new THREE.Mesh(frame, trimMat));
-    this.doorX = 0;
+    if(this.floor===0){
+      const frame = this.track(slab(dx - dw / 2 - 0.1, dx + dw / 2 + 0.1, 2.25, 2.4, D / 2 - 0.05, D / 2 + t + 0.05));
+      this.walls[5].add(new THREE.Mesh(frame, trimMat));
+    }
+    this.doorX = dx;
+  }
+
+  buildPartitionsAndStairs() {
+    const plan=this.blueprint;
+    for(const p of plan.partitions)this.partition(p.x-p.hw,p.x+p.hw,p.z-p.hd,p.z+p.hd);
+    if(plan.floors<2)return;
+    const x=plan.W/2-.65,z=-plan.D/2+.15;
+    const material=this.track(createToonMaterial({color:this.modern?0xb3aca1:0x8e633e}));
+    if(this.floor+1<plan.floors){
+      for(let i=0;i<14;i++){
+        const step=new THREE.Mesh(this.track(slab(x-.55,x+.55,0,(14-i)*.2,z+i*.185,z+(i+1)*.185)),material);
+        this.scene.add(step);
+      }
+    } else {
+      this.scene.add(new THREE.Mesh(this.track(slab(x-.55,x+.55,.005,.015,z,z+2.6)),this.track(new THREE.MeshBasicMaterial({color:0x292c32}))));
+    }
+    this.rects.push({x,z:z+1.3,hw:.55,hd:1.3,yaw:0});
   }
 
   /** Brick up the windows behind a tall piece standing against a wall. */
@@ -321,6 +360,37 @@ export class Interior {
       return { x, z };
     };
 
+    if (this.blueprint) {
+      for (const node of this.blueprint.furniture) {
+        const {asset,x,z,yaw,variant,kind}=node;
+        const start=this.interactables.length;
+        if(kind==='bed')bed(x,z,yaw);
+        else if(kind==='seat')this.seat(asset,x,z,yaw,{variant});
+        else if(kind==='light')lamp(asset,x,z);
+        else if(kind==='cabinet')hinged(asset,'fu_wardrobe_door',x,z,yaw,.6,.27,1.2,'lemari','open');
+        else {
+          this.put(asset,x,z,yaw,{variant});
+          if(kind==='surface'){
+            const h={fu_counter:.93,fu_desk:.76,fu_coffee_table:.43,fu_table:.77}[asset]||.77;
+            surface(x,z,h,.55);
+            item('it_apple',x-.12,h+.015,z,0);
+            item('it_book',x+.17,h+.015,z+.08,variant);
+            if(this.modern)radio(x+.25,h+.02,z-.15);
+          }
+        }
+        // Use the exact approach points validated by the floor planner.
+        for(const it of this.interactables.slice(start)) {
+          if(it.kind==='surface'){it.placementX=it.x;it.placementZ=it.z;}
+          if(it.kind!=='item') {it.x=node.approach.x;it.z=node.approach.z;it.reach=Math.max(it.reach,1.3);}
+        }
+        const seat=this.interactables.slice(start).find(it=>it.kind==='seat');
+        if(seat && !this.residentSpot)this.residentSpot={seat:true,...seat.seat};
+      }
+      for(const stair of this.blueprint.stairs)this.interactables.push({kind:'stairs',...stair,reach:.8,label:()=>this.holding?'Taruh barang sebelum memakai tangga':`${stair.target>this.floor?'Naik':'Turun'} ke lantai ${stair.target+1}`});
+      if(this.floor===0)this.interactables.push({kind:'exit',x:this.door.x,z:this.door.z,reach:1.1,label:()=> 'Keluar'});
+      return;
+    }
+
     if (k === 'cottage' || k === 'house' || k === 'apartment') {
       const big = k !== 'cottage';
       // Bedroom corner (left back)
@@ -443,14 +513,15 @@ export class Interior {
     const spot = this.residentSpot;
     if (!spot) return;
     const outfits = this.modern ? ['casual_f', 'business', 'casual_m', 'elder'] : ['townsfolk_f', 'peasant', 'elder'];
-    const p = makePerson(gltf, outfits[Math.floor(this.rng() * outfits.length)], { shadows });
+    const rng=this.blueprint?mulberry32(this.residentSeed):this.rng;
+    const p = makePerson(gltf, outfits[Math.floor(rng() * outfits.length)], { shadows, appearanceSeed: Math.floor(rng()*1000000) });
     if (!p) return;
     p.root.position.set(spot.x, 0, spot.z);
     p.root.rotation.y = spot.yaw;
     this.scene.add(p.root);
     this.resident = { p, pose: spot.seat ? 'sit' : null };
     // A seated resident takes that seat
-    if (spot.seat) this.interactables = this.interactables.filter((it) => !(it.kind === 'seat' && Math.hypot(it.x - spot.x, it.z - spot.z) < 0.6));
+    if (spot.seat) this.interactables = this.interactables.filter((it) => !(it.kind === 'seat' && Math.hypot(it.seat.x - spot.x, it.seat.z - spot.z) < 0.6));
   }
 
   setLamp(l, on, emit = true) {
@@ -511,9 +582,9 @@ export class Interior {
         if (!h) return {};
         h.taken = false;
         h.mesh.visible = true;
-        const a = Math.random() * Math.PI * 2;
-        h.x = it.x + Math.cos(a) * 0.25;
-        h.z = it.z + Math.sin(a) * 0.2;
+        const a = this.rng() * Math.PI * 2;
+        h.x = (it.placementX ?? it.x) + Math.cos(a) * 0.25;
+        h.z = (it.placementZ ?? it.z) + Math.sin(a) * 0.2;
         h.mesh.position.set(h.x, it.h, h.z);
         this.holding = null;
         return { event: 'place_item', action: 'drop' };
@@ -522,6 +593,8 @@ export class Interior {
         return { event: 'sit', action: 'sit', pose: it.seat };
       case 'bed':
         return { action: 'sleep', pose: it.bed };
+      case 'stairs':
+        return this.holding ? {} : { action: 'floor', target: it.target };
       case 'exit':
         return { action: 'exit' };
       default:
@@ -562,7 +635,7 @@ export class Interior {
 
   dispose() {
     this.disposables.forEach((d) => d.dispose?.());
-    this.resident?.p.mixer.stopAllAction();
+    disposePerson(this.resident?.p);
   }
 }
 

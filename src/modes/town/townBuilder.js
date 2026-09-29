@@ -1,11 +1,14 @@
 import * as THREE from 'three';
+import { townSurfaceHeight } from '../../world/townRelief.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createToonMaterial } from '../../render/assetLibrary.js';
 import { createNoise3D } from '../../math/simplex3d.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../../world/planetTypes.js';
 import { GroundPaint, detailNoiseTexture } from './groundPaint.js';
+import { roadMarkings } from './roadMarkings.js';
 import { GroundCover } from './groundCover.js';
 import { FarTrees } from './farTrees.js';
+import { applySurfaceCoordinates } from '../../render/townSurfaces.js';
 
 // Turns a town layout into a tabletop diorama: one terrain disc (heights and
 // colours from the blended hex fields), street ribbons, water, a soil skirt
@@ -163,10 +166,13 @@ function protoGeometry(kind) {
 // ---------------------------------------------------------------- builder
 
 export class TownBuilder {
-  constructor(layout, { planetPack, townPack, quality, planetType }) {
+  constructor(layout, { planetPack, townPack, sceneryPack, surfaceAtlas, quality, planetType }) {
     this.L = layout;
     this.planetPack = planetPack || {};
     this.townPack = townPack || {};
+    this.sceneryPack = sceneryPack || {};
+    this.surfaceAtlas = surfaceAtlas;
+    this.foliageMaterials = new Map();
     this.quality = quality;
     this.type = PLANET_TYPES[planetType] || PLANET_TYPES.terran;
     this.look = this.type.look || {};
@@ -180,10 +186,11 @@ export class TownBuilder {
     this.uniforms = { uNight: { value: 0 }, uTime: { value: 0 } };
     this.setupGroundColors();
     this.indexRivers();
+    this.indexFoundations();
     this.buildHeights();
     this.bridges = [];
     const detail = quality.settings.detail;
-    this.paint = new GroundPaint(layout, { res: detail >= 1 ? 2048 : detail >= 0.75 ? 1536 : 1024, farRes: detail >= 0.75 ? 1024 : 512 });
+    this.paint = new GroundPaint(layout, { res: detail >= 0.75 ? 2048 : 1536, farRes: detail >= 0.75 ? 1024 : 512 });
     this.disposables.push(this.paint);
     this.detailTex = this.track(detailNoiseTexture());
     this.material = this.track(this.makePropMaterial());
@@ -194,6 +201,7 @@ export class TownBuilder {
     this.buildFieldRows();
     this.buildInstances();
     this.buildBridges();
+    if(layout.modern){const markings=roadMarkings(layout,(x,z)=>this.surfaceAt(x,z),WATER_Y+.1);this.group.add(markings.mesh);this.disposables.push(markings);}
     // Grass, flowers, ferns, reeds and pebbles: one instanced sprite mesh
     const cover = detail >= 1 ? 72000 : detail >= 0.75 ? 36000 : 14000;
     this.groundCover = new GroundCover(this, { count: cover });
@@ -209,6 +217,32 @@ export class TownBuilder {
   }
 
   // -------------------------------------------------------------- rivers and bridges
+
+  indexFoundations() {
+    this.foundationGrid = new Map();
+    if (!this.L.relief?.enabled) return;
+    for (const b of this.L.buildings) {
+      const pad = { ...b, y: townSurfaceHeight(this.L.relief, b.x, b.z, this.L.fields.sample(b.x,b.z).land) };
+      const r = Math.hypot(b.w,b.d)/2+6;
+      for(let i=Math.floor((b.x-r)/32);i<=Math.floor((b.x+r)/32);i++) for(let j=Math.floor((b.z-r)/32);j<=Math.floor((b.z+r)/32);j++) {
+        const key=`${i},${j}`;
+        if(!this.foundationGrid.has(key))this.foundationGrid.set(key,[]);
+        this.foundationGrid.get(key).push(pad);
+      }
+    }
+  }
+
+  foundationHeight(x,z,height) {
+    const pads=this.foundationGrid.get(`${Math.floor(x/32)},${Math.floor(z/32)}`);
+    if(!pads)return height;
+    let nearest=null,best=Infinity;
+    for(const p of pads){
+      const c=Math.cos(p.yaw),s=Math.sin(p.yaw),dx=x-p.x,dz=z-p.z;
+      const distance=Math.max(Math.abs(dx*c+dz*s)-p.w/2,Math.abs(-dx*s+dz*c)-p.d/2);
+      if(distance<best){best=distance;nearest=p;}
+    }
+    return nearest ? THREE.MathUtils.lerp(nearest.y,height,THREE.MathUtils.smoothstep(best,0,6)) : height;
+  }
 
   /** River segments in a coarse grid, for fast distance queries while carving. */
   indexRivers() {
@@ -261,6 +295,7 @@ export class TownBuilder {
       g.setAttribute('color', new THREE.BufferAttribute(col, 3));
       g.setAttribute('emissive', new THREE.BufferAttribute(new Float32Array(n), 1));
       g.deleteAttribute('uv');
+      applySurfaceCoordinates(g, this.L.modern ? 15 : 4);
       geos.push(g);
     };
     for (const b of this.L.bridges || []) {
@@ -297,9 +332,20 @@ export class TownBuilder {
   /** Buildings and props: toon shading, and glass or lamps that glow at night. */
   makePropMaterial() {
     const m = createToonMaterial({ vertexColors: true });
+    m.defaultAttributeValues = { surface: [0, 0, 0], paint: [0], aPaint: [1, 1, 1], emissive: [0] };
     const u = this.uniforms;
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uNight = u.uNight;
+      if (this.surfaceAtlas) {
+        shader.uniforms.uSurfaceAtlas = { value: this.surfaceAtlas };
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 surface;\nvarying vec3 vSurface;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSurface=surface;');
+        shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D uSurfaceAtlas;\nvarying vec3 vSurface;')
+          .replace('#include <color_fragment>', `#include <color_fragment>
+            vec2 cell=vec2(mod(floor(vSurface.z+.5),4.0),3.0-floor((vSurface.z+.5)/4.0));
+            vec2 uv=(cell+vec2(.012)+fract(vSurface.xy)*.976)/4.0;
+            if(vSurface.z>.5)diffuseColor.rgb*=texture2D(uSurfaceAtlas,uv).rgb;`);
+      }
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nattribute float emissive;\nattribute float paint;\nattribute vec3 aPaint;\nvarying float vEmissive;\nvarying float vLit;\nvarying vec3 vWin;')
         // Paint: vehicle bodies and horses take their colour per instance (other models have paint = 0)
@@ -338,7 +384,7 @@ export class TownBuilder {
           totalEmissiveRadiance += glowCol * glow * uNight * 1.35;`
         );
     };
-    m.customProgramCacheKey = () => 'town-props';
+    m.customProgramCacheKey = () => `town-props-surfaces-${!!this.surfaceAtlas}`;
     return m;
   }
 
@@ -354,8 +400,19 @@ export class TownBuilder {
       uFarRect: { value: new THREE.Vector3(far.x0, far.z0, far.size) },
       uDetail: { value: this.detailTex }
     };
+    if(this.surfaceAtlas)Object.assign(uni,{uGroundAtlas:{value:this.surfaceAtlas},uSurfaceNear:{value:near.surface},uSurfaceFar:{value:far.surface}});
     m.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, uni);
+      if(this.surfaceAtlas){
+        shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
+          uniform sampler2D uGroundAtlas;
+          uniform sampler2D uSurfaceNear;
+          uniform sampler2D uSurfaceFar;
+          float groundTile(vec2 p,float tile,float span){
+            vec2 cell=vec2(mod(tile,4.0),3.0-floor(tile/4.0));
+            return texture2D(uGroundAtlas,(cell+.012+fract(p/span)*.976)/4.0).r;
+          }`);
+      }
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vGround;')
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGround = position;');
@@ -381,10 +438,16 @@ export class TownBuilder {
           // Grain: two octaves of tiling noise, stronger on bare ground than on paving
           float g = texture2D(uDetail, vGround.xz * 0.11).r * 0.6 + texture2D(uDetail, vGround.xz * 0.023).r * 0.4;
           diffuseColor.rgb *= mix(0.86 + g * 0.26, 0.95 + g * 0.1, paint.a);
-          diffuseColor.rgb = mix(diffuseColor.rgb, paint.rgb * (0.94 + g * 0.1), paint.a);`
+          diffuseColor.rgb = mix(diffuseColor.rgb, paint.rgb * (0.94 + g * 0.1), paint.a);
+          ${this.surfaceAtlas?`vec3 surface=(pn.a>.02?texture2D(uSurfaceNear,un):texture2D(uSurfaceFar,uf)).rgb;
+          float earth=max(0.0,1.0-surface.r-surface.g-surface.b);
+          float paving=mix(groundTile(vGround.xz,15.0,3.2),groundTile(vGround.xz,11.0,1.1),.35)*surface.r+groundTile(vGround.xz,9.0,2.4)*surface.g+
+            groundTile(vGround.xz,10.0,4.0)*surface.b+groundTile(vGround.xz,11.0,2.4)*earth;
+          float turf=groundTile(vGround.xz,12.0,2.0);
+          diffuseColor.rgb*=mix(.8+turf*.24,.42+paving*.66,paint.a);`:''}`
         );
     };
-    m.customProgramCacheKey = () => 'town-ground';
+    m.customProgramCacheKey = () => `town-ground-surfaces-${!!this.surfaceAtlas}`;
     return m;
   }
 
@@ -415,12 +478,15 @@ export class TownBuilder {
     const s = L.fields.sample(x, z, S);
     const land = smooth(s.land, 0.36, 0.64);
     const gentle = noise.noise(x * 0.004, z * 0.004, 1) * 3.2 + noise.noise(x * 0.018, z * 0.018, 2) * 0.9;
-    const ridged = 1 - Math.abs(noise.noise(x * 0.005, z * 0.005, 3));
-    const mountain = Math.pow(s.mountain, 1.4) * (30 + ridged * ridged * 70 + noise.noise(x * 0.02, z * 0.02, 4) * 6);
+    const ridged = 1 - Math.abs(noise.noise(x * 0.003, z * 0.003, 3));
+    // Broad foothills and rounded ridges, rather than near-vertical isolated
+    // tile peaks. High frequency detail belongs in the material, not height.
+    const mountain = Math.pow(s.mountain, .78) * (18 + ridged * ridged * 36 + noise.noise(x * 0.008, z * 0.008, 4) * 2);
     const town = smooth(s.city + s.otherCity * 0.8, 0.12, 0.5);
     let h = 1.3 + gentle * (1 - town) + mountain * (1 - town);
     h = THREE.MathUtils.lerp(-4 - s.deep * 7 + gentle * 0.5, h, land);
-    h = THREE.MathUtils.lerp(h, 1.1, town * land);
+    h = THREE.MathUtils.lerp(h, townSurfaceHeight(L.relief,x,z,s.land), town * land);
+    if (town > 0.5 && land > 0.9) h = this.foundationHeight(x,z,h);
     // River channel: a bed below the water line and banks that ease back up
     const rd = this.riverDist(x, z);
     const bank = rd < 8 ? 1 - smooth(rd, -1, 8) : 0;
@@ -517,8 +583,12 @@ export class TownBuilder {
     return d + (c - d) * (1 - u) + (b - d) * (1 - v);
   }
 
-  groundAt(x, z) {
-    const g = Math.max(this.heightAt(x, z), WATER_Y);
+  surfaceAt(x, z) {
+    const g = this.heightAt(x, z);
+    for (const d of this.L.docks) {
+      const c=Math.cos(d.yaw),s=Math.sin(d.yaw),dx=x-d.x,dz=z-d.z;
+      if(Math.abs(dx*c+dz*s)<(this.L.modern?3.5:2) && Math.abs(-dx*s+dz*c)<d.len/2) return Math.max(g,WATER_Y+0.65);
+    }
     // Bridge decks carry walkers and cars over the river
     for (const b of this.bridges) {
       const dx = x - b.x;
@@ -527,6 +597,8 @@ export class TownBuilder {
     }
     return g;
   }
+
+  groundAt(x,z) { return Math.max(this.surfaceAt(x,z),WATER_Y); }
 
   // -------------------------------------------------------------- terrain
 
@@ -729,6 +801,7 @@ export class TownBuilder {
             float rim = uDepthRect.z * 0.5;
             float ground = mix(nearGround, farGround, smoothstep(rim * 0.9, rim, length(p)));
             float depth = ${WATER_Y.toFixed(2)} - ground;
+            if (depth < -0.04) discard;
             // Ripples: a few travelling sine waves, derivatives -> normal
             float e = 0.35;
             float h0 = wave(p, vec2(0.8, 0.6), 0.55, 1.4) + wave(p, vec2(-0.5, 0.86), 0.8, 1.9) * 0.6 + wave(p, vec2(0.2, -0.98), 1.9, 2.6) * 0.25;
@@ -748,10 +821,17 @@ export class TownBuilder {
               col = mix(col, uSky, fres * 0.55);
               vec3 L = normalize(uSunDir);
               float spec = pow(max(dot(reflect(-L, N), V), 0.0), 160.0) * uSunI;
-              col += uSunColor * spec * 1.4;
+              col += uSunColor * spec * 0.65;
+              // Moving shallow-water caustics; cheap analytic pattern, no texture download.
+              float cellA=sin(p.x*.9+sin(p.y*.7+uTime*.4)*1.3);
+              float cellB=sin(p.y*.95+cos(p.x*.6-uTime*.3)*1.2);
+              float caustic=1.0-smoothstep(.025,.12,abs(cellA+cellB*.65));
+              col += vec3(0.12, 0.23, 0.17) * caustic * (1.0 - smoothstep(0.5, 4.5, depth)) * uSunI;
               // Foam where the water meets the shore, pulsing in and out
               float lap = 0.55 + 0.25 * sin(uTime * 1.3 + p.x * 0.05 + p.y * 0.04);
               float foam = (1.0 - smoothstep(0.0, lap, depth)) * (0.65 + 0.35 * sin(p.x * 1.7 + p.y * 1.3 + uTime * 2.0));
+              float breaker = pow(max(0.0, sin(depth * 6.5 - uTime * 1.6 + h0 * 0.3)), 12.0);
+              foam += breaker * smoothstep(0.05, 0.3, depth) * (1.0 - smoothstep(0.4, 1.6, depth)) * 0.5;
               col = mix(col, vec3(0.97, 0.99, 1.0) * (0.35 + 0.65 * (1.0 - uNight * 0.7)), clamp(foam, 0.0, 1.0) * 0.85);
               float alpha = mix(0.5, 0.94, smoothstep(0.0, 2.5, depth));
               gl_FragColor = vec4(col * (1.0 - uNight * 0.72), alpha);
@@ -814,6 +894,15 @@ export class TownBuilder {
   }
 
   resolve(name, variant = 0) {
+    const texturedName = this.sceneryPack[`${name}_v1`] && variant % 2 ? `${name}_v1` : name;
+    if (this.sceneryPack[texturedName]) {
+      const key = `textured:${texturedName}`;
+      if (!this.fitCache.has(key)) this.fitCache.set(key, {
+        parts: this.sceneryPack[texturedName], fix: new THREE.Matrix4(), native: true,
+        spec: { natural: !!CATALOG[name]?.natural }, key
+      });
+      return this.fitCache.get(key);
+    }
     const nv = this.variants(name);
     const key = nv ? `${name}_v${variant % nv}` : name;
     if (this.fitCache.has(key)) return this.fitCache.get(key);
@@ -896,7 +985,7 @@ export class TownBuilder {
     const add = (item, { scale = 1, span = null, y = null, shadow = true } = {}) => {
       const res = this.resolve(item.asset, item.variant ?? 0);
       if (!res) return;
-      const h = (y ?? (item.floating ? WATER_Y : this.heightAt(item.x, item.z))) - (item.sink ?? 0);
+      const h = (y ?? (item.deck ? this.surfaceAt(item.x,item.z) : item.floating ? WATER_Y : this.heightAt(item.x, item.z))) - (item.sink ?? 0);
       // Tilt (rocks tumble on every axis), then the heading
       q.setFromEuler(e.set(item.tiltX ?? 0, -item.yaw, item.tiltZ ?? 0, 'YXZ'));
       if (res.span) {
@@ -910,7 +999,7 @@ export class TownBuilder {
       const k = chunkOf(item.x, item.z);
       const bucket = this.chunks[k].buckets;
       if (!bucket.has(res.key)) bucket.set(res.key, { res, items: [], shadow });
-      bucket.get(res.key).items.push({ m: m.clone(), tint: item.tint ?? 1 });
+      bucket.get(res.key).items.push({ m: m.clone(), tint: item.tint ?? 1, autumn: item.asset==='t_oak'&&item.variant===2 || item.asset==='t_birch'&&item.variant===1 });
     };
     for (const b of L.buildings) add(b, { scale: b.w / (b.sx ?? 1) / ((CATALOG[b.asset]?.size) || b.w) });
     for (const p of L.props) if (!p.parked) add(p); // parked vehicles belong to the fleet (enterable)
@@ -930,11 +1019,14 @@ export class TownBuilder {
     for (const chunk of this.chunks) {
       for (const [, { res, items, shadow }] of chunk.buckets) {
         for (let lvl = 0; lvl < 3; lvl++) {
-          const inst = new THREE.InstancedMesh(res.lods[lvl], this.material, items.length);
+          for (const part of res.parts?.[lvl] || [{ geometry: res.lods[lvl], material: this.material }]) {
+          const foliage = part.material.name === 'Foliage_cutout';
+          const inst = new THREE.InstancedMesh(part.geometry, foliage ? this.foliageMaterial(part.material) : part.material, items.length);
           items.forEach((it, i) => {
             inst.setMatrixAt(i, it.m);
             if (Array.isArray(it.tint)) color.setRGB(it.tint[0], it.tint[1], it.tint[2]);
             else color.setScalar(it.tint);
+            if(foliage && it.autumn)color.multiply(new THREE.Color(1.7,.85,.38));
             inst.setColorAt(i, color);
           });
           inst.instanceMatrix.needsUpdate = true;
@@ -943,10 +1035,30 @@ export class TownBuilder {
           inst.receiveShadow = shadows && lvl === 0;
           chunk.levels[lvl].add(inst);
           this.disposables.push({ dispose: () => inst.dispose() });
+          }
         }
       }
       chunk.levels.forEach((l) => (l.visible = false));
     }
+  }
+
+  foliageMaterial(source) {
+    if(this.foliageMaterials.has(source))return this.foliageMaterials.get(source);
+    const m=this.track(source.clone());
+    m.alphaTest=.45;m.transparent=false;m.depthWrite=true;m.side=THREE.DoubleSide;
+    m.onBeforeCompile=shader=>{
+      shader.uniforms.uWindTime=this.uniforms.uTime;
+      shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nuniform float uWindTime;')
+        .replace('#include <begin_vertex>',`#include <begin_vertex>
+          float phase=0.0;
+          #ifdef USE_INSTANCING
+            phase=dot(instanceMatrix[3].xz,vec2(.13,.21));
+          #endif
+          transformed.x+=sin(uWindTime*1.3+phase+position.y*.7)*.065*clamp(position.y*.2,0.0,1.0);
+          transformed.z+=sin(uWindTime*.8+phase)*.04*clamp(position.y*.2,0.0,1.0);`);
+    };
+    m.customProgramCacheKey=()=> 'living-foliage-v1';
+    this.foliageMaterials.set(source,m);return m;
   }
 
   /**

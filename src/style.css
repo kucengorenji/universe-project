@@ -2486,3 +2486,20 @@ body.is-rover #screenshotBtn {
     font-size: 36px;
   }
 }
+
+.city-navigation { margin-top: 14px; border-top: 1px solid #aaa; padding-top: 10px; }
+.city-navigation__arrows { display: flex; gap: 6px; }
+.city-navigation button { font: inherit; border: 0; text-align: left; cursor: pointer; background: transparent; color: inherit; padding: 8px; border-radius: 5px; }
+.city-navigation__arrows button { flex: 1; font-size: 12px; background: #ffffff70; }
+.city-navigation__list { display: grid; max-height: min(180px, 23vh); overflow: auto; margin-top: 6px; }
+.city-navigation__list button { display: flex; justify-content: space-between; gap: 12px; }
+.city-navigation button:hover, .city-navigation button:focus-visible { background: #ffffffaa; }
+.city-navigation button[aria-current] { background: #14623b; color: white; cursor: default; }
+.city-navigation small { opacity: .7; }
+.town-card { max-height: calc(100vh - 200px); overflow: auto; }
+@media (max-width: 720px) {
+  #townUi:not(.is-street):not(.is-inside) .town-card { display: block; top: 104px; left: 10px; width: 240px; padding: 7px; }
+  .town-card .facts { display: none; }
+  .town-card .city-navigation { margin: 0; padding: 0; border: 0; }
+  .town-card .city-navigation__list { max-height: 100px; }
+}

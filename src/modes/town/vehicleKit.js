@@ -90,3 +90,70 @@ export function assemble(type, rng) {
   const horses = (R.horses || []).map(([x, z]) => ({ x, z, paint: color(pickOf(PAINTS.horse, rng)) }));
   return { type, physics: R.physics, body: R.body, paint: color(pickOf(paints, rng)), wheels, parts, horses };
 }
+
+// ---------------------------------------------------------------- a single assembled vehicle (outside the fleet)
+
+/** A geometry sharing a pack model's buffers, so an instanced attribute can be added without touching the pack. */
+export function wrapGeometry(src) {
+  const g = new THREE.BufferGeometry();
+  for (const [k, a] of Object.entries(src.attributes)) g.setAttribute(k, a);
+  g.index = src.index;
+  g.boundingSphere = src.boundingSphere;
+  g.boundingBox = src.boundingBox;
+  return g;
+}
+
+let kitMat = null;
+/** Toon material that reads the kit's paint (for scenes without the town's prop material). */
+export function kitMaterial(makeToon) {
+  if (kitMat) return kitMat;
+  kitMat = makeToon({ vertexColors: true });
+  kitMat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float paint;\nattribute vec3 aPaint;')
+      .replace('#include <color_vertex>', '#include <color_vertex>\nvColor.rgb *= mix(vec3(1.0), aPaint, paint);');
+  };
+  kitMat.customProgramCacheKey = () => 'vehicle-kit';
+  return kitMat;
+}
+
+const _km = new THREE.Matrix4();
+const _kr = new THREE.Matrix4();
+const _kq = new THREE.Quaternion();
+const _kv = new THREE.Vector3();
+
+/** The kit vehicle as one group of single instances (so the paint path is the same as the fleet's). */
+export function buildKitModel(kit, pack, material) {
+  const group = new THREE.Group();
+  const add = (asset, matrix, paint) => {
+    const lods = pack?.[asset];
+    if (!lods) return null;
+    const geo = wrapGeometry(lods[0] || lods[1]);
+    geo.setAttribute('aPaint', new THREE.InstancedBufferAttribute(new Float32Array(paint.toArray()), 3));
+    const mesh = new THREE.InstancedMesh(geo, material, 1);
+    mesh.setMatrixAt(0, matrix);
+    mesh.frustumCulled = false;
+    group.add(mesh);
+    return mesh;
+  };
+  const white = new THREE.Color(1, 1, 1);
+  add(kit.body, new THREE.Matrix4(), kit.paint);
+  for (const p of kit.parts) add(p.asset, new THREE.Matrix4().compose(_kv.set(p.x, p.y, p.z), _kq.identity(), new THREE.Vector3(p.sx, p.sy, p.sz)), p.paint);
+  for (const h of kit.horses) add('vh_horse', new THREE.Matrix4().makeTranslation(h.x, 0, h.z), h.paint);
+  const wheels = kit.wheels.map((w) => ({ w, mesh: add(w.kind, new THREE.Matrix4(), white) })).filter((x) => x.mesh);
+  const model = { group, wheels };
+  poseKitWheels(model, 0, 0);
+  return model;
+}
+
+/** Roll the wheels by the distance travelled and steer the front ones (angle > 0 turns left). */
+export function poseKitWheels(model, dist, steer) {
+  for (const { w, mesh } of model.wheels) {
+    _km.makeTranslation(w.x, w.y, w.z);
+    if (w.steer) _km.multiply(_kr.makeRotationY(steer));
+    _km.multiply(_kr.makeRotationX(dist / w.r));
+    _km.multiply(_kr.makeScale(w.w, w.r, w.r));
+    mesh.setMatrixAt(0, _km);
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+}

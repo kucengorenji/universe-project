@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { BIOMES } from '../map/mapGenerator.js';
 import { Car, VEHICLE_TYPES } from '../modes/town/vehicle.js';
+import { buildKitModel, kitMaterial, poseKitWheels } from '../modes/town/vehicleKit.js';
+import { createToonMaterial } from './assetLibrary.js';
 
 // Free driving on the globe (Mako style). The car physics are the town's
 // (grip, drift, handbrake), run in a small tangent plane that is re-anchored
@@ -16,22 +18,34 @@ export class PlanetRover {
   /**
    * pr: the PlanetRenderer (tiles, surface radius, camera, groups)
    * start: unit vector on the planet (planet space)
+   * kit:   a town vehicle (assembled kit) to drive instead of the rover; pack: the town pack
    */
-  constructor(pr, start, heading) {
+  constructor(pr, start, heading, { kit = null, pack = null } = {}) {
     this.pr = pr;
     this.pos = start.clone().normalize();
     this.fwd = (heading || new THREE.Vector3(0, 1, 0)).clone();
     this.fwd.addScaledVector(this.pos, -this.fwd.dot(this.pos)).normalize();
     if (this.fwd.lengthSq() < 1e-6) this.fwd.set(1, 0, 0).addScaledVector(this.pos, -this.pos.x).normalize();
-    const spec = { ...VEHICLE_TYPES.suv, top: 30, accel: 13, grip: 6.5, drift: 1.3 };
+    // A town vehicle keeps its handling, a little quicker across the open planet
+    const base = kit ? VEHICLE_TYPES[kit.physics] || VEHICLE_TYPES.sedan : VEHICLE_TYPES.suv;
+    const spec = kit ? { ...base, top: base.top * 1.25, accel: base.accel * 1.15 } : { ...base, top: 30, accel: 13, grip: 6.5, drift: 1.3 };
     this.car = new Car(spec, { x: 0, z: 0, yaw: 0 });
+    this.kit = kit;
+    this.dist = 0;
     this.hint = pr.locate(this.pos, pr.hexasphere.tiles[0]);
     this.camPos = null;
     this.camLook = new THREE.Vector3();
 
     const tr = pr.tileRadius;
     const rover = pr.roverPack?.rover;
-    if (rover) {
+    if (kit && pack?.[kit.body]) {
+      // The same car (or cart) the player drove out of town: town models face +Z in metres
+      this.model = buildKitModel(kit, pack, kitMaterial(createToonMaterial));
+      this.mesh = this.model.group;
+      this.mesh.rotation.y = Math.PI / 2;
+      // Same size on screen whatever it is (a bus would fill the chase view)
+      this.mesh.scale.setScalar((tr * 0.75) / Math.max(4.4, base.length || 4.5));
+    } else if (rover) {
       // Six-wheeled rover from the space pack: nose +Z, so turn it to the planet-pack +X convention
       this.mesh = new THREE.Mesh(rover[0] || rover[1], pr.propMaterial);
       this.mesh.rotation.y = Math.PI / 2;
@@ -86,6 +100,10 @@ export class PlanetRover {
       blocked: (x, z) => this.blockedDir(this.toDir(x, z))
     };
     car.update(dt, input, world);
+    if (this.model) {
+      this.dist += car.forwardSpeed * dt;
+      poseKitWheels(this.model, this.dist, -car.steer);
+    }
     // Wrap the step back onto the sphere: new position, heading turned by the yaw change
     const newPos = this.toDir(car.x, car.z);
     const { n } = this.frame();
@@ -148,5 +166,10 @@ export class PlanetRover {
 
   dispose() {
     this.pr.planetGroup.remove(this.holder);
+    this.model?.group.traverse((o) => {
+      if (!o.isInstancedMesh) return;
+      o.dispose();
+      o.geometry.dispose();
+    });
   }
 }

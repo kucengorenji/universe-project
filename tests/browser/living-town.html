@@ -1,0 +1,128 @@
+<!doctype html><meta charset="utf-8"><title>Living town QA</title>
+<style>body{margin:0;background:#182421;color:#eef3e9;font:14px system-ui}nav{padding:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}button{padding:8px}iframe{width:100vw;height:78vh;border:0}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px;max-height:8vh;overflow:auto}</style>
+<nav><button id="fantasy">Fantasy city</button><button id="modern">Modern city</button><button id="park">Park close-up</button><button id="street">Street close-up</button><button id="harbor">Harbor</button><button id="gallery">Asset gallery</button><button id="interior">Interior regression</button><button id="profile">Profile 120 frames</button><button id="clean">Toggle HUD</button></nav>
+<pre id="status">Loading fixture…</pre><iframe src="/#/town/1/0"></iframe>
+<script type="module">
+const frame=document.querySelector('iframe'),out=document.querySelector('pre');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+let app,gallery;
+const lifecycle=document.createElement('button');lifecycle.textContent='Scenery lifecycle';document.querySelector('nav').append(lifecycle);
+const night=document.createElement('button');night.textContent='Night / low';document.querySelector('nav').append(night);
+const day=document.createElement('button');day.textContent='Day / auto';document.querySelector('nav').append(day);
+const currentNight=document.createElement('button');currentNight.textContent='Night current city';document.querySelector('nav').append(currentNight);
+currentNight.onclick=async()=>{await ready();app.world.sunAt=()=>({x:.2,y:-.7,z:.4});await app.engine.afterFrame();report();};
+const controls=document.createElement('button');controls.textContent='Controls regression';document.querySelector('nav').append(controls);
+controls.onclick=async()=>{
+ try{
+  await ready();restore();const t=app.director.mode;
+  t.setView('diorama');t.tween=null;
+  for(let i=0;i<80;i++)t.onWheel({deltaY:1000});
+  if(app.director.mode!==t||t.view!=='diorama')throw Error('Zoom left town');
+  const {Car,VEHICLE_TYPES}=await import('/src/modes/town/vehicle.js');
+  const street=t.layout.driveGraph.find(s=>s.pts.length>2),a=street.pts[0],b=street.pts[1];
+  const car=new Car(VEHICLE_TYPES.sedan,{x:a.x,z:a.z,yaw:Math.atan2(b.x-a.x,b.z-a.z)}),world=t.driveWorld();
+  const start={x:car.x,z:car.z};
+  for(let i=0;i<90;i++)car.update(1/60,{forward:1,right:0},world);
+  const distance=Math.hypot(car.x-start.x,car.z-start.z);
+  if(distance<1)throw Error('Car could not move in rendered town');
+  const nav=frame.contentDocument.querySelectorAll('[data-town-city]');
+  if(nav.length<3)throw Error('City navigation missing');
+  const reachable=t.walkNetwork.portals.filter(p=>p.node!==null).length;
+  if(!reachable)throw Error('No reachable building entrances');
+  out.textContent='PASS town zoom remains; actual car/colliders/terrain '+JSON.stringify({distance,speed:car.speed,cityButtons:nav.length,reachableDoors:reachable,lamps:t.streetLighting.lamps.length,layoutVersion:t.layout.layoutVersion,error:app.engine.lastError?.message||null});
+ }catch(e){out.textContent='FAIL '+e.stack;}
+};
+const motion=document.createElement('button');motion.textContent='Walk / run preview';document.querySelector('nav').append(motion);
+motion.onclick=async()=>{
+ await ready();restore();const THREE=app.three,t=app.director.mode;
+ const {makePerson,animatePerson,disposePerson}=await import('/src/modes/town/peopleRig.js');
+ const scene=new THREE.Scene();scene.background=new THREE.Color('#b5c8c7');scene.add(new THREE.HemisphereLight(0xffffff,0x565d4f,2));
+ const sun=new THREE.DirectionalLight(0xffecd1,2.2);sun.position.set(-4,8,5);scene.add(sun);
+ const people=['explorer','peasant','casual_m','guard'].map((name,i)=>{const p=makePerson(t.character,name);p.root.position.x=(i-1.5)*2.2;p.root.rotation.y=.2;scene.add(p.root);return p;});
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(18,12),new THREE.MeshStandardMaterial({color:'#708a68',roughness:1}));ground.rotation.x=-Math.PI/2;scene.add(ground);
+ const camera=new THREE.PerspectiveCamera(40,app.engine.size.width/app.engine.size.height,.1,100);camera.position.set(4,3.2,11);camera.lookAt(0,.85,0);
+ gallery={update(dt){people.forEach((p,i)=>animatePerson(p,dt,[0,1.4,3.5,5.6][i],{panic:i===3}))},render(){app.engine.renderer.render(scene,camera)},resize(w,h){camera.aspect=w/h;camera.updateProjectionMatrix()},dispose(){people.forEach(disposePerson);ground.geometry.dispose();ground.material.dispose();}};
+ app.engine.setMode(gallery);out.textContent='Animation preview: idle / walk / jog / run. Shared rig, distance-driven contact phase; damped hips and arms.';
+};
+const navigation=document.createElement('button');navigation.textContent='Navigation regression';document.querySelector('nav').append(navigation);
+navigation.onclick=async()=>{
+ const snapshots=[];await ready();const original=app.engine.quality.preset;
+ try{
+  const {townWalkable}=await import('/src/modes/town/walkNetwork.js');
+  const signatures=new Map();
+  for(const tier of ['high','low'])for(const modern of [false,true]){
+   app.engine.quality.setPreset(tier,false);await show(modern);
+   const t=app.director.mode,g=t.walkNetwork,safe=townWalkable(t.layout),signature=JSON.stringify(g);
+   if(tier==='high')signatures.set(modern,signature);
+   else if(signatures.get(modern)!==signature)throw Error('Navigation changed with graphics quality');
+   const sources=new Map(t.walkers.walkers.map(w=>[w.i,new Set([g.edges[w.edge].source])]));
+   let minSurface=Infinity;
+   // Run the actual controller and rendered collider/height data for 180s.
+   for(let step=0;step<1800;step++){
+    t.walkers.update(.1);
+    for(const w of t.walkers.walkers){
+     const p=t.crowd.people[w.i];sources.get(w.i).add(g.edges[w.edge].source);
+     if(!safe(p.x,p.z))throw Error(`Unsafe walker ${w.i} edge ${w.edge} (${p.x},${p.z})`);
+     minSurface=Math.min(minSurface,p.y);
+     if(p.y<-.7)throw Error(`Walker submerged at ${p.x},${p.z}: ${p.y}`);
+    }
+   }
+   const snapshot={modern,tier,nodes:g.nodes.length,edges:g.edges.length,components:g.components.length,
+    portals:g.portals.length,reachablePortals:g.portals.filter(p=>p.node!==null).length,
+    reasons:g.portals.reduce((n,p)=>(n[p.reason||'reachable']=(n[p.reason||'reachable']||0)+1,n),{}),
+    walkers:t.walkers.walkers.length,changedRoute:[...sources.values()].filter(s=>s.size>1).length,minSurface};
+   if(!snapshot.changedRoute)throw Error('No pedestrian changed route');
+   snapshots.push(snapshot);out.textContent='Navigation QA '+JSON.stringify(snapshots);
+   t.crowd.pose();await app.engine.afterFrame();
+   if(app.engine.lastError)throw app.engine.lastError;
+  }
+  out.textContent='PASS 180s per era/tier; continuous collision-safe routes; identical high/low graph '+JSON.stringify(snapshots);
+ }catch(error){out.textContent='FAIL '+error.stack+' '+JSON.stringify(snapshots);}
+ finally{app.engine.quality.setPreset(original||'auto',false);}
+};
+function restore(){gallery?.dispose();gallery=null;app.engine.setMode(app.director.mode);}
+async function ready(){for(let i=0;i<600;i++){app=frame.contentWindow.__globe;if(app?.director.mode&&!app.director.busy)return app;await wait(200)}throw Error('Startup timeout');}
+function report(){const t=app.director.mode;out.textContent=JSON.stringify({city:t.layout.name,modern:t.layout.modern,buildings:t.layout.buildings.length,trees:t.layout.trees.length,parks:t.layout.parks.filter(p=>p.access).length,paths:t.layout.paths.length,assets:Object.keys(t.builder.sceneryPack).length,surfaces:!!t.builder.surfaceAtlas,lamps:t.streetLighting.lamps.length,reachableDoors:t.walkNetwork.portals.filter(p=>p.node!==null).length,layoutVersion:t.layout.layoutVersion,error:app.engine.lastError?.message||null,geometries:app.engine.renderer.info.memory.geometries});}
+function view(point,distance=60){const t=app.director.mode;t.tween=null;t.orbit.enabled=false;t.view='diorama';t.camera.near=.3;t.camera.fov=48;t.camera.updateProjectionMatrix();const y=t.builder.groundAt(point.x,point.z);t.orbit.target.set(point.x,y,point.z);t.camera.position.set(point.x+distance*.5,y+distance*.65,point.z+distance);t.camera.lookAt(t.orbit.target);app.engine.setMode(t);report();}
+async function show(modern){await ready();restore();const {world,director}=app;const map=world.mapFor(world.homeIndex);const city=map.cities.findIndex(c=>(c.style==='modern')===modern);if(city<0)throw Error('This world has no requested city style');await director.go({mode:'town',planet:world.homeIndex,city});world.sunAt=()=>({x:.5,y:.75,z:.4});const t=director.mode;const p=t.dioramaPose({});t.tween=null;t.camera.position.copy(p.pos);t.orbit.target.copy(p.target);t.camera.lookAt(p.target);t.orbit.enabled=true;app.engine.setMode(t);report();}
+for(const name of ['fantasy','modern'])document.querySelector('#'+name).onclick=()=>show(name==='modern').catch(e=>out.textContent=e.stack);
+night.onclick=async()=>{await ready();app.engine.quality.setPreset('low',false);await show(true);app.world.sunAt=()=>({x:.2,y:-.7,z:.4});await app.engine.afterFrame();report();};
+day.onclick=async()=>{await ready();app.engine.quality.setPreset('auto',false);await show(false);};
+lifecycle.onclick=async()=>{
+ try{
+  await ready();const snapshots=[];
+  for(let i=0;i<6;i++){
+   await show(i%2===1);for(let f=0;f<3;f++)await app.engine.afterFrame();
+   const memory=app.engine.renderer.info.memory;
+   snapshots.push({modern:i%2===1,geometries:memory.geometries,textures:memory.textures});
+   out.textContent=`Scene ${i+1}/6 `+JSON.stringify(snapshots);
+   if(app.engine.lastError)throw app.engine.lastError;
+  }
+  for(const start of [2,3])for(const key of ['geometries','textures'])if(snapshots[start+2][key]>snapshots[start][key]+2)throw Error(`Resource growth after warmup: ${key} ${JSON.stringify(snapshots)}`);
+  out.textContent='PASS six scene replacements; stable resources after warmup '+JSON.stringify(snapshots);
+ }catch(error){out.textContent='FAIL '+error.stack;}
+};
+document.querySelector('#park').onclick=()=>{const t=app.director.mode;view(t.layout.parks.find(p=>p.access)||t.layout.plaza,42)};
+document.querySelector('#street').onclick=()=>{const t=app.director.mode;view(t.layout.buildings.find(b=>/shop|tavern/.test(b.asset))||t.layout.buildings[0],30)};
+document.querySelector('#harbor').onclick=()=>{const t=app.director.mode;view(t.layout.docks[0]||t.layout.plaza,45);};
+document.querySelector('#clean').onclick=()=>{const doc=frame.contentDocument;let style=doc.getElementById('qa-clean');if(style)style.remove();else{style=doc.createElement('style');style.id='qa-clean';style.textContent='#townUi,#missionUi,#tipUi,#pauseUi{visibility:hidden}';doc.head.append(style);}};
+document.querySelector('#profile').onclick=async()=>{
+ const {engine}=app,info=engine.renderer.info,auto=info.autoReset,samples=[],calls=[];let previous=performance.now();
+ out.textContent='Sampling 120 frames…';info.autoReset=false;info.reset();
+ try{for(let i=0;i<120;i++)await engine.afterFrame(()=>{const now=performance.now();samples.push(now-previous);previous=now;calls.push(info.render.calls);info.reset();});
+  samples.sort((a,b)=>a-b);out.textContent=JSON.stringify({profile:app.director.mode.layout.name,viewport:engine.size,quality:engine.quality.tier,pixelRatio:engine.renderer.getPixelRatio(),medianMs:samples[60],p95Ms:samples[114],meanFullFrameDrawCalls:Math.round(calls.reduce((a,b)=>a+b,0)/calls.length),geometries:info.memory.geometries,textures:info.memory.textures,error:engine.lastError?.message||null});
+ }finally{info.autoReset=auto;info.reset();}
+};
+document.querySelector('#interior').onclick=async()=>{restore();const t=app.director.mode;const {WorldStateStore}=await import('/src/world/stateStore.js');app.world.state=new WorldStateStore(`qa-living:${app.world.worldId}`);await app.world.state.ready;await t.enterBuilding(t.doors.find(d=>d.b.blueprint.floors>1));await t.changeInteriorFloor(1);out.textContent=`Interior floor ${t.interior.floor+1}; near ${t.camera.near}; error ${app.engine.lastError?.message||'none'}`;};
+document.querySelector('#gallery').onclick=async()=>{
+ await ready();const THREE=app.three,t=app.director.mode,scene=new THREE.Scene();scene.background=new THREE.Color('#aac9cc');scene.add(new THREE.HemisphereLight(0xffffff,0x728054,2));const sun=new THREE.DirectionalLight(0xfff5df,2);sun.position.set(-15,30,20);scene.add(sun);
+ const names=['t_oak','t_birch','t_pine','t_palm','b_bush','g_pergola','f_house','m_shop','f_dock','m_dock','g_planter','m_bench'];
+ for(let i=0;i<names.length;i++){const res=t.builder.resolve(names[i],0);if(!res)continue;const x=(i%4-1.5)*14,z=(Math.floor(i/4)-1)*19;const scale=names[i].includes('dock')?.45:names[i]==='m_shop'?.75:1;
+  for(const part of res.parts?.[0]||[{geometry:res.lods[0],material:t.builder.material}]){const mesh=new THREE.Mesh(part.geometry,part.material.name==='Foliage_cutout'?t.builder.foliageMaterial(part.material):part.material);mesh.position.set(x,0,z);mesh.scale.setScalar(scale);scene.add(mesh);}
+ }
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(70,70),new THREE.MeshStandardMaterial({color:'#7e9864',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.15;scene.add(ground);
+ const camera=new THREE.PerspectiveCamera(42,app.engine.size.width/app.engine.size.height,.1,200);camera.position.set(40,42,65);camera.lookAt(0,1,0);
+ gallery?.dispose();gallery={update(dt,time){t.builder.uniforms.uTime.value=time},render(){app.engine.renderer.render(scene,camera)},resize(w,h){camera.aspect=w/h;camera.updateProjectionMatrix()},dispose(){ground.geometry.dispose();ground.material.dispose();}};app.engine.setMode(gallery);await app.engine.afterFrame();out.textContent='Original Blender pack, LOD0; shared surface atlas + alpha-tested foliage. '+JSON.stringify({error:app.engine.lastError?.message||null});
+};
+ready().then(()=>show(false)).catch(e=>out.textContent=e.stack);
+</script>

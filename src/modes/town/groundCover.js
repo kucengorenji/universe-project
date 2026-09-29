@@ -352,8 +352,9 @@ export class GroundCover {
     };
     // Streets (with their pavements) in a segment grid
     const sgrid = new Map();
-    for (const st of L.streets) {
-      const hw = st.w / 2 + (L.modern ? 2.6 : 0.9);
+    for (const st of [...L.streets,...(L.paths||[])]) {
+      const walkway = st.kind === 'garden' || st.kind === 'frontage';
+      const hw = st.w / 2 + (walkway ? .25 : L.modern ? 2.6 : .9);
       for (let i = 0; i + 1 < st.pts.length; i++) {
         const [ax, az] = st.pts[i];
         const [bx, bz] = st.pts[i + 1];

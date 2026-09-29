@@ -24,7 +24,8 @@ const CONTROLS = [
 ];
 
 export class PauseMenu {
-  constructor(root, { engine, audio, missions, tips }) {
+  constructor(root, { engine, audio, missions, tips, world }) {
+    this.world = world;
     this.root = root;
     this.engine = engine;
     this.audio = audio;
@@ -48,6 +49,7 @@ export class PauseMenu {
             </section>
             <section class="pause__group">
               <h3>Lainnya</h3>
+              <div class="pause__row" data-save-status role="status"></div>
               <div class="pause__row"><span>Tips pemula</span><button type="button" class="pill pill--ghost pill--small" data-act="tips">Tampilkan lagi</button></div>
               <div class="pause__row"><span>Progres misi</span><button type="button" class="pill pill--ghost pill--small" data-act="reset">Reset misi</button></div>
             </section>
@@ -135,6 +137,10 @@ export class PauseMenu {
   }
 
   sync() {
+    const state = this.world?.state;
+    this.root.querySelector('[data-save-status]').textContent = state?.error
+      ? 'Perubahan belum tersimpan. Penyimpanan browser penuh atau tidak tersedia.'
+      : 'Perubahan rumah tersimpan di browser ini.';
     const q = this.engine.quality.preset;
     const p = this.engine.post.pref;
     this.root.querySelectorAll('[data-seg="quality"] [data-val]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.val === q)));
@@ -158,6 +164,7 @@ export class PauseMenu {
     delete this.el.reset.dataset.armed;
     this.el.tips.textContent = 'Tampilkan lagi';
     this.engine.paused = true;
+    this.world?.clock.pause(true);
     this.audio.setPaused(true);
     this.sync();
     this.root.querySelector('[data-act="close"]').focus({ preventScroll: true });
@@ -168,6 +175,7 @@ export class PauseMenu {
     this.open = false;
     this.el.overlay.hidden = true;
     this.engine.paused = false;
+    this.world?.clock.pause(false);
     this.audio.setPaused(false);
   }
 }

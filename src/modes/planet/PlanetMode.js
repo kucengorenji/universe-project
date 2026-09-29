@@ -5,6 +5,8 @@ import { MenuController } from '../../ui/menuController.js';
 import { typeOf } from '../../world/planetTypes.js';
 import { PlanetRover } from '../../render/planetRover.js';
 import { Speedo } from '../../ui/gauges.js';
+
+const TOWN_PACK_URL = `${import.meta.env.BASE_URL}models/town.glb`;
 import { BIOMES } from '../../map/mapGenerator.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
@@ -71,7 +73,7 @@ export default class PlanetMode {
     this.onKeyUp = (e) => this.keys.delete(e.key.toLowerCase());
   }
 
-  enter() {
+  async enter() {
     const { world } = this.ctx;
     this.state.mode = this;
     this.map = world.mapFor(this.index);
@@ -100,6 +102,40 @@ export default class PlanetMode {
     const city = a?.city ?? this.route.city;
     if (city !== null && city !== undefined && this.map.cities?.[city]) pr.focusOn({ type: 'city', index: city }, { animate: !a?.fromTown });
     if (a?.fromTown) this.riseFrom = city;
+    // Driven out of a town along a road: carry on across the planet in the same vehicle
+    if (a?.drive) {
+      const pack = await loadAssetPack(TOWN_PACK_URL).catch(() => null);
+      const start = this.roadStart(a.drive.fromCity, a.drive.toCity);
+      if (start) this.startRover({ start, kit: a.drive.kit, pack, trip: { from: a.drive.fromCity, leftHome: false } });
+    }
+  }
+
+  /**
+   * Where a car leaving city `from` toward `to` comes out on the globe: the
+   * first tile past the city along their road, heading down it.
+   */
+  roadStart(from, to) {
+    const tm = this.pr.hexasphere.tileMap;
+    const route = (this.map.landRoutes || []).find((r) => (r.from === from && r.to === to) || (r.from === to && r.to === from));
+    let path = route ? (route.from === from ? route.path : [...route.path].reverse()) : null;
+    if (!path) {
+      // No road: straight out of the city on any dry side
+      const city = this.map.cities[from];
+      const ids = city?.tiles || [city?.tileId];
+      for (const id of ids) {
+        const t = tm.get(id);
+        const out = t?.neighbors.map((n) => tm.get(n)).find((n) => n.cityIndex !== from && n.biome !== BIOMES.MOUNTAIN && this.pr.isDry(n.center, n, 0.1));
+        if (out) return { dir: out.center.clone(), heading: out.center.clone().sub(t.center) };
+      }
+      return null;
+    }
+    const k = path.findIndex((id) => tm.get(id)?.cityIndex !== from);
+    if (k < 0) return null;
+    const t = tm.get(path[k]);
+    const next = tm.get(path[Math.min(path.length - 1, k + 1)]);
+    const prev = tm.get(path[Math.max(0, k - 1)]);
+    const heading = next && next !== t ? next.center.clone().sub(t.center) : t.center.clone().sub(prev.center);
+    return { dir: t.center.clone(), heading };
   }
 
   arrived() {
@@ -162,12 +198,30 @@ export default class PlanetMode {
       this.speedo.set(Math.abs(fs) * 3.6, Math.abs(fs) / (top * 1.25), fs < -0.5 ? 'R' : Math.abs(fs) < 0.3 ? 'N' : 'D');
       this.ctx.audio?.engine('rover', { speed01: Math.min(1, car.speed / top), throttle: car.throttle, rpm: Math.min(1, 0.15 + (car.speed / top) * 0.8 + car.throttle * 0.1), skid: car.skid * Math.min(1, car.speed / 6) });
       // Mission distance, reported in chunks
-      this.roverAcc = (this.roverAcc || 0) + Math.abs(this.rover.car.speed) * Math.min(dt, 0.05);
+      this.roverAcc = (this.roverAcc || 0) + Math.abs(car.speed) * Math.min(dt, 0.05);
       if (this.roverAcc > 10) {
         this.ctx.missions?.emit('rover_m', this.roverAcc);
         this.roverAcc = 0;
       }
+      // Last: it may hand over to a town (and stop the rover)
+      this.checkCityAhead();
     }
+  }
+
+  /** Rolled into a city's tiles: drive on into its town (with the same vehicle). */
+  checkCityAhead() {
+    if (!this.rover || this.arriving || this.ctx.director.busy) return;
+    const t = this.rover.tileAt(this.rover.pos);
+    const ci = t.cityIndex;
+    const trip = this.trip;
+    if (ci === null || ci === undefined) {
+      trip.leftHome = true;
+      return;
+    }
+    if (ci === trip.from && !trip.leftHome) return;
+    if (!this.map.cities[ci]) return;
+    this.arriving = { drive: { kit: this.rover.kit, type: this.rover.kit?.type, dir: this.rover.pos.toArray(), fromCity: trip.from } };
+    this.ctx.director.go({ mode: 'town', planet: this.index, city: ci });
   }
 
   /** Where to put the rover: the focused city, else land under the middle of the screen. */
@@ -209,12 +263,16 @@ export default class PlanetMode {
     return { dir, heading };
   }
 
-  startRover() {
+  startRover({ start = null, kit = null, pack = null, trip = null } = {}) {
     const pr = this.pr;
     if (pr.pov) pr.exitPov(true, false);
     // Start from the focused city (or the land in the middle of the screen)
-    const start = this.roverStart();
+    start ||= this.roverStart();
     if (!start) return;
+    // Driving into a city takes you into its town: not the one you start in, until you have left it
+    const startTile = pr.locate(start.dir.clone().normalize(), pr.hexasphere.tiles[0]);
+    this.trip = trip || { from: startTile.cityIndex ?? null, leftHome: startTile.cityIndex === null || startTile.cityIndex === undefined };
+    this.tripKit = kit;
     if (pr.focus) pr.clearFocus({ animate: false });
     pr.camTween = null;
     pr.autoRotate = false;
@@ -228,7 +286,7 @@ export default class PlanetMode {
     pr.stars.visible = false;
     pr.nebula.visible = false;
     if (pr.onTileHover) pr.onTileHover(null);
-    this.rover = new PlanetRover(pr, start.dir, start.heading);
+    this.rover = new PlanetRover(pr, start.dir, start.heading, { kit, pack });
     this.ctx.audio?.sfx('ignition');
     this.ctx.tips?.show('rover');
     this.speedo ||= new Speedo(this.ui);
@@ -279,6 +337,19 @@ export default class PlanetMode {
 
   depart(route) {
     const pr = this.pr;
+    // A saved route or direct navigation can target a different planet. Its
+    // city index cannot be used to animate over this planet's map.
+    if (route.mode === 'town' && route.planet !== this.index) {
+      if (this.rover) this.stopRover();
+      return Promise.resolve({ cover: 'fade' });
+    }
+    if (this.arriving && route.mode === 'town') {
+      // Driving in: no dive through the clouds, just a quick fade on the road
+      const arrival = this.arriving;
+      this.arriving = null;
+      if (this.rover) this.stopRover();
+      return Promise.resolve({ cover: 'fade', arrival });
+    }
     if (this.rover) this.stopRover();
     pr.camTween = null;
     if (pr.pov) pr.exitPov(true, false);

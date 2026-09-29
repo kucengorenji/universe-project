@@ -131,7 +131,7 @@ export class Audio {
     if (this.scene) {
       const s = this.scene;
       this.scene = null;
-      this.setScene(s);
+      this.setScene(s, { modern: this.modern });
     }
   }
 
@@ -195,8 +195,8 @@ export class Audio {
   // ------------------------------------------------------------------ ambience + music
 
   /** Scene bed: 'space' | 'planet' | 'town' | 'interior' | null. */
-  setScene(kind, { modern = true } = {}) {
-    if (kind === this.scene) return;
+  setScene(kind, { modern = this.modern ?? true } = {}) {
+    if (kind === this.scene && modern === this.modern) return;
     this.scene = kind;
     this.modern = modern;
     if (!this.ctx) return;
@@ -209,8 +209,8 @@ export class Audio {
       this.bed = null;
     }
     if (kind) this.bed = this.makeBed(kind);
-    this.nextChord = t + 0.5;
-    this.chordIndex = 0;
+    this.nextChord = Math.max(t + 0.5, this.nextChord || 0);
+    this.chordIndex ??= 0;
   }
 
   makeBed(kind) {
@@ -477,8 +477,11 @@ export class Audio {
     // Pad chords (the scene picks the set; interiors keep the town's)
     const set = CHORDS[this.scene === 'interior' ? 'town' : this.scene];
     if (set && t > this.nextChord - 0.2 && this.settings.music > 0) {
-      const dur = this.scene === 'space' ? 9 : 7;
-      this.padChord(set[this.chordIndex % set.length], Math.max(t, this.nextChord), dur);
+      const dur = this.scene === 'space' ? 9 : this.night > 0.5 ? 8 : 7;
+      const notes = set[this.chordIndex % set.length];
+      const start = Math.max(t, this.nextChord);
+      this.padChord(notes, start, dur);
+      if (this.scene === 'town' || this.scene === 'interior') this.townMotif(notes, start, dur);
       this.chordIndex++;
       this.nextChord = Math.max(t, this.nextChord) + dur;
     }
@@ -486,6 +489,24 @@ export class Audio {
   }
 
   // ------------------------------------------------------------------ one-shots
+
+  // Original four-phrase motif: plucked fantasy strings / soft modern keys.
+  // Day/night changes density; interiors retain the same phrase at a lower level.
+  townMotif(notes, t, dur) {
+    const phrase = [[0,2,3,1], [2,1,0,3], [1,3,2,0], [3,2,1,0]][this.chordIndex % 4];
+    const sparse = this.night > 0.5 ? 2 : 4;
+    for (let i = 0; i < sparse; i++) {
+      const at = t + dur * (0.12 + i * 0.21);
+      const o = this.ctx.createOscillator();
+      o.type = this.modern ? 'sine' : 'triangle';
+      o.frequency.value = midi(notes[phrase[i] + 1] + (i === 3 ? 0 : 12));
+      const gain = this.gain(0);
+      this.env(gain, at, 0.012, this.scene === 'interior' ? 0.014 : 0.025, this.modern ? 1.4 : 0.7);
+      o.connect(gain); gain.connect(this.bus.music); gain.connect(this.echo);
+      o.start(at); o.stop(at + 1.6);
+      o.onended = () => { o.disconnect(); gain.disconnect(); };
+    }
+  }
 
   env(g, t, a, peak, d) {
     g.gain.setValueAtTime(0, t);

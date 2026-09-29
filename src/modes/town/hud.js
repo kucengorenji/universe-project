@@ -1,4 +1,5 @@
 import { PLANET_TYPES } from '../../world/planetTypes.js';
+import { cityNavigation } from '../../ui/cityNavigation.js';
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const QUALITY_LABEL = { auto: 'Auto', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' };
@@ -51,7 +52,7 @@ class Joystick {
 }
 
 export class TownHud {
-  constructor(root, { city, planet, layout, quality, on }) {
+  constructor(root, { city, cities = [], planet, layout, quality, on }) {
     this.root = root;
     this.on = on;
     const type = PLANET_TYPES[planet.type];
@@ -80,6 +81,7 @@ export class TownHud {
           <dt>Jalan ke luar</dt><dd>${layout.exits.length ? layout.exits.map((e) => escapeHtml(e.to || '?')).join(', ') : 'Tidak ada'}</dd>
           <dt>Pelabuhan</dt><dd>${layout.isPort ? 'Ada' : 'Tidak ada'}</dd>
         </dl>
+        ${cityNavigation(cities,city.index,'data-town-city')}
       </aside>
       <div class="town-hud" role="status"><span data-hint>${HINTS.diorama}</span></div>
       <button type="button" class="interact-prompt" hidden><kbd data-key>E</kbd><span data-prompt></span></button>
@@ -93,6 +95,7 @@ export class TownHud {
       const b = e.target.closest('button');
       if (!b) return;
       if (b.dataset.view) this.on.view(b.dataset.view);
+      else if (b.dataset.townCity !== undefined) this.on.city?.(Number(b.dataset.townCity));
       else if (b.classList.contains('interact-prompt')) this.on.interact?.();
       else if (b.dataset.act === 'liftoff') this.on.liftoff();
       else if (b.dataset.act === 'quality') {
@@ -113,6 +116,10 @@ export class TownHud {
     this.hint.textContent = HINTS[v];
     this.joyEl.hidden = !(this.touch && v !== 'diorama');
     this.root.classList.toggle('is-street', v !== 'diorama');
+  }
+
+  setInteriorFloor(floor,total) {
+    this.hint.textContent=`Lantai ${floor+1}/${total} · ${HINTS.interior}`;
   }
 
   /** Contextual action hint, e.g. "E  Masuk kendaraan" (tap it on touch screens). */

@@ -60,6 +60,9 @@ export class Car {
    * world: { heightAt(x, z), resolve(x, z, r) -> {x, z}, blocked(x, z) -> bool }
    */
   update(dt, input, world) {
+    if(!Number.isFinite(dt)||dt<=0)return this;
+    // Stable suspension/contact response at 30, 60 and 120 Hz.
+    if(dt>1/90){const steps=Math.ceil(Math.min(dt,.12)/(1/120)),step=Math.min(dt,.12)/steps;for(let i=0;i<steps;i++)this.update(step,input,world);return this;}
     const S = this.spec;
     const fx = Math.sin(this.yaw);
     const fz = Math.cos(this.yaw);
@@ -73,13 +76,13 @@ export class Car {
     let a = 0;
     if (input.forward > 0) {
       if (vF < -0.5) a = S.brake * input.forward;
-      else a = S.accel * input.forward * Math.max(0, 1 - Math.max(0, vF) / top) * (input.boost ? 1.4 : 1);
+      else a = S.accel * input.forward * Math.max(0, 1 - (Math.max(0, vF) / top)**2) * (input.boost ? 1.3 : 1);
     } else if (input.forward < 0) {
       if (vF > 0.5) a = -S.brake * -input.forward;
       else a = -S.reverse * -input.forward * Math.max(0, 1 + Math.min(0, vF) / (top * 0.3));
     }
     this.throttle = THREE.MathUtils.lerp(this.throttle, Math.abs(input.forward), 1 - Math.exp(-dt * 6));
-    a -= vF * Math.abs(vF) * 0.0035 + vF * 0.12; // air + rolling
+    a -= vF * Math.abs(vF) * 0.0015 + vF * 0.055;
     if (!input.forward && Math.abs(vF) < 0.4) vF *= Math.exp(-dt * 8);
     if (input.handbrake) a -= Math.sign(vF) * Math.min(Math.abs(vF) / dt, 6);
     vF += a * dt;
@@ -87,12 +90,13 @@ export class Car {
 
     // Steering: less lock at speed, returns to centre on its own
     const lock = S.steer / (1 + Math.abs(vF) * 0.045);
-    this.steer = THREE.MathUtils.lerp(this.steer, input.right * lock, 1 - Math.exp(-dt * (input.right ? 5 : 8)));
+    this.steer = THREE.MathUtils.lerp(this.steer, input.right * lock, 1 - Math.exp(-dt * (input.right ? 11 : 15)));
     // Positive yaw turns toward local +X, which is the car's left: steering right means negative
-    const targetRate = -(vF / S.wheelbase) * Math.tan(this.steer);
+    const turnLimit=(input.handbrake?14:9)/(Math.abs(vF)+2);
+    const targetRate = THREE.MathUtils.clamp(-(vF / S.wheelbase) * Math.tan(this.steer),-turnLimit,turnLimit);
     const grip = input.handbrake ? S.drift : S.grip;
     // The rear steps out under the handbrake: yaw follows the wheels less tightly
-    this.yawRate = THREE.MathUtils.lerp(this.yawRate, targetRate * (input.handbrake ? 1.35 : 1), 1 - Math.exp(-dt * grip * 0.9));
+    this.yawRate = THREE.MathUtils.lerp(this.yawRate, targetRate, 1 - Math.exp(-dt * grip * 1.6));
     this.yaw += this.yawRate * dt;
 
     // Lateral grip: sideways velocity bleeds off (slowly when drifting)
@@ -149,9 +153,9 @@ export class Car {
         this.impact = Math.min(1, -into / 15);
         this.vx -= (1 + 0.3) * into * n[0];
         this.vz -= (1 + 0.3) * into * n[1];
-        this.vx *= 0.8;
-        this.vz *= 0.8;
-        this.yawRate += (Math.random() - 0.5) * this.impact * 1.5;
+        this.vx *= 0.9;
+        this.vz *= 0.9;
+        this.yawRate *= .6;
       }
     }
     this.x = nx;
@@ -220,7 +224,7 @@ export class ChaseCamera {
     const heading = speed > 4 && car.forwardSpeed > 0 ? velYaw : car.yaw + (car.forwardSpeed < -2 ? Math.PI : 0);
     let d = heading - this.yaw;
     d = Math.atan2(Math.sin(d), Math.cos(d));
-    this.yaw += d * (1 - Math.exp(-dt * 3.2));
+    this.yaw += d * (1 - Math.exp(-dt * 5.5));
     if (t - this.lastLook > 1.6) {
       this.lookYaw *= Math.exp(-dt * 2.5);
       this.lookPitch *= Math.exp(-dt * 2.5);
@@ -246,9 +250,9 @@ export class ChaseCamera {
       cam.position.y += (Math.random() - 0.5) * this.shake * 0.4;
     }
     // Look a bit ahead of the car along its velocity
-    const ahead = Math.min(6, speed * 0.25);
+    const ahead = Math.min(4, speed * 0.16);
     cam.lookAt(target.x + Math.sin(velYaw) * ahead, target.y + 0.4, target.z + Math.cos(velYaw) * ahead);
-    const fov = this.baseFov + Math.min(18, speed * 0.55);
+    const fov = this.baseFov + Math.min(9, speed * 0.3);
     if (Math.abs(cam.fov - fov) > 0.1) {
       cam.fov += (fov - cam.fov) * (1 - Math.exp(-dt * 3));
       cam.updateProjectionMatrix();

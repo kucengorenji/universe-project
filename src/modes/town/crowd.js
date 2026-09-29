@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mulberry32 } from '../../map/mapGenerator.js';
+import { appearanceFor } from './peopleAppearance.js';
 
 // Stylised people, drawn as instanced body parts (4 draw calls for the whole
 // crowd, however many walkers there are). Each person is a few boxes posed per
@@ -26,11 +27,6 @@ const PART = {
   arm: () => new THREE.BoxGeometry(0.11, 0.58, 0.12).translate(0, -0.27, 0).toNonIndexed(),
   leg: () => new THREE.BoxGeometry(0.15, 0.82, 0.16).translate(0, -0.41, 0).toNonIndexed()
 };
-
-const SKIN = [0xf1c9a5, 0xd9a47a, 0xa8714a, 0x7a4c2e, 0xf5d6bd];
-const SHIRT_FANTASY = [0x8a5a33, 0x4a6a3a, 0x7a3a2e, 0x3f5f8a, 0xb89a5a, 0x6b4a6e];
-const SHIRT_MODERN = [0x3f6fb0, 0xc4513a, 0xf2f2ee, 0x2f2f33, 0xe0b030, 0x3f8f5a, 0x9aa3ad];
-const PANTS = [0x3a3a44, 0x5a4a3a, 0x2f3e5a, 0x6b5a45];
 
 const _m = new THREE.Matrix4();
 const _m2 = new THREE.Matrix4();
@@ -61,11 +57,12 @@ export class Crowd {
     this.arms = make(PART.arm(), count * 2);
     this.legs = make(PART.leg(), count * 2);
     const rng = mulberry32(seed);
-    const shirts = modern ? SHIRT_MODERN : SHIRT_FANTASY;
     for (let i = 0; i < count; i++) {
-      const skin = SKIN[Math.floor(rng() * SKIN.length)];
-      const shirt = shirts[Math.floor(rng() * shirts.length)];
-      const pants = PANTS[Math.floor(rng() * PANTS.length)];
+      rng(); rng(); rng(); // retain the established motion/height random stream
+      const appearance = appearanceFor(seed*131+i);
+      const skin = appearance.skin;
+      const shirt = appearance.top;
+      const pants = appearance.legs;
       const height = 0.92 + rng() * 0.16;
       this.head.setColorAt(i, _c.set(skin));
       this.torso.setColorAt(i, _c.set(shirt));
@@ -108,8 +105,8 @@ export class Crowd {
         continue;
       }
       const run = THREE.MathUtils.clamp(p.speed / 3.2, 0, 1.6);
-      const swing = Math.sin(p.phase) * (0.1 + Math.min(1, p.speed / 1.4) * 0.45 + run * 0.2);
-      const bob = Math.abs(Math.cos(p.phase)) * 0.05 * Math.min(1, p.speed) + p.jump;
+      const swing = Math.sin(p.phase) * Math.min(1,p.speed/.8) * (.32 + run * .17);
+      const bob = (1-Math.cos(p.phase*2)) * .012 * Math.min(1,p.speed) + p.jump;
       const k = p.height;
       // Body frame: position, yaw (front = +Z), uniform height scale
       const body = _m2.compose(_v.set(p.x, p.y + bob, p.z), _q.setFromEuler(_e.set(0, p.yaw, 0)), _s.setScalar(k));
@@ -117,7 +114,7 @@ export class Crowd {
         _m.compose(_v.set(px, py, pz), _q.setFromEuler(_e.set(rx, 0, 0)), _s.set(1, 1, 1));
         mesh.setMatrixAt(idx, _m.premultiply(body));
       };
-      const lean = Math.min(0.25, p.speed * 0.04);
+      const lean = Math.min(0.14, p.speed * 0.024);
       part(this.torso, i, 0, 0.94, 0, lean);
       part(this.head, i, 0, 1.47, lean * 0.4);
       part(this.arms, i * 2, -0.285, 1.42, 0, swing);
@@ -137,121 +134,5 @@ export class Crowd {
   }
 }
 
-/**
- * Walkers following the street polylines back and forth on one side of the
- * street, at their own pace. Cheap: no pathfinding, no avoidance.
- */
-export class Pedestrians {
-  constructor(crowd, first, lines, rng, heightAt) {
-    this.crowd = crowd;
-    this.heightAt = heightAt;
-    this.walkers = [];
-    const usable = lines.filter((l) => l.pts.length >= 2);
-    if (!usable.length) return;
-    for (let i = first; i < crowd.count; i++) {
-      const line = usable[Math.floor(rng() * usable.length)];
-      const lens = [0];
-      for (let k = 1; k < line.pts.length; k++) lens.push(lens[k - 1] + Math.hypot(line.pts[k].x - line.pts[k - 1].x, line.pts[k].z - line.pts[k - 1].z));
-      const total = lens[lens.length - 1];
-      if (total < 8) continue;
-      this.walkers.push({
-        i,
-        line,
-        lens,
-        total,
-        s: rng() * total,
-        dir: rng() < 0.5 ? 1 : -1,
-        side: (rng() < 0.5 ? -1 : 1) * (line.w / 2 - 0.9 + rng() * 0.6),
-        speed: 1.0 + rng() * 0.6,
-        pause: 0
-      });
-    }
-  }
-
-  /** The walker nearest (x, z) becomes a startled driver: appears there and runs away from (fromX, fromZ). */
-  flee(x, z, fromX, fromZ) {
-    const people = this.crowd.people;
-    let best = null;
-    let bestD = Infinity;
-    for (const w of this.walkers) {
-      if (w.flee) continue;
-      const p = people[w.i];
-      const d = Math.hypot(p.x - x, p.z - z);
-      if (d < bestD) {
-        bestD = d;
-        best = w;
-      }
-    }
-    if (!best) return;
-    const p = people[best.i];
-    p.x = x;
-    p.z = z;
-    let ax = x - fromX;
-    let az = z - fromZ;
-    const l = Math.hypot(ax, az) || 1;
-    ax /= l;
-    az /= l;
-    best.flee = { t: 5, vx: ax * 5.2, vz: az * 5.2 };
-  }
-
-  update(dt, near, threat = null) {
-    const people = this.crowd.people;
-    for (const w of this.walkers) {
-      const p = people[w.i];
-      if (w.flee) {
-        // Running off: straight away from trouble, then back to the usual stroll
-        const f = w.flee;
-        f.t -= dt;
-        p.x += f.vx * dt;
-        p.z += f.vz * dt;
-        p.y = this.heightAt(p.x, p.z);
-        p.yaw = Math.atan2(f.vx, f.vz);
-        p.speed = Math.hypot(f.vx, f.vz);
-        p.phase += dt * p.speed * 3.1;
-        p.visible = near ? near(p.x, p.z) : true;
-        if (f.t <= 0) w.flee = null;
-        continue;
-      }
-      if (threat) {
-        const dx = p.x - threat.x;
-        const dz = p.z - threat.z;
-        const ahead = (dx * threat.vx + dz * threat.vz) / (threat.speed || 1);
-        const side = Math.abs(dx * threat.vz - dz * threat.vx) / (threat.speed || 1);
-        if (ahead > 0 && ahead < 9 && side < 2.6) {
-          // Dive sideways, away from the car's path
-          const s = Math.sign(dx * threat.vz - dz * threat.vx) || 1;
-          w.flee = { t: 0.8, vx: (threat.vz / threat.speed) * s * 6, vz: (-threat.vx / threat.speed) * s * 6 };
-          continue;
-        }
-      }
-      if (w.pause > 0) {
-        w.pause -= dt;
-        p.speed = 0;
-        continue;
-      }
-      w.s += w.speed * w.dir * dt;
-      if (w.s > w.total || w.s < 0) {
-        w.dir *= -1;
-        w.s = THREE.MathUtils.clamp(w.s, 0, w.total);
-        w.pause = Math.random() < 0.3 ? 1 + Math.random() * 3 : 0;
-      }
-      let k = 1;
-      while (k < w.lens.length - 1 && w.lens[k] < w.s) k++;
-      const a = w.line.pts[k - 1];
-      const b = w.line.pts[k];
-      const t = (w.s - w.lens[k - 1]) / (w.lens[k] - w.lens[k - 1] || 1);
-      const dx = b.x - a.x;
-      const dz = b.z - a.z;
-      const len = Math.hypot(dx, dz) || 1;
-      // Keep to the right-hand side of the walking direction
-      const side = w.side * w.dir;
-      p.x = a.x + dx * t - (dz / len) * side;
-      p.z = a.z + dz * t + (dx / len) * side;
-      p.y = this.heightAt(p.x, p.z);
-      p.yaw = Math.atan2(dx * w.dir, dz * w.dir);
-      p.speed = w.speed;
-      p.phase += dt * w.speed * 5.2;
-      p.visible = near ? near(p.x, p.z) : true;
-    }
-  }
-}
+// Keep the crowd renderer independent of the pure navigation controller.
+export { Pedestrians } from './pedestrianRoutes.js';

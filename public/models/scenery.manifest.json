@@ -1,0 +1,1332 @@
+{
+  "version": 2,
+  "file": "scenery.glb",
+  "bytes": 1244892,
+  "sha256": "16b7a6d9de4386d999f49a421e5373c4aa3dd580a614fb2e16cf2d7f04d40cfa",
+  "source": "tools/blender/build_scenery.py",
+  "textures": [
+    "scenery_atlas.png (256x256, embedded)",
+    "flora_cards.png (512x512, embedded)"
+  ],
+  "placement": "Bounds describe rendering geometry. Root/deck colliders and sockets are owned by townLayout/TownBuilder.",
+  "assets": {
+    "t_oak": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 1348,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -4.287,
+              -0.077,
+              -3.744
+            ],
+            "max": [
+              4.391,
+              8.259,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 628,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.495,
+              -0.074,
+              -3.744
+            ],
+            "max": [
+              3.642,
+              8.191,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 80,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.355,
+              -0.131,
+              -3.104
+            ],
+            "max": [
+              3.852,
+              8.172,
+              3.188
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "t_birch": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 1348,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -4.287,
+              -0.077,
+              -3.744
+            ],
+            "max": [
+              4.391,
+              8.259,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 628,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.495,
+              -0.074,
+              -3.744
+            ],
+            "max": [
+              3.642,
+              8.191,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 80,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.355,
+              -0.131,
+              -3.104
+            ],
+            "max": [
+              3.852,
+              8.172,
+              3.188
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "t_pine": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 352,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.252,
+              -0.058,
+              -2.218
+            ],
+            "max": [
+              2.278,
+              7.933,
+              2.189
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 204,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.252,
+              -0.055,
+              -2.02
+            ],
+            "max": [
+              2.26,
+              7.93,
+              2.189
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 68,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -2.495,
+              -0.081,
+              -2.61
+            ],
+            "max": [
+              2.836,
+              7.956,
+              2.352
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "t_spruce": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 352,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.252,
+              -0.058,
+              -2.218
+            ],
+            "max": [
+              2.278,
+              7.933,
+              2.189
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 204,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.252,
+              -0.055,
+              -2.02
+            ],
+            "max": [
+              2.26,
+              7.93,
+              2.189
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 68,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -2.495,
+              -0.081,
+              -2.61
+            ],
+            "max": [
+              2.836,
+              7.956,
+              2.352
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "t_cypress": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 352,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.252,
+              -0.031,
+              -2.218
+            ],
+            "max": [
+              2.278,
+              7.907,
+              2.189
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 204,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.252,
+              -0.03,
+              -2.02
+            ],
+            "max": [
+              2.26,
+              7.905,
+              2.189
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 68,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -1.294,
+              -0.043,
+              -1.378
+            ],
+            "max": [
+              1.635,
+              7.919,
+              1.241
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "t_palm": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 424,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.288,
+              -0.019,
+              -3.534
+            ],
+            "max": [
+              4.425,
+              6.924,
+              3.956
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 256,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.291,
+              -0.019,
+              -3.3
+            ],
+            "max": [
+              4.723,
+              6.928,
+              3.612
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 120,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.986,
+              -0.019,
+              -3.3
+            ],
+            "max": [
+              4.418,
+              6.914,
+              3.655
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "t_acacia": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 1348,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -4.309,
+              -0.09,
+              -3.559
+            ],
+            "max": [
+              4.574,
+              7.011,
+              3.897
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 628,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -4.197,
+              -0.086,
+              -3.559
+            ],
+            "max": [
+              4.443,
+              6.969,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 80,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.358,
+              -0.146,
+              -3.35
+            ],
+            "max": [
+              3.852,
+              7.897,
+              3.35
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "t_fruit": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 1672,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -4.287,
+              -0.077,
+              -3.744
+            ],
+            "max": [
+              4.391,
+              8.259,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 628,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.495,
+              -0.074,
+              -3.744
+            ],
+            "max": [
+              3.642,
+              8.191,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 80,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.355,
+              -0.131,
+              -3.104
+            ],
+            "max": [
+              3.852,
+              8.172,
+              3.188
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "f_dock": {
+      "family": "harbor",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 636,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -2,
+              -3,
+              -11
+            ],
+            "max": [
+              2,
+              1.6,
+              11
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        },
+        "1": {
+          "triangles": 444,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -2,
+              -3,
+              -11
+            ],
+            "max": [
+              2,
+              1.6,
+              11
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        },
+        "2": {
+          "triangles": 132,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -2,
+              -3,
+              -11
+            ],
+            "max": [
+              2,
+              1.1,
+              11
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "m_dock": {
+      "family": "harbor",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 852,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -3.5,
+              -3,
+              -17
+            ],
+            "max": [
+              4,
+              9.22,
+              17
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        },
+        "1": {
+          "triangles": 564,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -3.5,
+              -3,
+              -17
+            ],
+            "max": [
+              4,
+              9.22,
+              17
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        },
+        "2": {
+          "triangles": 144,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -3.5,
+              -3,
+              -17
+            ],
+            "max": [
+              3.5,
+              3.65,
+              17
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "t_oak_v1": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 1348,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -4.153,
+              -0.242,
+              -3.744
+            ],
+            "max": [
+              5.056,
+              9.137,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 628,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.366,
+              -0.232,
+              -3.744
+            ],
+            "max": [
+              4.564,
+              9.027,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 80,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.205,
+              -0.411,
+              -3.104
+            ],
+            "max": [
+              4.663,
+              8.609,
+              3.188
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "t_birch_v1": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 1348,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -4.153,
+              -0.242,
+              -3.744
+            ],
+            "max": [
+              5.056,
+              9.137,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 628,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.366,
+              -0.232,
+              -3.744
+            ],
+            "max": [
+              4.564,
+              9.027,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 80,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.205,
+              -0.411,
+              -3.104
+            ],
+            "max": [
+              4.663,
+              8.609,
+              3.188
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "t_pine_v1": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 352,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.343,
+              -0.178,
+              -2.218
+            ],
+            "max": [
+              2.521,
+              8.009,
+              2.189
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 204,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.343,
+              -0.169,
+              -2.02
+            ],
+            "max": [
+              2.506,
+              8,
+              2.189
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 68,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -2.591,
+              -0.254,
+              -2.61
+            ],
+            "max": [
+              3.257,
+              8.086,
+              2.352
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "t_fruit_v1": {
+      "family": "tree",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 1672,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -4.153,
+              -0.242,
+              -3.744
+            ],
+            "max": [
+              5.056,
+              9.137,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 628,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.366,
+              -0.232,
+              -3.744
+            ],
+            "max": [
+              4.564,
+              9.027,
+              3.81
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 80,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -3.205,
+              -0.411,
+              -3.104
+            ],
+            "max": [
+              4.663,
+              8.609,
+              3.188
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "b_bush": {
+      "family": "understory",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 288,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1.686,
+              -0.132,
+              -1.578
+            ],
+            "max": [
+              1.61,
+              1.684,
+              1.459
+            ]
+          },
+          "materials": [
+            "Foliage_cutout",
+            "Scenery_shared"
+          ]
+        },
+        "1": {
+          "triangles": 124,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1.479,
+              -0.132,
+              -1.578
+            ],
+            "max": [
+              1.411,
+              1.661,
+              1.375
+            ]
+          },
+          "materials": [
+            "Foliage_cutout",
+            "Scenery_shared"
+          ]
+        },
+        "2": {
+          "triangles": 36,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -0.81,
+              0.034,
+              -0.8
+            ],
+            "max": [
+              0.835,
+              1.334,
+              0.8
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "b_flowers": {
+      "family": "understory",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 24,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -0.543,
+              0,
+              -0.596
+            ],
+            "max": [
+              0.595,
+              0.7,
+              0.588
+            ]
+          },
+          "materials": [
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 16,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -0.527,
+              0,
+              -0.565
+            ],
+            "max": [
+              0.595,
+              0.7,
+              0.588
+            ]
+          },
+          "materials": [
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 8,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -0.325,
+              0,
+              -0.565
+            ],
+            "max": [
+              0.577,
+              0.7,
+              0.588
+            ]
+          },
+          "materials": [
+            "Foliage_cutout"
+          ]
+        }
+      }
+    },
+    "m_bench": {
+      "family": "garden-prop",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 144,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -1.1,
+              0,
+              -0.34
+            ],
+            "max": [
+              1.1,
+              1.33,
+              0.325
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        },
+        "1": {
+          "triangles": 48,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -1.1,
+              0,
+              -0.34
+            ],
+            "max": [
+              1.1,
+              1.33,
+              0.325
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        },
+        "2": {
+          "triangles": 48,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -1.1,
+              0,
+              -0.34
+            ],
+            "max": [
+              1.1,
+              1.33,
+              0.325
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "g_planter": {
+      "family": "garden-prop",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 396,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1.521,
+              0,
+              -1.497
+            ],
+            "max": [
+              1.448,
+              1.955,
+              1.392
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 136,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1.326,
+              0,
+              -1.497
+            ],
+            "max": [
+              1.262,
+              1.933,
+              1.297
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 48,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -0.8,
+              0,
+              -0.85
+            ],
+            "max": [
+              0.8,
+              1.631,
+              0.85
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "g_pergola": {
+      "family": "garden-prop",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 684,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.587,
+              0,
+              -2
+            ],
+            "max": [
+              2.561,
+              3.857,
+              2
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "1": {
+          "triangles": 356,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -2.499,
+              0,
+              -2
+            ],
+            "max": [
+              2.465,
+              3.844,
+              2
+            ]
+          },
+          "materials": [
+            "Scenery_shared",
+            "Foliage_cutout"
+          ]
+        },
+        "2": {
+          "triangles": 108,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -2.09,
+              0,
+              -2
+            ],
+            "max": [
+              2.09,
+              3.23,
+              2
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    },
+    "g_crate": {
+      "family": "garden-prop",
+      "units": "metres",
+      "up": "+Y",
+      "lods": {
+        "0": {
+          "triangles": 108,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -0.6,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.6,
+              1.2,
+              0.6
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        },
+        "1": {
+          "triangles": 12,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -0.6,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.6,
+              1.2,
+              0.6
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        },
+        "2": {
+          "triangles": 12,
+          "primitives": 1,
+          "bounds": {
+            "min": [
+              -0.6,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.6,
+              1.2,
+              0.6
+            ]
+          },
+          "materials": [
+            "Scenery_shared"
+          ]
+        }
+      }
+    }
+  }
+}

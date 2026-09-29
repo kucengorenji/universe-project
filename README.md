@@ -1,5 +1,9 @@
 # 🌍 Planet Globe 3D — Procedural Hexagon World
 
+**Rencana aset dan atmosfer:** [Asset, Art & Audio Plan](docs/ASSET_ART_AUDIO_PLAN.md) — model mid-poly modular, daftar texture/sprite, Blender MCP workflow, modern city, harbor, NPC, air/pantai, kota berbukit dan musik adaptif. Implementasi bertahap dan hasil pengujiannya dicatat di [status implementasi](docs/IMPLEMENTATION_STATUS.md).
+
+**Rencana world building (26 September 2026):** [Catatan riset Watabou](docs/WATABOU_WORLD_BUILDING_NOTES.md) dan [roadmap implementasi Globe Universe](docs/WORLD_BUILDING_ROADMAP.md) memetakan pengembangan space → planet → town → interior. Dokumen tersebut berisi usulan, audit source, dan kriteria verifikasi; fitur yang direncanakan belum otomatis tersedia di game.
+
 Proyek simulasi 3D planet globe dengan daratan berbasis grid heksagon prosedural (*Goldberg Polyhedron*), border wilayah ala Civilization, penyimpanan map di `localStorage`, menu navigasi di kiri atas, dan garis koneksi diplomatik antar-ibukota.
 
 ---
@@ -195,6 +199,7 @@ Tiga mode, masing-masing di "halaman" sendiri (URL hash) dan chunk JS sendiri. H
 **Nyetir ala GTA di semua mode**
 - Mobil (`vehicle.js`): grip lateral, rem tangan untuk drift, suspensi, tabrakan memantul, kamera chase yang tertinggal di tikungan. 11 tipe (sedan, hatchback, SUV, van, bus, sport, pikap, polisi, kereta kuda, wagon, karavan).
 - Semua kendaraan bisa dinaiki: dekati lalu tekan E. Mobil yang sedang jalan bisa diambil alih (sopirnya kabur). Ada lalu lintas di jalan besar.
+- Ikuti jalan keluar kota hingga batas untuk melanjutkan berkendara di planet. Memasuki wilayah kota lain membuka town mode dengan bodi, warna, roda, dan aksesori kendaraan yang sama. Posisi kedatangan dipilih di jalan masuk yang kering; bila tidak tersedia, gunakan titik spawn kota.
 - Luar angkasa: 3 kapal di hangar (fregat, interceptor, freighter) dan kapal NPC yang lalu-lalang. Di planet: tombol "Nyetir rover" untuk menjelajah permukaan.
 
 **Masuk rumah** (`interior.js`)

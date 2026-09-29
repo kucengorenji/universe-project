@@ -1,5 +1,9 @@
 # 📋 Plan Fine-Tuning & Asset Roadmap: Planet Globe 3D
 
+**Plan aset tambahan:** [Asset, Art & Audio Plan](docs/ASSET_ART_AUDIO_PLAN.md) menjadi acuan produksi model mid-poly, texture/sprite, modern mapping, pelabuhan, vegetasi, NPC, air, relief kota dan musik; masih berupa rencana dengan acceptance criteria.
+
+> **Pembaruan arah, 26 September 2026:** rencana visual di bawah merupakan konteks historis 14 September. Untuk pengembangan prosedural lintas level, gunakan [World Building Roadmap](docs/WORLD_BUILDING_ROADMAP.md) dan [catatan Watabou](docs/WATABOU_WORLD_BUILDING_NOTES.md). Prioritas baru: stable IDs dan persistence → kontrak planet/town/building → interior mengikuti footprint → distrik dan rutinitas → POI → perdagangan antariksa. Semua milestone baru masih usulan. Default konstruktor `World` kini subdivision 5; periksa map tersimpan sebelum merencanakan peningkatan densitas.
+
 > **Referensi Visual**: *New Dawn Protocol* (`Screenshot 2026-09-14 at 12.29.11.png`)  
 > **Target**: Mengubah planet globe dari visual dasar (642 tiles) menjadi dunia heksagon berdensitas tinggi (~2.562 tiles) dengan bioma kaya, atmosfer awan melayang, kota sci-fi futuristik, dan border bercahaya neon.
 
@@ -24,7 +28,7 @@
 
 ### A. Peningkatan Subdivisi Icosphere ke Level 4
 - Mengubah parameter subdivisi `hexasphere.js` dari $k=3$ ke $k=4$:
-  $$\text{Jumlah Tile} = 10 \times 4^2 + 2 = 2.562 \text{ tile (2.550 heksagon + 12 pentagon)}$$
+  $$\text{Jumlah Tile} = 10 \times 4^k + 2;\quad k=4 \Rightarrow 2.562 \text{ tile (2.550 heksagon + 12 pentagon)}$$
 - **Rasio Ukuran Tile**: Radius heksagon menyusut menjadi $\approx 0.35$ unit (dari sebelumnya $\approx 0.75$).
 - **Performa 60 FPS**:
   - Menggunakan `THREE.InstancedMesh` atau penggabungan geometri (*Merged BufferGeometry*) untuk tile daratan, pohon, dan puncak gunung.

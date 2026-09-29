@@ -63,8 +63,14 @@ export class Engine {
     if (this.paused && !this.frameHooks.length) return;
     this.time += this.paused ? 0 : dt;
     const t = this.time;
-    this.mode.update(this.paused ? 0 : dt, t, t * 1000);
-    this.mode.render();
+    // A mode that throws must not stop the loop (three.js drops the loop on an uncaught error)
+    try {
+      this.mode.update(this.paused ? 0 : dt, t, t * 1000);
+      this.mode.render();
+    } catch (err) {
+      if (!this.lastError || this.lastError.message !== err.message) console.error(err);
+      this.lastError = err;
+    }
     this.quality.sample(dt);
     this.audio?.update();
     if (this.frameHooks.length) {

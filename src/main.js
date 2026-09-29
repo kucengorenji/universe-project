@@ -7,20 +7,22 @@ import { Missions } from './core/missions.js';
 import { Audio } from './core/audio.js';
 import { Tips } from './core/tips.js';
 import { PauseMenu } from './core/pauseMenu.js';
+import './core/firebase.js';
 
 // App shell: one canvas, one world, one mode on screen at a time.
 //   #/space          star system (ship, orbits, landing)
 //   #/planet/<i>     the hex globe of a planet
 //   #/town/<i>/<c>   inside a city
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const engine = new Engine(document.getElementById('canvas-container'));
   const audio = (engine.audio = new Audio());
   const world = new World();
   const overlay = new Overlay(document.getElementById('cover'));
   const missions = new Missions(document.getElementById('missionUi'), audio);
   const tips = new Tips(document.getElementById('tipUi'));
-  new PauseMenu(document.getElementById('pauseUi'), { engine, audio, missions, tips });
+  new PauseMenu(document.getElementById('pauseUi'), { engine, audio, missions, tips, world });
   const director = new Director({ engine, world, overlay, missions, audio, tips });
+  await world.ready;
   director.start();
-  if (import.meta.env.DEV) window.__globe = { engine, world, director, missions, audio }; // dev-only handle for debugging in the console
+  if (import.meta.env.DEV) window.__globe = { engine, world, director, missions, audio, three: await import('three') }; // dev-only debug/visual QA handle
 });

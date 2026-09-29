@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { applySurfaceCoordinates, surfaceForMaterial } from './townSurfaces.js';
 
 // Asset packs generated in Blender (tools/blender/build_assets.py). Each asset
 // is an Empty named after the asset whose children are <name>_LOD0/1/2 meshes,
@@ -66,6 +67,7 @@ function bakeNode(root) {
     geo.setAttribute('emissive', new THREE.BufferAttribute(new Float32Array(count).fill(glow), 1));
     // Paint: surfaces the game tints per instance (vehicle bodies, horses)
     geo.setAttribute('paint', new THREE.BufferAttribute(new Float32Array(count).fill(node.material?.name === 'M_paint' ? 1 : 0), 1));
+    applySurfaceCoordinates(geo, surfaceForMaterial(node.material?.name));
     parts.push(geo);
   });
   if (!parts.length) return null;

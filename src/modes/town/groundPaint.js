@@ -19,46 +19,11 @@ const STREET_STYLE = {
   modern: {
     road: { fill: '#5b5e64', edge: '#4a4c52' },
     grid: { fill: '#4d4f55', edge: '#c9c6bd' },
+    collector: { fill: '#52545a', edge: '#c9c6bd' },
+    residential: { fill: '#62646a', edge: '#c5c2b8' },
     main: { fill: '#46484e', edge: '#c9c6bd' }
   }
 };
-
-function cobblePattern(ctx, base, dark, scale) {
-  const c = document.createElement('canvas');
-  const n = Math.max(8, Math.round(24 * scale));
-  c.width = c.height = n * 4;
-  const g = c.getContext('2d');
-  g.fillStyle = base;
-  g.fillRect(0, 0, c.width, c.height);
-  const rng = mulberry32(99);
-  g.strokeStyle = dark;
-  g.lineWidth = Math.max(1, scale * 1.2);
-  // Staggered rows of rounded setts
-  for (let row = 0; row < 8; row++) {
-    const y = (row + 0.5) * (c.height / 8);
-    const off = row % 2 ? n / 2 : 0;
-    for (let x = -n; x < c.width + n; x += n) {
-      const w = n * (0.8 + rng() * 0.15);
-      g.beginPath();
-      g.ellipse(x + off + n / 2, y, w / 2, c.height / 16 - 0.5, 0, 0, Math.PI * 2);
-      g.stroke();
-    }
-  }
-  return ctx.createPattern(c, 'repeat');
-}
-
-function tilePattern(ctx, base, line, px) {
-  const c = document.createElement('canvas');
-  const n = Math.max(4, Math.round(px));
-  c.width = c.height = n;
-  const g = c.getContext('2d');
-  g.fillStyle = base;
-  g.fillRect(0, 0, n, n);
-  g.fillStyle = line;
-  g.fillRect(0, 0, n, Math.max(1, n / 12));
-  g.fillRect(0, 0, Math.max(1, n / 12), n);
-  return ctx.createPattern(c, 'repeat');
-}
 
 export class GroundPaint {
   /**
@@ -91,6 +56,10 @@ export class GroundPaint {
     };
 
     if (detail) this.paintFields(ctx, m);
+    for(const park of L.parks||[])if(park.access){
+      ctx.save();ctx.globalAlpha=.55;ctx.fillStyle='#78934f';
+      path(park.poly.map(p=>[p.x,p.z]));ctx.closePath();ctx.fill();ctx.restore();
+    }
     // Ward ground: packed earth in the slums, paving by the merchants, grass in the rich quarter
     if (detail && L.wards) {
       const WARD_GROUND = { slum: ['#9a8763', 0.32], craftsmen: ['#a59676', 0.2], merchant: ['#b0a58f', 0.26], gate: ['#a8987a', 0.24], docks: ['#9d937d', 0.3], military: ['#a0957c', 0.28] };
@@ -108,7 +77,7 @@ export class GroundPaint {
 
     // Streets: kerb / pavement pass first for every street, then the surfaces,
     // so junctions merge into one clean shape.
-    const order = L.modern ? ['road', 'grid', 'main'] : ['road', 'lane', 'ring', 'main'];
+    const order = L.modern ? ['road', 'residential', 'grid', 'collector', 'main'] : ['road', 'lane', 'ring', 'main'];
     const streets = [...L.streets].sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
     const kerb = L.modern ? 2.4 : 0.6;
     for (const s of streets) {
@@ -118,6 +87,11 @@ export class GroundPaint {
       ctx.lineWidth = s.w + (s.kind === 'road' ? 0.8 : kerb * 2);
       ctx.stroke();
     }
+    // Walkways are canonical paths, shared with grass exclusion and walkers.
+    for(const p of L.paths||[]){
+      path(p.pts);ctx.strokeStyle=L.modern?'#b3ac96':'#8d7959';ctx.lineWidth=p.w+.5;ctx.stroke();
+      path(p.pts);ctx.strokeStyle=L.modern?'#c8c3b1':'#c3ad82';ctx.lineWidth=p.w;ctx.stroke();
+    }
     for (const s of streets) {
       const st = style[s.kind] || style.road;
       path(s.pts);
@@ -125,33 +99,7 @@ export class GroundPaint {
       ctx.lineWidth = s.w;
       ctx.stroke();
     }
-    if (detail && !L.modern) {
-      // Cobbles on the main streets: pattern masked by the street shape
-      const mask = document.createElement('canvas');
-      mask.width = mask.height = canvas.width;
-      const mc = mask.getContext('2d');
-      mc.setTransform(1 / m, 0, 0, 1 / m, -x0 / m, -z0 / m);
-      mc.lineCap = 'round';
-      mc.lineJoin = 'round';
-      mc.strokeStyle = '#fff';
-      for (const s of streets) {
-        if (s.kind !== 'main' && s.kind !== 'ring') continue;
-        mc.beginPath();
-        mc.moveTo(s.pts[0][0], s.pts[0][1]);
-        for (let i = 1; i < s.pts.length; i++) mc.lineTo(s.pts[i][0], s.pts[i][1]);
-        mc.lineWidth = s.w - 0.4;
-        mc.stroke();
-      }
-      mc.setTransform(1, 0, 0, 1, 0, 0);
-      mc.globalCompositeOperation = 'source-in';
-      mc.fillStyle = cobblePattern(mc, '#aa9e8a', 'rgba(90, 80, 66, 0.55)', Math.max(0.25, 0.25 / m));
-      mc.fillRect(0, 0, mask.width, mask.height);
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.drawImage(mask, 0, 0);
-      ctx.restore();
-    }
-    if (detail && L.modern) this.paintMarkings(ctx, streets, m);
+    // Markings use a single terrain-conforming geometry batch for street-level clarity.
 
     // Rivers over the streets they cross (bridges carry the streets): muddy banks, dark bed
     for (const r of L.rivers || []) {
@@ -177,12 +125,6 @@ export class GroundPaint {
       } else ctx.arc(p.x, p.z, p.r, 0, Math.PI * 2);
       ctx.fillStyle = L.modern ? '#d4d0c6' : '#b3a792';
       ctx.fill();
-      if (detail) {
-        ctx.clip();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.fillStyle = L.modern ? tilePattern(ctx, '#d6d2c8', 'rgba(120,115,105,0.35)', 2 / m) : cobblePattern(ctx, '#b3a792', 'rgba(95,82,66,0.5)', Math.max(0.25, 0.25 / m));
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
       ctx.restore();
       if (detail && !p.poly) {
         // A darker ring of stones around the plaza edge
@@ -200,75 +142,19 @@ export class GroundPaint {
     tex.anisotropy = 8;
     tex.generateMipmaps = true;
     tex.minFilter = THREE.LinearMipmapLinearFilter;
-    return { tex, x0, z0, size };
-  }
-
-  /** Lane lines, stop lines and zebra crossings (modern towns). */
-  paintMarkings(ctx, streets, m) {
-    const L = this.L;
-    ctx.save();
-    ctx.lineCap = 'butt';
-    for (const s of streets) {
-      if (s.kind === 'road') continue;
-      ctx.beginPath();
-      ctx.moveTo(s.pts[0][0], s.pts[0][1]);
-      for (let i = 1; i < s.pts.length; i++) ctx.lineTo(s.pts[i][0], s.pts[i][1]);
-      ctx.setLineDash(s.kind === 'main' ? [] : [3, 4]);
-      ctx.strokeStyle = s.kind === 'main' ? 'rgba(240, 200, 70, 0.9)' : 'rgba(245, 245, 240, 0.85)';
-      ctx.lineWidth = Math.max(0.18, m * 0.9);
-      ctx.stroke();
-      if (s.kind === 'main') {
-        // Double yellow line
-        ctx.lineWidth = Math.max(0.12, m * 0.7);
-        for (const off of [-0.3, 0.3]) {
-          ctx.beginPath();
-          for (let i = 0; i < s.pts.length; i++) {
-            const a = s.pts[Math.max(0, i - 1)];
-            const b = s.pts[Math.min(s.pts.length - 1, i + 1)];
-            const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-            const nx = -(b[1] - a[1]) / len;
-            const nz = (b[0] - a[0]) / len;
-            const x = s.pts[i][0] + nx * off;
-            const z = s.pts[i][1] + nz * off;
-            if (i === 0) ctx.moveTo(x, z);
-            else ctx.lineTo(x, z);
-          }
-          ctx.stroke();
-        }
-      }
-    }
-    ctx.setLineDash([]);
-    // Junctions of the street grid: clear the markings, paint zebra crossings
-    const g = L.grid;
-    if (g) {
-      const ca = Math.cos(g.axis);
-      const sa = Math.sin(g.axis);
-      const n = Math.ceil((L.cityR + g.pitch) / g.pitch) + 1;
-      for (let i = -n; i <= n; i++) {
-        for (let j = -n; j <= n; j++) {
-          const u = i * g.pitch - g.pitch / 2;
-          const v = j * g.pitch - g.pitch / 2;
-          const x = u * ca - v * sa;
-          const z = u * sa + v * ca;
-          if (Math.hypot(x, z) > L.cityR + 20) continue;
-          const w = i === 0 || j === 0 ? 18 : g.road;
-          ctx.save();
-          ctx.translate(x, z);
-          ctx.rotate(g.axis);
-          ctx.fillStyle = '#4b4d53';
-          ctx.fillRect(-w / 2, -w / 2, w, w);
-          ctx.fillStyle = 'rgba(245, 245, 240, 0.9)';
-          for (let side = 0; side < 4; side++) {
-            ctx.save();
-            ctx.rotate((side * Math.PI) / 2);
-            for (let k = -w / 2 + 0.6; k < w / 2 - 0.6; k += 1.2) ctx.fillRect(k, w / 2 + 0.4, 0.6, 2.6);
-            ctx.restore();
-          }
-          ctx.restore();
-        }
-      }
-    }
-    ctx.restore();
+    // RGB weights identify asphalt / setts / paving. Black selects earth.
+    // Fine surface detail is sampled in world metres by the terrain shader,
+    // so zooming or a larger town cannot turn stones into metre-wide circles.
+    const mask=document.createElement('canvas');mask.width=mask.height=res;
+    const mc=mask.getContext('2d');mc.fillStyle='#000';mc.fillRect(0,0,res,res);
+    mc.setTransform(1/m,0,0,1/m,-x0/m,-z0/m);mc.lineCap='round';mc.lineJoin='round';
+    const stroke=(pts,w,color)=>{mc.beginPath();mc.moveTo(...pts[0]);for(const p of pts.slice(1))mc.lineTo(...p);mc.strokeStyle=color;mc.lineWidth=w;mc.stroke();};
+    if(L.modern)for(const s of streets)stroke(s.pts,s.w+(s.kind==='road'?.8:kerb*2),'#00f');
+    for(const p of L.paths||[])stroke(p.pts,p.w,L.modern?'#00f':'#000');
+    for(const s of streets)stroke(s.pts,s.w,L.modern?'#f00':['main','ring'].includes(s.kind)?'#0f0':'#000');
+    if(L.plaza){const p=L.plaza;mc.beginPath();if(p.poly?.length>2){mc.moveTo(...p.poly[0]);for(const q of p.poly.slice(1))mc.lineTo(...q);mc.closePath();}else mc.arc(p.x,p.z,p.r,0,Math.PI*2);mc.fillStyle=L.modern?'#00f':'#0f0';mc.fill();}
+    const surface=new THREE.CanvasTexture(mask);surface.flipY=false;surface.anisotropy=4;
+    return { tex, surface, x0, z0, size };
   }
 
   /** Farm plots: soil colour with furrows along the plot. */
@@ -294,6 +180,8 @@ export class GroundPaint {
   dispose() {
     this.near.tex.dispose();
     this.far.tex.dispose();
+    this.near.surface.dispose();
+    this.far.surface.dispose();
   }
 }
 

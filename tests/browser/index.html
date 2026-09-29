@@ -1,0 +1,82 @@
+<!doctype html><meta charset="utf-8"><title>Globe runtime checks</title>
+<style>body{font:16px system-ui;background:#17232a;color:#edf4e9}iframe{width:98vw;height:65vh;border:0}pre{white-space:pre-wrap;max-height:22vh;overflow:auto}button{padding:12px}</style>
+<button id="run">Run runtime checks</button><button id="preview">Preview procedural interior</button><button id="upper">Preview upper floor</button><pre id="results">Ready. Toggles then restores a room lamp; exercises mode transitions without resetting the world.</pre><iframe src="/"></iframe>
+<script type="module">
+const frame=document.querySelector('iframe'), output=document.querySelector('pre');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const check=(v,s)=>{if(!v)throw Error(s);output.textContent+='\nPASS '+s};
+async function waitForApp(){
+ const deadline=Date.now()+120000;
+ while(Date.now()<deadline){const app=frame.contentWindow.__globe;if(app?.director.mode&&!app.director.busy)return app;await wait(200);}
+ throw Error('App did not finish startup within 120 seconds');
+}
+document.querySelector('button').onclick=async()=>{
+ output.textContent='Running';
+ try {
+  const app=await waitForApp();
+  check(!!app.director.mode&&!app.director.busy,'app boot');const {world,director,engine}=app;
+  const {WorldStateStore}=await import('/src/world/stateStore.js');
+  world.state=new WorldStateStore(`qa-interior-v2:${world.worldId}`);await world.state.ready;
+  const planet=world.homeIndex,map=world.mapFor(planet);
+  const ci=map.cities.findIndex(c=>c.isPort||c.port);const city=ci<0?0:ci;
+  await director.go({mode:'town',planet,city});await wait(400);
+  const town=director.mode;check(town.layout?.buildings.length>0,'town populated');
+  check(Object.keys(town.builder.sceneryPack).length===20,'20 textured scenery assets loaded');
+  check(town.doors.length>0,'enterable building exists');
+  town.setView('walk');
+  const door=town.doors.find(d=>d.b.blueprint?.floors>1)||town.doors[0];await town.enterBuilding(door);
+  check(!!town.interior,'enter interior');
+  check(town.camera.near<=.3&&!town.tween,'interior resets diorama camera clipping');
+  check(!engine.lastError,'no runtime render errors');
+  const lamp=town.interior.interactables.find(i=>i.kind==='light');
+  check(!!lamp,'interactive lamp exists');const prior=!!lamp.on;
+  await town.useInterior(lamp);const wanted=!!lamp.on;
+  await town.exitBuilding();await town.enterBuilding(door);
+  check(town.interior.interactables.find(i=>i.id===lamp.id)?.on===wanted,'lamp survives scene disposal');
+  await world.state.serial;
+  const reloaded=new WorldStateStore(world.state.worldId);await reloaded.ready;
+  check((reloaded.get(town.interiorStateKey).floors?.[0]||reloaded.get(town.interiorStateKey)).objects[lamp.id].on===wanted,'IndexedDB survives store reconstruction');
+  reloaded.db?.close();
+  if(wanted!==prior)await town.useInterior(town.interior.interactables.find(i=>i.id===lamp.id));
+  if(town.interior.blueprint?.floors>1){
+    await town.useInterior(town.interior.interactables.find(i=>i.kind==='stairs'&&i.target===1));
+    check(town.interior.floor===1,'stairs reach second floor');
+    const upstairs=town.interior.interactables.find(i=>i.kind==='light');check(!!upstairs,'upstairs lamp exists');
+    await town.useInterior(upstairs);const value=upstairs.on;
+    await town.changeInteriorFloor(0);await town.changeInteriorFloor(1);
+    check(town.interior.interactables.find(i=>i.id===upstairs.id).on===value,'floor state survives stair round trip');
+    const savedLocation=world.state.get('playerLocation');
+    await town.exitBuilding();
+    check(world.state.get('playerLocation')===null,'leaving clears interior resume point');
+    await town.restoreInteriorLocation(savedLocation);
+    check(town.interior.floor===1&&town.interiorDoor.b.id===savedLocation.buildingId,'resume restores building and floor');
+    await town.changeInteriorFloor(0);
+  }
+  await town.exitBuilding();
+  check(!world.state.error,'no persistence errors');
+  check(engine.renderer.info.render.calls>0,'scene rendered');
+  for(let i=0;i<20;i++){await town.enterBuilding(door);await town.exitBuilding();output.textContent+=`\nCycle ${i+1}/20`;}
+  check(!town.interior,'20 enter/exit cycles completed');
+  const modernIndex=map.cities.findIndex(c=>c.style==='modern');
+  if(modernIndex>=0){await director.go({mode:'town',planet,city:modernIndex});await wait(400);check(director.mode.layout.modern&&director.mode.layout.buildings.length>0,'modern town populated');}
+  const lastTown=director.mode;await lastTown.enterBuilding(lastTown.doors[0]);
+  await director.go({mode:'planet',planet,city:null});check(director.route.mode==='planet','depart directly from interior to planet');
+  check(world.state.get('playerLocation')===null,'mode departure clears interior resume point');
+  await director.go({mode:'space',planet});check(director.route.mode==='space','return to space');
+  check(!engine.lastError,'all transitions render without runtime errors');
+  output.textContent+='\nDONE '+JSON.stringify({seed:map.seed,planet,city,buildings:town.layout.buildings.length,trees:town.layout.trees.length,renderer:engine.renderer.info.render});
+ }catch(e){output.textContent+='\nFAIL '+e.stack;console.error(e)}
+};
+document.querySelector('#preview').onclick=async()=>{
+ const {world,director}=await waitForApp();
+ await director.go({mode:'town',planet:world.homeIndex,city:0});
+ const town=director.mode;town.setView('walk');
+ const door=town.doors.find(d=>d.b.asset==='f_townhouse')||town.doors[0];
+ await town.enterBuilding(door);
+ output.textContent=`Preview ${door.b.asset}, layout ${town.interior.layoutVersion}, ${town.interior.W.toFixed(1)} × ${town.interior.D.toFixed(1)}m`;
+};
+document.querySelector('#upper').onclick=async()=>{
+ const town=frame.contentWindow.__globe.director.mode;
+ if(town.interior?.blueprint?.floors>1){await town.changeInteriorFloor(1);output.textContent=`Preview floor ${town.interior.floor+1}/${town.interior.blueprint.floors}`;}
+};
+</script>

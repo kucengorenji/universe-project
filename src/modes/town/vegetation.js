@@ -1,4 +1,5 @@
 import { riverDistance } from './townPlan.js';
+import { containsField } from '../../world/landUsePlan.js';
 
 // Trees and rocks around the town, in groups rather than one by one:
 // a clump has a dominant species with a few others mixed in, a bigger tree in
@@ -40,12 +41,12 @@ function pickW(pool, rng) {
 }
 
 export function planVegetation(L, { rng, noise, at, place, streetClear, fields, flora, detail }) {
-  if (flora === 'none') return planRocks(L, { rng, at, streetClear, detail, flora });
+  if (flora === 'none') return planRocks(L, { rng, at, streetClear, detail, flora, place, fields });
   const S = {};
   const R = L.dioramaR;
-  const k = 0.45 + detail * 0.55; // lighter tiers plant fewer
+  const k = 1; // Trunks/colliders are canonical; LOD and grass density handle quality.
   const pools = POOLS[flora] || POOLS.green;
-  const inField = (x, z) => fields.some((f) => Math.abs(f.x - x) < f.w + f.d && Math.hypot(f.x - x, f.z - z) < Math.max(f.w, f.d) * 0.55);
+  const inField = (x, z) => fields.some(f => containsField(f, x, z, 2.5));
   const ok = (x, z, s) => s.land >= 0.76 && s.city <= 0.3 && s.otherCity <= 0.3 && streetClear(x, z, 20) >= 3 && !inField(x, z) && riverDistance(L, x, z) > 2.5;
 
   /** What grows here: a species pool, how likely a clump is, how big. */
@@ -53,6 +54,10 @@ export function planVegetation(L, { rng, noise, at, place, streetClear, fields, 
     const stand = noise.noise(x * 0.008, z * 0.008, 9);
     const autumn = noise.noise(x * 0.004, z * 0.004, 13) > 0.45;
     const dens = noise.noise(x * 0.006, z * 0.006, 3) * 0.5 + 0.5;
+    // Moist banks have a different community; noise leaves meadow clearings
+    // through forest masses instead of making one uniformly dense scatter.
+    if(flora==='green'&&riverDistance(L,x,z)<15)return {pool:[['t_birch',0,4],['t_oak',0,1],['t_fruit',0,1]],p:.75,n:[2,5],r:7,mix:.3};
+    if(s.forest>.35&&noise.noise(x*.018,z*.018,17)>.45)return null;
     if (s.mountain > 0.5) return { pool: pools.conifer || pools.open, p: 0.4, n: [2, 5], r: 8, mix: 0.25, snowy: s.mountain > 0.8 };
     if (s.forest > 0.45) {
       const pool = Math.abs(stand) > 0.25 && pools.conifer ? pools.conifer : autumn && pools.autumn ? pools.autumn : pools.broadleaf;
@@ -64,7 +69,7 @@ export function planVegetation(L, { rng, noise, at, place, streetClear, fields, 
     return { pool: pools.open, p: 0.1 + dens * 0.16, n: [1, 4], r: 5 + dens * 5, mix: 0.45 };
   };
 
-  const clumps = Math.round(1300 * k);
+  const clumps = Math.round(950 * k);
   let made = 0;
   for (let i = 0; i < clumps * 8 && made < clumps; i++) {
     const a = rng() * TAU;
@@ -140,14 +145,14 @@ export function planVegetation(L, { rng, noise, at, place, streetClear, fields, 
       else for (let c = 0; c < 1 + Math.floor(rng() * 3); c++) place(L.trees, 'cactus', x + (rng() - 0.5) * 5, z + (rng() - 0.5) * 5, rng() * TAU, 2.1, 2.1, { collide: false, pad: 0 });
     }
   }
-  planRocks(L, { rng, at, streetClear, detail, flora });
+  planRocks(L, { rng, at, streetClear, detail, flora, place, fields });
 }
 
 /** Rock groups: a boulder and a few stones, each tumbled, squashed and sunk. */
-function planRocks(L, { rng, at, streetClear, detail, flora }) {
+function planRocks(L, { rng, at, streetClear, detail, flora, place, fields=[] }) {
   const S = {};
   const R = L.dioramaR;
-  const groups = Math.round((flora === 'none' ? 520 : 240) * (0.45 + detail * 0.55));
+  const groups = flora === 'none' ? 520 : 240;
   for (let i = 0, made = 0; i < groups * 8 && made < groups; i++) {
     const a = rng() * TAU;
     const r = Math.sqrt(rng()) * R;
@@ -167,15 +172,12 @@ function planRocks(L, { rng, at, streetClear, detail, flora }) {
       const tr = main ? 0 : big * (0.55 + rng() * 0.6);
       const x = cx + Math.cos(ta) * tr;
       const z = cz + Math.sin(ta) * tr;
+      const sample=at(x,z,S);
+      if(sample.land<.76||sample.city>.3||streetClear(x,z,20)<3||riverDistance(L,x,z)<3||fields.some(f=>containsField(f,x,z,size*.5+1)))continue;
       const tilt = main ? 0.35 : 0.8;
       const grey = 0.84 + rng() * 0.22;
-      L.trees.push({
-        asset: 'r_rock',
-        x,
-        z,
-        yaw: rng() * TAU,
-        w: size * 0.7,
-        d: size * 0.7,
+      const placed=place(L.trees,'r_rock',x,z,rng()*TAU,size*.7,size*.7,{
+        collide:false,pad:.1,
         variant: Math.floor(rng() * 3),
         tint: [grey, grey * (0.97 + rng() * 0.04), grey * (0.93 + rng() * 0.06)],
         tiltX: (rng() - 0.5) * tilt,
@@ -185,7 +187,7 @@ function planRocks(L, { rng, at, streetClear, detail, flora }) {
         sz: 0.75 + rng() * 0.6,
         sink: size * (0.08 + rng() * 0.12)
       });
-      if (main && size > 2.2) L.colliders.push({ type: 'circle', x, z, r: size * 0.32 });
+      if (placed && main && size > 2.2) L.colliders.push({ type: 'circle', x, z, r: size * 0.32 });
     }
   }
 }

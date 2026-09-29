@@ -1,5 +1,28 @@
 # Roadmap Generasi Model Tile 3D & Aset Lanjutan
 
+**Spesifikasi produksi terbaru:** [Asset, Art & Audio Plan](docs/ASSET_ART_AUDIO_PLAN.md). Arah dekat kini **stylized mid-poly + reusable textures**, dengan LOD jauh yang ringan. Dokumen tersebut memuat inventaris TX-01–22, workflow Blender MCP, loader ber-UV, budget bytes/VRAM, modern city, harbor, land-use, NPC, water, hillside town dan musik. Detail low-poly/Meshy di bagian historis di bawah bukan target utama baru.
+
+## Pembaruan prioritas aset — 26 September 2026
+
+Bagian setelah pembaruan ini menyimpan rencana aset historis. Kondisi runtime terbaru harus dibaca dari source dan README, bukan dari tabel baseline lama. Arah pengembangan mengikuti [World Building Roadmap](docs/WORLD_BUILDING_ROADMAP.md), berdasarkan [kajian Watabou](docs/WATABOU_WORLD_BUILDING_NOTES.md).
+
+| Prioritas | Paket yang direncanakan | Kontrak yang harus disediakan | Milestone |
+|---|---|---|---|
+| P0 | Rumah/rumah-toko satu dan dua lantai | Footprint meter, origin, front axis, lantai, entrance/window sockets, envelope interior | WB-02 |
+| P0 | Wall, door, window, roof dan tangga modular | Dimensi, portal clearance, pivot pintu, koneksi antarlantai, collider sederhana | WB-03 |
+| P0 | Kitchen, sleep, storage dan work furniture kits | Footprint, interaction/approach anchors, stable asset IDs, LOD | WB-03 |
+| P1 | Lapak, gudang, peti, dermaga, signage dan landmark | Fungsi distrik, cargo/storage anchors, culture/style tags | WB-04, WB-07 |
+| P1 | Variasi penghuni dan perlengkapan kerja | Outfit per role, pose kerja/duduk, attachment sockets; identitas NPC terpisah dari mesh | WB-05 |
+| P2 | Ruin/cave kits, mercusuar, flora musiman, fleet variants | POI entrance, navigasi, biome tags, LOD dan palet budaya | WB-06, WB-08 |
+
+- [ ] Ekspor metadata blueprint bersama GLB dari pipeline Blender yang sudah ada.
+- [ ] Validasi pintu, envelope interior, collider dan skala sebelum menaikkan detail polygon.
+- [ ] Pastikan LOD/quality tidak mengubah portal, inventaris atau layout gameplay.
+
+Status semua item tambahan ini: **direncanakan, belum diimplementasikan**.
+
+---
+
 > **Catatan Pengembangan**: Implementasi saat ini menggunakan representasi 3D geometris *low-poly procedural* (prisma heksagonal, kubah pohon pinus, puncak gunung bersalju, kurva sungai *tube*, dan benteng ibukota dengan *holographic beacon*).
 > File ini merangkum rancangan untuk meng-upgrade aset tile ke model 3D berkulitas tinggi di iterasi berikutnya.
 

@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { getToonGradient } from '../../render/assetLibrary.js';
+import { locomotionClips, animatePerson } from './peopleMotion.js';
+export { animatePerson } from './peopleMotion.js';
+import { appearanceMaterial, makeFace } from './peopleAppearance.js';
+import { disposePerson } from './personLifecycle.js';
+export { disposePerson } from './personLifecycle.js';
 
 // Rigged people from character.glb: one shared skeleton layout, ten outfits
 // (vertex-coloured, one draw call each) and clips idle / walk / run / sit /
@@ -19,10 +24,11 @@ function peopleMaterial() {
 }
 
 /** One rigged person with a single outfit and its own mixer. */
-export function makePerson(gltf, outfit, { shadows = true, color = null } = {}) {
+export function makePerson(gltf, outfit, { shadows = true, color = null, appearanceSeed = null } = {}) {
   const root = cloneSkinned(gltf.scene);
   const drop = [];
   let found = false;
+  const personalMaterial = appearanceSeed === null ? null : appearanceMaterial(outfit, appearanceSeed);
   root.traverse((o) => {
     if (!o.isMesh) return;
     if (o.name !== outfit) {
@@ -30,15 +36,17 @@ export function makePerson(gltf, outfit, { shadows = true, color = null } = {}) 
       return;
     }
     found = true;
-    o.material = color ? new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getToonGradient(), color }) : peopleMaterial();
+    o.material = personalMaterial || (color ? new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getToonGradient(), color }) : peopleMaterial());
     o.castShadow = shadows;
     o.frustumCulled = false;
   });
   if (!found) return null;
   drop.forEach((o) => o.parent.remove(o));
+  let face = null;
+  if (personalMaterial) { face=makeFace(appearanceSeed); root.getObjectByName('head')?.add(face); }
   const mixer = new THREE.AnimationMixer(root);
   const actions = {};
-  for (const clip of gltf.animations) {
+  for (const clip of locomotionClips(gltf)) {
     const a = mixer.clipAction(clip);
     a.play();
     a.setEffectiveWeight(0);
@@ -46,42 +54,18 @@ export function makePerson(gltf, outfit, { shadows = true, color = null } = {}) 
   }
   if (!actions.idle || !actions.walk) return null;
   actions.idle.setEffectiveWeight(1);
-  return { root, mixer, actions, pose: 'idle' };
-}
-
-/** Blend idle / walk / run (or panic) from a speed; or hold one pose (sit, sleep, drive). */
-export function animatePerson(p, dt, speed, { panic = false, pose = null } = {}) {
-  const A = p.actions;
-  const sm = THREE.MathUtils.smoothstep;
-  const set = (name, w) => A[name] && A[name].setEffectiveWeight(w);
-  if (pose && A[pose]) {
-    for (const k of Object.keys(A)) set(k, k === pose ? 1 : 0);
-  } else {
-    const idle = 1 - sm(speed, 0.1, 0.9);
-    const run = sm(speed, 2.8, 4.6);
-    const walk = Math.max(0, 1 - idle - run);
-    set('idle', idle);
-    set('walk', walk);
-    set('run', panic ? 0 : run);
-    set('panic', panic ? run : 0);
-    set('sit', 0);
-    set('sleep', 0);
-    set('drive', 0);
-    A.walk.setEffectiveTimeScale(Math.max(0.4, speed / 1.5));
-    if (A.run) A.run.setEffectiveTimeScale(Math.max(0.6, speed / 5.2));
-  }
-  p.mixer.update(dt);
+  return { root, mixer, actions, pose: 'idle', personalMaterial, outfit, face, gaitPhase: 0, animSpeed: 0 };
 }
 
 export class RiggedPeople {
   constructor(gltf, scene, { count, modern, shadows, seed = 1 }) {
     this.pool = [];
     const list = OUTFITS[modern ? 'modern' : 'fantasy'];
+    this.outfits = list;
+    this.seed = seed;
     for (let i = 0; i < count; i++) {
-      const p = makePerson(gltf, list[(i + seed) % list.length], { shadows });
+      const p = makePerson(gltf, list[(i + seed) % list.length], { shadows, appearanceSeed: seed * 131 + i });
       if (!p) continue;
-      // Every seventh one is a child
-      if (i % 7 === 3) p.root.scale.setScalar(0.72);
       p.root.visible = false;
       p.index = -1;
       scene.add(p.root);
@@ -115,9 +99,14 @@ export class RiggedPeople {
     }
     near.sort((a, b) => a[0] - b[0]);
     for (const [, i] of near) {
-      const r = free.pop();
-      if (!r) break;
+      const slot=free.findIndex(r=>r.outfit===this.outfits[(i+this.seed)%this.outfits.length]);
+      if(slot<0)continue;
+      const [r] = free.splice(slot,1);
+      const identity=this.seed*131+i;
+      r.personalMaterial?.userData.setSeed(identity);
+      if(r.face){r.face.removeFromParent();r.face=makeFace(identity);r.root.getObjectByName('head')?.add(r.face);}
       r.index = i;
+      r.root.scale.setScalar(people[i].height);
     }
   }
 
@@ -137,16 +126,13 @@ export class RiggedPeople {
       r.root.visible = true;
       p.visible = false; // the instanced stand-in hides
       r.root.position.set(p.x, p.y, p.z);
-      r.root.rotation.y = p.yaw;
+      r.root.rotation.y += Math.atan2(Math.sin(p.yaw-r.root.rotation.y),Math.cos(p.yaw-r.root.rotation.y))*(1-Math.exp(-dt*12));
       animatePerson(r, dt, p.speed, { panic: fleeing.has(r.index) && p.speed > 3 });
     }
   }
 
   dispose() {
-    for (const r of this.pool) {
-      r.mixer.stopAllAction();
-      this.scene.remove(r.root);
-    }
+    for (const r of this.pool) disposePerson(r);
     this.pool = [];
   }
 }

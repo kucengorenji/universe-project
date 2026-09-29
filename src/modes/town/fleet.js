@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Car, VEHICLE_TYPES } from './vehicle.js';
-import { assemble } from './vehicleKit.js';
+import { trafficPose, advanceTraffic } from './trafficRoute.js';
+import { assemble, wrapGeometry as wrap } from './vehicleKit.js';
 
 // Every vehicle in town: parked cars and carts, traffic running the streets,
 // and the one the player drives. Each is assembled from the kit (body,
@@ -19,16 +20,6 @@ const _s = new THREE.Vector3(1, 1, 1);
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 const WHITE = new THREE.Color(1, 1, 1);
 
-/** A geometry sharing a pack model's buffers, so an instanced attribute can be added without touching the pack. */
-function wrap(src) {
-  const g = new THREE.BufferGeometry();
-  for (const [k, a] of Object.entries(src.attributes)) g.setAttribute(k, a);
-  g.index = src.index;
-  g.boundingSphere = src.boundingSphere;
-  g.boundingBox = src.boundingBox;
-  return g;
-}
-
 export class Fleet {
   constructor(builder, scene, { shadows, rng = Math.random }) {
     this.builder = builder;
@@ -44,7 +35,7 @@ export class Fleet {
    * Call build() once all vehicles are added.
    */
   add(v) {
-    const kit = assemble(v.type, this.rng);
+    const kit = v.kit || assemble(v.type, this.rng); // a vehicle arriving from the planet keeps its kit
     if (!this.builder.townPack[kit.body]) return null;
     const spec = VEHICLE_TYPES[kit.physics] || VEHICLE_TYPES.sedan;
     const car = new Car(spec, v);
@@ -58,9 +49,10 @@ export class Fleet {
   initRoute(v, line, s, dir) {
     const lens = [0];
     for (let k = 1; k < line.pts.length; k++) lens.push(lens[k - 1] + Math.hypot(line.pts[k].x - line.pts[k - 1].x, line.pts[k].z - line.pts[k - 1].z));
-    v.route = { line, lens, total: lens[lens.length - 1], s, dir, lane: line.w >= 10 ? line.w / 4 : 0 };
-    v.cruise = v.cruise ?? (['caravan', 'cart', 'wagon'].includes(v.type) ? 2.4 : 8 + Math.random() * 4);
+    v.route = { line, lens, total: lens[lens.length - 1], s, dir, lane: line.w >= 6 ? line.w / 4 : 0 };
+    v.cruise = v.cruise ?? (['caravan', 'cart', 'wagon'].includes(v.type) ? 2.4 : 8 + this.rng() * 4);
     v.speed = v.cruise;
+    Object.assign(v.car, trafficPose(v.route));
   }
 
   /** One instanced mesh per model, a slot in it for every use of that model. */
@@ -148,21 +140,7 @@ export class Fleet {
 
   /** Where along its street a traffic vehicle is: position and heading. */
   routePose(v) {
-    const r = v.route;
-    let k = 1;
-    while (k < r.lens.length - 1 && r.lens[k] < r.s) k++;
-    const a = r.line.pts[k - 1];
-    const b = r.line.pts[k];
-    const t = (r.s - r.lens[k - 1]) / (r.lens[k] - r.lens[k - 1] || 1);
-    const dx = (b.x - a.x) * r.dir;
-    const dz = (b.z - a.z) * r.dir;
-    const len = Math.hypot(dx, dz) || 1;
-    // Right-hand traffic: the lane sits to the right of the direction of travel
-    return {
-      x: a.x + (b.x - a.x) * t - (dz / len) * r.lane,
-      z: a.z + (b.z - a.z) * t + (dx / len) * r.lane,
-      yaw: Math.atan2(dx, dz)
-    };
+    return trafficPose(v.route);
   }
 
   /**
@@ -193,15 +171,12 @@ export class Fleet {
       };
       for (const o of obstacles) check(o.x, o.z);
       for (const o of this.vehicles) if (o !== v && !o.hidden) check(o.car.x, o.car.z);
-      const want = v.stopped > 0 ? 0 : clear < 6 ? 0 : clear < 16 ? v.cruise * ((clear - 6) / 10) : v.cruise;
+      const r=v.route, remaining=r.dir>0?r.total-r.s:r.s;
+      const cruise=r.turn!==undefined?Math.min(2.5,v.cruise):Math.min(v.cruise,2.5+remaining*.6);
+      const want = v.stopped > 0 ? 0 : clear < 6 ? 0 : clear < 16 ? cruise * ((clear - 6) / 10) : cruise;
       v.speed += (want - v.speed) * (1 - Math.exp(-dt * (want < v.speed ? 5 : 1.5)));
       if (v.stopped > 0) v.stopped -= dt;
-      const r = v.route;
-      r.s += v.speed * r.dir * dt;
-      if (r.s > r.total || r.s < 0) {
-        r.dir *= -1; // U-turn at the end of the street
-        r.s = THREE.MathUtils.clamp(r.s, 0, r.total);
-      }
+      advanceTraffic(r, v.speed*dt, dt);
       const p = this.routePose(v);
       // Smooth the heading so U-turns and corners swing instead of snapping
       let d = p.yaw - c.yaw;
@@ -217,6 +192,11 @@ export class Fleet {
       c.x = p.x;
       c.z = p.z;
       c.y = this.builder.groundAt(c.x, c.z);
+      const axle=v.spec.wheelbase/2,dx=Math.sin(c.yaw)*axle,dz=Math.cos(c.yaw)*axle;
+      const pitch=Math.atan2(this.builder.groundAt(c.x+dx,c.z+dz)-this.builder.groundAt(c.x-dx,c.z-dz),v.spec.wheelbase);
+      const settle=1-Math.exp(-dt*10);
+      c.pitch+=(pitch-c.pitch)*settle;
+      c.roll+=(THREE.MathUtils.clamp(-v.speed*yawRate*.008,-.055,.055)-c.roll)*settle;
       this.write(v);
     }
     this.flush();
@@ -287,6 +267,9 @@ export class Fleet {
     for (const m of this.meshes) {
       this.scene.remove(m.inst);
       m.inst.dispose();
+      // The fleet owns this wrapper (including its per-instance paint buffer),
+      // while the source pack remains in the asset library for later towns.
+      m.inst.geometry.dispose();
     }
     this.meshes = [];
   }

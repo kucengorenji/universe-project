@@ -1,7 +1,7 @@
 import { voronoi, relax, area, centroid, insetConvex, subdivide, edgeFrame, fitAgainst, inConvex, pickWeighted, WARDS, BOUND, CUT } from './wards.js';
 
 // District plan for fantasy towns (and the lot filling modern towns share).
-// Steps, as in watabou's generator:
+// Project adaptation inspired by Watabou (not a copy of its generator):
 //   1. sites -> Voronoi cells (dense in town, coarse in the countryside)
 //   2. cell edges -> street graph; arteries from each gate to the market by A*
 //   3. wards: market, landmark, docks, gate wards, parks, then merchants near
@@ -110,7 +110,7 @@ function segIntersect(ax, az, bx, bz, cx, cz, dx, dz) {
  *   frontKind(label) -> 'main' | 'lane' | 'water' | null for a block edge label
  */
 export function fillBlock(L, block, wardName, K, { frontKind = () => 'lane', setback = 0.3, keep = null } = {}) {
-  const { rng, fp, claim } = K;
+  const { rng, fp, claim, free, buildable } = K;
   const ward = WARDS[wardName];
   if (!ward?.lots || block.length < 3) return;
   const lots = subdivide(block, ward.lots, rng);
@@ -177,6 +177,8 @@ export function fillBlock(L, block, wardName, K, { frontKind = () => 'lane', set
         sz = rect.d / F.d;
         if (sx < 0.78 || sz < 0.8) continue;
         if (riverDistance(L, rect.cx, rect.cz) < Math.max(rect.w, rect.d) / 2 + 1) continue;
+        const footprint = { x: rect.cx, z: rect.cz, yaw, hw: rect.w / 2, hd: rect.d / 2 };
+        if (!free(footprint, 0.1) || !buildable(footprint)) continue;
         const x = rect.cx - Xx * F.cx * sx + f.nx * F.cz * sz;
         const z = rect.cz - Xz * F.cx * sx + f.nz * F.cz * sz;
         L.buildings.push({ asset, x, z, yaw, w: F.w * sx, d: F.d * sz, sx, sz, tint: 0.92 + rng() * 0.16, variant: Math.floor(rng() * 4), ward: wardName });
@@ -224,7 +226,7 @@ function addTree(L, x, z, [asset, variant], K) {
 
 // ---------------------------------------------------------------- fantasy wards
 
-export function planWards(L, K) {
+export function planWards(L, K, fillFronts) {
   const { rng, at, inCity, addStreet, claim } = K;
   const R = L.dioramaR;
   const big = L.capital || L.size >= 5;
@@ -255,7 +257,10 @@ export function planWards(L, K) {
     const z = Math.sin(a) * r;
     if (!inCity(x, z, 0.3) || at(x, z, S).land < 0.5) continue;
     if (riverDistance(L, x, z) < 8) continue;
-    const min = spacing * (0.8 + rng() * 0.35);
+    // Dense old streets near the market, larger estates at the edge, and
+    // neighbourhood-scale variation. Uniform Poisson + Lloyd made honeycombs.
+    const district = .75 + .28 * Math.sin(x*.012+L.seed) * Math.cos(z*.009);
+    const min = L.layoutVersion===1 ? spacing*(.8+rng()*.35) : spacing * (.52 + rng() * .7) * district * (.85 + r / Math.max(80,L.cityR) * .35);
     if (!tooClose(x, z, min)) add({ x, z, city: true });
   }
   for (let i = 0; i < 3000; i++) {
@@ -266,7 +271,7 @@ export function planWards(L, K) {
     if (inCity(x, z, 0.3)) continue;
     if (!tooClose(x, z, 100 + rng() * 50)) add({ x, z, city: false });
   }
-  const cells = relax(sites, R + 80, 2, (s) => s.city);
+  const cells = L.layoutVersion===1 ? relax(sites,R+80,2,s=>s.city) : voronoi(sites, R + 80);
 
   // Classify
   for (const c of cells) {
@@ -404,9 +409,31 @@ export function planWards(L, K) {
   }
   for (const e of edges.values()) if (!e.kind) e.kind = e.water ? 'water' : 'lane';
 
-  // Street widths
-  const W = { main: 7, lane: 4.2 };
-  for (const p of arteries) addStreet(p.map((id) => [verts[id].x, verts[id].z]), W.main, 'main');
+  // Keep a connected skeleton, then only some of its redundant loops. Treating
+  // every Voronoi edge as a road made the cell construction visible as hexagons.
+  if (L.layoutVersion >= 2) {
+    const parent=verts.map(v=>v.id), root=i=>parent[i]===i?i:(parent[i]=root(parent[i]));
+    const join=e=>{const a=root(e.a),b=root(e.b);if(a===b)return false;parent[a]=b;return true;};
+    for(const e of edges.values())if(e.kind==='main'||e.boundary||e.cells.includes(market.i))join(e);
+    const candidates=[...edges.values()].filter(e=>e.kind==='lane'&&!e.boundary&&!e.cells.includes(market.i));
+    const ranked=candidates.map(e=>({e,rank:rng()})).sort((a,b)=>a.rank-b.rank);
+    for(const {e} of ranked)if(!join(e)&&rng()>.18)e.kind='yard';
+    L.morphology={version:2,kind:'grown-wards',retiredLanes:candidates.filter(e=>e.kind==='yard').length};
+  }
+  const streetPoints = ids => {
+    if(L.layoutVersion===1)return ids.map(id=>[verts[id].x,verts[id].z]);
+    const out=[];
+    for(let i=1;i<ids.length;i++){
+      const a=verts[ids[i-1]],b=verts[ids[i]],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1;
+      const bend=Math.sin((a.x+b.x)*.035+(a.z+b.z)*.027)*Math.min(1.6,len*.04);
+      const n=Math.max(1,Math.ceil(len/6));
+      for(let k=0;k<n;k++){const t=k/n,off=Math.sin(t*Math.PI)*bend;out.push([a.x+dx*t-dz/len*off,a.z+dz*t+dx/len*off]);}
+    }
+    const end=verts[ids.at(-1)];out.push([end.x,end.z]);return out;
+  };
+  // Street widths are hierarchy-specific, not uniform cell outlines.
+  const W = { main: 7, lane: L.layoutVersion>=2?3.2:4.2 };
+  for (const p of arteries) addStreet(streetPoints(p), W.main, 'main');
   // Lanes: chain the rest into long strokes (straightest continuation at junctions)
   const laneEdges = [...edges.values()].filter((e) => e.kind === 'lane');
   const usedE = new Set();
@@ -438,7 +465,7 @@ export function planWards(L, K) {
         else chain.unshift(nxt);
       }
     }
-    addStreet(chain.map((id) => [verts[id].x, verts[id].z]), W.lane, 'lane');
+    addStreet(streetPoints(chain), W.lane, 'lane');
   }
   const kindBetween = (cellIdx, label) => {
     const c = byIndex[cellIdx];
@@ -563,6 +590,8 @@ export function planWards(L, K) {
       for (const s of [1, 0.9, 0.8, 0.7]) {
         const rect = fitAgainst(block, f, F.w * s, F.d * s, { setback: 1.5, maxShrink: 0.98 });
         if (rect) {
+          const footprint={x:rect.cx,z:rect.cz,yaw:Math.atan2(f.nx,-f.nz),hw:rect.w/2,hd:rect.d/2};
+          if(!K.free(footprint,0.1)||!K.buildable(footprint))continue;
           const score = s * 100 - toMarket * 0.2;
           if (!best || score > best.score) best = { f, rect, s, score };
           break;
@@ -597,17 +626,20 @@ export function planWards(L, K) {
   // Parks: trees and flower beds
   for (const c of cityCells.filter((c) => c.ward === 'park')) {
     const block = blockOf(c);
-    const n = Math.round(c.area / 110);
-    for (let t = 0; t < n; t++) {
-      const tx = c.cx + (rng() - 0.5) * Math.sqrt(c.area);
-      const tz = c.cz + (rng() - 0.5) * Math.sqrt(c.area);
-      if (!inConvex(block, tx, tz, 1.5)) continue;
-      addTree(L, tx, tz, rng() < 0.25 ? ['b_flowers', Math.floor(rng() * 3)] : gardenTree(L, rng), K);
-    }
+    L.parks.push({x:c.cx,z:c.cz,poly:block,style:'garden'});
   }
 
-  // Everything else: lots
-  for (const c of cityCells) {
+  // Legacy parcels remain available for towns with saved interiors. New towns
+  // grow frontage continuously along the connected roads, across cell seams.
+  if(L.layoutVersion>=2&&fillFronts){
+    const typeAt=(r,x,z)=>{
+      let near=null,d=Infinity;
+      for(const c of cityCells){const q=(c.cx-x)**2+(c.cz-z)**2;if(q<d){d=q;near=c;}}
+      const pool=WARDS[near?.ward]?.pool||WARDS.craftsmen.pool,asset=pickWeighted(pool,rng);
+      return [asset,...(NOMINAL[asset]||[8,8])];
+    };
+    fillFronts(L,{...K,typeAt,cityTh:.42,list:L.buildings,kinds:['main','lane']});
+  }else for (const c of cityCells) {
     if (['market', 'landmark', 'park'].includes(c.ward)) continue;
     fillBlock(L, blockOf(c), c.ward, K, { frontKind: (label) => kindBetween(c.i, label) });
   }

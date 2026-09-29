@@ -47,9 +47,11 @@ export class Director {
     });
   }
 
-  start() {
+  async start() {
     const r = this.sanitize(parseRoute(location.hash)) || { mode: 'space', planet: this.world.homeIndex };
-    return this.go(r, { replace: true });
+    const locationState = this.world.state.get('playerLocation');
+    await this.go(r, { replace: true });
+    await this.mode?.restoreInteriorLocation?.(locationState);
   }
 
   /** Clamp a route to something that exists in the current system. */

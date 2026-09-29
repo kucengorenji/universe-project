@@ -1,5 +1,6 @@
 import { BIOMES, STORAGE_KEY } from '../map/mapGenerator.js';
 import { PLANET_TYPES } from '../world/planetTypes.js';
+import { cityNavigation } from './cityNavigation.js';
 
 const BIOME_NAMES = {
   [BIOMES.OCEAN_DEEP]: 'Laut dalam',
@@ -395,6 +396,7 @@ export class MenuController {
             <button type="button" class="pill pill--ghost" data-action="ride" data-city="${c.index}">Naik kendaraan dari sini</button>
             <button type="button" class="pill pill--ghost" data-action="close">Kembali ke globe</button>
           </div>
+          ${cityNavigation(d.cities,c.index)}
         </div>`;
     } else if (spec.type === 'faction') {
       const info = d[spec.owner];

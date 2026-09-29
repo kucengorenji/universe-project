@@ -22,14 +22,15 @@ npm run build    # build produksi ke dist/
 |---|---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Peta sistem inti | Aktif; perbarui saat menambah modul atau mode |
 | [ASSETS.md](ASSETS.md) | Registry aset runtime, sumber, tekstur prosedural, audio | Aktif; perbarui setiap kali aset berubah |
-| [ART_DIRECTION.md](ART_DIRECTION.md) | Diagnosis visual dan kontrak tampilan | Usulan; menunggu keputusan AD-0 |
+| [ART_DIRECTION.md](ART_DIRECTION.md) | Diagnosis visual, kontrak tampilan, status migrasi | Aktif; arah disetujui 29 September |
+| [TOWN_GENERATION_PLAN.md](TOWN_GENERATION_PLAN.md) | Planner kota 2D, reroll, kepadatan, usulan generator ala Watabou (TG-1–6) | Aktif |
 | [WORLD_BUILDING_ROADMAP.md](WORLD_BUILDING_ROADMAP.md) | Milestone WB-00–08 | Roadmap aktif |
 | [ASSET_ART_AUDIO_PLAN.md](ASSET_ART_AUDIO_PLAN.md) | Milestone AA-00–09, budget, pipeline Blender, musik | Roadmap aktif; arah visual §1 mengikuti ART_DIRECTION setelah disetujui |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Status aktual per milestone dan hasil verifikasi | Sumber kebenaran status |
 | [REVIEW_2026_09_29.md](REVIEW_2026_09_29.md) | Gap rencana, inkonsistensi, dan urutan perapian | Review titik-waktu |
 | [LIVING_TOWNS_IMPLEMENTATION.md](LIVING_TOWNS_IMPLEMENTATION.md) | Log implementasi 27 September | Log bertanggal; tidak diedit ulang |
 | [TOWN_REFINEMENT_2026_09_29.md](TOWN_REFINEMENT_2026_09_29.md) | Log implementasi 29 September | Log bertanggal; tidak diedit ulang |
-| [TOWN_PLAN_V3.md](TOWN_PLAN_V3.md) | Tata kota v3: template dan blok dibelah ala Neighbourhood, parameter kepadatan, versi save | Aktif; perbarui saat generator kota berubah |
+| [TOWN_PLAN_V3.md](TOWN_PLAN_V3.md) | Tata kota blok (layout v4 di cabang ini): template dan blok dibelah ala Neighbourhood, parameter kepadatan, versi save | Aktif; perbarui saat generator kota berubah |
 | [WATABOU_WORLD_BUILDING_NOTES.md](WATABOU_WORLD_BUILDING_NOTES.md) | Riset generator Watabou dan audit awal | Riset |
 | [`../README.md`](../README.md) | Changelog Update 1–9 | Riwayat; beberapa angka sudah basi (lihat review §2.4) |
 | [`../plan.md`](../plan.md), [`../TILES_ROADMAP.md`](../TILES_ROADMAP.md) | Rencana 14 September dan upgrade tile | Historis; jangan dipakai sebagai acuan |

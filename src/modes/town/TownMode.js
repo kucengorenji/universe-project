@@ -2,28 +2,32 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { loadAssetPack, ASSET_PACK_URL, ASSET_PACK_LOD0_URL, getToonGradient } from '../../render/assetLibrary.js';
-import { mulberry32 } from '../../map/mapGenerator.js';
+import { loadAssetPack, getToonGradient } from '../../render/assetLibrary.js';
+import { ASSETS } from '../../render/assetManifest.js';
+import { mulberry32 } from '../../math/random.js';
 import { PLANET_TYPES } from '../../world/planetTypes.js';
-import { generateTownLayout, segDist2 } from './townLayout.js';
-import { TownBuilder, WATER_Y, packFootprints } from './townBuilder.js';
-import { Crowd, Pedestrians } from './crowd.js';
-import { createWalkNetwork, townWalkable } from './walkNetwork.js';
-import { StreetLighting } from './streetLighting.js';
-import { townGenerationVersion } from '../../world/townGeneration.js';
-import { Colliders } from './colliders.js';
-import { TownHud } from './hud.js';
-import { TownSky } from './sky.js';
-import { Fleet } from './fleet.js';
-import { Car, ChaseCamera } from './vehicle.js';
-import { RiggedPeople, makePerson, animatePerson, disposePerson } from './peopleRig.js';
-import { Interior, ENTERABLE } from './interior.js';
+import { generateTownLayout, segDist2, townBaseSeed } from './layout/townLayout.js';
+import { TownBuilder, packFootprints } from './render/townBuilder.js';
+import { WATER_Y } from './scale.js';
+import { Crowd, Pedestrians } from './people/crowd.js';
+import { createWalkNetwork, townWalkable } from './navigation/walkNetwork.js';
+import { StreetLighting } from './render/streetLighting.js';
+import { townGenerationVersion, townPlanChoice, townPlanVersion, saveTownPlanChoice, townHasSavedRooms } from '../../world/townGeneration.js';
+import { TownPlanner } from './planner/townPlanner.js';
+import { Colliders } from './navigation/colliders.js';
+import { TownHud } from './ui/hud.js';
+import { TownSky } from './render/sky.js';
+import { Fleet } from './vehicles/fleet.js';
+import { Car, ChaseCamera } from './vehicles/vehicle.js';
+import { RiggedPeople, makePerson, animatePerson, disposePerson } from './people/peopleRig.js';
+import { ChunkyPeople, loadNpcPack, makeNpc, dressPlayer, animateNpc, disposeNpc } from './people/chunkyPeople.js';
+import { Interior, ENTERABLE, FURNITURE_PACK } from './interior/interior.js';
 import { buildingId, seedFor } from '../../world/identity.js';
 import { describeBuilding, buildingApproach } from '../../world/buildingBlueprint.js';
 import { loadTexturedPack } from '../../render/texturedAssetLibrary.js';
 import { loadTownSurfaces } from '../../render/townSurfaces.js';
 import { Minimap, Speedo } from '../../ui/gauges.js';
-import { FLEETS, pickRecipe } from './vehicleKit.js';
+import { FLEETS, pickRecipe } from './vehicles/vehicleKit.js';
 
 const STREET_FOV = 55;
 
@@ -31,29 +35,27 @@ const STREET_FOV = 55;
 // streets (third person) or drive. Everything is built from the planet's map
 // data, so the town you land in is the one you clicked on the globe.
 
-const TOWN_PACK_URL = `${import.meta.env.BASE_URL}models/town.glb`;
-const CHARACTER_URL = `${import.meta.env.BASE_URL}models/character.glb`;
-const FURNITURE_URL = `${import.meta.env.BASE_URL}models/furniture.glb`;
-const ATLAS_URL = `${import.meta.env.BASE_URL}textures/interior_atlas.jpg`;
 let atlasTex = null;
 const loadAtlas = () =>
-  (atlasTex ||= new THREE.TextureLoader().loadAsync(ATLAS_URL).then((t) => {
+  (atlasTex ||= new THREE.TextureLoader().loadAsync(ASSETS.interiorAtlas).then((t) => {
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 4;
     return t;
   }).catch(() => null));
 let characterGltf = null;
-const loadCharacter = () => (characterGltf ||= new GLTFLoader().loadAsync(CHARACTER_URL).catch(() => null));
+const loadCharacter = () => (characterGltf ||= new GLTFLoader().loadAsync(ASSETS.characterPack).catch(() => null));
 const packs = () =>
   Promise.all([
-    loadAssetPack(ASSET_PACK_URL),
-    loadAssetPack(ASSET_PACK_LOD0_URL).catch(() => null),
-    loadAssetPack(TOWN_PACK_URL).catch(() => null),
+    loadAssetPack(ASSETS.planetPack),
+    loadAssetPack(ASSETS.planetPackLod0).catch(() => null),
+    loadAssetPack(ASSETS.townPack).catch(() => null),
     loadCharacter(),
-    loadAssetPack(FURNITURE_URL).catch(() => null),
+    loadAssetPack(ASSETS.furniturePack, FURNITURE_PACK).catch(() => null),
     loadAtlas(),
-    loadTexturedPack(`${import.meta.env.BASE_URL}models/scenery.glb`).catch(() => null),
-    loadTownSurfaces(`${import.meta.env.BASE_URL}textures/town_surfaces.png`).catch(() => null)
+    loadTexturedPack(ASSETS.sceneryPack).catch(() => null),
+    loadTownSurfaces(ASSETS.townSurfaces).catch(() => null),
+    loadTexturedPack(ASSETS.environmentPack, { mergeShades: true }).catch(() => null),
+    loadNpcPack(ASSETS.npcPack).catch(() => null)
   ]);
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -82,8 +84,9 @@ export default class TownMode {
     const city = map.cities[this.route.city];
     this.planet = planet;
     this.city = city;
-    const [base, lod0, townPack, character, furniture, atlas, sceneryPack, surfaceAtlas] = await packs();
+    const [base, lod0, townPack, character, furniture, atlas, sceneryPack, surfaceAtlas, environmentPack, npcPack] = await packs();
     this.character = character;
+    this.npcPack = npcPack;
     this.furniture = furniture;
     this.atlas = atlas;
     const planetPack = {};
@@ -93,14 +96,22 @@ export default class TownMode {
     const quality = engine.quality;
     this.footprints = packFootprints(townPack);
     await world.ready;
-    const townSeed=((map.seed||1)*131+this.route.city*977)>>>0;
+    const townSeed=townBaseSeed(map,this.route.city);
     const layoutVersion=townGenerationVersion(world.state,this.route.planet,townSeed);
-    this.layout = generateTownLayout({ map, hexasphere, cityIndex: this.route.city, planetType: planet.type, detail: quality.settings.detail, footprints: this.footprints, layoutVersion });
+    // The plan the player approved in the 2D planner (variant 0 = the original town)
+    const plan=townPlanChoice(world.state,this.route.planet,townSeed);
+    this.townSeed=townSeed;
+    this.plan=plan;
+    // Everything the 2D planner needs to regenerate this town with another variant or density
+    this.genArgs={ map, hexasphere, cityIndex: this.route.city, planetType: planet.type, detail: quality.settings.detail, footprints: this.footprints };
+    this.layout = generateTownLayout({ ...this.genArgs, layoutVersion, variant: plan.variant, options: { density: plan.density } });
     this.doors = this.findDoors();
     this.ctx.missions?.emit('visit_town');
     this.ctx.audio?.setScene('town', { modern: this.layout.modern });
-    this.builder = new TownBuilder(this.layout, { planetPack, townPack, sceneryPack, surfaceAtlas, quality, planetType: planet.type });
+    this.builder = new TownBuilder(this.layout, { planetPack, townPack, sceneryPack, environmentPack, surfaceAtlas, quality, planetType: planet.type });
     this.colliders = new Colliders(this.layout.colliders);
+    this.cameraBlockers = this.buildCameraBlockers();
+    this.vehicleColliders = this.buildVehicleColliders();
 
     const { width, height } = engine.size;
     this.scene = new THREE.Scene();
@@ -164,11 +175,11 @@ export default class TownMode {
     this.player = this.crowd.people[0];
     const sp = this.layout.spawn;
     Object.assign(this.player, { x: sp.x, z: sp.z, y: this.builder.groundAt(sp.x, sp.z), yaw: sp.yaw, vy: 0, visible: false });
-    if (character) {
-      this.setupAvatar(character, city.owner === 'system' ? 'explorer_red' : 'explorer', shadows);
-      const rigCount = { high: 24, medium: 14, low: 6 }[quality.tier];
-      this.rigged = new RiggedPeople(character, this.scene, { count: rigCount, modern: this.layout.modern, shadows, seed: this.layout.seed });
-    }
+    const rigCount = { high: 24, medium: 14, low: 6 }[quality.tier];
+    if (this.npcPack || character) this.setupAvatar(character, city.owner === 'system' ? 'explorer_red' : 'explorer', shadows);
+    // Townsfolk near the camera: the NPC v1 cast when its pack loaded, else the older rigged outfits
+    if (this.npcPack) this.rigged = new ChunkyPeople(this.npcPack, this.scene, { count: rigCount, shadows, seed: this.layout.seed });
+    else if (character) this.rigged = new RiggedPeople(character, this.scene, { count: rigCount, modern: this.layout.modern, shadows, seed: this.layout.seed });
     this.buildFleet(rng, shadows);
     this.chase = new ChaseCamera(this.camera);
     this.chase.baseFov = STREET_FOV;
@@ -191,6 +202,7 @@ export default class TownMode {
         liftoff: () => this.ctx.director.go({ mode: 'planet', planet: this.route.planet, city: this.route.city }),
         city: city => this.ctx.director.go({ mode: 'town', planet: this.route.planet, city }),
         view: (v) => this.setView(v),
+        plan: () => this.openPlanner(),
         interact: () => this.interact()
       }
     });
@@ -303,9 +315,14 @@ export default class TownMode {
     }
   }
 
-  /** The player's rigged explorer (faction outfit), toon-shaded like the rest. */
+  /** The player: the NPC v1 hero in the faction's colour (the older rigged explorer without that pack). */
   setupAvatar(gltf, outfit, shadows) {
-    const person = makePerson(gltf, outfit, { shadows }) || makePerson(gltf, 'explorer', { shadows });
+    let person = null;
+    if (this.npcPack) {
+      person = makeNpc(this.npcPack, { shadows });
+      person.npc = true;
+      dressPlayer(person, { top: outfit === 'explorer_red' ? 0xc8453b : 0x027b49 });
+    } else person = makePerson(gltf, outfit, { shadows }) || makePerson(gltf, 'explorer', { shadows });
     if (!person) return;
     person.root.visible = false;
     this.scene.add(person.root);
@@ -321,8 +338,92 @@ export default class TownMode {
     this.crowd.people[0].visible = false; // the rig stands in for person #0
     if (!on) return;
     av.root.position.set(p.x, p.y + p.jump + (this.pose?.lift || 0), p.z);
-    av.root.rotation.y = p.yaw;
-    animatePerson(av, dt, this.interior||this.transfer ? p.speed : (p.motionSpeed ?? p.speed), { pose: this.pose?.name || null });
+    const speed = this.interior || this.transfer ? p.speed : (p.motionSpeed ?? p.speed);
+    if (av.npc) {
+      const dyaw = Math.atan2(Math.sin(p.yaw - av.root.rotation.y), Math.cos(p.yaw - av.root.rotation.y));
+      av.root.rotation.y = p.yaw;
+      av.turn = (av.turn || 0) + ((dt > 0 ? dyaw / dt : 0) - (av.turn || 0)) * (1 - Math.exp(-dt * 8));
+      animateNpc(av, dt, speed, { pose: this.pose?.name || null, jump: p.jump, turn: av.turn });
+    } else {
+      av.root.rotation.y = p.yaw;
+      animatePerson(av, dt, speed, { pose: this.pose?.name || null });
+    }
+  }
+
+  /** The 2D town planner (diorama view only). Applying rebuilds this mode with the chosen plan. */
+  openPlanner() {
+    if (this.planner || this.view !== 'diorama' || this.tween || this.transfer || this.interior) return;
+    const { world, director } = this.ctx;
+    const planet = this.route.planet;
+    this.planner = new TownPlanner({
+      name: this.city.name,
+      layout: this.layout,
+      choice: { variant: this.plan.variant, density: this.plan.density },
+      footprints: this.footprints,
+      generate: (choice) => generateTownLayout({ ...this.genArgs, layoutVersion: townPlanVersion(world.state, planet, this.townSeed, choice), variant: choice.variant, options: { density: choice.density } }),
+      hasRooms: (layout) => townHasSavedRooms(world.state, planet, layout.seed),
+      onApply: (choice) => {
+        saveTownPlanChoice(world.state, planet, this.townSeed, choice);
+        director.go({ ...this.route });
+      },
+      onClose: () => this.closePlanner()
+    });
+  }
+
+  closePlanner() {
+    this.planner?.dispose();
+    this.planner = null;
+  }
+
+  /** Building volumes the follow camera must stay out of: footprint boxes with a roof height. */
+  buildCameraBlockers() {
+    const boxes = [];
+    for (const b of this.layout.buildings) {
+      const f = this.footprints[b.asset];
+      if (!f || !Number.isFinite(f.minX)) continue;
+      const sx = b.sx ?? 1, sz = b.sz ?? 1, ca = Math.cos(b.yaw), sa = Math.sin(b.yaw);
+      const cx = ((f.maxX + f.minX) / 2) * sx, cz = ((f.maxZ + f.minZ) / 2) * sz;
+      boxes.push({ type: 'box', x: b.x + ca * cx - sa * cz, z: b.z + sa * cx + ca * cz, hw: ((f.maxX - f.minX) / 2) * sx, hd: ((f.maxZ - f.minZ) / 2) * sz, yaw: b.yaw, top: this.builder.groundAt(b.x, b.z) + f.maxY * (b.sy ?? 1) });
+    }
+    return new Colliders(boxes);
+  }
+
+  /**
+   * What stops a car: buildings, the town wall and its towers. Trees, lamps,
+   * fences, benches and stalls are driven through (they only slow the car a touch).
+   */
+  buildVehicleColliders() {
+    const key = (x, z) => `${Math.round(x * 10)},${Math.round(z * 10)}`;
+    const walls = new Set((this.layout.walls || []).map((w) => key(w.x, w.z)));
+    const towers = new Set((this.layout.props || []).filter((p) => p.asset === 'f_wall_tower').map((p) => key(p.x, p.z)));
+    const inBuilding = (x, z) => {
+      for (const b of this.cameraBlockers.near(x, z, 0.5)) {
+        const dx = x - b.x, dz = z - b.z, ca = Math.cos(b.yaw), sa = Math.sin(b.yaw);
+        if (Math.abs(dx * ca + dz * sa) <= b.hw + 0.5 && Math.abs(-dx * sa + dz * ca) <= b.hd + 0.5) return true;
+      }
+      return false;
+    };
+    const solid = this.layout.colliders.filter((c) =>
+      c.type === 'box' ? walls.has(key(c.x, c.z)) || inBuilding(c.x, c.z) : towers.has(key(c.x, c.z)) && c.r >= 2
+    );
+    // Buildings without a layout collider still stop the car (their footprint box)
+    for (const b of this.cameraBlockers.near(0, 0, 1e5)) if (!solid.some((c) => c.type === 'box' && Math.hypot(c.x - b.x, c.z - b.z) < 0.6)) solid.push(b);
+    return new Colliders(solid);
+  }
+
+  /** Share (0..1) of the way from the player's head to the wanted camera spot that stays outside buildings. */
+  cameraClearance(from, to) {
+    const steps = 16;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const x = from.x + (to.x - from.x) * t, y = from.y + (to.y - from.y) * t, z = from.z + (to.z - from.z) * t;
+      for (const c of this.cameraBlockers.near(x, z, 0.5)) {
+        if (y > c.top) continue;
+        const ca = Math.cos(c.yaw), sa = Math.sin(c.yaw), dx = x - c.x, dz = z - c.z;
+        if (Math.abs(dx * ca + dz * sa) < c.hw + 0.35 && Math.abs(-dx * sa + dz * ca) < c.hd + 0.35) return Math.max(0.15, (i - 1) / steps);
+      }
+    }
+    return 1;
   }
 
   placePlayer(x, z) {
@@ -383,7 +484,7 @@ export default class TownMode {
       seed: seedFor(this.layout.seed, door.b.id, 'interior-v1'),
       layoutVersion: saved?.schemaVersion === 1 ? 1 : 2,
       night: this.night || 0,
-      shadows: false
+      shadows: this.ctx.engine.quality.settings.shadows
     };
     if(saved?.schemaVersion===1 || !Number.isInteger(floor) || floor<0 || floor>=door.b.blueprint.floors)floor=0;
     const inside = new Interior({...this.interiorArgs, floor, state:saved?.schemaVersion===1?saved:this.interiorRecord.floors[floor]});
@@ -845,7 +946,7 @@ export default class TownMode {
     return {
       heightAt: (x, z) => this.builder.groundAt(x, z),
       resolve: (x, z, r) => {
-        const a = this.colliders.resolve(x, z, r);
+        const a = this.vehicleColliders.resolve(x, z, r);
         return this.fleet.resolve(a.x, a.z, r, exclude);
       },
       blocked: (x, z) => this.builder.surfaceAt(x, z) < WATER_Y - 0.3 || Math.hypot(x, z) > this.layout.dioramaR - 8
@@ -858,6 +959,7 @@ export default class TownMode {
     const i = this.intent();
     const input = this.transfer ? { forward: 0, right: 0 } : { forward: i.forward, right: i.right, handbrake: this.keys.has(' '), boost: i.run };
     d.car.update(dt, input, this.driveWorld());
+    this.brushProps(d.car, dt);
     d.car.apply(d.obj);
     this.checkRoadOut(dt);
     this.engineSound(d.car, ['cart', 'wagon', 'caravan'].includes(d.v.type));
@@ -866,6 +968,25 @@ export default class TownMode {
       this.ctx.missions?.emit('drive_m', this.driveAcc);
       this.driveAcc = 0;
     }
+  }
+
+  /** Props (trees, lamps, fences...) do not stop the car: running through one only scrubs a little speed. */
+  brushProps(car, dt) {
+    const S = car.spec;
+    const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+    let touching = false;
+    for (const s of [-1, 1]) {
+      const cx = car.x + fx * S.length * 0.32 * s, cz = car.z + fz * S.length * 0.32 * s;
+      const r = this.colliders.resolve(cx, cz, S.width * 0.45);
+      if (Math.hypot(r.x - cx, r.z - cz) > 0.02) touching = true;
+    }
+    if (touching && car.speed > 1) {
+      const k = Math.exp(-dt * 1.2);
+      car.vx *= k;
+      car.vz *= k;
+      if (!this.brushing) this.ctx.audio?.sfx('hit', { strength: Math.min(0.35, car.speed / 40) });
+    }
+    this.brushing = touching;
   }
 
   /** Engine note with a fake gearbox: revs climb through each gear and drop on the shift. */
@@ -926,7 +1047,7 @@ export default class TownMode {
   bindInput() {
     const canvas = this.ctx.engine.renderer.domElement;
     this.onKeyDown = (e) => {
-      if (e.target.matches?.('input, textarea')) return;
+      if (e.target.matches?.('input, textarea') || this.planner) return;
       const k = e.key.toLowerCase();
       if (k === '1') this.setView('diorama');
       else if (k === '2') this.setView('walk');
@@ -936,7 +1057,7 @@ export default class TownMode {
       else if (k === 'e' || k === 'f') this.interact();
       else if (k === ' ' && this.view === 'walk' && this.player.jump === 0 && !this.player.vy) this.player.vy = 4.4;
       this.keys.add(k);
-      if (this.view !== 'diorama' && [' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
+      if ((this.view !== 'diorama' || k.startsWith('arrow')) && [' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
     };
     this.onKeyUp = (e) => this.keys.delete(e.key.toLowerCase());
     this.onBlur = () => this.keys.clear();
@@ -979,6 +1100,40 @@ export default class TownMode {
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
     canvas.removeEventListener('wheel', this.onWheel);
+  }
+
+  /** Diorama: WASD / arrow keys slide the camera over the table (Shift for faster), relative to the view. */
+  panDiorama(dt) {
+    if (!this.orbit.enabled || this.interior) return;
+    const k = this.keys;
+    const axis = (a, b, c, d) => (k.has(a) || k.has(c) ? 1 : 0) - (k.has(b) || k.has(d) ? 1 : 0);
+    const fwd = axis('w', 's', 'arrowup', 'arrowdown');
+    const right = axis('d', 'a', 'arrowright', 'arrowleft');
+    const vel = (this.dioramaPan ||= new THREE.Vector3());
+    const cam = this.camera.position;
+    const tg = this.orbit.target;
+    // Ground-plane axes of the current view
+    const f = new THREE.Vector3(tg.x - cam.x, 0, tg.z - cam.z);
+    if (f.lengthSq() < 1e-6) f.set(0, 0, -1).applyQuaternion(this.camera.quaternion).setY(0);
+    f.normalize();
+    const r = new THREE.Vector3(-f.z, 0, f.x);
+    // Speed scales with the zoom, so it feels the same close up and far out; eased in and out
+    const speed = cam.distanceTo(tg) * (k.has('shift') ? 1.5 : 0.65);
+    const want = f.multiplyScalar(fwd).addScaledVector(r, right);
+    if (want.lengthSq() > 1) want.normalize();
+    vel.lerp(want.multiplyScalar(speed), 1 - Math.exp(-dt * (fwd || right ? 10 : 7)));
+    if (vel.lengthSq() < 1e-4) return;
+    const step = vel.clone().multiplyScalar(dt);
+    // Keep the table in reach, and ride over the terrain with the camera
+    const limit = this.layout.dioramaR * 0.85;
+    const reach = Math.hypot(tg.x + step.x, tg.z + step.z);
+    if (reach > limit) {
+      step.x -= (tg.x + step.x) * (1 - limit / reach);
+      step.z -= (tg.z + step.z) * (1 - limit / reach);
+    }
+    step.y = Math.max(0, this.builder.groundAt(tg.x + step.x, tg.z + step.z)) - tg.y;
+    cam.add(step);
+    tg.add(step);
   }
 
   /** Move intent in -1..1 from keys or the touch joystick. */
@@ -1091,6 +1246,13 @@ export default class TownMode {
     const pos = new THREE.Vector3(Math.sin(f.yaw) * Math.cos(f.pitch), Math.sin(f.pitch), Math.cos(f.yaw) * Math.cos(f.pitch)).multiplyScalar(f.dist).add(look);
     const floor = this.builder.groundAt(pos.x, pos.z) + 0.6;
     if (pos.y < floor) pos.y = floor;
+    // Pull in (without easing) when a building stands between the player and the camera
+    const clear = this.cameraClearance(look, pos);
+    if (clear < 1) {
+      this.camera.position.lerpVectors(look, pos, clear);
+      this.camera.lookAt(look);
+      return;
+    }
     const k = 1 - Math.exp(-dt * 10);
     this.camera.position.lerp(pos, k);
     this.camera.lookAt(look);
@@ -1119,6 +1281,7 @@ export default class TownMode {
         tw.done?.();
       }
     } else if (this.view === 'diorama') {
+      this.panDiorama(dt);
       this.orbit.update();
       // Keep the table in reach
       const tg = this.orbit.target;
@@ -1217,6 +1380,7 @@ export default class TownMode {
   }
 
   render() {
+    if (this.planner) return; // the planner covers the view; keep the last frame
     this.ctx.engine.draw(this.interior ? this.interior.scene : this.scene, this.camera);
   }
 
@@ -1262,6 +1426,7 @@ export default class TownMode {
   }
 
   exit() {
+    this.closePlanner();
     this.saveInterior();
     this.ctx.world.state.set('playerLocation', null);
     this.ctx.audio?.stopRoom();
@@ -1272,7 +1437,8 @@ export default class TownMode {
     this.builder.dispose();
     this.streetLighting.dispose();
     this.crowd.dispose();
-    disposePerson(this.avatar);
+    if (this.avatar?.npc) disposeNpc(this.avatar);
+    else disposePerson(this.avatar);
     this.rigged?.dispose();
     this.fleet.dispose();
     if (this.drive) this.scene.remove(this.drive.obj);

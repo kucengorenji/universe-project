@@ -1,4 +1,5 @@
 import { createNoise3D } from '../math/simplex3d.js';
+import { mulberry32 } from '../math/random.js';
 
 export const STORAGE_KEY = 'planet_globe_map_v5';
 
@@ -33,17 +34,6 @@ const LAND_COST = {
   [BIOMES.FOREST]: 2,
   [BIOMES.TUNDRA]: 2.2
 };
-
-export function mulberry32(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 class MinHeap {
   constructor() {

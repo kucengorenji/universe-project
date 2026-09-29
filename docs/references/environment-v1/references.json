@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "references": [
+    {
+      "id": "REF-01",
+      "path": "docs/references/environment-v1/01-canopy-shapes.png",
+      "originalPath": "/Users/mikelrisyad/Library/Caches/com.apple.SwiftUI.Drag-854C6270-F99D-42F3-8881-61A7F129C1AD/163bcc8e4cfe94dea2918cf6585e4c0f.png",
+      "role": "Grouped asymmetric tree canopy; avoid sponge noise and identical spheres",
+      "sha256": "5446daf4f4d504970e16437f844f8dab41fbd47c770e63190e92f8805ec82ace",
+      "usage": "visual-reference-only",
+      "origin": "user-provided; original author/license not established"
+    },
+    {
+      "id": "REF-02",
+      "path": "docs/references/environment-v1/02-village-composition.png",
+      "originalPath": "/Users/mikelrisyad/Library/Caches/com.apple.SwiftUI.Drag-AB56E9E4-D5CF-4DEE-BA7D-819790C7CA42/f20c2d0f338caec3413a240c9f7b403a.png",
+      "role": "Village composition, paths and river; not a texture or measured topology",
+      "sha256": "55cc824e230cfc0148cdc1b1084a1f1e0fdbf70ae214243aab75537ecf73ca6c",
+      "usage": "visual-reference-only",
+      "origin": "user-provided; original author/license not established"
+    },
+    {
+      "id": "REF-03",
+      "path": "docs/references/environment-v1/03-rock-shapes.png",
+      "originalPath": "/var/folders/68/78fl9_0j18s2bkfy4rnz01j80000gq/T/codex-clipboard-dee11da2-21aa-4ad6-bc57-c505162a9fc3.png",
+      "role": "Rock planes and silhouette; plants must be separate variants",
+      "sha256": "5018cced9be90dedf71501fa9f8480b941194e6b7fafb38cb3aa2b1851f64b4a",
+      "usage": "visual-reference-only",
+      "origin": "user-provided; original author/license not established"
+    },
+    {
+      "id": "REF-04",
+      "path": "docs/references/environment-v1/04-paving-patterns.png",
+      "originalPath": "/Users/mikelrisyad/Library/Caches/com.apple.SwiftUI.Drag-2B2745AA-D3EF-4C3F-8AC4-6C0756833890/b11cbc324d95ceff51a373eb01cf79c9.png",
+      "role": "Paving pattern families; circular motifs are decals or dedicated plaza modules",
+      "sha256": "bcef0d6188396d2fbe289286bd0b6b4c26367a13aec424c7f2f3f78def80d028",
+      "usage": "visual-reference-only",
+      "origin": "user-provided; original author/license not established"
+    },
+    {
+      "id": "REF-05",
+      "path": "docs/references/environment-v1/05-brick-patterns.png",
+      "originalPath": "/Users/mikelrisyad/Library/Caches/com.apple.SwiftUI.Drag-5FBBCEF8-149F-4B70-AEFE-B7E9F6153DFB/4e74203e616d595936b17ab7c163553f.png",
+      "role": "Rounded edges and readable joints; orange hue not universal; grid image is not seamless",
+      "sha256": "e06721c33fc400f0b6569bf7de886117efa3a76b5c414c3a6a122c5de2750548",
+      "usage": "visual-reference-only",
+      "origin": "user-provided; original author/license not established"
+    },
+    {
+      "id": "REF-06",
+      "path": "docs/references/environment-v1/06-forest-kit.png",
+      "originalPath": "/Users/mikelrisyad/Library/Caches/com.apple.SwiftUI.Drag-123F689B-EC3A-498B-B6CF-6C1F26D34860/83201d3955007b5db0678612e19906cc.png",
+      "role": "Forest ecosystem inventory and density hierarchy; refine near-camera faceting",
+      "sha256": "5d9ca54edda60d6cee656e8313d20afe97aa23a2ee0ae0c63f129ccfe6f977a8",
+      "usage": "visual-reference-only",
+      "origin": "user-provided; original author/license not established"
+    },
+    {
+      "id": "REF-07",
+      "path": "docs/references/environment-v1/07-modular-world-kit.png",
+      "originalPath": "/Users/mikelrisyad/Library/Caches/com.apple.SwiftUI.Drag-EC8DD689-0E06-42F7-8932-C1F3E9E8B687/8fe316c266cb541c5bc321b1110154f1.png",
+      "role": "Modular kit coverage, architecture and terrain; branded third-party presentation reference only",
+      "sha256": "68c9acd5f0ec652c936614df9afae19bb7d23f960e08f2b3bad729766955cae5",
+      "usage": "visual-reference-only",
+      "origin": "user-provided; original author/license not established"
+    }
+  ]
+}

@@ -1,0 +1,220 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "tools/blender/environment/source/b1/environment_b1_gallery_v001.blend",
+      "bytes": 18537157,
+      "sha256": "f2bd8898e3ab544c82f06b5cc29fc199edadcd61c9c839c82a680fd066a03da8"
+    },
+    {
+      "path": "tools/blender/environment/source/b1/environment_b1_setup_v001.blend",
+      "bytes": 18547540,
+      "sha256": "1e9231887137525bf73e56dfde5278436da2947df25e38cdaa1ad4c1e21cfb08"
+    },
+    {
+      "path": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "bytes": 18538021,
+      "sha256": "ce03a418d6d3de13cd668c6484761a370eeab8476e30675b467a9e9eb92425f2"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_cliff_straight_a_v001.glb",
+      "bytes": 352428,
+      "sha256": "d3720a2a1753a2567d29e8013ed35e25df68c3314dcc9a05ab975398bbffd82a"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_dock_straight_a_v001.glb",
+      "bytes": 265384,
+      "sha256": "c4f9aacc3ada35de6a5f236502aa66bc920fcacc38b4764c908133d658c81654"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_fence_straight_a_v001.glb",
+      "bytes": 507024,
+      "sha256": "1ab72c172e78de6188c2cc4520c4bf2f75e0019347887469d5157664a8172f09"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_grass_tuft_a_v001.glb",
+      "bytes": 19572,
+      "sha256": "9738d4931df2c1c43198f5aa6dea7bb63735c3a376998e98c7eb8425bb438c83"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_grass_tuft_b_v001.glb",
+      "bytes": 19588,
+      "sha256": "448f8a906e823d407859709b9e2da492346946bb61d6d1e4160ef81acd743f47"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_grass_tuft_c_v001.glb",
+      "bytes": 19568,
+      "sha256": "8d629b6409a682271bcb91a2bfc70bdf6e50ec09e593bf022cea7807134e03bf"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_modern_facade_a_v001.glb",
+      "bytes": 350712,
+      "sha256": "fad5e293a50016fbd68ce75970d9f95bdd529a65f4fdd3530de9f0ea6de7c994"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_rock_boulder_a_v001.glb",
+      "bytes": 366168,
+      "sha256": "b9c7357c97e7139601759972e08db56e95f5744bc2cbbbd905ee74289a41f41c"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_rock_boulder_b_v001.glb",
+      "bytes": 365152,
+      "sha256": "6c73f527072570be0ebd856d547b63a114e4857ecac7156656af57eb5d94d384"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_rock_boulder_c_v001.glb",
+      "bytes": 365648,
+      "sha256": "0f78aaefcfec68307e86cec76f9cb59057e01d7d6e1f2ff7c01b5d4005d9d5d8"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_rock_boulder_d_v001.glb",
+      "bytes": 365688,
+      "sha256": "84d9b577f2339cca170060479354fd86d5e32c1d8fea36c9ceeaab64b1319d38"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_rock_slab_a_v001.glb",
+      "bytes": 363676,
+      "sha256": "ada6839f7d1d081e2aecb4a5df9d2366c03035b37635f5f26221e975355fc438"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_rock_slab_b_v001.glb",
+      "bytes": 363740,
+      "sha256": "1f27785fda57f23d9305ed32c9641394de28de6c0b47caf89e0798d6e8482da2"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_rock_slab_c_v001.glb",
+      "bytes": 363872,
+      "sha256": "4668a37506a6c2846c0642cbe5a04e3800c357fe1ed916a730769bd3e4328b27"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_roof_gable_a_v001.glb",
+      "bytes": 531248,
+      "sha256": "1c40337a8448476e8a5420419c65506a9fcc5374a19ab174acedbe722d519181"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_shrub_round_a_v001.glb",
+      "bytes": 42364,
+      "sha256": "7dafa75c30fc10624453d022b23d2ea8b9e1179fe17a979372276a1aab0435ad"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_shrub_round_b_v001.glb",
+      "bytes": 48808,
+      "sha256": "ca7bea9866edb3160bcfe5f12e322cfe47e46de471852192a1daa0f9c1b8190e"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_shrub_round_c_v001.glb",
+      "bytes": 55192,
+      "sha256": "68f54ee1c1449189954f7c4110220f2e02c49700398ead31d0a8c175b95b5d71"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_tree_oak_a_v001.glb",
+      "bytes": 605676,
+      "sha256": "3cb53159c2746fef4d2da85fee6d22d45de7b7a074a8a69fb3f65e5d006fd16a"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_tree_oak_b_v001.glb",
+      "bytes": 604168,
+      "sha256": "29608ba6e2b8d98cc212cc675833ae3b66a28ba41f5c5f3586b8dbdfd6a85157"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_tree_oak_c_v001.glb",
+      "bytes": 605488,
+      "sha256": "e4bb564816a2256a94814a109b39915a910304a9376966e730de4ef01de0c1d2"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_tree_pine_a_v001.glb",
+      "bytes": 456324,
+      "sha256": "1080f1221d97b24ee5a8c3587dbad98726cef3ac5e34198c889ec2c985e343fb"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_tree_pine_b_v001.glb",
+      "bytes": 478288,
+      "sha256": "a7b4bec8f35ddf5de7ce7ce96a6d589eb7db81058489d1babb1f65f28b685991"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_tree_pine_c_v001.glb",
+      "bytes": 499300,
+      "sha256": "cb92f683f9cb97165eb73cefcebfbc0d9aeb0d9397cb446bc1924e70d67b3ca8"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/env_wall_door_a_v001.glb",
+      "bytes": 482356,
+      "sha256": "cd3aae8c40765e1e94b69be82ba8c660d6d7c46ea2ca80533e834b49cc5d72fc"
+    },
+    {
+      "path": "tools/blender/environment/exports/staging/b1/environment_b1_v001.glb",
+      "bytes": 3355532,
+      "sha256": "1ee6d09dede62759b454a485ebf4746cbf9ef9382d22808aaa6d5b9014e9fb00"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/01-b1-asset-gallery.png",
+      "bytes": 2237553,
+      "sha256": "d88034e1baa08843f84551c343b5cf769750f23dab6a060662ab6bbdbcf80b6f"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/02-b1-environment-setup.png",
+      "bytes": 2670134,
+      "sha256": "5cb7d3b7e19977375653d49ea71f74173b145603e47971673da67ca42f3aba51"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_cliff_straight-hero.png",
+      "bytes": 722170,
+      "sha256": "e891b3fd7d3408a0b6e3c8d91c9b9402b2b9aba18811c500b4a6184d06c97766"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_dock_straight-hero.png",
+      "bytes": 715567,
+      "sha256": "67c907ad326c5830239755ba75843d50583a73de01a25695cd7e74e2fdc0fd97"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_fence_straight-hero.png",
+      "bytes": 659111,
+      "sha256": "38f279d94445b341f4906997c568bbe54603eb4b585a6ca2f67bc3740c1e9792"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_grass_tuft-hero.png",
+      "bytes": 627548,
+      "sha256": "0a0555ab639e2ec2df4e49a312385ef4df209262d69330b90741592909a14b15"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_modern_facade-hero.png",
+      "bytes": 669366,
+      "sha256": "404c62b61c5c4c72b108897d449f01f2fbb3212795864a765b0068d4292ca7a2"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_rock_boulder-hero.png",
+      "bytes": 724057,
+      "sha256": "77582da5b78037136fbbc9e3107e025dac81192af1ed62280119bda1caa213a8"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_rock_slab-hero.png",
+      "bytes": 688463,
+      "sha256": "0ddfa5fba707f478778d61864822abb762454269ba8f63f67a47c5e6752abaf1"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_roof_gable-hero.png",
+      "bytes": 711811,
+      "sha256": "661295297995f8efc0a56949c2a6b921e844acd19eef156228f36482d61c6828"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_shrub_round-hero.png",
+      "bytes": 616679,
+      "sha256": "012f374d4b4dfd6a0aa9d4640bcdac43f33545c1af792bdd9248eaea2702e8c6"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_tree_oak-hero.png",
+      "bytes": 645090,
+      "sha256": "6c90480a46ac4760656890a722b3533e31acb333bae559d19bdd9c9a5dd088de"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_tree_pine-hero.png",
+      "bytes": 622084,
+      "sha256": "99135ffbec8411c955cd8ba3f57db810aff6de49b9b45f6a66d66c1487452b5f"
+    },
+    {
+      "path": "tools/blender/environment/qa/renders/b1/env_wall_door-hero.png",
+      "bytes": 644834,
+      "sha256": "2d60ee6bac249b3bcff6236284f80bfe6cf388ab1461854ebf167e6170923834"
+    }
+  ]
+}

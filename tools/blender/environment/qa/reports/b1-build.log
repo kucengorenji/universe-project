@@ -1,0 +1,428 @@
+/Users/mikelrisyad/Developer/globe/tools/blender/environment/scripts/build_b1.py:36: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m=bpy.data.materials.new(name);m.use_nodes=True;m.diffuse_color=(*color,1)
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Warning: No mesh data to join
+Info: Saved as "environment_b1_v001.blend"
+INFO Draco mesh compression is available, use library at /Applications/Blender.app/Contents/Resources/5.1/scripts/addons_core/io_scene_gltf2/libextern_draco.dylib
+20:39:27 | INFO: Starting glTF 2.0 export
+20:39:27 | INFO: Extracting primitive: canopy leaf cluster
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: Icosphere.021
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: Icosphere.042
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: canopy leaf cluster.070
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: Icosphere.070
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: Icosphere.091
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: canopy leaf cluster.140
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: Icosphere.119
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: Icosphere.140
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier.005
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier.010
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier.015
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier.021
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier.027
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier.033
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier.040
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: lobed pine tier.047
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: broad planar rock
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.001
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.002
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.003
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.004
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.005
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.006
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.007
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.008
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.009
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.010
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.011
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.012
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.013
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.014
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.015
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.016
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.017
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.018
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.019
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad planar rock.020
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad curved grass blade
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: broad curved grass blade.007
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: broad curved grass blade.012
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad curved grass blade.015
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: broad curved grass blade.022
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: broad curved grass blade.027
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: broad curved grass blade.030
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: broad curved grass blade.037
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: broad curved grass blade.042
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: Icosphere.147
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: Icosphere.152
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: Icosphere.157
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: Icosphere.162
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: Icosphere.168
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: Icosphere.174
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: Icosphere.180
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: Icosphere.187
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: Icosphere.194
+20:39:27 | INFO: Primitives created: 4
+20:39:27 | INFO: Extracting primitive: layered cliff volume
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: layered cliff volume.001
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: layered cliff volume.002
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: Cube.001
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: Cube.005
+20:39:27 | INFO: Primitives created: 2
+20:39:27 | INFO: Extracting primitive: Cube.009
+20:39:27 | INFO: Primitives created: 2
+20:39:27 | INFO: Extracting primitive: Cube.013
+20:39:27 | INFO: Primitives created: 2
+20:39:27 | INFO: Extracting primitive: Cube.029
+20:39:27 | INFO: Primitives created: 2
+20:39:27 | INFO: Extracting primitive: Cube.045
+20:39:27 | INFO: Primitives created: 2
+20:39:27 | INFO: Extracting primitive: Cube.056
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: Cube.065
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: Cube.074
+20:39:27 | INFO: Primitives created: 2
+20:39:27 | INFO: Extracting primitive: Cube.080
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: Cube.082
+20:39:27 | INFO: Primitives created: 5
+20:39:27 | INFO: Extracting primitive: Cube.084
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: Cube.086
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: Cube.098
+20:39:27 | INFO: Primitives created: 3
+20:39:27 | INFO: Extracting primitive: Cube.110
+20:39:27 | INFO: Primitives created: 2
+20:39:27 | INFO: Finished glTF 2.0 export in 0.692314863204956 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: canopy leaf cluster
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: Icosphere.021
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: Icosphere.042
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Finished glTF 2.0 export in 0.05428886413574219 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: canopy leaf cluster.070
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: Icosphere.070
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: Icosphere.091
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Finished glTF 2.0 export in 0.07062792778015137 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: canopy leaf cluster.140
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: Icosphere.119
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: Icosphere.140
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Finished glTF 2.0 export in 0.05052328109741211 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: lobed pine tier
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: lobed pine tier.005
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: lobed pine tier.010
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Finished glTF 2.0 export in 0.04903101921081543 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: lobed pine tier.015
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: lobed pine tier.021
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: lobed pine tier.027
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Finished glTF 2.0 export in 0.04834103584289551 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: lobed pine tier.033
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: lobed pine tier.040
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Extracting primitive: lobed pine tier.047
+20:39:28 | INFO: Primitives created: 5
+20:39:28 | INFO: Finished glTF 2.0 export in 0.04850578308105469 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: broad planar rock
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Extracting primitive: broad planar rock.001
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Extracting primitive: broad planar rock.002
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Finished glTF 2.0 export in 0.12367892265319824 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: broad planar rock.003
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Extracting primitive: broad planar rock.004
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Extracting primitive: broad planar rock.005
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Finished glTF 2.0 export in 0.14645695686340332 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: broad planar rock.006
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Extracting primitive: broad planar rock.007
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Extracting primitive: broad planar rock.008
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Finished glTF 2.0 export in 0.14549708366394043 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: broad planar rock.009
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Extracting primitive: broad planar rock.010
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Extracting primitive: broad planar rock.011
+20:39:28 | INFO: Primitives created: 3
+20:39:28 | INFO: Finished glTF 2.0 export in 0.1229710578918457 s
+
+20:39:28 | INFO: Starting glTF 2.0 export
+20:39:28 | INFO: Extracting primitive: broad planar rock.012
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: broad planar rock.013
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: broad planar rock.014
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Finished glTF 2.0 export in 0.12260007858276367 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: broad planar rock.015
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: broad planar rock.016
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: broad planar rock.017
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Finished glTF 2.0 export in 0.12136697769165039 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: broad planar rock.018
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: broad planar rock.019
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: broad planar rock.020
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Finished glTF 2.0 export in 0.12357807159423828 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: broad curved grass blade
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: broad curved grass blade.007
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: broad curved grass blade.012
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Finished glTF 2.0 export in 0.011249065399169922 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: broad curved grass blade.015
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: broad curved grass blade.022
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: broad curved grass blade.027
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Finished glTF 2.0 export in 0.01087808609008789 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: broad curved grass blade.030
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: broad curved grass blade.037
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: broad curved grass blade.042
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Finished glTF 2.0 export in 0.010298967361450195 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: Icosphere.147
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: Icosphere.152
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: Icosphere.157
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Finished glTF 2.0 export in 0.011720895767211914 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: Icosphere.162
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: Icosphere.168
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: Icosphere.174
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Finished glTF 2.0 export in 0.011260032653808594 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: Icosphere.180
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: Icosphere.187
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Extracting primitive: Icosphere.194
+20:39:29 | INFO: Primitives created: 4
+20:39:29 | INFO: Finished glTF 2.0 export in 0.011640071868896484 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: layered cliff volume
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: layered cliff volume.001
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: layered cliff volume.002
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Finished glTF 2.0 export in 0.13635516166687012 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: Cube.001
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: Cube.005
+20:39:29 | INFO: Primitives created: 2
+20:39:29 | INFO: Extracting primitive: Cube.009
+20:39:29 | INFO: Primitives created: 2
+20:39:29 | INFO: Finished glTF 2.0 export in 0.09717893600463867 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: Cube.013
+20:39:29 | INFO: Primitives created: 2
+20:39:29 | INFO: Extracting primitive: Cube.029
+20:39:29 | INFO: Primitives created: 2
+20:39:29 | INFO: Extracting primitive: Cube.045
+20:39:29 | INFO: Primitives created: 2
+20:39:29 | INFO: Finished glTF 2.0 export in 0.062448978424072266 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: Cube.056
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: Cube.065
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: Cube.074
+20:39:29 | INFO: Primitives created: 2
+20:39:29 | INFO: Finished glTF 2.0 export in 0.10584282875061035 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: Cube.080
+20:39:29 | INFO: Primitives created: 5
+20:39:29 | INFO: Extracting primitive: Cube.082
+20:39:29 | INFO: Primitives created: 5
+20:39:29 | INFO: Extracting primitive: Cube.084
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Finished glTF 2.0 export in 0.07590198516845703 s
+
+20:39:29 | INFO: Starting glTF 2.0 export
+20:39:29 | INFO: Extracting primitive: Cube.086
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: Cube.098
+20:39:29 | INFO: Primitives created: 3
+20:39:29 | INFO: Extracting primitive: Cube.110
+20:39:29 | INFO: Primitives created: 2
+20:39:29 | INFO: Finished glTF 2.0 export in 0.08082294464111328 s
+/Users/mikelrisyad/Developer/globe/tools/blender/environment/scripts/build_b1.py:440: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world.use_nodes=True;scene.world.node_tree.nodes.get('Background').inputs[0].default_value=(.65,.7,.8,1)
+00:22.313  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/01-b1-asset-gallery.png'
+00:27.688  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_tree_oak-hero.png'
+00:32.273  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_tree_pine-hero.png'
+00:37.884  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_rock_boulder-hero.png'
+00:43.055  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_rock_slab-hero.png'
+00:48.475  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_grass_tuft-hero.png'
+00:54.726  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_shrub_round-hero.png'
+01:00.183  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_cliff_straight-hero.png'
+01:05.327  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_fence_straight-hero.png'
+01:12.185  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_dock_straight-hero.png'
+01:17.536  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_wall_door-hero.png'
+01:23.129  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_roof_gable-hero.png'
+01:28.566  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/env_modern_facade-hero.png'
+01:45.594  render           | Saved: '/Users/mikelrisyad/Developer/globe/tools/blender/environment/qa/renders/b1/02-b1-environment-setup.png'
+
+Info: Saved as "environment_b1_gallery_v001.blend"
+Info: Saved as "environment_b1_setup_v001.blend"
+B1_COMPLETE 25 variants 75 LOD meshes
+Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:30:33)
+
+Blender quit

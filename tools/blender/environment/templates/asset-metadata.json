@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "template": true,
+  "assetId": "env_tree_oak",
+  "variantId": "env_tree_oak_a",
+  "revision": 1,
+  "status": "planned",
+  "source": {
+    "blend": null,
+    "script": null,
+    "parameters": null,
+    "jobId": null,
+    "inputReferenceIds": [
+      "REF-01",
+      "REF-06"
+    ],
+    "sha256": null
+  },
+  "space": {
+    "units": "metres",
+    "authoringUp": "+Z",
+    "authoringFront": "-Y",
+    "runtimeUp": "+Y",
+    "runtimeFront": "+Z",
+    "appliedTransformsVerified": false
+  },
+  "palette": {
+    "source": "src/art/palette.js",
+    "sourceSha256": null,
+    "materialTokenBindings": {}
+  },
+  "geometry": {
+    "boundsM": null,
+    "groundFootprint": null,
+    "canopyEnvelope": null,
+    "pivotM": null,
+    "sockets": [],
+    "collision": {
+      "type": null,
+      "dataPath": null
+    },
+    "walkSurface": null
+  },
+  "lods": [
+    {
+      "level": 0,
+      "rootName": "env_tree_oak_a_LOD0",
+      "triangles": null,
+      "primitives": null,
+      "materials": [],
+      "boundsM": null
+    },
+    {
+      "level": 1,
+      "rootName": "env_tree_oak_a_LOD1",
+      "triangles": null,
+      "primitives": null,
+      "materials": [],
+      "boundsM": null
+    },
+    {
+      "level": 2,
+      "rootName": "env_tree_oak_a_LOD2",
+      "triangles": null,
+      "primitives": null,
+      "materials": [],
+      "boundsM": null
+    }
+  ],
+  "placement": {
+    "biomes": [],
+    "minSlopeDegrees": null,
+    "maxSlopeDegrees": null,
+    "waterDistanceM": null,
+    "clearanceM": null
+  },
+  "export": {
+    "path": null,
+    "bytes": null,
+    "sha256": null,
+    "loader": "loadTexturedPack candidate; not registered",
+    "runtimeManifestKey": null
+  },
+  "qa": {
+    "status": "pending",
+    "reports": [],
+    "renders": []
+  },
+  "replaces": []
+}

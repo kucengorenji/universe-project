@@ -1,0 +1,72 @@
+{
+  "assetId": "env_tree_pine",
+  "variantId": "env_tree_pine_b",
+  "lods": {
+    "0": {
+      "triangles": 1088,
+      "vertices": 624,
+      "boundsBlender": {
+        "min": [
+          -2.0,
+          -2.0,
+          0.0
+        ],
+        "max": [
+          2.0,
+          2.0,
+          10.0
+        ]
+      },
+      "materialSlots": 5,
+      "uv": true,
+      "ceiling": 6000,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 720,
+      "vertices": 416,
+      "boundsBlender": {
+        "min": [
+          -1.96674,
+          -1.96674,
+          0.0
+        ],
+        "max": [
+          1.96674,
+          1.96674,
+          10.0
+        ]
+      },
+      "materialSlots": 5,
+      "uv": true,
+      "ceiling": 2000,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 318,
+      "vertices": 188,
+      "boundsBlender": {
+        "min": [
+          -1.94213,
+          -2.00323,
+          0.00044
+        ],
+        "max": [
+          1.68333,
+          1.78364,
+          10.0
+        ]
+      },
+      "materialSlots": 5,
+      "uv": true,
+      "ceiling": 400,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 1,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated"
+}

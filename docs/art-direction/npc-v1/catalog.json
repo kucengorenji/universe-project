@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "status": "concept-only; no generated mesh or rig",
+  "categories": {
+    "head": {
+      "H01": "Angular",
+      "H02": "Round",
+      "H03": "Oval",
+      "H04": "Broad square"
+    },
+    "hair": {
+      "R01": "Side part",
+      "R02": "Wavy bob",
+      "R03": "Tied bun",
+      "R04": "Cropped textured",
+      "R05": "Short wavy"
+    },
+    "glasses": {
+      "G00": "None",
+      "G01": "Thick rectangle",
+      "G02": "Thin round",
+      "G03": "Safety",
+      "G04": "Thin rectangle; adapt G01 frame thickness (extra modeling variant)"
+    },
+    "beard": {
+      "B00": "None",
+      "B01": "Stubble",
+      "B02": "Full angular",
+      "B03": "Short beard; trimmed B02 (extra modeling variant)"
+    },
+    "hat": {
+      "A00": "None",
+      "A01": "Baseball cap"
+    },
+    "top": {
+      "T01": "Open short sleeve overshirt + undershirt",
+      "T02": "Crewneck sweatshirt",
+      "T03": "Rolled cuff collared shirt",
+      "T04": "Utility overshirt",
+      "T05": "Outdoor zip jacket"
+    },
+    "pants": {
+      "P01": "Cuffed relaxed",
+      "P02": "Tapered chinos",
+      "P03": "Straight office",
+      "P04": "Cargo"
+    },
+    "shoes": {
+      "S01": "Canvas sneakers",
+      "S02": "Running sneakers",
+      "S03": "Loafers",
+      "S04": "Work boots",
+      "S05": "Hiking boots"
+    },
+    "expression": {
+      "E01": "Neutral",
+      "E02": "Gentle smile",
+      "E03": "Curious",
+      "E04": "Worried",
+      "E05": "Focused",
+      "E06": "Blink"
+    }
+  },
+  "themes": {
+    "cafe": {
+      "presets": [
+        "C01",
+        "C02"
+      ],
+      "tops": [
+        "T01"
+      ],
+      "pants": [
+        "P01",
+        "P02"
+      ],
+      "shoes": [
+        "S01"
+      ],
+      "glasses": [
+        "G00",
+        "G01",
+        "G02"
+      ],
+      "colors": [
+        "#86A9BD",
+        "#AF6249",
+        "#ECE5D6",
+        "#353735"
+      ]
+    },
+    "campus": {
+      "presets": [
+        "C03",
+        "C04"
+      ],
+      "tops": [
+        "T02"
+      ],
+      "pants": [
+        "P02"
+      ],
+      "shoes": [
+        "S02"
+      ],
+      "glasses": [
+        "G00",
+        "G01",
+        "G02"
+      ],
+      "colors": [
+        "#929D86",
+        "#C98273",
+        "#30394B",
+        "#ECE5D6"
+      ]
+    },
+    "office": {
+      "presets": [
+        "C05",
+        "C06"
+      ],
+      "tops": [
+        "T03"
+      ],
+      "pants": [
+        "P03"
+      ],
+      "shoes": [
+        "S03"
+      ],
+      "glasses": [
+        "G00",
+        "G02",
+        "G04"
+      ],
+      "colors": [
+        "#ECE5D6",
+        "#8199AF",
+        "#30394B",
+        "#705039"
+      ]
+    },
+    "workshop": {
+      "presets": [
+        "C07",
+        "C08"
+      ],
+      "tops": [
+        "T04"
+      ],
+      "pants": [
+        "P04"
+      ],
+      "shoes": [
+        "S04"
+      ],
+      "glasses": [
+        "G00",
+        "G01",
+        "G03"
+      ],
+      "colors": [
+        "#74785E",
+        "#BC9852",
+        "#353735",
+        "#9F7955"
+      ]
+    },
+    "outdoor": {
+      "presets": [
+        "C09",
+        "C10"
+      ],
+      "tops": [
+        "T05"
+      ],
+      "pants": [
+        "P04"
+      ],
+      "shoes": [
+        "S05"
+      ],
+      "glasses": [
+        "G00",
+        "G01",
+        "G02"
+      ],
+      "colors": [
+        "#A8553C",
+        "#51827E",
+        "#C6B491",
+        "#353735"
+      ]
+    }
+  },
+  "presets": [
+    {
+      "id": "C01",
+      "theme": "cafe",
+      "head": "H01",
+      "hair": "R04",
+      "glasses": "G01",
+      "beard": "B02",
+      "hat": "A01",
+      "top": "T01",
+      "pants": "P01",
+      "shoes": "S01",
+      "skin": "medium warm",
+      "hairColor": "black",
+      "paletteDescription": "blue stripe / cream / charcoal / black",
+      "bodyFit": "standard"
+    },
+    {
+      "id": "C02",
+      "theme": "cafe",
+      "head": "H02",
+      "hair": "R02",
+      "glasses": "G02",
+      "beard": "B00",
+      "hat": "A00",
+      "top": "T01",
+      "pants": "P01",
+      "shoes": "S01",
+      "skin": "deep warm",
+      "hairColor": "black",
+      "paletteDescription": "terracotta solid / cream / charcoal / cream",
+      "bodyFit": "soft"
+    },
+    {
+      "id": "C03",
+      "theme": "campus",
+      "head": "H03",
+      "hair": "R01",
+      "glasses": "G00",
+      "beard": "B00",
+      "hat": "A00",
+      "top": "T02",
+      "pants": "P02",
+      "shoes": "S02",
+      "skin": "light warm",
+      "hairColor": "dark brown",
+      "paletteDescription": "sage / navy / cream",
+      "bodyFit": "slim"
+    },
+    {
+      "id": "C04",
+      "theme": "campus",
+      "head": "H03",
+      "hair": "R03",
+      "glasses": "G02",
+      "beard": "B00",
+      "hat": "A00",
+      "top": "T02",
+      "pants": "P02",
+      "shoes": "S02",
+      "skin": "medium tan",
+      "hairColor": "black",
+      "paletteDescription": "dusty coral / charcoal / cream",
+      "bodyFit": "soft"
+    },
+    {
+      "id": "C05",
+      "theme": "office",
+      "head": "H04",
+      "hair": "R04",
+      "glasses": "G04",
+      "beard": "B00",
+      "hat": "A00",
+      "top": "T03",
+      "pants": "P03",
+      "shoes": "S03",
+      "skin": "brown",
+      "hairColor": "black",
+      "paletteDescription": "cream / navy / brown",
+      "bodyFit": "broad"
+    },
+    {
+      "id": "C06",
+      "theme": "office",
+      "head": "H01",
+      "hair": "R01",
+      "glasses": "G00",
+      "beard": "B00",
+      "hat": "A00",
+      "top": "T03",
+      "pants": "P03",
+      "shoes": "S03",
+      "skin": "light olive",
+      "hairColor": "dark brown",
+      "paletteDescription": "dusty blue / charcoal / black",
+      "bodyFit": "slim"
+    },
+    {
+      "id": "C07",
+      "theme": "workshop",
+      "head": "H04",
+      "hair": "R04",
+      "glasses": "G00",
+      "beard": "B03",
+      "hat": "A00",
+      "top": "T04",
+      "pants": "P04",
+      "shoes": "S04",
+      "skin": "deep brown",
+      "hairColor": "black",
+      "paletteDescription": "olive / charcoal / tan",
+      "bodyFit": "broad"
+    },
+    {
+      "id": "C08",
+      "theme": "workshop",
+      "head": "H02",
+      "hair": "R03",
+      "glasses": "G03",
+      "beard": "B00",
+      "hat": "A00",
+      "top": "T04",
+      "pants": "P04",
+      "shoes": "S04",
+      "skin": "medium warm",
+      "hairColor": "black",
+      "paletteDescription": "ochre / olive / brown",
+      "bodyFit": "soft"
+    },
+    {
+      "id": "C09",
+      "theme": "outdoor",
+      "head": "H03",
+      "hair": "R05",
+      "glasses": "G00",
+      "beard": "B01",
+      "hat": "A00",
+      "top": "T05",
+      "pants": "P04",
+      "shoes": "S05",
+      "skin": "tan",
+      "hairColor": "dark brown",
+      "paletteDescription": "rust / sand / dark brown",
+      "bodyFit": "standard"
+    },
+    {
+      "id": "C10",
+      "theme": "outdoor",
+      "head": "H04",
+      "hair": "R03",
+      "glasses": "G00",
+      "beard": "B00",
+      "hat": "A01",
+      "top": "T05",
+      "pants": "P04",
+      "shoes": "S05",
+      "skin": "deep warm",
+      "hairColor": "black",
+      "paletteDescription": "muted teal / charcoal / gray",
+      "bodyFit": "soft"
+    }
+  ],
+  "rules": {
+    "stableIdentity": "Persist worldSeed + npcId; appearance must not change on LOD or pool reassignment.",
+    "minimumTen": "Shuffle all 10 preset IDs without replacement for the first 10 NPCs, then generate within theme; a random sample alone does not guarantee ten unique NPCs.",
+    "hatFit": "A01 only uses authored R04_cap or R03_cap hair variant; never overlay full hair under cap.",
+    "headFit": "Hair, beard and glasses need per-head fit offsets or authored variants; image claims of universal fit are design intentions, not verification.",
+    "bodyFit": "standard/slim/broad/soft use corresponding authored garment fits on the same reference skeleton.",
+    "hemFit": "P04 requires boot-compatible hem for S04/S05. P01/P02/P03 use low-shoe hems.",
+    "expression": "E06 is a transient blink action. Identity and emotion are separate; do not freeze blink as personality.",
+    "themeBias": "Theme controls clothing and context; skin, gender presentation and head shape are not tied to occupation.",
+    "morphSync": "All body and garment fit shapes must use the same parameter values.",
+    "material": "T01 stripe and solid are material variants; C06 hair silhouette needs fitting R01 to the lineup.",
+    "scope": "Presets are curated design recipes. Broader combinatorial variants require 3D compatibility validation."
+  }
+}

@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateHexasphere } from '../src/math/hexasphere.js';
 import { MapGenerator } from '../src/map/mapGenerator.js';
-import { generateTownLayout } from '../src/modes/town/townLayout.js';
-import { splitPolygon, TEMPLATES } from '../src/modes/town/blockPlan.js';
-import { area } from '../src/modes/town/wards.js';
+import { generateTownLayout } from '../src/modes/town/layout/townLayout.js';
+import { splitPolygon, TEMPLATES } from '../src/modes/town/layout/blockPlan.js';
+import { area } from '../src/modes/town/layout/wards.js';
 
 const hexasphere = generateHexasphere(3, 10);
 const generator = new MapGenerator(hexasphere);
@@ -72,7 +72,7 @@ test('planned towns have smooth streets, rows of houses clear of them and a smoo
   for (const { seed, map, cityIndex } of towns()) {
     const L = generateTownLayout({ map, hexasphere, cityIndex });
     const where = `seed ${seed} city ${cityIndex}`;
-    assert.equal(L.layoutVersion, 3);
+    assert.equal(L.layoutVersion, 4);
     assert.equal(L.morphology.kind, 'bisected-neighbourhood');
     assert.ok(TEMPLATES.includes(L.morphology.template));
     assert.ok(L.buildings.length > 10, where);
@@ -116,14 +116,14 @@ test('templates and density are choosable and deterministic', () => {
   const { map, cityIndex } = firstTown();
   const counts = {};
   for (const template of TEMPLATES) {
-    const a = generateTownLayout({ map, hexasphere, cityIndex, plan: { template } });
-    const b = generateTownLayout({ map, hexasphere, cityIndex, plan: { template } });
+    const a = generateTownLayout({ map, hexasphere, cityIndex, options: { template } });
+    const b = generateTownLayout({ map, hexasphere, cityIndex, options: { template } });
     assert.equal(a.morphology.template, template);
     assert.deepEqual(a.buildings, b.buildings);
     assert.ok(a.buildings.length > 10);
   }
-  for (const density of ['sparse', 'normal', 'dense']) {
-    const L = generateTownLayout({ map, hexasphere, cityIndex, plan: { template: 'area', density } });
+  for (const [density, value] of [['sparse', 0.75], ['normal', 1], ['dense', 1.3]]) {
+    const L = generateTownLayout({ map, hexasphere, cityIndex, options: { template: 'area', density: value } });
     counts[density] = L.buildings.filter((b) => Math.hypot(b.x, b.z) < L.cityR).length;
   }
   assert.ok(counts.dense > counts.normal && counts.normal > counts.sparse, JSON.stringify(counts));

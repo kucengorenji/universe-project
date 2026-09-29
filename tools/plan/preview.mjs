@@ -1,12 +1,12 @@
 // Town plan preview: renders generateTownLayout() as a top-down SVG, and a PNG
 // beside it when playwright can be imported (PLAYWRIGHT_MODULE may point at a
 // global install). Streets, blocks, houses, trees, walls and fields only.
-//   node tools/plan/preview.mjs --seed 17 [--city 0] [--out plan.svg] [--version 3]
+//   node tools/plan/preview.mjs --seed 17 [--city 0] [--out plan.svg] [--version 4]
 //     [--template auto|area|street|square|ring] [--density sparse|normal|dense] [--radius m] [--png 0]
 import { writeFileSync } from 'node:fs';
 import { generateHexasphere } from '../../src/math/hexasphere.js';
 import { MapGenerator } from '../../src/map/mapGenerator.js';
-import { generateTownLayout } from '../../src/modes/town/townLayout.js';
+import { generateTownLayout } from '../../src/modes/town/layout/townLayout.js';
 
 const arg = (k, d) => {
   const i = process.argv.indexOf(`--${k}`);
@@ -14,15 +14,15 @@ const arg = (k, d) => {
 };
 const seed = Number(arg('seed', 17));
 const sub = Number(arg('sub', 4));
-const version = Number(arg('version', 3));
+const version = Number(arg('version', 4));
 const out = arg('out', 'plan.svg');
 const hexasphere = generateHexasphere(sub, 10);
 const map = new MapGenerator(hexasphere).generate(seed, { planetType: 'terran' });
 let cityIndex = arg('city', null);
 if (cityIndex === null) cityIndex = map.cities.findIndex((c) => c.type === 'capital' && c.style !== 'modern');
 cityIndex = Math.max(0, Number(cityIndex));
-const plan = { template: arg('template', 'auto'), density: arg('density', 'normal') };
-const L = generateTownLayout({ map, hexasphere, cityIndex, layoutVersion: version, plan });
+const density = { sparse: 0.75, normal: 1, dense: 1.3 }[arg('density', 'normal')] ?? 1;
+const L = generateTownLayout({ map, hexasphere, cityIndex, layoutVersion: version, options: { template: arg('template', 'auto'), density } });
 
 const R = Math.min(L.dioramaR, Number(arg('radius', L.cityR * 1.35 + 60)));
 const px = 1000 / (2 * R);

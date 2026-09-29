@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createSpaceBackdrop } from '../../render/spaceBackdrop.js';
 import { loadAssetPack } from '../../render/assetLibrary.js';
+import { ASSETS } from '../../render/assetManifest.js';
 import { bakeSystem } from './bake.js';
 import { SystemBodies } from './bodies.js';
 import { Ship, SHIPS, proceduralShipGeometry } from './ship.js';
@@ -11,9 +12,8 @@ import { SpaceHud } from './hud.js';
 // planet); from orbit it can land, which hands the exact camera view over to
 // the planet mode so the swap reads as one continuous descent.
 
-const SPACE_PACK_URL = `${import.meta.env.BASE_URL}models/space.glb`;
 let shipPack = null;
-const loadShipPack = () => (shipPack ||= loadAssetPack(SPACE_PACK_URL).catch(() => null));
+const loadShipPack = () => (shipPack ||= loadAssetPack(ASSETS.spacePack).catch(() => null));
 
 const UP = new THREE.Vector3(0, 1, 0);
 const SHIP_KEY = 'planet_globe_ship';

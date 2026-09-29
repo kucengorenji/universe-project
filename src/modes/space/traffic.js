@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mulberry32 } from '../../map/mapGenerator.js';
+import { mulberry32 } from '../../math/random.js';
 import { createToonMaterial } from '../../render/assetLibrary.js';
 
 // NPC ships: cargo haulers and patrols travelling between planets, pausing in

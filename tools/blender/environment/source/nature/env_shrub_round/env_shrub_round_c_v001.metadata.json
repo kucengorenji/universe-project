@@ -1,0 +1,72 @@
+{
+  "assetId": "env_shrub_round",
+  "variantId": "env_shrub_round_c",
+  "lods": {
+    "0": {
+      "triangles": 560,
+      "vertices": 294,
+      "boundsBlender": {
+        "min": [
+          -0.75,
+          -0.6,
+          -0.0
+        ],
+        "max": [
+          0.75,
+          0.6,
+          1.1
+        ]
+      },
+      "materialSlots": 4,
+      "uv": true,
+      "ceiling": 6000,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 560,
+      "vertices": 294,
+      "boundsBlender": {
+        "min": [
+          -0.75,
+          -0.6,
+          -0.0
+        ],
+        "max": [
+          0.75,
+          0.6,
+          1.1
+        ]
+      },
+      "materialSlots": 4,
+      "uv": true,
+      "ceiling": 2000,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 140,
+      "vertices": 84,
+      "boundsBlender": {
+        "min": [
+          -0.72362,
+          -0.54393,
+          -0.0
+        ],
+        "max": [
+          0.72325,
+          0.55545,
+          1.1
+        ]
+      },
+      "materialSlots": 4,
+      "uv": true,
+      "ceiling": 400,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 2,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated"
+}

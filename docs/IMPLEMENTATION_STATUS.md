@@ -14,6 +14,13 @@ Enam koreksi pengguna diimplementasikan: morphology v2 modern/fantasy, jalan/mat
 
 24 test lolos, sweep 30 seed lolos, build produksi lolos. Navigasi pejalan kaki telah diuji 180 detik per era/tier; enam penggantian scene stabil setelah cache hangat. Pack scenery terbaru **1.244.892 byte**. Kota dengan interior lama tetap memakai parcel v1; belum ada migrasi layout lama ke v2. Kemajuan ini tidak menandakan seluruh roadmap dunia selesai.
 
+## Revisi 29 September (lanjutan) — struktur, art direction, planner kota
+
+- Struktur kode: `modes/town/` dikelompokkan ke `layout/`, `navigation/`, `render/`, `people/`, `vehicles/`, `interior/`, `planner/`, `ui/`. RNG dipindah ke `math/random.js`, konstanta skala ke `modes/town/scale.js`, dan semua URL aset dikumpulkan di `render/assetManifest.js`. Tidak ada perubahan perilaku; 16 kota asli identik dengan `bc791db`.
+- Art direction ([status AD](ART_DIRECTION.md)): palet atap per kota, scenery memakai ramp toon, rumput mengikuti warna tanah, kaca siang dengan mullion, perbaikan alpha `farTrees`, tabrakan kamera jalan kaki, dan lantai marmer berlempeng.
+- Planner kota 2D ([rencana generator](TOWN_GENERATION_PLAN.md)): tombol Tata kota, acak ulang yang mempertahankan terrain, kepadatan Jarang/Normal/Padat, dan Terapkan yang membangun ulang town dari layout yang sama.
+- Verifikasi: `npm test` 30/30, `GLOBE_SWEEP_SEEDS=30` untuk generation/walk-network lolos, dan `npm run build` lolos. Pemeriksaan visual di in-app browser mencakup overview dan close-up fantasy, peta 2D, reroll, kepadatan, Terapkan, jalan modern tanpa pita horizon, kamera jalan kaki, dan lantai interior (sebelum penurunan kontras).
+
 ## Sudah terpasang
 
 - Identitas bangunan deterministik, namespace seed, world manifest dan IndexedDB dengan journal pemulihan localStorage. Transaksi menggabungkan delta agar dua tab yang menyimpan ruangan berbeda tidak saling menimpa seluruh dunia.

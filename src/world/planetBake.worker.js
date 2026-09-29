@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { generateHexasphere } from '../math/hexasphere.js';
-import { MapGenerator, BIOMES, isWater, mulberry32 } from '../map/mapGenerator.js';
+import { MapGenerator, BIOMES, isWater } from '../map/mapGenerator.js';
+import { mulberry32 } from '../math/random.js';
 import { createNoise3D } from '../math/simplex3d.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from './planetTypes.js';
 

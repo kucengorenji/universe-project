@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createNoise3D } from '../math/simplex3d.js';
-import { mulberry32 } from '../map/mapGenerator.js';
+import { mulberry32 } from '../math/random.js';
 
 /**
  * Deep-space backdrop: a procedural nebula sphere concentrated along a tilted

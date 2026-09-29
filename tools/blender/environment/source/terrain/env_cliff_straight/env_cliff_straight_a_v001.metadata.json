@@ -1,0 +1,84 @@
+{
+  "assetId": "env_cliff_straight",
+  "variantId": "env_cliff_straight_a",
+  "lods": {
+    "0": {
+      "triangles": 46,
+      "vertices": 25,
+      "boundsBlender": {
+        "min": [
+          -2.0,
+          -1.11924,
+          0.0
+        ],
+        "max": [
+          2.0,
+          1.0,
+          2.0
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 4000,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 46,
+      "vertices": 25,
+      "boundsBlender": {
+        "min": [
+          -2.0,
+          -1.11924,
+          0.0
+        ],
+        "max": [
+          2.0,
+          1.0,
+          2.0
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 1200,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 28,
+      "vertices": 16,
+      "boundsBlender": {
+        "min": [
+          -2.0,
+          -1.11924,
+          0.0
+        ],
+        "max": [
+          2.0,
+          1.0,
+          2.0
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 300,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 0,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated",
+  "sockets": {
+    "left": [
+      -2,
+      0,
+      0
+    ],
+    "right": [
+      2,
+      0,
+      0
+    ]
+  }
+}

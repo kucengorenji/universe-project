@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Environment B1 · Asset Review</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e8e6dd;color:#293a31;font:14px system-ui,sans-serif}header{padding:18px 24px;background:#faf8f1;border-bottom:1px solid #c7cdbf;display:flex;align-items:center;gap:20px;flex-wrap:wrap}h1{margin:0;font-size:20px}small{display:block;color:#627266;font-size:12px;margin-top:4px}select,button,a.button{font:inherit;border:1px solid #bac5b5;border-radius:6px;background:white;padding:8px 12px;color:inherit}button{cursor:pointer}#status{padding:10px 24px;background:#dce5d6;font-size:12px}#view{height:calc(100vh - 135px);min-height:500px;position:relative}canvas{display:block}#textures{padding:24px;display:none;grid-template-columns:repeat(4,minmax(180px,1fr));gap:24px}.texture{background:#faf8f1;padding:12px;border-radius:8px}.texture h2{font-size:14px;margin:0 0 10px}.texture img{width:100%;display:block}.repeat{aspect-ratio:1;background-size:25% 25%;margin-top:10px;border:1px solid #b3b7ad}.texture p{font-size:12px;color:#657165}.hint{position:absolute;bottom:12px;left:20px;pointer-events:none;color:#536357}.hidden{display:none!important}@media(max-width:850px){#textures{grid-template-columns:repeat(2,minmax(130px,1fr))}}
+</style></head><body>
+<header><div><h1>Environment / B1</h1><small>Painted diorama · exported asset review</small></div><select id="asset" aria-label="Aset"><option value="all">12 master — gallery</option></select><select id="lod" aria-label="LOD"><option value="0">LOD 0 — dekat</option><option value="1">LOD 1 — sedang</option><option value="2">LOD 2 — jauh</option></select><button id="light">Siang / malam</button><button id="mode">Lihat 8 tekstur</button></header>
+<div id="status">Memuat GLB kandidat melalui loader toon game…</div><div id="view"><div class="hint">Drag untuk orbit · scroll untuk zoom. Kandidat B1; belum dipasang ke world generator.</div></div><div id="textures"></div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {loadTexturedPack} from '/src/render/texturedAssetLibrary.js';
+window.__environmentErrors=[];window.addEventListener('error',e=>window.__environmentErrors.push(e.message));
+const base='/tools/blender/environment/', view=document.querySelector('#view');
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;view.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#e8e6dd');
+const camera=new THREE.PerspectiveCamera(40,1,.1,300);camera.position.set(32,34,46);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,2,0);controls.enableDamping=true;
+const hemi=new THREE.HemisphereLight('#f2f2ec','#77766b',1.8);scene.add(hemi);
+const sun=new THREE.DirectionalLight('#fff6e5',1.8);sun.position.set(-18,35,18);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-35,right:35,top:35,bottom:-35,near:.5,far:100});sun.shadow.bias=-.0002;scene.add(sun);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(70,60),new THREE.MeshStandardMaterial({color:'#d3d4bf',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.04;floor.receiveShadow=true;scene.add(floor);
+const group=new THREE.Group();scene.add(group);let pack=null;let night=false;
+const select=document.querySelector('#asset'),lod=document.querySelector('#lod'),status=document.querySelector('#status');
+function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();
+function label(name){const c=document.createElement('canvas');c.width=512;c.height=64;const ctx=c.getContext('2d');ctx.fillStyle='#334135';ctx.font='26px system-ui';ctx.textAlign='center';ctx.fillText(name.replace('env_','').replace(/_/g,' '),256,42);const m=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false});const s=new THREE.Sprite(m);s.scale.set(5.5,.7,1);return s}
+function show(){
+ for(const o of [...group.children]){if(o.isSprite){o.material.map.dispose();o.material.dispose()}group.remove(o)}
+ const keys=select.value==='all'?Object.keys(pack).filter(k=>k.endsWith('_a')):[select.value];
+ keys.forEach((key,i)=>{const root=new THREE.Group();for(const p of pack[key][+lod.value]){const mesh=new THREE.Mesh(p.geometry,p.material);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh)}
+ const box=new THREE.Box3().setFromObject(root);const center=box.getCenter(new THREE.Vector3());
+ root.position.set(select.value==='all'?(i%4-1.5)*13-center.x:-center.x,0,select.value==='all'?(Math.floor(i/4)-1)*14-center.z:-center.z);group.add(root);
+ if(select.value==='all'){const s=label(key);s.position.set((i%4-1.5)*13,.5,(Math.floor(i/4)-1)*14+5);group.add(s)}
+ });
+ const box=new THREE.Box3().setFromObject(group),size=box.getSize(new THREE.Vector3());
+ if(select.value==='all'){const f=Math.max(1,1.3/camera.aspect);camera.position.set(32*f,34*f,46*f);controls.target.set(0,2,0)}else{const d=Math.max(size.x,size.y,size.z,1);camera.position.set(d*1.2,d*.9,d*1.5);controls.target.set(0,size.y*.45,0)}
+ controls.update();status.textContent=`${Object.keys(pack).length} varian · ${keys.length} ditampilkan · LOD ${lod.value} · loader toon game · ${night?'malam':'siang'}`;
+ window.environmentQA={loaded:true,variants:Object.keys(pack).length,lod:+lod.value,selected:select.value,missingUV:Object.entries(pack).flatMap(([k,ls])=>Object.entries(ls).flatMap(([l,ps])=>ps.filter(p=>!p.geometry.attributes.uv).map(()=>k+':'+l))),materials:[...new Set(Object.values(pack).flatMap(ls=>Object.values(ls).flatMap(ps=>ps.map(p=>p.material.name))))]};
+}
+try{pack=await loadTexturedPack(base+'exports/staging/b1/environment_b1_v001.glb');for(const key of Object.keys(pack)){const option=document.createElement('option');option.value=key;option.textContent=key.replace('env_','');select.append(option)}show()}catch(e){status.textContent='Gagal: '+e.message;window.__environmentErrors.push(e.stack)}
+select.addEventListener('change',show);lod.addEventListener('change',show);
+document.querySelector('#light').onclick=()=>{night=!night;hemi.intensity=night?.45:1.8;sun.intensity=night?.55:1.8;sun.color.set(night?'#8cb4dd':'#fff6e5');scene.background.set(night?'#253846':'#e8e6dd');if(pack)show()};
+const textures=['ground_grass','ground_dirt','stone_cobble','stone_rock','wood_trim','wood_bark','architecture_trim','modern_trim'];
+for(const id of textures){const card=document.createElement('article');card.className='texture';const url=base+'textures/masters/'+id+'/'+id+'_v001.png';card.innerHTML=`<h2>${id}</h2><img src="${url}" alt="${id} texture master"><div class="repeat" style="background-image:url('${url}')"></div><p>Atas: master asli. Bawah: repeat 4×4 untuk inspeksi; trim bukan tile dua arah.</p>`;document.querySelector('#textures').append(card)}
+document.querySelector('#mode').onclick=()=>{const t=document.querySelector('#textures');const on=t.style.display!=='grid';t.style.display=on?'grid':'none';view.classList.toggle('hidden',on);document.querySelector('#mode').textContent=on?'Kembali ke model':'Lihat 8 tekstur';if(!on)resize()};
+function frame(){requestAnimationFrame(frame);controls.update();if(!view.classList.contains('hidden'))renderer.render(scene,camera)}frame();
+</script></body></html>

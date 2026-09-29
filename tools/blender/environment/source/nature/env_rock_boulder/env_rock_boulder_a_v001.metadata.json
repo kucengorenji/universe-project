@@ -1,0 +1,72 @@
+{
+  "assetId": "env_rock_boulder",
+  "variantId": "env_rock_boulder_a",
+  "lods": {
+    "0": {
+      "triangles": 188,
+      "vertices": 96,
+      "boundsBlender": {
+        "min": [
+          -1.0,
+          -0.8,
+          0.0
+        ],
+        "max": [
+          1.0,
+          0.8,
+          1.5
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 1500,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 52,
+      "vertices": 28,
+      "boundsBlender": {
+        "min": [
+          -0.98776,
+          -0.66919,
+          0.0
+        ],
+        "max": [
+          1.20531,
+          0.78668,
+          1.46435
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 500,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 44,
+      "vertices": 24,
+      "boundsBlender": {
+        "min": [
+          -0.99769,
+          -0.65978,
+          0.0
+        ],
+        "max": [
+          1.11826,
+          0.80088,
+          1.53231
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 100,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 0,
+  "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated"
+}

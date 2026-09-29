@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {Car,VEHICLE_TYPES} from '../src/modes/town/vehicle.js';
-import {trafficPose,advanceTraffic} from '../src/modes/town/trafficRoute.js';
+import {Car,VEHICLE_TYPES} from '../src/modes/town/vehicles/vehicle.js';
+import {trafficPose,advanceTraffic} from '../src/modes/town/navigation/trafficRoute.js';
 import {buildingApproach,townToLocal} from '../src/world/buildingBlueprint.js';
 import {townGenerationVersion,TOWN_LAYOUT_VERSION} from '../src/world/townGeneration.js';
-import {locomotionClips,animatePerson} from '../src/modes/town/peopleMotion.js';
-import {streetJunctions} from '../src/modes/town/streetJunctions.js';
+import {locomotionClips,animatePerson} from '../src/modes/town/people/peopleMotion.js';
+import {streetJunctions} from '../src/modes/town/layout/streetJunctions.js';
 
 test('organic road markings identify T junctions without counting parallel roads',()=>{
  const streets=[{w:12,pts:[[-20,0],[20,0]]},{w:8,pts:[[0,0],[0,20]]},{w:8,pts:[[-20,30],[20,30]]}];

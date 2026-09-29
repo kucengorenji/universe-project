@@ -1,12 +1,11 @@
 import * as THREE from 'three';
 import { PlanetRenderer } from '../../render/planetRenderer.js';
 import { loadAssetPack } from '../../render/assetLibrary.js';
+import { ASSETS } from '../../render/assetManifest.js';
 import { MenuController } from '../../ui/menuController.js';
 import { typeOf } from '../../world/planetTypes.js';
-import { PlanetRover } from '../../render/planetRover.js';
-import { Speedo } from '../../ui/gauges.js';
+import { PlanetFlight } from '../../render/planetFlight.js';
 
-const TOWN_PACK_URL = `${import.meta.env.BASE_URL}models/town.glb`;
 import { BIOMES } from '../../map/mapGenerator.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
@@ -37,12 +36,12 @@ const UP = new THREE.Vector3(0, 1, 0);
 
 export default class PlanetMode {
   static prepare(ctx) {
-    // Asset packs are shared by all planets: start them early, once. The rover lives in the space pack.
+    // Asset packs are shared by all planets: start them early, once. The player's ship lives in the space pack.
     const pr = getShared(ctx).pr;
-    const rover = loadAssetPack(`${import.meta.env.BASE_URL}models/space.glb`)
-      .then((pack) => (pr.roverPack = pack))
+    const ships = loadAssetPack(ASSETS.spacePack)
+      .then((pack) => (pr.shipPack = pack))
       .catch(() => null);
-    return Promise.all([pr.assetsPromise, rover]);
+    return Promise.all([pr.assetsPromise, ships]);
   }
 
   constructor(ctx, route, arrival) {
@@ -55,15 +54,20 @@ export default class PlanetMode {
     this.pr = this.state.pr;
     this.ui = document.getElementById('planetUi');
     this.orbitBtn = document.getElementById('orbitBtn');
-    this.roverBtn = document.getElementById('roverBtn');
+    this.flyBtn = document.getElementById('flyBtn');
+    this.flightHud = document.getElementById('planetFlightHud');
+    this.flightSpeed = this.flightHud.querySelector('[data-speed]');
+    this.flightState = this.flightHud.querySelector('[data-state]');
     this.onOrbit = () => ctx.director.go({ mode: 'space', planet: this.index });
-    this.onRover = () => (this.rover ? this.stopRover() : this.startRover());
+    this.onFly = () => (this.flight ? this.stopFlight() : this.startFlight());
+    this.onHudClick = (e) => e.target.closest('[data-act="stop"]') && this.flight && this.stopFlight();
     this.keys = new Set();
     this.onKey = (e) => {
       if (e.target.matches?.('input, textarea')) return;
       const k = e.key.toLowerCase();
-      if (this.rover) {
-        if (k === 'escape') this.stopRover();
+      if (this.flight) {
+        if (k === 'escape') this.stopFlight();
+        else if (k === 'l' && this.flight.cityBelow() !== null) this.landCity(this.flight.cityBelow());
         else this.keys.add(k);
         if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
         return;
@@ -71,6 +75,26 @@ export default class PlanetMode {
       if (k === 'o') this.onOrbit();
     };
     this.onKeyUp = (e) => this.keys.delete(e.key.toLowerCase());
+    this.onBlur = () => this.keys.clear();
+    // Flying: drag orbits the chase camera, the wheel zooms it
+    const canvas = ctx.engine.renderer.domElement;
+    this.onPointerDown = (e) => {
+      if (!this.flight) return;
+      this.drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+      canvas.setPointerCapture?.(e.pointerId);
+    };
+    this.onPointerMove = (e) => {
+      if (!this.flight || !this.drag || e.pointerId !== this.drag.id) return;
+      this.flight.look(e.clientX - this.drag.x, e.clientY - this.drag.y, this.ctx.engine.time);
+      this.drag.x = e.clientX;
+      this.drag.y = e.clientY;
+    };
+    this.onPointerUp = () => (this.drag = null);
+    this.onWheel = (e) => {
+      if (!this.flight) return;
+      e.preventDefault();
+      this.flight.zoom(e.deltaY);
+    };
   }
 
   async enter() {
@@ -88,9 +112,16 @@ export default class PlanetMode {
     this.ui.hidden = false;
     document.body.dataset.mode = 'planet';
     this.orbitBtn.addEventListener('click', this.onOrbit);
-    this.roverBtn.addEventListener('click', this.onRover);
+    this.flyBtn.addEventListener('click', this.onFly);
+    this.flightHud.addEventListener('click', this.onHudClick);
     window.addEventListener('keydown', this.onKey);
     window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('blur', this.onBlur);
+    const canvas = this.ctx.engine.renderer.domElement;
+    canvas.addEventListener('pointerdown', this.onPointerDown);
+    canvas.addEventListener('pointermove', this.onPointerMove);
+    canvas.addEventListener('pointerup', this.onPointerUp);
+    canvas.addEventListener('wheel', this.onWheel, { passive: false });
 
     // Arrival: from orbit the globe is framed from the side we flew in on;
     // from a town the camera starts over that city.
@@ -102,11 +133,10 @@ export default class PlanetMode {
     const city = a?.city ?? this.route.city;
     if (city !== null && city !== undefined && this.map.cities?.[city]) pr.focusOn({ type: 'city', index: city }, { animate: !a?.fromTown });
     if (a?.fromTown) this.riseFrom = city;
-    // Driven out of a town along a road: carry on across the planet in the same vehicle
+    // Driven out of a town along a road: take off low over that road and fly on
     if (a?.drive) {
-      const pack = await loadAssetPack(TOWN_PACK_URL).catch(() => null);
       const start = this.roadStart(a.drive.fromCity, a.drive.toCity);
-      if (start) this.startRover({ start, kit: a.drive.kit, pack, trip: { from: a.drive.fromCity, leftHome: false } });
+      if (start) this.startFlight({ start, altitude: 0.18, speed: 14 });
     }
   }
 
@@ -181,51 +211,50 @@ export default class PlanetMode {
 
   update(dt, t, ts) {
     this.pr.update(ts);
-    if (this.rover) {
+    if (this.flight) {
       const k = this.keys;
       const axis = (a, b, c, d) => (k.has(a) || k.has(c) ? 1 : 0) - (k.has(b) || k.has(d) ? 1 : 0);
-      this.rover.update(Math.min(dt, 0.05), {
+      const step = THREE.MathUtils.clamp(dt, 0, 0.05);
+      this.flight.update(step, {
         forward: axis('w', 's', 'arrowup', 'arrowdown'),
-        right: axis('d', 'a', 'arrowright', 'arrowleft'),
-        handbrake: k.has(' '),
+        turn: axis('d', 'a', 'arrowright', 'arrowleft'),
+        strafe: axis('e', 'q'),
+        lift: axis('r', 'f', ' ', 'c'),
         boost: k.has('shift')
       });
-      this.rover.updateCamera(dt, this.pr.camera);
+      this.flight.updateCamera(step, t, this.pr.camera);
       this.pr.updateNearPlane();
-      const car = this.rover.car;
-      const top = car.spec.top || 20;
-      const fs = car.forwardSpeed;
-      this.speedo.set(Math.abs(fs) * 3.6, Math.abs(fs) / (top * 1.25), fs < -0.5 ? 'R' : Math.abs(fs) < 0.3 ? 'N' : 'D');
-      this.ctx.audio?.engine('rover', { speed01: Math.min(1, car.speed / top), throttle: car.throttle, rpm: Math.min(1, 0.15 + (car.speed / top) * 0.8 + car.throttle * 0.1), skid: car.skid * Math.min(1, car.speed / 6) });
+      this.updateFlightHud(t);
+      const sh = this.flight.ship;
+      const boost = sh.boostFx || 0;
+      this.ctx.audio?.engine('ship', { speed01: Math.min(1, sh.speed / sh.boostSpeed), throttle: sh.thrust, boost });
+      // Kick of air as the boost lights
+      if (boost > 0.3 && !this.boostKick) this.ctx.audio?.sfx('whoosh', { dur: 1.1, peak: 0.3 });
+      this.boostKick = boost > 0.3;
       // Mission distance, reported in chunks
-      this.roverAcc = (this.roverAcc || 0) + Math.abs(car.speed) * Math.min(dt, 0.05);
-      if (this.roverAcc > 10) {
-        this.ctx.missions?.emit('rover_m', this.roverAcc);
-        this.roverAcc = 0;
+      this.flownAcc = (this.flownAcc || 0) + this.flight.metresPerSecond * step;
+      if (this.flownAcc > 10) {
+        this.ctx.missions?.emit('rover_m', this.flownAcc);
+        this.flownAcc = 0;
       }
-      // Last: it may hand over to a town (and stop the rover)
-      this.checkCityAhead();
     }
   }
 
-  /** Rolled into a city's tiles: drive on into its town (with the same vehicle). */
-  checkCityAhead() {
-    if (!this.rover || this.arriving || this.ctx.director.busy) return;
-    const t = this.rover.tileAt(this.rover.pos);
-    const ci = t.cityIndex;
-    const trip = this.trip;
-    if (ci === null || ci === undefined) {
-      trip.leftHome = true;
-      return;
-    }
-    if (ci === trip.from && !trip.leftHome) return;
-    if (!this.map.cities[ci]) return;
-    this.arriving = { drive: { kit: this.rover.kit, type: this.rover.kit?.type, dir: this.rover.pos.toArray(), fromCity: trip.from } };
-    this.ctx.director.go({ mode: 'town', planet: this.index, city: ci });
+  updateFlightHud() {
+    const f = this.flight;
+    const kmh = Math.round(f.metresPerSecond * 3.6);
+    if (kmh !== this.hudSpeed) this.flightSpeed.textContent = this.hudSpeed = kmh;
+    const ci = f.cityBelow();
+    const city = ci === null ? null : this.map.cities[ci];
+    let state = 'Melayang';
+    if (city) state = `Di atas ${city.name}. Tekan L untuk mendarat`;
+    else if (f.alt > f.ceiling * 0.9) state = 'Batas langit';
+    else if (f.speed > 0.5) state = f.clearance < 0.3 ? 'Terbang rendah' : 'Terbang bebas';
+    if (state !== this.hudState) this.flightState.textContent = this.hudState = state;
   }
 
-  /** Where to put the rover: the focused city, else land under the middle of the screen. */
-  roverStart() {
+  /** Where to take off: the focused city, else land under the middle of the screen. */
+  takeoffStart() {
     const pr = this.pr;
     const tiles = pr.hexasphere.tiles;
     const q = pr.planetGroup.quaternion.clone().invert();
@@ -263,62 +292,72 @@ export default class PlanetMode {
     return { dir, heading };
   }
 
-  startRover({ start = null, kit = null, pack = null, trip = null } = {}) {
+  startFlight({ start = null, altitude = 0.45, speed = 0 } = {}) {
     const pr = this.pr;
     if (pr.pov) pr.exitPov(true, false);
-    // Start from the focused city (or the land in the middle of the screen)
-    start ||= this.roverStart();
+    // Take off over the focused city (or the land in the middle of the screen)
+    start ||= this.takeoffStart();
     if (!start) return;
-    // Driving into a city takes you into its town: not the one you start in, until you have left it
-    const startTile = pr.locate(start.dir.clone().normalize(), pr.hexasphere.tiles[0]);
-    this.trip = trip || { from: startTile.cityIndex ?? null, leftHome: startTile.cityIndex === null || startTile.cityIndex === undefined };
-    this.tripKit = kit;
     if (pr.focus) pr.clearFocus({ animate: false });
     pr.camTween = null;
     pr.autoRotate = false;
     pr.driving = true;
     pr.controls.enabled = false;
-    // Surface visuals: sky instead of space, like riding along
-    pr.camera.far = 120;
+    // Inside the sky: a sky dome instead of space, clouds you can fly past
+    pr.camera.far = pr.radius * 12;
     pr.camera.updateProjectionMatrix();
     pr.scene.background = new THREE.Color(pr.look?.sky ?? 0x9dc0e3);
     pr.atmosphere.visible = false;
     pr.stars.visible = false;
     pr.nebula.visible = false;
+    const clouds = pr.cloudsMesh.material.uniforms;
+    clouds.uNear.value = pr.radius * 0.012;
+    clouds.uFar.value = pr.radius * 0.05;
+    if (pr.hoverIndicatorMesh) pr.hoverIndicatorMesh.visible = false;
     if (pr.onTileHover) pr.onTileHover(null);
-    this.rover = new PlanetRover(pr, start.dir, start.heading, { kit, pack });
-    this.ctx.audio?.sfx('ignition');
+    this.flight = new PlanetFlight(pr, start.dir, start.heading, { pack: pr.shipPack, altitude, speed });
+    this.ctx.audio?.sfx('whoosh', { dur: 1.6, peak: 0.35 });
     this.ctx.tips?.show('rover');
-    this.speedo ||= new Speedo(this.ui);
-    this.speedo.show(true);
-    this.roverBtn.textContent = 'Keluar rover';
-    document.body.classList.add('is-rover');
+    this.hudSpeed = this.hudState = null;
+    this.flightHud.hidden = false;
+    this.flyBtn.textContent = 'Selesai terbang';
+    document.body.classList.add('is-flying');
   }
 
-  stopRover() {
+  stopFlight() {
     const pr = this.pr;
-    const dir = this.rover.pos.clone();
-    this.speedo?.show(false);
-    this.rover.dispose();
-    this.rover = null;
-    this.keys.clear();
-    pr.driving = false;
+    const dir = this.flight.pos.clone();
+    this.endFlight();
     pr.camera.far = 400;
     pr.camera.fov = 42;
     pr.camera.updateProjectionMatrix();
-    pr.scene.background = null;
-    pr.atmosphere.visible = pr.hasAir !== false;
-    pr.stars.visible = true;
-    pr.nebula.visible = true;
-    // Back up to orbit over the spot where we parked
+    // Back up to orbit over the spot where we were flying
     const { width, height } = this.ctx.engine.size;
     const halfV = THREE.MathUtils.degToRad(pr.camera.fov / 2);
     const halfH = Math.atan(Math.tan(halfV) * (width / height));
     const d = pr.radius / Math.sin(0.91 * Math.min(halfV, halfH));
     const worldDir = dir.applyQuaternion(pr.planetGroup.quaternion);
     pr.flyTo({ pos: worldDir.multiplyScalar(d), target: new THREE.Vector3(), up: UP.clone() }, true, () => pr.releaseFocusControls());
-    this.roverBtn.textContent = 'Nyetir rover';
-    document.body.classList.remove('is-rover');
+  }
+
+  /** Put the ship away and restore the globe visuals (no camera move). */
+  endFlight() {
+    const pr = this.pr;
+    this.flight.dispose();
+    this.flight = null;
+    this.keys.clear();
+    this.drag = null;
+    pr.driving = false;
+    pr.scene.background = null;
+    pr.atmosphere.visible = pr.hasAir !== false;
+    pr.stars.visible = true;
+    pr.nebula.visible = true;
+    const clouds = pr.cloudsMesh.material.uniforms;
+    clouds.uNear.value = pr.radius * 0.1;
+    clouds.uFar.value = pr.radius * 0.26;
+    this.flightHud.hidden = true;
+    this.flyBtn.textContent = 'Terbang';
+    document.body.classList.remove('is-flying');
   }
 
   render() {
@@ -340,17 +379,10 @@ export default class PlanetMode {
     // A saved route or direct navigation can target a different planet. Its
     // city index cannot be used to animate over this planet's map.
     if (route.mode === 'town' && route.planet !== this.index) {
-      if (this.rover) this.stopRover();
+      if (this.flight) this.stopFlight();
       return Promise.resolve({ cover: 'fade' });
     }
-    if (this.arriving && route.mode === 'town') {
-      // Driving in: no dive through the clouds, just a quick fade on the road
-      const arrival = this.arriving;
-      this.arriving = null;
-      if (this.rover) this.stopRover();
-      return Promise.resolve({ cover: 'fade', arrival });
-    }
-    if (this.rover) this.stopRover();
+    if (this.flight) this.stopFlight();
     pr.camTween = null;
     if (pr.pov) pr.exitPov(true, false);
     if (route.mode === 'town') {
@@ -390,18 +422,18 @@ export default class PlanetMode {
   }
 
   exit() {
-    this.speedo?.dispose();
-    this.speedo = null;
-    if (this.rover) {
-      this.rover.dispose();
-      this.rover = null;
-      this.pr.driving = false;
-      document.body.classList.remove('is-rover');
-    }
+    if (this.flight) this.endFlight();
     this.orbitBtn.removeEventListener('click', this.onOrbit);
-    this.roverBtn.removeEventListener('click', this.onRover);
+    this.flyBtn.removeEventListener('click', this.onFly);
+    this.flightHud.removeEventListener('click', this.onHudClick);
     window.removeEventListener('keydown', this.onKey);
     window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('blur', this.onBlur);
+    const canvas = this.ctx.engine.renderer.domElement;
+    canvas.removeEventListener('pointerdown', this.onPointerDown);
+    canvas.removeEventListener('pointermove', this.onPointerMove);
+    canvas.removeEventListener('pointerup', this.onPointerUp);
+    canvas.removeEventListener('wheel', this.onWheel);
     this.pr.suspend();
     this.ui.hidden = true;
     document.body.classList.remove('has-card', 'is-pov');

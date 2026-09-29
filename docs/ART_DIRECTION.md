@@ -1,6 +1,6 @@
 # Globe Universe — art direction
 
-**Status: usulan, menunggu keputusan (AD-0).** Setelah disetujui, dokumen ini menjadi kontrak tampilan untuk semua aset dan modul render. [ASSET_ART_AUDIO_PLAN.md](ASSET_ART_AUDIO_PLAN.md) tetap menjadi acuan budget dan metode produksi (mid-poly, LOD, tekstur, kompresi). Dokumen ini menetapkan tampilan akhir yang harus dicapai metode tersebut.
+**Status: arah *painted diorama* disetujui pemilik proyek pada 29 September 2026 (AD-0); migrasi berjalan, lihat §6.** Dokumen ini adalah kontrak tampilan untuk semua aset dan modul render. [ASSET_ART_AUDIO_PLAN.md](ASSET_ART_AUDIO_PLAN.md) tetap menjadi acuan budget dan metode produksi (mid-poly, LOD, tekstur, kompresi). Dokumen ini menetapkan tampilan akhir yang harus dicapai metode tersebut.
 
 Disusun 29 September 2026 dari screenshot in-app browser (viewport 1280×860, tier high, dunia lokal: Neum Prime, kota New Babylon dan Aegis Citadel), pembacaan source, dan inventaris GLB. Semua screenshot ada di `docs/references/review-2026-09-29/`.
 
@@ -53,7 +53,7 @@ Akibatnya, objek yang disinari matahari yang sama terlihat seperti berasal dari 
 - **Modern:** aspal mendominasi, persimpangan sangat lebar, dan jumlah bangunan sedikit dibanding luas jalan.
 - Semua elemen punya bobot visual yang sama, jadi mata tidak punya titik fokus.
 
-![Modern: aspal mendominasi, kotak putih di kanan adalah m_office_v1](references/review-2026-09-29/08-modern-street-far-trees-on.jpg)
+![Modern: aspal mendominasi, kotak putih di kanan adalah sisi toko m_shop_v1 tanpa jendela](references/review-2026-09-29/08-modern-street-far-trees-on.jpg)
 
 ### 2.5 Skala dan kerapatan texel
 
@@ -67,7 +67,7 @@ Akibatnya, objek yang disinari matahari yang sama terlihat seperti berasal dari 
 
 ### 2.6 Identitas planet ↔ town terputus
 
-Di globe, ibukota modern tampil sebagai menara kaca biru dengan spire putih dan border faksi merah. Di town, kota yang sama berisi apartemen krem, toko bata, dan kantor kaca yang tampak seperti kotak putih. Ibukota fantasy di globe adalah gugus kastil dan kuil, sedangkan di town menjadi hamparan atap merah-biru.
+Di globe, ibukota modern tampil sebagai menara kaca biru dengan spire putih dan border faksi merah. Di town, kota yang sama berisi apartemen krem, toko bata, dan toko modern yang dari samping tampak seperti kotak putih. Ibukota fantasy di globe adalah gugus kastil dan kuil, sedangkan di town menjadi hamparan atap merah-biru.
 
 ![Planet mode, fokus Aegis Citadel: bahasa visual paling kohesif di game saat ini](references/review-2026-09-29/12-planet-city-focus.jpg)
 
@@ -78,7 +78,7 @@ Di globe, ibukota modern tampil sebagai menara kaca biru dengan spire putih dan 
 | Artefak | Bukti | Penyebab yang sudah diverifikasi |
 |---|---|---|
 | Pita titik putih di horizon | Screenshot 08 dan 09 (sama, `farTrees` dimatikan) | Billboard `FarTrees`; hilang saat mesh-nya disembunyikan. |
-| `m_office_v1` seperti kotak putih di siang hari | Screenshot 08, raycast ke `m_office_v1_LOD0` | Kaca berupa satu box `M_glass_teal` tanpa mullion; pola jendela hanya muncul lewat shader malam. |
+| Kotak putih polos di kota modern | Screenshot 08; raycast dan pencocokan posisi ke item layout `m_shop` varian 1 | Sisi samping `m_shop_v1` berisi ±141 m² dinding dan ±2 m² kaca; tingginya 12,7 m. Versi awal dokumen ini salah menyebutnya `m_office_v1` karena pemetaan nama geometri di skrip QA keliru. |
 | Kamera jalan kaki menembus bangunan | Screenshot 04 | `updateFollowCamera` hanya menjaga kamera di atas tanah, tanpa uji tabrakan dengan collider. |
 | Pola lantai interior simetris | Screenshot 11 | `atlasMaterial` di `interior.js` memakai *mirrored repeat*. Toko modern memakai tile `marble` (2,5 m per ulangan), dan tile itu tidak dibuat untuk dicerminkan. |
 
@@ -159,3 +159,15 @@ Lima pilar opsi A:
 | **AD-6** | Identitas planet ↔ town: pemetaan landmark (CBD kaca + spire, kastil/kuil) dan palet faksi | `townLayout.js`, `planetRenderer.js` | Pasangan screenshot planet dan town untuk kota yang sama |
 
 Setiap langkah diverifikasi dengan fixture yang sama sebelum dan sesudah, pada tier high dan low, siang dan malam, ditambah `npm test` dan `npm run build`. Tanggal atau durasi tidak dijanjikan; urutan di atas adalah urutan dependensi.
+
+## 6. Status implementasi (29 September 2026)
+
+| Langkah | Yang sudah dikerjakan | Sisa |
+|---|---|---|
+| AD-0 | Arah disetujui. Screenshot baseline ada di `references/review-2026-09-29/`. | Fixture kamera yang dipatok seed (saat ini harness memakai dunia di localStorage). |
+| AD-1 | `src/art/palette.js`: keluarga atap per tipe planet, token peta 2D. Warna atap ditetapkan per bangunan di layout (`layout/roofPlan.js`, stream seed sendiri) dan dipakai town 3D serta planner 2D. Menara tembok dan gerbang memakai satu tone slate; kastil dan kuil tetap aksen. | Migrasi literal warna lain (tanah, jalan, air, langit, orang, kendaraan) ke token; generator Blender membaca palet yang sama. |
+| AD-2 | Material glTF scenery dikonversi ke ramp toon saat dimuat (`texturedAssetLibrary.js`). Sprite rumput hijau diberi tint menuju warna tanah di bawahnya (`groundCover.js`). Kaca siang hari lebih gelap dari dinding, dengan mullion dan pita lantai pada curtain wall (`M_glass_blue`, `M_glass_teal`). | Tint `farTrees`, genangan cahaya malam, dan marka jalan. Eksposur dan intensitas cahaya town masih membuat warna menengah cenderung pucat. |
+| AD-3 | Konfeti atap hilang (satu keluarga dominan per distrik). Planner 2D dengan kepadatan Jarang/Normal/Padat (lihat [TOWN_GENERATION_PLAN.md](TOWN_GENERATION_PLAN.md)). | Lampu yang terbaca acak, isi taman, frontage fantasy yang lebih rapat secara default. |
+| AD-4 | — | Air dan pantai. |
+| AD-5 | Pita titik di horizon: shader `farTrees` menulis alpha 1, dan latar canvas town hitam, sehingga alpha dari cut-out ber-alpha-to-coverage tidak lagi bocor ke latar CSS. Kamera jalan kaki ditarik mendekat saat bangunan menghalangi (kotak footprint + tinggi atap dari pack). Lantai marmer interior memakai lempeng dengan nat dan kontras 45%, tidak lagi dicerminkan. | Jendela samping/belakang `m_shop_v1` (butuh ekspor ulang `town.glb`); pengganti skala town untuk aset pack planet; chase camera kendaraan belum diberi uji tabrakan. |
+| AD-6 | — | Identitas landmark planet ↔ town. |

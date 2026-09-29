@@ -1,0 +1,1864 @@
+{
+  "generator": "build_b1.py",
+  "version": 1,
+  "seed": 290926,
+  "blender": "5.1.2",
+  "execution": "headless CLI, not MCP",
+  "paletteSha256": "bab966807b56f6bc63d5ade6c8017b548bf6c0d3427ccdfa4043aabc27e5cc31",
+  "status": "candidate-export; runtime promotion pending",
+  "variants": {
+    "env_tree_oak_a": {
+      "assetId": "env_tree_oak",
+      "variantId": "env_tree_oak_a",
+      "lods": {
+        "0": {
+          "triangles": 5132,
+          "vertices": 2774,
+          "boundsBlender": {
+            "min": [
+              -4.0,
+              -4.0,
+              -0.0
+            ],
+            "max": [
+              4.0,
+              4.0,
+              9.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 1444,
+          "vertices": 790,
+          "boundsBlender": {
+            "min": [
+              -3.96395,
+              -3.8661,
+              -0.0
+            ],
+            "max": [
+              3.96559,
+              3.91543,
+              8.97737
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 368,
+          "vertices": 214,
+          "boundsBlender": {
+            "min": [
+              -3.70025,
+              -3.65655,
+              0.00835
+            ],
+            "max": [
+              3.56829,
+              3.672,
+              8.97737
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_tree_oak_b": {
+      "assetId": "env_tree_oak",
+      "variantId": "env_tree_oak_b",
+      "lods": {
+        "0": {
+          "triangles": 5132,
+          "vertices": 2774,
+          "boundsBlender": {
+            "min": [
+              -4.0,
+              -4.0,
+              -0.0
+            ],
+            "max": [
+              4.0,
+              4.0,
+              9.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 1444,
+          "vertices": 790,
+          "boundsBlender": {
+            "min": [
+              -3.93936,
+              -3.96219,
+              -0.0
+            ],
+            "max": [
+              3.94505,
+              3.91797,
+              8.96084
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 368,
+          "vertices": 214,
+          "boundsBlender": {
+            "min": [
+              -3.75611,
+              -3.75628,
+              0.00852
+            ],
+            "max": [
+              3.8085,
+              3.68187,
+              8.96084
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 1,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_tree_oak_c": {
+      "assetId": "env_tree_oak",
+      "variantId": "env_tree_oak_c",
+      "lods": {
+        "0": {
+          "triangles": 5132,
+          "vertices": 2774,
+          "boundsBlender": {
+            "min": [
+              -4.0,
+              -4.0,
+              -0.0
+            ],
+            "max": [
+              4.0,
+              4.0,
+              9.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 1444,
+          "vertices": 790,
+          "boundsBlender": {
+            "min": [
+              -3.89861,
+              -3.96821,
+              -0.0
+            ],
+            "max": [
+              3.94559,
+              3.92707,
+              8.9769
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 368,
+          "vertices": 214,
+          "boundsBlender": {
+            "min": [
+              -3.81437,
+              -3.79508,
+              0.00842
+            ],
+            "max": [
+              3.81039,
+              3.58961,
+              8.9769
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 2,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_tree_pine_a": {
+      "assetId": "env_tree_pine",
+      "variantId": "env_tree_pine_a",
+      "lods": {
+        "0": {
+          "triangles": 922,
+          "vertices": 528,
+          "boundsBlender": {
+            "min": [
+              -2.0,
+              -2.0,
+              0.0
+            ],
+            "max": [
+              2.0,
+              2.0,
+              10.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 610,
+          "vertices": 352,
+          "boundsBlender": {
+            "min": [
+              -1.91294,
+              -1.91294,
+              0.0
+            ],
+            "max": [
+              1.91294,
+              1.91294,
+              10.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 271,
+          "vertices": 160,
+          "boundsBlender": {
+            "min": [
+              -1.8655,
+              -2.01864,
+              0.00044
+            ],
+            "max": [
+              1.77476,
+              1.73026,
+              9.99997
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_tree_pine_b": {
+      "assetId": "env_tree_pine",
+      "variantId": "env_tree_pine_b",
+      "lods": {
+        "0": {
+          "triangles": 1088,
+          "vertices": 624,
+          "boundsBlender": {
+            "min": [
+              -2.0,
+              -2.0,
+              0.0
+            ],
+            "max": [
+              2.0,
+              2.0,
+              10.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 720,
+          "vertices": 416,
+          "boundsBlender": {
+            "min": [
+              -1.96674,
+              -1.96674,
+              0.0
+            ],
+            "max": [
+              1.96674,
+              1.96674,
+              10.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 318,
+          "vertices": 188,
+          "boundsBlender": {
+            "min": [
+              -1.94213,
+              -2.00323,
+              0.00044
+            ],
+            "max": [
+              1.68333,
+              1.78364,
+              10.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 1,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_tree_pine_c": {
+      "assetId": "env_tree_pine",
+      "variantId": "env_tree_pine_c",
+      "lods": {
+        "0": {
+          "triangles": 1254,
+          "vertices": 720,
+          "boundsBlender": {
+            "min": [
+              -2.0,
+              -2.0,
+              0.0
+            ],
+            "max": [
+              2.0,
+              2.0,
+              10.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 830,
+          "vertices": 480,
+          "boundsBlender": {
+            "min": [
+              -2.0192,
+              -2.0192,
+              0.0
+            ],
+            "max": [
+              2.0192,
+              2.0192,
+              10.0
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 365,
+          "vertices": 216,
+          "boundsBlender": {
+            "min": [
+              -2.01685,
+              -1.9882,
+              0.00044
+            ],
+            "max": [
+              1.59416,
+              1.94437,
+              9.99997
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 2,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_rock_boulder_a": {
+      "assetId": "env_rock_boulder",
+      "variantId": "env_rock_boulder_a",
+      "lods": {
+        "0": {
+          "triangles": 188,
+          "vertices": 96,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -0.8,
+              0.0
+            ],
+            "max": [
+              1.0,
+              0.8,
+              1.5
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 1500,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 52,
+          "vertices": 28,
+          "boundsBlender": {
+            "min": [
+              -0.98776,
+              -0.66919,
+              0.0
+            ],
+            "max": [
+              1.20531,
+              0.78668,
+              1.46435
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 500,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 44,
+          "vertices": 24,
+          "boundsBlender": {
+            "min": [
+              -0.99769,
+              -0.65978,
+              0.0
+            ],
+            "max": [
+              1.11826,
+              0.80088,
+              1.53231
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 100,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_rock_boulder_b": {
+      "assetId": "env_rock_boulder",
+      "variantId": "env_rock_boulder_b",
+      "lods": {
+        "0": {
+          "triangles": 176,
+          "vertices": 90,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -0.8,
+              0.0
+            ],
+            "max": [
+              1.0,
+              0.8,
+              1.5
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 1500,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 52,
+          "vertices": 28,
+          "boundsBlender": {
+            "min": [
+              -0.91087,
+              -0.69936,
+              0.0
+            ],
+            "max": [
+              1.19715,
+              0.69233,
+              1.55836
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 500,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 44,
+          "vertices": 24,
+          "boundsBlender": {
+            "min": [
+              -1.01846,
+              -0.72126,
+              0.0
+            ],
+            "max": [
+              1.17752,
+              0.63266,
+              1.56909
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 100,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 1,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_rock_boulder_c": {
+      "assetId": "env_rock_boulder",
+      "variantId": "env_rock_boulder_c",
+      "lods": {
+        "0": {
+          "triangles": 180,
+          "vertices": 92,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -0.8,
+              0.0
+            ],
+            "max": [
+              1.0,
+              0.8,
+              1.5
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 1500,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 52,
+          "vertices": 28,
+          "boundsBlender": {
+            "min": [
+              -0.93793,
+              -0.75544,
+              0.0
+            ],
+            "max": [
+              1.0629,
+              0.86149,
+              1.55885
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 500,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 44,
+          "vertices": 24,
+          "boundsBlender": {
+            "min": [
+              -1.01245,
+              -0.78495,
+              0.0
+            ],
+            "max": [
+              0.97107,
+              0.72505,
+              1.57041
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 100,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 2,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_rock_boulder_d": {
+      "assetId": "env_rock_boulder",
+      "variantId": "env_rock_boulder_d",
+      "lods": {
+        "0": {
+          "triangles": 182,
+          "vertices": 93,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -0.8,
+              0.0
+            ],
+            "max": [
+              1.0,
+              0.8,
+              1.5
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 1500,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 52,
+          "vertices": 28,
+          "boundsBlender": {
+            "min": [
+              -0.94557,
+              -0.78122,
+              0.0
+            ],
+            "max": [
+              0.96731,
+              0.8923,
+              1.5489
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 500,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 44,
+          "vertices": 24,
+          "boundsBlender": {
+            "min": [
+              -0.89022,
+              -0.81086,
+              0.0
+            ],
+            "max": [
+              0.91708,
+              0.78613,
+              1.46185
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 100,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 3,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_rock_slab_a": {
+      "assetId": "env_rock_slab",
+      "variantId": "env_rock_slab_a",
+      "lods": {
+        "0": {
+          "triangles": 156,
+          "vertices": 80,
+          "boundsBlender": {
+            "min": [
+              -0.8,
+              -0.6,
+              0.0
+            ],
+            "max": [
+              0.8,
+              0.6,
+              3.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 1500,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 52,
+          "vertices": 28,
+          "boundsBlender": {
+            "min": [
+              -0.78211,
+              -0.53378,
+              0.0
+            ],
+            "max": [
+              0.84588,
+              0.59701,
+              2.88984
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 500,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 44,
+          "vertices": 24,
+          "boundsBlender": {
+            "min": [
+              -0.78367,
+              -0.48358,
+              0.0
+            ],
+            "max": [
+              0.89693,
+              0.58052,
+              2.89644
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 100,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_rock_slab_b": {
+      "assetId": "env_rock_slab",
+      "variantId": "env_rock_slab_b",
+      "lods": {
+        "0": {
+          "triangles": 156,
+          "vertices": 80,
+          "boundsBlender": {
+            "min": [
+              -0.8,
+              -0.6,
+              0.0
+            ],
+            "max": [
+              0.8,
+              0.6,
+              3.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 1500,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 52,
+          "vertices": 28,
+          "boundsBlender": {
+            "min": [
+              -0.65586,
+              -0.64366,
+              0.0
+            ],
+            "max": [
+              0.7702,
+              0.60428,
+              3.12971
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 500,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 44,
+          "vertices": 24,
+          "boundsBlender": {
+            "min": [
+              -0.72186,
+              -0.59478,
+              0.0
+            ],
+            "max": [
+              0.87055,
+              0.55703,
+              3.13811
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 100,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 1,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_rock_slab_c": {
+      "assetId": "env_rock_slab",
+      "variantId": "env_rock_slab_c",
+      "lods": {
+        "0": {
+          "triangles": 160,
+          "vertices": 82,
+          "boundsBlender": {
+            "min": [
+              -0.8,
+              -0.6,
+              0.0
+            ],
+            "max": [
+              0.8,
+              0.6,
+              3.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 1500,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 52,
+          "vertices": 28,
+          "boundsBlender": {
+            "min": [
+              -0.84244,
+              -0.59672,
+              0.0
+            ],
+            "max": [
+              0.79303,
+              0.52385,
+              3.25867
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 500,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 44,
+          "vertices": 24,
+          "boundsBlender": {
+            "min": [
+              -0.91519,
+              -0.5694,
+              0.0
+            ],
+            "max": [
+              0.76,
+              0.52759,
+              3.24782
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 100,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 2,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_grass_tuft_a": {
+      "assetId": "env_grass_tuft",
+      "variantId": "env_grass_tuft_a",
+      "lods": {
+        "0": {
+          "triangles": 56,
+          "vertices": 42,
+          "boundsBlender": {
+            "min": [
+              -0.25001,
+              -0.25,
+              0.0
+            ],
+            "max": [
+              0.25,
+              0.24999,
+              0.35
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 300,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 40,
+          "vertices": 30,
+          "boundsBlender": {
+            "min": [
+              -0.25001,
+              -0.25,
+              0.0
+            ],
+            "max": [
+              0.25,
+              0.16731,
+              0.31583
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 120,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 24,
+          "vertices": 18,
+          "boundsBlender": {
+            "min": [
+              -0.18851,
+              -0.25,
+              0.0
+            ],
+            "max": [
+              0.25,
+              0.16731,
+              0.30379
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 30,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_grass_tuft_b": {
+      "assetId": "env_grass_tuft",
+      "variantId": "env_grass_tuft_b",
+      "lods": {
+        "0": {
+          "triangles": 56,
+          "vertices": 42,
+          "boundsBlender": {
+            "min": [
+              -0.25,
+              -0.25001,
+              0.0
+            ],
+            "max": [
+              0.24999,
+              0.25,
+              0.35
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 300,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 40,
+          "vertices": 30,
+          "boundsBlender": {
+            "min": [
+              -0.24008,
+              -0.25001,
+              0.0
+            ],
+            "max": [
+              0.24999,
+              0.25,
+              0.35
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 120,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 24,
+          "vertices": 18,
+          "boundsBlender": {
+            "min": [
+              -0.17733,
+              -0.14767,
+              0.0
+            ],
+            "max": [
+              0.24999,
+              0.25,
+              0.35
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 30,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 1,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_grass_tuft_c": {
+      "assetId": "env_grass_tuft",
+      "variantId": "env_grass_tuft_c",
+      "lods": {
+        "0": {
+          "triangles": 56,
+          "vertices": 42,
+          "boundsBlender": {
+            "min": [
+              -0.25,
+              -0.25,
+              0.0
+            ],
+            "max": [
+              0.25001,
+              0.24999,
+              0.35
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 300,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 40,
+          "vertices": 30,
+          "boundsBlender": {
+            "min": [
+              -0.15804,
+              -0.25,
+              0.0
+            ],
+            "max": [
+              0.25001,
+              0.24999,
+              0.33667
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 120,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 24,
+          "vertices": 18,
+          "boundsBlender": {
+            "min": [
+              -0.08466,
+              -0.15179,
+              0.0
+            ],
+            "max": [
+              0.25001,
+              0.24999,
+              0.31151
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 30,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 2,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_shrub_round_a": {
+      "assetId": "env_shrub_round",
+      "variantId": "env_shrub_round_a",
+      "lods": {
+        "0": {
+          "triangles": 400,
+          "vertices": 210,
+          "boundsBlender": {
+            "min": [
+              -0.75,
+              -0.6,
+              0.0
+            ],
+            "max": [
+              0.75,
+              0.6,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 400,
+          "vertices": 210,
+          "boundsBlender": {
+            "min": [
+              -0.75,
+              -0.6,
+              0.0
+            ],
+            "max": [
+              0.75,
+              0.6,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 100,
+          "vertices": 60,
+          "boundsBlender": {
+            "min": [
+              -0.7261,
+              -0.56088,
+              0.0
+            ],
+            "max": [
+              0.72581,
+              0.5573,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_shrub_round_b": {
+      "assetId": "env_shrub_round",
+      "variantId": "env_shrub_round_b",
+      "lods": {
+        "0": {
+          "triangles": 480,
+          "vertices": 252,
+          "boundsBlender": {
+            "min": [
+              -0.75,
+              -0.6,
+              0.0
+            ],
+            "max": [
+              0.75,
+              0.6,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 480,
+          "vertices": 252,
+          "boundsBlender": {
+            "min": [
+              -0.75,
+              -0.6,
+              0.0
+            ],
+            "max": [
+              0.75,
+              0.6,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 120,
+          "vertices": 72,
+          "boundsBlender": {
+            "min": [
+              -0.72028,
+              -0.55676,
+              0.0
+            ],
+            "max": [
+              0.72772,
+              0.56176,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 1,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_shrub_round_c": {
+      "assetId": "env_shrub_round",
+      "variantId": "env_shrub_round_c",
+      "lods": {
+        "0": {
+          "triangles": 560,
+          "vertices": 294,
+          "boundsBlender": {
+            "min": [
+              -0.75,
+              -0.6,
+              -0.0
+            ],
+            "max": [
+              0.75,
+              0.6,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 6000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 560,
+          "vertices": 294,
+          "boundsBlender": {
+            "min": [
+              -0.75,
+              -0.6,
+              -0.0
+            ],
+            "max": [
+              0.75,
+              0.6,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 2000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 140,
+          "vertices": 84,
+          "boundsBlender": {
+            "min": [
+              -0.72362,
+              -0.54393,
+              -0.0
+            ],
+            "max": [
+              0.72325,
+              0.55545,
+              1.1
+            ]
+          },
+          "materialSlots": 4,
+          "uv": true,
+          "ceiling": 400,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 2,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_cliff_straight_a": {
+      "assetId": "env_cliff_straight",
+      "variantId": "env_cliff_straight_a",
+      "lods": {
+        "0": {
+          "triangles": 46,
+          "vertices": 25,
+          "boundsBlender": {
+            "min": [
+              -2.0,
+              -1.11924,
+              0.0
+            ],
+            "max": [
+              2.0,
+              1.0,
+              2.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 4000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 46,
+          "vertices": 25,
+          "boundsBlender": {
+            "min": [
+              -2.0,
+              -1.11924,
+              0.0
+            ],
+            "max": [
+              2.0,
+              1.0,
+              2.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 1200,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 28,
+          "vertices": 16,
+          "boundsBlender": {
+            "min": [
+              -2.0,
+              -1.11924,
+              0.0
+            ],
+            "max": [
+              2.0,
+              1.0,
+              2.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 300,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated",
+      "sockets": {
+        "left": [
+          -2,
+          0,
+          0
+        ],
+        "right": [
+          2,
+          0,
+          0
+        ]
+      }
+    },
+    "env_fence_straight_a": {
+      "assetId": "env_fence_straight",
+      "variantId": "env_fence_straight_a",
+      "lods": {
+        "0": {
+          "triangles": 288,
+          "vertices": 160,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -0.128,
+              0.0
+            ],
+            "max": [
+              1.0,
+              0.09,
+              1.1
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 4000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 48,
+          "vertices": 32,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -0.09,
+              0.0
+            ],
+            "max": [
+              1.0,
+              0.09,
+              1.1
+            ]
+          },
+          "materialSlots": 2,
+          "uv": true,
+          "ceiling": 1200,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 48,
+          "vertices": 32,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -0.09,
+              0.0
+            ],
+            "max": [
+              1.0,
+              0.09,
+              1.1
+            ]
+          },
+          "materialSlots": 2,
+          "uv": true,
+          "ceiling": 300,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated",
+      "sockets": {
+        "left": [
+          -1,
+          0,
+          0
+        ],
+        "right": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "env_dock_straight_a": {
+      "assetId": "env_dock_straight",
+      "variantId": "env_dock_straight_a",
+      "lods": {
+        "0": {
+          "triangles": 704,
+          "vertices": 384,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -1.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0,
+              0.4
+            ]
+          },
+          "materialSlots": 2,
+          "uv": true,
+          "ceiling": 4000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 192,
+          "vertices": 128,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -1.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0,
+              0.4
+            ]
+          },
+          "materialSlots": 2,
+          "uv": true,
+          "ceiling": 1200,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 132,
+          "vertices": 88,
+          "boundsBlender": {
+            "min": [
+              -1.0,
+              -1.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0,
+              0.4
+            ]
+          },
+          "materialSlots": 2,
+          "uv": true,
+          "ceiling": 300,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated",
+      "sockets": {
+        "deck_start": [
+          0,
+          0.4,
+          1
+        ],
+        "deck_end": [
+          0,
+          0.4,
+          -1
+        ]
+      }
+    },
+    "env_wall_door_a": {
+      "assetId": "env_wall_door",
+      "variantId": "env_wall_door_a",
+      "lods": {
+        "0": {
+          "triangles": 396,
+          "vertices": 216,
+          "boundsBlender": {
+            "min": [
+              0.0,
+              -0.05,
+              0.0
+            ],
+            "max": [
+              2.0,
+              0.2,
+              3.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 800,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 108,
+          "vertices": 72,
+          "boundsBlender": {
+            "min": [
+              0.0,
+              -0.05,
+              0.0
+            ],
+            "max": [
+              2.0,
+              0.2,
+              3.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 300,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 72,
+          "vertices": 48,
+          "boundsBlender": {
+            "min": [
+              0.0,
+              -0.045,
+              0.0
+            ],
+            "max": [
+              2.0,
+              0.2,
+              3.0
+            ]
+          },
+          "materialSlots": 2,
+          "uv": true,
+          "ceiling": 80,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "lower-left-front socket origin",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated",
+      "sockets": {
+        "entrance": [
+          1,
+          0,
+          0
+        ],
+        "left": [
+          0,
+          0,
+          0
+        ],
+        "right": [
+          2,
+          0,
+          0
+        ]
+      }
+    },
+    "env_roof_gable_a": {
+      "assetId": "env_roof_gable",
+      "variantId": "env_roof_gable_a",
+      "lods": {
+        "0": {
+          "triangles": 924,
+          "vertices": 1048,
+          "boundsBlender": {
+            "min": [
+              -2.095,
+              -2.05,
+              -0.19
+            ],
+            "max": [
+              2.095,
+              2.05,
+              2.15
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 12000,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 268,
+          "vertices": 336,
+          "boundsBlender": {
+            "min": [
+              -2.095,
+              -2.05,
+              -0.19
+            ],
+            "max": [
+              2.095,
+              2.05,
+              2.15
+            ]
+          },
+          "materialSlots": 5,
+          "uv": true,
+          "ceiling": 4000,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 64,
+          "vertices": 42,
+          "boundsBlender": {
+            "min": [
+              -2.095,
+              -2.05,
+              -0.19
+            ],
+            "max": [
+              2.095,
+              2.05,
+              2.14413
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 800,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "ground-center; exact deck/socket offsets recorded per variant",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    },
+    "env_modern_facade_a": {
+      "assetId": "env_modern_facade",
+      "variantId": "env_modern_facade_a",
+      "lods": {
+        "0": {
+          "triangles": 496,
+          "vertices": 272,
+          "boundsBlender": {
+            "min": [
+              0.0,
+              -0.195,
+              0.0
+            ],
+            "max": [
+              2.0,
+              0.2,
+              3.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 800,
+          "withinBudget": true
+        },
+        "1": {
+          "triangles": 144,
+          "vertices": 96,
+          "boundsBlender": {
+            "min": [
+              0.0,
+              -0.195,
+              0.0
+            ],
+            "max": [
+              2.0,
+              0.2,
+              3.0
+            ]
+          },
+          "materialSlots": 3,
+          "uv": true,
+          "ceiling": 300,
+          "withinBudget": true
+        },
+        "2": {
+          "triangles": 60,
+          "vertices": 40,
+          "boundsBlender": {
+            "min": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "max": [
+              2.0,
+              0.2,
+              3.0
+            ]
+          },
+          "materialSlots": 2,
+          "uv": true,
+          "ceiling": 80,
+          "withinBudget": true
+        }
+      },
+      "units": "metres",
+      "baseSeed": 290926,
+      "variantIndex": 0,
+      "pivotPolicy": "lower-left-front socket origin",
+      "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+      "status": "exported-candidate; gameplay colliders/sockets not integrated"
+    }
+  }
+}

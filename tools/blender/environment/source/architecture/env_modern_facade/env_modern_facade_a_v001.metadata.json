@@ -1,0 +1,72 @@
+{
+  "assetId": "env_modern_facade",
+  "variantId": "env_modern_facade_a",
+  "lods": {
+    "0": {
+      "triangles": 496,
+      "vertices": 272,
+      "boundsBlender": {
+        "min": [
+          0.0,
+          -0.195,
+          0.0
+        ],
+        "max": [
+          2.0,
+          0.2,
+          3.0
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 800,
+      "withinBudget": true
+    },
+    "1": {
+      "triangles": 144,
+      "vertices": 96,
+      "boundsBlender": {
+        "min": [
+          0.0,
+          -0.195,
+          0.0
+        ],
+        "max": [
+          2.0,
+          0.2,
+          3.0
+        ]
+      },
+      "materialSlots": 3,
+      "uv": true,
+      "ceiling": 300,
+      "withinBudget": true
+    },
+    "2": {
+      "triangles": 60,
+      "vertices": 40,
+      "boundsBlender": {
+        "min": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max": [
+          2.0,
+          0.2,
+          3.0
+        ]
+      },
+      "materialSlots": 2,
+      "uv": true,
+      "ceiling": 80,
+      "withinBudget": true
+    }
+  },
+  "units": "metres",
+  "baseSeed": 290926,
+  "variantIndex": 0,
+  "pivotPolicy": "lower-left-front socket origin",
+  "source": "tools/blender/environment/source/b1/environment_b1_v001.blend",
+  "status": "exported-candidate; gameplay colliders/sockets not integrated"
+}

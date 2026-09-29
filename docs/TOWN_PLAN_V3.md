@@ -21,7 +21,7 @@ Sumber: halaman generator dan devlog resmi ([1.1.0 templates](https://watabou.it
 - **Blok diisi dari tepi**: rumah berderet menerus menghadap jalan, sisi belakang dan tengah blok menjadi halaman/kebun berpohon. Lot segitiga yang jelek dikurangi dan rumah dipaskan rapat ke lotnya.
 - Pengamatan gambar: jalan panjang berupa lengkung halus atau garis lurus; jalan kecil bertemu jalan induknya sebagai simpang T; tidak ada jalan yang berbelok bolak-balik.
 
-## 3. Pipeline v3 (`src/modes/town/blockPlan.js`)
+## 3. Pipeline v3 (`src/modes/town/layout/blockPlan.js`)
 
 1. **Garis kota halus.** Radius tepi kota dari medan `city` diambil pada 96 sudut, berhenti di air. Filter minimum lalu enam kali rata-rata bergerak (operasi *opening*): tanpa duri dan tanpa takik.
 2. **Template.** `ring` untuk ibu kota fantasy; kota fantasy lain acak di antara keempatnya; kota modern `street` atau `square`. Sumbu template = arah jalan regional pertama.
@@ -86,3 +86,12 @@ node tools/plan/preview.mjs --seed 427 --template ring --density normal --out pl
 - Sudut blok belum punya bangunan sudut khusus; baris rumah berhenti sebelum sudut bila tidak muat.
 - Sungai yang membelah kota tidak menjadi batas region; gang yang memotong sungai diputus, arteri dan cincin diberi jembatan.
 - Kota yang sudah punya interior v2 belum dimigrasikan ke v3 (sama seperti batas v1→v2).
+
+## Integrasi ke cabang lokal (30 September 2026)
+
+Cabang lokal sudah memakai nomor versi 3 untuk lebar jalan praktis, pagar tanaman, dan bunga berkelompok, jadi planner blok ini menjadi **layout versi 4** (`TOWN_LAYOUT_VERSION = 4`). Kota yang tersimpan di versi lama tanpa ruangan tersimpan naik ke versi 4; yang punya ruangan tetap di generatornya.
+
+- `blockPlan.js` pindah ke `src/modes/town/layout/`; dipanggil dari `generateTownLayout` untuk kota dan ibu kota, baik fantasi maupun modern. Desa fantasi kecil (satu tile, bukan ibu kota) tetap memakai `villagePlan.js`.
+- Parameter mengikuti planner 2D lokal: `options: { density: 0.75 | 1 | 1.3, template }` dipetakan ke `sparse | normal | dense`. Jalan selalu dipotong untuk kepadatan normal (`streetDensity`), sehingga mengubah kepadatan di planner hanya menjarangkan/memadatkan kavling tanpa menggeser jalan.
+- Preview 2D: `node tools/plan/preview.mjs --seed 17 --version 4 [--template ring] [--density dense]`.
+

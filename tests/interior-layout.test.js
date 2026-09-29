@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { Box3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { describeBuilding,localToTown,townToLocal } from '../src/world/buildingBlueprint.js';
-import { generateInteriorLayout,unreachableTargets,overlaps,measureFurnitureBounds } from '../src/modes/town/interiorLayout.js';
+import { generateInteriorLayout,unreachableTargets,overlaps,measureFurnitureBounds } from '../src/modes/town/interior/interiorLayout.js';
 const fixtures=[['f_house_small','cottage'],['f_house','house'],['f_house_tall','house'],['f_townhouse','house'],['f_shop','shop'],['f_tavern','tavern'],['m_house','house'],['m_shop','shop'],['m_apartment','apartment'],['m_office','office']];
 test('authored door sockets preserve placement through scaling and rotation',()=>{
  for(const [asset]of fixtures){

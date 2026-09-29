@@ -1,0 +1,19 @@
+{
+  "resolution": [
+    1254,
+    1254
+  ],
+  "channels": 4,
+  "sha256": "7472b8459463875ccccadfcad6d067d196d163e63202b1b02ef4ce8ca4d22bf7",
+  "meanRGBLinear": 0.6980279684066772,
+  "seamMeanAbsoluteErrorLinear": {
+    "u": 0.04378876835107803,
+    "v": 0.27123039960861206
+  },
+  "seamToInteriorGradientRatio": {
+    "u": 3.2858481457233926,
+    "v": 15.668836143071598
+  },
+  "seamlessApproval": "pending visual cleanup; generated opposite edges are not guaranteed identical",
+  "masterRole": "neutral RGB albedo multiplier in B1; sRGB decode then palette factor; not scalar town atlas"
+}

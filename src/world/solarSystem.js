@@ -1,4 +1,4 @@
-import { mulberry32 } from '../map/mapGenerator.js';
+import { mulberry32 } from '../math/random.js';
 import { PLANET_TYPES } from './planetTypes.js';
 
 // One star system per world seed. The terran home world (the globe the player

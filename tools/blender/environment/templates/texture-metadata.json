@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "template": true,
+  "materialSetId": "stone_cobble",
+  "revision": 1,
+  "status": "planned",
+  "referenceIds": [
+    "REF-04"
+  ],
+  "role": "tileable neutral modulation",
+  "source": {
+    "rawPath": null,
+    "masterPath": null,
+    "jobId": null,
+    "sha256": null
+  },
+  "resolution": [
+    512,
+    512
+  ],
+  "worldSpanM": [
+    2,
+    2
+  ],
+  "tileableAxes": [
+    "u",
+    "v"
+  ],
+  "mapContract": {
+    "modulation": {
+      "suffix": "_mod",
+      "channels": "R scalar replicated RGB",
+      "colorSpace": "NoColorSpace",
+      "valueRange": "record measured range after authoring",
+      "directionalLighting": false
+    },
+    "preview": {
+      "suffix": "_preview",
+      "colorSpace": "sRGB",
+      "runtime": false
+    }
+  },
+  "atlas": {
+    "bands": [],
+    "gutterPixels": null,
+    "dilationPixels": null,
+    "mipCoverageTested": false
+  },
+  "runtime": {
+    "loaderAdapter": null,
+    "materialToken": null,
+    "compression": null,
+    "path": null,
+    "bytes": null
+  },
+  "qa": {
+    "offsetWrap": "pending",
+    "repeat4x4": "pending",
+    "obliqueMip": "pending",
+    "lighting": "pending",
+    "evidence": []
+  }
+}

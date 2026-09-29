@@ -6,12 +6,12 @@ const KEY = 'planet_globe_tips';
 
 const TIPS = {
   space: { title: 'Terbang di tata surya', keys: ['W', 'A', 'D', 'Shift'], text: 'W dorong, A/D belok, Shift boost. Pilih planet di daftar kiri untuk autopilot, lalu tekan L atau Mendarat.' },
-  planet: { title: 'Di atas planet', keys: ['Seret'], text: 'Seret untuk memutar planet. Klik sebuah kota untuk melihatnya lalu mendarat, atau tekan Nyetir rover untuk menjelajah permukaan.' },
-  town: { title: 'Diorama kota', keys: ['2', '3'], text: 'Seret untuk memutar, scroll untuk zoom. Tekan 2 untuk jalan kaki atau 3 untuk langsung nyetir.' },
+  planet: { title: 'Di atas planet', keys: ['Seret'], text: 'Seret untuk memutar planet. Klik sebuah kota untuk melihatnya lalu mendarat, atau tekan Terbang untuk menjelajah langitnya dengan kapalmu.' },
+  town: { title: 'Diorama kota', keys: ['WASD', '2', '3'], text: 'Seret untuk memutar, WASD atau panah untuk menggeser, scroll untuk zoom. Tekan 2 untuk jalan kaki atau 3 untuk langsung nyetir.' },
   walk: { title: 'Jalan kaki', keys: ['E'], text: 'Dekati mobil, kereta, atau pintu rumah lalu tekan E. Shift lari, Spasi lompat, Esc kembali ke diorama.' },
   drive: { title: 'Nyetir', keys: ['Spasi', 'E'], text: 'W gas, S rem, Spasi rem tangan untuk drift, Shift ngebut. Tekan E untuk turun. Mobil di jalan juga bisa diambil alih.' },
   interior: { title: 'Di dalam rumah', keys: ['E', 'J'], text: 'Dekati perabot lalu tekan E: duduk, tidur, nyalakan lampu atau TV, buka kulkas, ambil dan taruh barang. Buka daftar misi dengan J.' },
-  rover: { title: 'Rover', keys: ['W', 'Spasi'], text: 'WASD untuk nyetir di permukaan, Spasi drift, Esc keluar dari rover.' }
+  rover: { title: 'Terbang', keys: ['W', 'R', 'F'], text: 'W/S dorong, A/D belok, R/F naik turun, Shift boost. Seret untuk melihat sekeliling. Di atas kota tekan L untuk mendarat, Esc selesai.' }
 };
 
 export class Tips {
@@ -31,7 +31,7 @@ export class Tips {
           <p class="intro__lead">Satu tata surya, dibuat dari satu angka. Terbang antar planet, mendarat di dunia heksagonal, lalu turun ke kotanya.</p>
           <ol class="intro__steps">
             <li><strong>Luar angkasa</strong><span>Terbangkan kapal, ganti kapal di hangar, parkir di orbit.</span></li>
-            <li><strong>Planet</strong><span>Putar globe, pilih kota, atau jelajahi permukaan dengan rover.</span></li>
+            <li><strong>Planet</strong><span>Putar globe, pilih kota, atau terbangkan kapal di langitnya.</span></li>
             <li><strong>Kota</strong><span>Diorama, jalan kaki, nyetir mobil siapa saja, masuk ke rumah.</span></li>
           </ol>
           <p class="intro__hint">Daftar misi ada di kiri bawah (J), menu dan pengaturan di kanan bawah (P).</p>

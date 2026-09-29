@@ -1,0 +1,20 @@
+{
+  "fixture": "qa/viewer.html via Vite 127.0.0.1:5191",
+  "loader": "src/render/texturedAssetLibrary.js loadTexturedPack",
+  "observed": [
+    "25 variants loaded",
+    "roof palette color survives export",
+    "LOD0 closeup",
+    "oak LOD2 switch",
+    "oak LOD1 night switch",
+    "all 8 texture masters loaded at 1254x1254",
+    "grass and dirt 4x4 repeat visual review",
+    "final pine_c LOD2 loads after polygon-budget repair; console errors absent"
+  ],
+  "consoleErrorsObserved": 0,
+  "limits": [
+    "isolated viewer, not production city",
+    "not a frame-time benchmark",
+    "terrain collision and world integration not tested"
+  ]
+}

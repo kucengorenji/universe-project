@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateHexasphere } from '../src/math/hexasphere.js';
 import { MapGenerator } from '../src/map/mapGenerator.js';
-import { generateTownLayout } from '../src/modes/town/townLayout.js';
+import { generateTownLayout } from '../src/modes/town/layout/townLayout.js';
 import { dryFootprint, containsField } from '../src/world/landUsePlan.js';
-import { riverDistance } from '../src/modes/town/townPlan.js';
-import { pathClearance } from '../src/modes/town/townGreenery.js';
+import { riverDistance } from '../src/modes/town/layout/townPlan.js';
+import { pathClearance } from '../src/modes/town/layout/townGreenery.js';
 
 test('fixture towns retain gameplay across detail tiers and keep farms dry', () => {
  const hexasphere=generateHexasphere(3,10), generator=new MapGenerator(hexasphere);

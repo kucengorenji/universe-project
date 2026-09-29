@@ -15,9 +15,10 @@ Town pack (public/models/town.glb):
 Space pack (public/models/space.glb):
     ships (frigate, interceptor, freighter, cargo, patrol) and the planet
     rover, space units (a ship is about 1.5 long), nose = Blender -Y.
-Also: furniture.glb (interiors, doors with the origin on the hinge),
-character.glb (one rig, ten outfits with vertex colours, seven clips) and
+Also: character.glb (one rig, ten outfits with vertex colours, seven clips) and
 public/textures/interior_atlas.jpg (4 x 4 tiles rendered from node materials).
+The Furniture collection is still built here but no longer exported:
+furniture.glb comes from build_furniture.py (chunky/props.py).
 
 Geometry is assembled with bmesh (no operators), so the script runs the same
 through the MCP sandbox and in `blender --background`.
@@ -2789,7 +2790,6 @@ if __name__ != 'town_build':  # the preview harness only wants the definitions
     sizes = {
         'town.glb': export_pack(f'{OUT}/town.glb', ('Fantasy', 'Modern', 'Nature', 'Vehicles')),
         'space.glb': export_pack(f'{OUT}/space.glb', ('Space',)),
-        'furniture.glb': export_pack(f'{OUT}/furniture.glb', ('Furniture',)),
         'character.glb': export_character(f'{OUT}/character.glb', arm, bodies),
     }
     # Interior atlas (rendered in its own scene)

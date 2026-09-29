@@ -1,0 +1,94 @@
+{
+  "source": "src/art/palette.js",
+  "sha256": "bab966807b56f6bc63d5ade6c8017b548bf6c0d3427ccdfa4043aabc27e5cc31",
+  "ROOF_PALETTES": {
+    "terran": {
+      "main": [
+        "#a45a43",
+        "#9a5440",
+        "#ad6448",
+        "#8f4f3d"
+      ],
+      "second": [
+        "#8a5b3f",
+        "#7d523a"
+      ],
+      "third": [
+        "#5f6671",
+        "#687079"
+      ],
+      "fort": "#5a616c"
+    },
+    "ocean": {
+      "main": [
+        "#b8603f",
+        "#ad5638",
+        "#c06d48"
+      ],
+      "second": [
+        "#8e6045"
+      ],
+      "third": [
+        "#4f6f7a",
+        "#5a7b84"
+      ],
+      "fort": "#56646c"
+    },
+    "desert": {
+      "main": [
+        "#c68a52",
+        "#bb7c47",
+        "#cf9860"
+      ],
+      "second": [
+        "#a8603f"
+      ],
+      "third": [
+        "#d9ccad"
+      ],
+      "fort": "#9c7a57"
+    },
+    "ice": {
+      "main": [
+        "#4f5864",
+        "#58616d",
+        "#474f5a"
+      ],
+      "second": [
+        "#6b4f42"
+      ],
+      "third": [
+        "#7a3f36"
+      ],
+      "fort": "#4a515b"
+    }
+  },
+  "MAP_COLORS": {
+    "meadow": "#a9c48b",
+    "meadowLight": "#b9d09a",
+    "meadowDark": "#8fae74",
+    "contour": "rgba(52, 78, 44, 0.22)",
+    "sand": "#e2d3a8",
+    "waterShallow": "#86c1c6",
+    "waterDeep": "#4a8aa0",
+    "waterLine": "rgba(235, 248, 250, 0.75)",
+    "road": "#e8dcbc",
+    "roadEdge": "#6f6452",
+    "path": "#d9cda9",
+    "plaza": "#ddd0ad",
+    "field": "#9d8577",
+    "fieldLine": "#5e4a40",
+    "fieldGreen": "#a4ae7a",
+    "treeDark": "#2f5a44",
+    "tree": "#4f7f5c",
+    "treeLight": "#6f9c72",
+    "outline": "#1f2a24",
+    "shadow": "rgba(20, 30, 24, 0.28)",
+    "wall": "#8e8a80",
+    "dock": "#9a7a55",
+    "wallsModern": "#c9c4ba",
+    "glass": "#6d96a6",
+    "asphalt": "#6c6e72",
+    "label": "#1c2320"
+  }
+}

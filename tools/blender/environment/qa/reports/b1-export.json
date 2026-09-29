@@ -1,0 +1,2105 @@
+{
+  "version": 1,
+  "checkedAt": "2026-09-29T13:44:41.124Z",
+  "file": "exports/staging/b1/environment_b1_v001.glb",
+  "bytes": 3355532,
+  "sha256": "1ee6d09dede62759b454a485ebf4746cbf9ef9382d22808aaa6d5b9014e9fb00",
+  "variantCount": 25,
+  "meshCount": 75,
+  "assets": {
+    "env_tree_oak_a": {
+      "assetId": "env_tree_oak",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 5132,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -4,
+              0,
+              -4
+            ],
+            "max": [
+              4,
+              9,
+              4
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 1444,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -3.964,
+              0,
+              -3.9154
+            ],
+            "max": [
+              3.9656,
+              8.9774,
+              3.8661
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 368,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -3.7002,
+              0.0084,
+              -3.672
+            ],
+            "max": [
+              3.5683,
+              8.9774,
+              3.6565
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_tree_oak_b": {
+      "assetId": "env_tree_oak",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 5132,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -4,
+              0,
+              -4
+            ],
+            "max": [
+              4,
+              9,
+              4
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 1444,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -3.9394,
+              0,
+              -3.918
+            ],
+            "max": [
+              3.945,
+              8.9608,
+              3.9622
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 368,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -3.7561,
+              0.0085,
+              -3.6819
+            ],
+            "max": [
+              3.8085,
+              8.9608,
+              3.7563
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_tree_oak_c": {
+      "assetId": "env_tree_oak",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 5132,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -4,
+              0,
+              -4
+            ],
+            "max": [
+              4,
+              9,
+              4
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 1444,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -3.8986,
+              0,
+              -3.9271
+            ],
+            "max": [
+              3.9456,
+              8.9769,
+              3.9682
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 368,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -3.8144,
+              0.0084,
+              -3.5896
+            ],
+            "max": [
+              3.8104,
+              8.9769,
+              3.7951
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_tree_pine_a": {
+      "assetId": "env_tree_pine",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 922,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -2,
+              0,
+              -2
+            ],
+            "max": [
+              2,
+              10,
+              2
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 610,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -1.9129,
+              0,
+              -1.9129
+            ],
+            "max": [
+              1.9129,
+              10,
+              1.9129
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 271,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -1.8655,
+              0.0004,
+              -1.7303
+            ],
+            "max": [
+              1.7748,
+              10,
+              2.0186
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_tree_pine_b": {
+      "assetId": "env_tree_pine",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 1088,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -2,
+              0,
+              -2
+            ],
+            "max": [
+              2,
+              10,
+              2
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 720,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -1.9667,
+              0,
+              -1.9667
+            ],
+            "max": [
+              1.9667,
+              10,
+              1.9667
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 318,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -1.9421,
+              0.0004,
+              -1.7836
+            ],
+            "max": [
+              1.6833,
+              10,
+              2.0032
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_tree_pine_c": {
+      "assetId": "env_tree_pine",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 1254,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -2,
+              0,
+              -2
+            ],
+            "max": [
+              2,
+              10,
+              2
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 830,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -2.0192,
+              0,
+              -2.0192
+            ],
+            "max": [
+              2.0192,
+              10,
+              2.0192
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 365,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -2.0169,
+              0.0004,
+              -1.9444
+            ],
+            "max": [
+              1.5942,
+              10,
+              1.9882
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_bark",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_rock_boulder_a": {
+      "assetId": "env_rock_boulder",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 188,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -0.8
+            ],
+            "max": [
+              1,
+              1.5,
+              0.8
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "1": {
+          "triangles": 52,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.9878,
+              0,
+              -0.7867
+            ],
+            "max": [
+              1.2053,
+              1.4644,
+              0.6692
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "2": {
+          "triangles": 44,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.9977,
+              0,
+              -0.8009
+            ],
+            "max": [
+              1.1183,
+              1.5323,
+              0.6598
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        }
+      }
+    },
+    "env_rock_boulder_b": {
+      "assetId": "env_rock_boulder",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 176,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -0.8
+            ],
+            "max": [
+              1,
+              1.5,
+              0.8
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "1": {
+          "triangles": 52,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.9109,
+              0,
+              -0.6923
+            ],
+            "max": [
+              1.1972,
+              1.5584,
+              0.6994
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "2": {
+          "triangles": 44,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -1.0185,
+              0,
+              -0.6327
+            ],
+            "max": [
+              1.1775,
+              1.5691,
+              0.7213
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        }
+      }
+    },
+    "env_rock_boulder_c": {
+      "assetId": "env_rock_boulder",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 180,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -0.8
+            ],
+            "max": [
+              1,
+              1.5,
+              0.8
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "1": {
+          "triangles": 52,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.9379,
+              0,
+              -0.8615
+            ],
+            "max": [
+              1.0629,
+              1.5589,
+              0.7554
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "2": {
+          "triangles": 44,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -1.0124,
+              0,
+              -0.7251
+            ],
+            "max": [
+              0.9711,
+              1.5704,
+              0.785
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        }
+      }
+    },
+    "env_rock_boulder_d": {
+      "assetId": "env_rock_boulder",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 182,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -0.8
+            ],
+            "max": [
+              1,
+              1.5,
+              0.8
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "1": {
+          "triangles": 52,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.9456,
+              0,
+              -0.8923
+            ],
+            "max": [
+              0.9673,
+              1.5489,
+              0.7812
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "2": {
+          "triangles": 44,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.8902,
+              0,
+              -0.7861
+            ],
+            "max": [
+              0.9171,
+              1.4619,
+              0.8109
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        }
+      }
+    },
+    "env_rock_slab_a": {
+      "assetId": "env_rock_slab",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 156,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.8,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.8,
+              3,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "1": {
+          "triangles": 52,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.7821,
+              0,
+              -0.597
+            ],
+            "max": [
+              0.8459,
+              2.8898,
+              0.5338
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "2": {
+          "triangles": 44,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.7837,
+              0,
+              -0.5805
+            ],
+            "max": [
+              0.8969,
+              2.8964,
+              0.4836
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        }
+      }
+    },
+    "env_rock_slab_b": {
+      "assetId": "env_rock_slab",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 156,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.8,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.8,
+              3,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "1": {
+          "triangles": 52,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.6559,
+              0,
+              -0.6043
+            ],
+            "max": [
+              0.7702,
+              3.1297,
+              0.6437
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "2": {
+          "triangles": 44,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.7219,
+              0,
+              -0.557
+            ],
+            "max": [
+              0.8706,
+              3.1381,
+              0.5948
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        }
+      }
+    },
+    "env_rock_slab_c": {
+      "assetId": "env_rock_slab",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 160,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.8,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.8,
+              3,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "1": {
+          "triangles": 52,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.8424,
+              0,
+              -0.5238
+            ],
+            "max": [
+              0.793,
+              3.2587,
+              0.5967
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "2": {
+          "triangles": 44,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.9152,
+              0,
+              -0.5276
+            ],
+            "max": [
+              0.76,
+              3.2478,
+              0.5694
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        }
+      }
+    },
+    "env_grass_tuft_a": {
+      "assetId": "env_grass_tuft",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 56,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.25,
+              0,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.35,
+              0.25
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 40,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.25,
+              0,
+              -0.1673
+            ],
+            "max": [
+              0.25,
+              0.3158,
+              0.25
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 24,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.1885,
+              0,
+              -0.1673
+            ],
+            "max": [
+              0.25,
+              0.3038,
+              0.25
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2"
+          ]
+        }
+      }
+    },
+    "env_grass_tuft_b": {
+      "assetId": "env_grass_tuft",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 56,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.25,
+              0,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.35,
+              0.25
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 40,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.2401,
+              0,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.35,
+              0.25
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 24,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.1773,
+              0,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.35,
+              0.1477
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2"
+          ]
+        }
+      }
+    },
+    "env_grass_tuft_c": {
+      "assetId": "env_grass_tuft",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 56,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.25,
+              0,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.35,
+              0.25
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 40,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.158,
+              0,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.3367,
+              0.25
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 24,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -0.0847,
+              0,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.3115,
+              0.1518
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2"
+          ]
+        }
+      }
+    },
+    "env_shrub_round_a": {
+      "assetId": "env_shrub_round",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 400,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.75,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.75,
+              1.1,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 400,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.75,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.75,
+              1.1,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 100,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.7261,
+              0,
+              -0.5573
+            ],
+            "max": [
+              0.7258,
+              1.1,
+              0.5609
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_shrub_round_b": {
+      "assetId": "env_shrub_round",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 480,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.75,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.75,
+              1.1,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 480,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.75,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.75,
+              1.1,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 120,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.7203,
+              0,
+              -0.5618
+            ],
+            "max": [
+              0.7277,
+              1.1,
+              0.5568
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_shrub_round_c": {
+      "assetId": "env_shrub_round",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 560,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.75,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.75,
+              1.1,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "1": {
+          "triangles": 560,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.75,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.75,
+              1.1,
+              0.6
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        },
+        "2": {
+          "triangles": 140,
+          "primitives": 4,
+          "bounds": {
+            "min": [
+              -0.7236,
+              0,
+              -0.5554
+            ],
+            "max": [
+              0.7233,
+              1.1,
+              0.5439
+            ]
+          },
+          "materials": [
+            "ENV_leaf_0",
+            "ENV_leaf_1",
+            "ENV_leaf_2",
+            "ENV_leaf_3"
+          ]
+        }
+      }
+    },
+    "env_cliff_straight_a": {
+      "assetId": "env_cliff_straight",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 46,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -2,
+              0,
+              -1
+            ],
+            "max": [
+              2,
+              2,
+              1.1192
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "1": {
+          "triangles": 46,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -2,
+              0,
+              -1
+            ],
+            "max": [
+              2,
+              2,
+              1.1192
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        },
+        "2": {
+          "triangles": 28,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -2,
+              0,
+              -1
+            ],
+            "max": [
+              2,
+              2,
+              1.1192
+            ]
+          },
+          "materials": [
+            "ENV_stone_1",
+            "ENV_stone_0",
+            "ENV_stone_2"
+          ]
+        }
+      }
+    },
+    "env_fence_straight_a": {
+      "assetId": "env_fence_straight",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 288,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -0.09
+            ],
+            "max": [
+              1,
+              1.1,
+              0.128
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_wood",
+            "ENV_metal"
+          ]
+        },
+        "1": {
+          "triangles": 48,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -0.09
+            ],
+            "max": [
+              1,
+              1.1,
+              0.09
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_wood"
+          ]
+        },
+        "2": {
+          "triangles": 48,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -0.09
+            ],
+            "max": [
+              1,
+              1.1,
+              0.09
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_wood"
+          ]
+        }
+      }
+    },
+    "env_dock_straight_a": {
+      "assetId": "env_dock_straight",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 704,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -1
+            ],
+            "max": [
+              1,
+              0.4,
+              1
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_wood"
+          ]
+        },
+        "1": {
+          "triangles": 192,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -1
+            ],
+            "max": [
+              1,
+              0.4,
+              1
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_wood"
+          ]
+        },
+        "2": {
+          "triangles": 132,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -1
+            ],
+            "max": [
+              1,
+              0.4,
+              1
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_wood"
+          ]
+        }
+      }
+    },
+    "env_wall_door_a": {
+      "assetId": "env_wall_door",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 396,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              0,
+              0,
+              -0.2
+            ],
+            "max": [
+              2,
+              3,
+              0.05
+            ]
+          },
+          "materials": [
+            "ENV_plaster",
+            "ENV_wood_dark",
+            "ENV_wood"
+          ]
+        },
+        "1": {
+          "triangles": 108,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              0,
+              0,
+              -0.2
+            ],
+            "max": [
+              2,
+              3,
+              0.05
+            ]
+          },
+          "materials": [
+            "ENV_plaster",
+            "ENV_wood_dark",
+            "ENV_wood"
+          ]
+        },
+        "2": {
+          "triangles": 72,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              0,
+              0,
+              -0.2
+            ],
+            "max": [
+              2,
+              3,
+              0.045
+            ]
+          },
+          "materials": [
+            "ENV_plaster",
+            "ENV_wood_dark"
+          ]
+        }
+      }
+    },
+    "env_roof_gable_a": {
+      "assetId": "env_roof_gable",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 924,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -2.095,
+              -0.19,
+              -2.05
+            ],
+            "max": [
+              2.095,
+              2.15,
+              2.05
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_roof",
+            "ENV_tile",
+            "ENV_tile_light",
+            "ENV_tile_dark"
+          ]
+        },
+        "1": {
+          "triangles": 268,
+          "primitives": 5,
+          "bounds": {
+            "min": [
+              -2.095,
+              -0.19,
+              -2.05
+            ],
+            "max": [
+              2.095,
+              2.15,
+              2.05
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_roof",
+            "ENV_tile",
+            "ENV_tile_light",
+            "ENV_tile_dark"
+          ]
+        },
+        "2": {
+          "triangles": 64,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              -2.095,
+              -0.19,
+              -2.05
+            ],
+            "max": [
+              2.095,
+              2.1441,
+              2.05
+            ]
+          },
+          "materials": [
+            "ENV_wood_dark",
+            "ENV_roof",
+            "ENV_tile_light"
+          ]
+        }
+      }
+    },
+    "env_modern_facade_a": {
+      "assetId": "env_modern_facade",
+      "units": "metres",
+      "up": "+Y",
+      "front": "+Z",
+      "lods": {
+        "0": {
+          "triangles": 496,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              0,
+              0,
+              -0.2
+            ],
+            "max": [
+              2,
+              3,
+              0.195
+            ]
+          },
+          "materials": [
+            "ENV_modern",
+            "ENV_glass",
+            "ENV_metal"
+          ]
+        },
+        "1": {
+          "triangles": 144,
+          "primitives": 3,
+          "bounds": {
+            "min": [
+              0,
+              0,
+              -0.2
+            ],
+            "max": [
+              2,
+              3,
+              0.195
+            ]
+          },
+          "materials": [
+            "ENV_modern",
+            "ENV_glass",
+            "ENV_metal"
+          ]
+        },
+        "2": {
+          "triangles": 60,
+          "primitives": 2,
+          "bounds": {
+            "min": [
+              0,
+              0,
+              -0.2
+            ],
+            "max": [
+              2,
+              3,
+              0
+            ]
+          },
+          "materials": [
+            "ENV_modern",
+            "ENV_glass"
+          ]
+        }
+      }
+    }
+  },
+  "materials": [
+    {
+      "name": "ENV_leaf_0",
+      "baseColorFactor": [
+        0.17679788172245026,
+        0.2987871766090393,
+        0.14580954611301422,
+        1
+      ],
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421
+    },
+    {
+      "name": "ENV_bark",
+      "baseColorTexture": {
+        "index": 0
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.18742306530475616,
+        0.11287834495306015,
+        0.05268819257616997,
+        1
+      ]
+    },
+    {
+      "name": "ENV_leaf_1",
+      "baseColorFactor": [
+        0.2203918695449829,
+        0.3724607229232788,
+        0.18176259100437164,
+        1
+      ],
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421
+    },
+    {
+      "name": "ENV_leaf_2",
+      "baseColorFactor": [
+        0.2615639865398407,
+        0.442041277885437,
+        0.21571823954582214,
+        1
+      ],
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421
+    },
+    {
+      "name": "ENV_leaf_3",
+      "baseColorFactor": [
+        0.2954704165458679,
+        0.4993429481983185,
+        0.24368171393871307,
+        1
+      ],
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421
+    },
+    {
+      "name": "ENV_stone_1",
+      "baseColorTexture": {
+        "index": 1
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.3783036768436432,
+        0.3415478765964508,
+        0.254517138004303,
+        1
+      ]
+    },
+    {
+      "name": "ENV_stone_0",
+      "baseColorTexture": {
+        "index": 2
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.3102090060710907,
+        0.2800692617893219,
+        0.20870405435562134,
+        1
+      ]
+    },
+    {
+      "name": "ENV_stone_2",
+      "baseColorTexture": {
+        "index": 3
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.431266188621521,
+        0.3893645703792572,
+        0.2901495397090912,
+        1
+      ]
+    },
+    {
+      "name": "ENV_wood_dark",
+      "baseColorTexture": {
+        "index": 4
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.18742306530475616,
+        0.11287834495306015,
+        0.05268819257616997,
+        1
+      ]
+    },
+    {
+      "name": "ENV_wood",
+      "baseColorTexture": {
+        "index": 5
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.3554575443267822,
+        0.2140796184539795,
+        0.09992588311433792,
+        1
+      ]
+    },
+    {
+      "name": "ENV_metal",
+      "baseColorTexture": {
+        "index": 6
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.1081991195678711,
+        0.1016608402132988,
+        0.08634419739246368,
+        1
+      ]
+    },
+    {
+      "name": "ENV_plaster",
+      "baseColorTexture": {
+        "index": 7
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.7300980091094971,
+        0.6900142431259155,
+        0.6137760877609253,
+        1
+      ]
+    },
+    {
+      "name": "ENV_roof",
+      "baseColorTexture": {
+        "index": 8
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.42692333459854126,
+        0.11757799237966537,
+        0.06454776227474213,
+        1
+      ]
+    },
+    {
+      "name": "ENV_tile",
+      "baseColorFactor": [
+        0.42692333459854126,
+        0.11757799237966537,
+        0.06454776227474213,
+        1
+      ],
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421
+    },
+    {
+      "name": "ENV_tile_light",
+      "baseColorFactor": [
+        0.45662233233451843,
+        0.1257573366165161,
+        0.0690380409359932,
+        1
+      ],
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421
+    },
+    {
+      "name": "ENV_tile_dark",
+      "baseColorFactor": [
+        0.3972243070602417,
+        0.10939865559339523,
+        0.06005748361349106,
+        1
+      ],
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421
+    },
+    {
+      "name": "ENV_modern",
+      "baseColorTexture": {
+        "index": 9
+      },
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421,
+      "baseColorFactor": [
+        0.7008941173553467,
+        0.6624136567115784,
+        0.5892249941825867,
+        1
+      ]
+    },
+    {
+      "name": "ENV_glass",
+      "baseColorFactor": [
+        0.09481421113014221,
+        0.18909212946891785,
+        0.2364221215248108,
+        1
+      ],
+      "metallicFactor": 0,
+      "roughnessFactor": 0.8999999761581421
+    }
+  ],
+  "images": [
+    {
+      "name": "wood_bark_v001",
+      "mimeType": "image/jpeg",
+      "embedded": true,
+      "bytes": 327447
+    },
+    {
+      "name": "stone_rock_v001",
+      "mimeType": "image/jpeg",
+      "embedded": true,
+      "bytes": 337530
+    },
+    {
+      "name": "wood_trim_v001",
+      "mimeType": "image/jpeg",
+      "embedded": true,
+      "bytes": 183765
+    },
+    {
+      "name": "modern_trim_v001",
+      "mimeType": "image/jpeg",
+      "embedded": true,
+      "bytes": 291493
+    },
+    {
+      "name": "architecture_trim_v001",
+      "mimeType": "image/jpeg",
+      "embedded": true,
+      "bytes": 251456
+    }
+  ],
+  "checks": {
+    "attributes": true,
+    "lodCount": true,
+    "triangleBudget": true,
+    "tintFactors": true,
+    "glbHeaderLength": true
+  },
+  "errors": [],
+  "status": "structural-pass; visual and runtime integration gates separate"
+}

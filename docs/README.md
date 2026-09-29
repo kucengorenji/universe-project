@@ -29,6 +29,7 @@ npm run build    # build produksi ke dist/
 | [REVIEW_2026_09_29.md](REVIEW_2026_09_29.md) | Gap rencana, inkonsistensi, dan urutan perapian | Review titik-waktu |
 | [LIVING_TOWNS_IMPLEMENTATION.md](LIVING_TOWNS_IMPLEMENTATION.md) | Log implementasi 27 September | Log bertanggal; tidak diedit ulang |
 | [TOWN_REFINEMENT_2026_09_29.md](TOWN_REFINEMENT_2026_09_29.md) | Log implementasi 29 September | Log bertanggal; tidak diedit ulang |
+| [TOWN_PLAN_V3.md](TOWN_PLAN_V3.md) | Tata kota v3: template dan blok dibelah ala Neighbourhood, parameter kepadatan, versi save | Aktif; perbarui saat generator kota berubah |
 | [WATABOU_WORLD_BUILDING_NOTES.md](WATABOU_WORLD_BUILDING_NOTES.md) | Riset generator Watabou dan audit awal | Riset |
 | [`../README.md`](../README.md) | Changelog Update 1–9 | Riwayat; beberapa angka sudah basi (lihat review §2.4) |
 | [`../plan.md`](../plan.md), [`../TILES_ROADMAP.md`](../TILES_ROADMAP.md) | Rencana 14 September dan upgrade tile | Historis; jangan dipakai sebagai acuan |

@@ -8,6 +8,8 @@ import { planVegetation } from './vegetation.js';
 import { planTownGreenery } from './townGreenery.js';
 import { planNeighbourhoods } from './neighbourhoodPlan.js';
 import { planStreetLights } from './streetLighting.js';
+import { planBlocks } from './blockPlan.js';
+import { TOWN_LAYOUT_VERSION } from '../../world/townGeneration.js';
 
 // Town layout: a city and its surroundings, cut out of the planet's hex map
 // and unrolled onto a flat, metre-scale disc (a tabletop diorama). Pure data:
@@ -145,8 +147,12 @@ class Fields {
  * @param {object} p
  *   map: planet map data, hexasphere: tiles with that map applied,
  *   cityIndex, planetType, seed
+ *   layoutVersion: 1 and 2 are kept for towns whose saved interiors refer to
+ *     their buildings; 3 is the block planner (blockPlan.js)
+ *   plan: { template: 'auto' | 'area' | 'street' | 'square' | 'ring',
+ *           density: 'sparse' | 'normal' | 'dense' } (layout version 3)
  */
-export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 'terran', detail = 1, footprints = {}, layoutVersion = 2 }) {
+export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 'terran', detail = 1, footprints = {}, layoutVersion = TOWN_LAYOUT_VERSION, plan = {} }) {
   const city = map.cities[cityIndex];
   const tileMap = hexasphere.tileMap;
   const seed = ((map.seed || 1) * 131 + cityIndex * 977) >>> 0;
@@ -348,26 +354,29 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   planRivers(layout, byId, local, chaikin);
   const buildable = rect => dryFootprint(rect, at, (x, z) => riverDistance(layout, x, z));
   const K = { rng, noise, at, inCity, edgeRadius, addStreet, streetClear, place, claim, segs, free, fp, footprints, buildable };
-  if (modern && layoutVersion >= 2) planNeighbourhoods(layout, K, fillStreetFronts);
-  else if (modern) planModern(layout, K);
-  else if (planWards(layout, K, fillStreetFronts)) {
-    // Torch posts along the arteries
+  const torches = () =>
     scatterAlong(layout, ['main'], 26, (x, z, yaw) => {
       if (streetClear(x, z, 10) < 0.3) return;
       layout.props.push({ asset: 'f_lamp', x, z, yaw, w: 0.6, d: 0.6 });
       layout.colliders.push({ type: 'circle', x, z, r: 0.3 });
     }, { side: 4.2, rng });
-  } else planFantasy(layout, K);
+  if (layoutVersion >= 3 && planBlocks(layout, K, plan)) {
+    if (!modern) torches();
+  } else if (modern && layoutVersion >= 2) planNeighbourhoods(layout, K, fillStreetFronts);
+  else if (modern) planModern(layout, K);
+  else if (planWards(layout, K, fillStreetFronts)) torches(); // torch posts along the arteries
+  else planFantasy(layout, K);
 
   // Roads out of town to the edge of the disc, along the planet's route
   for (const e of exits) {
     const start = e.gate ? [e.gate.x, e.gate.z] : [Math.cos(e.angle) * edgeRadius(e.angle) * 0.92, Math.sin(e.angle) * edgeRadius(e.angle) * 0.92];
-    const pts = [start];
+    const pts = [start, ...(e.via || [])];
     // Out to the painted far ground, so the road visibly carries on past the disc
     const reach = 1050;
+    const from = Math.hypot(...pts[pts.length - 1]);
     for (const p of e.path) {
       if (Math.hypot(p[0], p[1]) > reach) break;
-      if (Math.hypot(p[0], p[1]) < Math.hypot(...start) + 30) continue;
+      if (Math.hypot(p[0], p[1]) < from + 30) continue;
       pts.push(p);
     }
     const last = pts[pts.length - 1];

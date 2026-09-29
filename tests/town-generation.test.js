@@ -34,7 +34,7 @@ test('fixture towns retain gameplay across detail tiers and keep farms dry', () 
     assert.ok(!high.fields2.some(f=>containsField(f,rock.x,rock.z)),'rocks avoid farm parcels');
     assert.ok(high.fields.sample(rock.x,rock.z).land>.76,'rocks stay off water');
    }
-   if(high.modern)assert.equal(high.morphology.kind,'grown-neighbourhoods','modern streets grow from regional approaches');
+   assert.equal(high.morphology.kind,'bisected-neighbourhood','new towns are planned block by block');
    count++;styles.add(high.modern?'modern':'fantasy');
   }
  }

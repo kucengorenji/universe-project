@@ -6,7 +6,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {Car,VEHICLE_TYPES} from '../src/modes/town/vehicle.js';
 import {trafficPose,advanceTraffic} from '../src/modes/town/trafficRoute.js';
 import {buildingApproach,townToLocal} from '../src/world/buildingBlueprint.js';
-import {townGenerationVersion} from '../src/world/townGeneration.js';
+import {townGenerationVersion,TOWN_LAYOUT_VERSION} from '../src/world/townGeneration.js';
 import {locomotionClips,animatePerson} from '../src/modes/town/peopleMotion.js';
 import {streetJunctions} from '../src/modes/town/streetJunctions.js';
 
@@ -55,7 +55,13 @@ test('door approaches clear measured porches and saved rooms pin their original 
  const records=new Map([['interior:2:town:99:building:old',{cabinet:true}]]);
  const state={records,get:k=>records.get(k),set:(k,v)=>records.set(k,v)};
  assert.equal(townGenerationVersion(state,2,99),1);
- assert.equal(townGenerationVersion(state,2,100),2);
+ assert.equal(townGenerationVersion(state,2,100),TOWN_LAYOUT_VERSION);
+ // A town remembered at v2 keeps it while it has rooms, and moves up when it has none
+ records.set('town-layout:2:101',{version:2});records.set('interior:2:town:101:building:x',{});
+ assert.equal(townGenerationVersion(state,2,101),2);
+ records.set('town-layout:2:102',{version:2});
+ assert.equal(townGenerationVersion(state,2,102),TOWN_LAYOUT_VERSION);
+ assert.equal(records.get('town-layout:2:102').version,TOWN_LAYOUT_VERSION);
  assert.deepEqual(records.get('interior:2:town:99:building:old'),{cabinet:true});
  assert.equal(townGenerationVersion(state,2,99),1);
 });

@@ -3,6 +3,7 @@ import { seedFor } from '../../../world/identity.js';
 import { describeBuilding, buildingApproach } from '../../../world/buildingBlueprint.js';
 import { inConvex } from './wards.js';
 import { riverDistance } from './townPlan.js';
+import { pavementWidth } from '../scale.js';
 
 export function segmentDistance(x,z,a,b) {
   const dx=b[0]-a[0],dz=b[1]-a[1],d=dx*dx+dz*dz;
@@ -22,6 +23,82 @@ function nearestStreet(L,x,z) {
     if(!best||hit.distance<best.distance)best={...hit,street};
   }
   return best;
+}
+
+/**
+ * v4 streetscape, after the reference dioramas: terraces in front of shops and taverns, a
+ * fountain with benches and kiosks on a modern plaza, bus stops, hydrants and bins along
+ * modern streets. Small props: walkers step round them, cars do not stop for them.
+ */
+function planStreetscape(L,K,dry){
+  const rng=mulberry32(seedFor(L.seed,'streetscape-v4'));
+  const put=(asset,x,z,yaw,w,d,collider)=>{
+    if(!dry(x,z)||pathClearance(L.paths,x,z)<Math.max(w,d)/2+.2)return false;
+    if(!K.place(L.props,asset,x,z,yaw,w,d,{collide:false,pad:.2,variant:0,tint:1}))return false;
+    if(collider)L.colliders.push(collider);
+    return true;
+  };
+  // Terraces: two tables in front of every shop and tavern, either side of the door
+  for(const b of L.buildings){
+    if(!/shop|tavern/.test(b.asset))continue;
+    const fx=-Math.sin(b.yaw),fz=Math.cos(b.yaw),rx=Math.cos(b.yaw),rz=Math.sin(b.yaw);
+    const front=(K.footprints?.[b.asset]?.maxZ??b.d/2)*(b.sz??1)+2.1;
+    for(const u of [-1,1]){
+      const k=u*Math.max(1.6,Math.min(b.w/2-1.2,3.4));
+      const x=b.x+fx*front+rx*k,z=b.z+fz*front+rz*k;
+      if(K.streetClear(x,z,8)<.9)continue;
+      put(rng()<.5?'g_cafe_a':'g_cafe_b',x,z,b.yaw,2.3,2.3,{type:'circle',x,z,r:1});
+    }
+  }
+  if(!L.modern)return;
+  // Plaza: a fountain in the middle, benches facing it, kiosks at the edge
+  const p=L.plaza;
+  if(p){
+    const poly=p.poly?.length>2?p.poly:null;
+    const px=poly?poly.reduce((s,q)=>s+q[0],0)/poly.length:p.x,pz=poly?poly.reduce((s,q)=>s+q[1],0)/poly.length:p.z;
+    const pr=poly?Math.min(...poly.map(q=>Math.hypot(q[0]-px,q[1]-pz))):p.r;
+    if(pr>7&&!L.props.some(o=>Math.hypot(o.x-px,o.z-pz)<4)){
+      L.props.push({asset:'g_fountain',x:px,z:pz,yaw:0,w:6.6,d:6.6,variant:0,tint:1});
+      L.colliders.push({type:'circle',x:px,z:pz,r:3.4});
+      for(let i=0;i<4;i++){
+        const a=i*Math.PI/2+Math.PI/4,x=px+Math.cos(a)*5.6,z=pz+Math.sin(a)*5.6;
+        L.props.push({asset:'m_bench',x,z,yaw:Math.atan2(-Math.cos(a),Math.sin(a))+Math.PI,w:2,d:.6,variant:0,tint:1});
+      }
+    }
+    if(pr>10)for(const a of [rng()*Math.PI*2,rng()*Math.PI*2+Math.PI]){
+      const x=px+Math.cos(a)*pr*.72,z=pz+Math.sin(a)*pr*.72;
+      put('g_kiosk',x,z,Math.atan2(-Math.cos(a),Math.sin(a))+Math.PI,2.6,2,{type:'box',x,z,hw:1.3,hd:1,yaw:a+Math.PI/2});
+    }
+  }
+  // Along the streets: bus stops on the busy ones, hydrants at the kerb, bins on the pavement
+  const pav=pavementWidth(L);
+  for(const s of L.streets){
+    if(!['main','collector','residential','grid'].includes(s.kind))continue;
+    const busy=s.kind==='main'||s.kind==='collector';
+    let run=rng()*40,side=1;
+    for(let i=0;i+1<s.pts.length;i++){
+      const [ax,az]=s.pts[i],[bx,bz]=s.pts[i+1];
+      const len=Math.hypot(bx-ax,bz-az);if(len<1e-3)continue;
+      const tx=(bx-ax)/len,tz=(bz-az)/len,nx=-tz,nz=tx;
+      for(let d=0;d<len;d+=6){
+        run+=6;
+        const cx=ax+tx*d,cz=az+tz*d;
+        // Front of the prop (+Z local) faces the street
+        const yawTo=(sx)=>Math.atan2(sx*nx,-sx*nz);
+        if(busy&&run%130<6){
+          const x=cx+nx*side*(s.w/2+pav*.62),z=cz+nz*side*(s.w/2+pav*.62);
+          put('g_bus_stop',x,z,yawTo(side),3.4,1.6,{type:'box',x,z,hw:1.7,hd:.8,yaw:Math.atan2(tz,tx)});
+          side=-side;
+        }else if(run%66<6){
+          const x=cx+nx*side*(s.w/2+.45),z=cz+nz*side*(s.w/2+.45);
+          put('g_hydrant',x,z,yawTo(side),.5,.5,{type:'circle',x,z,r:.25});
+        }else if(run%48<6){
+          const x=cx-nx*side*(s.w/2+pav*.85),z=cz-nz*side*(s.w/2+pav*.85);
+          put('g_bin',x,z,yawTo(-side),.6,.6,{type:'circle',x,z,r:.3});
+        }
+      }
+    }
+  }
 }
 
 // Public space is planned before dressing. Paths remain gameplay data at every
@@ -99,6 +176,40 @@ export function planTownGreenery(L,K) {
       const x=start[0]+Math.cos(b.yaw)*sign*2.3,z=start[1]+Math.sin(b.yaw)*sign*2.3;
       if(K.streetClear(x,z,12)>1&&pathClearance(L.paths,x,z)>.9)K.place(L.props,'g_planter',x,z,b.yaw,1.6,1.6,{variant:0,tint:1});
     }
+  }
+
+  // v4: every building reaches a street. Where the street is not straight ahead of the door,
+  // the path leaves the door, then turns toward the nearest street, clear of the buildings.
+  if(L.layoutVersion>=4){
+    const linked=new Set(L.paths.filter(p=>p.kind==='frontage').map(p=>p.id));
+    const inside=(o,x,z,m)=>{const c=Math.cos(o.yaw),s=Math.sin(o.yaw),dx=x-o.x,dz=z-o.z;return Math.abs(dx*c+dz*s)<o.w/2+m&&Math.abs(-dx*s+dz*c)<o.d/2+m;};
+    const clear=(a,b)=>Array.from({length:11},(_,i)=>i/10).every(t=>{
+      const x=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;
+      return dry(x,z)&&!L.buildings.some(o=>inside(o,x,z,.35));
+    });
+    for(const b of L.buildings){
+      if(linked.has(`${b.id}:frontage`))continue;
+      const fx=-Math.sin(b.yaw),fz=Math.cos(b.yaw);
+      const approach=buildingApproach(b,K.footprints?.[b.asset],1.1)||{x:b.x+fx*(b.d/2+1.1),z:b.z+fz*(b.d/2+1.1)};
+      const start=[approach.x,approach.z];
+      const out=[start[0]+fx*2.5,start[1]+fz*2.5];
+      const hit=nearestStreet(L,...out);
+      if(!hit||hit.distance>45)continue;
+      const pts=hit.distance<1.5?[start,hit.point]:[start,out,hit.point];
+      if(!clear(pts[pts.length-2],pts[pts.length-1])||(pts.length>2&&!clear(start,out)))continue;
+      L.paths.push({id:`${b.id}:frontage`,pts,w:1.4,kind:'frontage'});
+    }
+    // Lot aprons: paving (or a packed-earth yard) round every building, so none stands on bare grass
+    L.aprons=L.buildings.map(b=>{
+      const f=K.footprints?.[b.asset];
+      const sx=b.sx??1,sz=b.sz??1,c=Math.cos(b.yaw),s=Math.sin(b.yaw);
+      const cx=f&&Number.isFinite(f.minX)?(f.maxX+f.minX)/2*sx:0,cz=f&&Number.isFinite(f.minZ)?(f.maxZ+f.minZ)/2*sz:0;
+      const hw=f&&Number.isFinite(f.minX)?(f.maxX-f.minX)/2*sx:b.w/2,hd=f&&Number.isFinite(f.minZ)?(f.maxZ-f.minZ)/2*sz:b.d/2;
+      const farm=/barn|windmill/.test(b.asset),big=/office|apartment|tower|spire|shop|tavern|temple|castle/.test(b.asset);
+      const pad=farm?1.8:L.modern?(big?2.2:1.3):(big?1.4:.9);
+      return {x:b.x+c*cx-s*cz,z:b.z+s*cx+c*cz,yaw:b.yaw,hw:hw+pad,hd:hd+pad,kind:farm?'yard':big?'plaza':'lot'};
+    });
+    planStreetscape(L,K,dry);
   }
 
   // Pocket gardens soften residential lots and shop backs without filling

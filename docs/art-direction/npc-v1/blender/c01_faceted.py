@@ -133,7 +133,27 @@ class Part:
         return self
 
     def rings(self, *rs):
-        return self.hull([p for r in rs for p in r])
+        """A loft through cross-section rings: clean edge loops of quads, capped at both ends.
+        Rings of different sizes (or fewer than two) fall back to a convex hull."""
+        if len(rs) < 2 or len({len(r) for r in rs}) != 1:
+            return self.hull([p for r in rs for p in r])
+        bm = self.bm
+        loops = [[bm.verts.new(V(p)) for p in r] for r in rs]
+        n = len(loops[0])
+        for a, b in zip(loops, loops[1:]):
+            for i in range(n):
+                j = (i + 1) % n
+                quad = [a[i], a[j], b[j], b[i]]
+                if len({v.co.to_tuple(6) for v in quad}) >= 3:
+                    bm.faces.new(quad)
+        for cap in (loops[0], loops[-1]):
+            if len({v.co.to_tuple(6) for v in cap}) >= 3:
+                bm.faces.new(cap)
+        geom = [v for l in loops for v in l]
+        bmesh.ops.remove_doubles(bm, verts=geom, dist=1e-6)
+        faces = list({f for v in geom if v.is_valid for f in v.link_faces})
+        bmesh.ops.recalc_face_normals(bm, faces=faces)
+        return self
 
     def box(self, c, s, rot=None):
         return self.hull(boxpts(c, s, rot))

@@ -54,6 +54,14 @@ export const CATALOG = {
   m_spire: { fb: 'landmark_spire', fit: 'w', size: 22 },
   m_lamp: { proto: 'streetlight' },
   m_bench: { proto: 'bench' },
+  // Streetscape (layout v4): terraces, a plaza fountain, kiosks, bus stops, kerbside details
+  g_cafe_a: { proto: 'cafe_a' },
+  g_cafe_b: { proto: 'cafe_b' },
+  g_fountain: { proto: 'fountain' },
+  g_kiosk: { proto: 'kiosk' },
+  g_bus_stop: { proto: 'bus_stop' },
+  g_hydrant: { proto: 'hydrant' },
+  g_bin: { proto: 'bin' },
   m_car: { fb: 'truck', fit: 'w', size: 4.6, fwdX: true, byLength: true },
   m_dock: { fb: 'dock', fit: 'w', size: 34 },
   barn: { fb: 'barn', fit: 'w', size: 14 },
@@ -161,6 +169,52 @@ function protoGeometry(kind) {
     parts.push(colored(new THREE.BoxGeometry(2, 0.12, 0.6), 0x8a5a33, T(0, 0.5, 0)));
     parts.push(colored(new THREE.BoxGeometry(2, 0.5, 0.1), 0x8a5a33, T(0, 0.85, -0.28)));
     for (const x of [-0.85, 0.85]) parts.push(colored(new THREE.BoxGeometry(0.1, 0.5, 0.5), 0x3a3a3a, T(x, 0.25, 0)));
+  } else if (kind === 'cafe_a' || kind === 'cafe_b') {
+    // A terrace table under a parasol, two chairs
+    const canopy = kind === 'cafe_a' ? 0xd8643f : 0x2f8f8a;
+    parts.push(colored(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 10), 0xf2efe6, T(0, 0.74, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(0.04, 0.04, 0.72, 6), 0x3b3d42, T(0, 0.37, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(0.22, 0.26, 0.04, 8), 0x3b3d42, T(0, 0.02, 0)));
+    for (const s of [-1, 1]) {
+      parts.push(colored(new THREE.BoxGeometry(0.42, 0.05, 0.42), 0x6b4a2e, T(s * 0.72, 0.46, 0)));
+      parts.push(colored(new THREE.BoxGeometry(0.05, 0.46, 0.42), 0x6b4a2e, T(s * 0.92, 0.7, 0)));
+      for (const dz of [-0.17, 0.17]) parts.push(colored(new THREE.BoxGeometry(0.04, 0.46, 0.04), 0x3b3d42, T(s * 0.72, 0.23, dz)));
+    }
+    parts.push(colored(new THREE.CylinderGeometry(0.03, 0.03, 2.3, 6), 0xd8d5cc, T(0, 1.15, 0)));
+    parts.push(colored(new THREE.ConeGeometry(1.35, 0.45, 8), canopy, T(0, 2.38, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(1.35, 1.35, 0.08, 8), 0xf2efe6, T(0, 2.13, 0)));
+  } else if (kind === 'fountain') {
+    // Round basin, water, a column with a bowl
+    parts.push(colored(new THREE.CylinderGeometry(3.2, 3.35, 0.6, 16), 0xcfc9bb, T(0, 0.3, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(2.85, 2.85, 0.1, 16), 0x4f9fc4, T(0, 0.52, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(0.4, 0.55, 1.8, 8), 0xcfc9bb, T(0, 1.2, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(1.2, 0.35, 0.35, 12), 0xcfc9bb, T(0, 2.1, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(1.05, 1.05, 0.06, 12), 0x6fb8d8, T(0, 2.26, 0)));
+    parts.push(colored(new THREE.ConeGeometry(0.25, 0.9, 6), 0x9fd6ea, T(0, 2.7, 0)));
+  } else if (kind === 'kiosk') {
+    // A news / flower kiosk: counter, back wall, striped awning
+    parts.push(colored(new THREE.BoxGeometry(2.4, 1.1, 1.6), 0x2f6f5a, T(0, 0.55, 0)));
+    parts.push(colored(new THREE.BoxGeometry(2.4, 1.2, 0.2), 0x2f6f5a, T(0, 1.7, -0.7)));
+    parts.push(colored(new THREE.BoxGeometry(2.3, 0.1, 1.4), 0xe8e2d2, T(0, 1.13, 0.05)));
+    for (let i = 0; i < 4; i++) parts.push(colored(new THREE.BoxGeometry(0.62, 0.08, 1.2), i % 2 ? 0xf2efe6 : 0xc9463a, T(-0.93 + i * 0.62, 2.45, 0.25, 0, 1, 1, 1).multiply(new THREE.Matrix4().makeRotationX(0.25))));
+    for (const x of [-1.1, 1.1]) parts.push(colored(new THREE.BoxGeometry(0.08, 1.3, 0.08), 0x3b3d42, T(x, 1.8, 0.75)));
+    parts.push(colored(new THREE.BoxGeometry(2.0, 0.35, 0.05), 0xf2d04a, T(0, 2.95, -0.62)));
+  } else if (kind === 'bus_stop') {
+    // Shelter: glass back and side, a roof, a bench and a sign post
+    parts.push(colored(new THREE.BoxGeometry(3.2, 0.1, 1.5), 0x4a4e56, T(0, 2.45, 0)));
+    parts.push(colored(new THREE.BoxGeometry(3.0, 1.9, 0.06), 0x9fc3d6, T(0, 1.35, -0.68)));
+    parts.push(colored(new THREE.BoxGeometry(0.06, 1.9, 1.2), 0x9fc3d6, T(-1.5, 1.35, -0.1)));
+    for (const x of [-1.55, 1.55]) parts.push(colored(new THREE.BoxGeometry(0.08, 2.45, 0.08), 0x4a4e56, T(x, 1.22, -0.68)));
+    parts.push(colored(new THREE.BoxGeometry(2.0, 0.08, 0.4), 0x8a5a33, T(0.3, 0.48, -0.42)));
+    parts.push(colored(new THREE.CylinderGeometry(0.05, 0.05, 2.6, 6), 0x4a4e56, T(1.9, 1.3, 0.6)));
+    parts.push(colored(new THREE.BoxGeometry(0.5, 0.5, 0.05), 0x2a62b8, T(1.9, 2.55, 0.6)));
+  } else if (kind === 'hydrant') {
+    parts.push(colored(new THREE.CylinderGeometry(0.16, 0.2, 0.7, 8), 0xc8352b, T(0, 0.35, 0)));
+    parts.push(colored(new THREE.SphereGeometry(0.17, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), 0xc8352b, T(0, 0.7, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(0.07, 0.07, 0.42, 6), 0xd8d5cc, T(0, 0.45, 0).multiply(new THREE.Matrix4().makeRotationZ(Math.PI / 2))));
+  } else if (kind === 'bin') {
+    parts.push(colored(new THREE.CylinderGeometry(0.26, 0.23, 0.85, 8), 0x3f6b4f, T(0, 0.43, 0)));
+    parts.push(colored(new THREE.CylinderGeometry(0.29, 0.29, 0.06, 8), 0x2c2e33, T(0, 0.88, 0)));
   }
   const g = mergeGeometries(parts, false);
   g.computeVertexNormals();
@@ -290,7 +344,9 @@ export class TownBuilder {
   /** Bridges where streets cross rivers: a deck and parapets, stone or concrete. */
   buildBridges() {
     const geos = [];
-    const colors = this.L.modern ? { deck: 0xb9b6ad, side: 0xd5d2ca, pier: 0x9d9a92 } : { deck: 0x9c8f7a, side: 0xb5a88f, pier: 0x8a7e6a };
+    const colors = this.L.modern
+      ? { deck: 0xb9b6ad, road: 0x4a4b50, walk: 0xcfcbc1, side: 0xd5d2ca, beam: 0xa9a59b, pier: 0x9d9a92, rail: 0x6f757d }
+      : { deck: 0x9c8f7a, road: 0x8d806a, walk: 0xa99b80, side: 0xb5a88f, beam: 0x94876f, pier: 0x8a7e6a, rail: 0x7d705a, cope: 0xc4b89d };
     const box = (cx, cy, cz, sx, sy, sz, yaw, hex) => {
       const g = new THREE.BoxGeometry(sx, sy, sz);
       g.rotateY(-yaw);
@@ -315,11 +371,15 @@ export class TownBuilder {
       applySurfaceCoordinates(g, this.L.modern ? 15 : 4);
       geos.push(g);
     };
-    /** A strip along the deck: cross-section corners (across, up) at each station, flat shaded. */
+    /**
+     * A strip along the deck: cross-section corners (across, up above the deck) at each
+     * station, flat shaded. `section` may be a function of the station for varying shapes.
+     */
     const loft = (b, stations, section, hex) => {
       const pts = stations.map((t) => {
         const y = this.bridgeHeight(b, t);
-        return section.map(([a, h]) => new THREE.Vector3(b.x + b.c * t - b.s * a, y + h, b.z + b.s * t + b.c * a));
+        const sec = typeof section === 'function' ? section(t, y) : section;
+        return sec.map(([a, h]) => new THREE.Vector3(b.x + b.c * t - b.s * a, y + h, b.z + b.s * t + b.c * a));
       });
       const pos = [];
       const quad = (p, q, r, s2) => pos.push(...p.toArray(), ...q.toArray(), ...r.toArray(), ...p.toArray(), ...r.toArray(), ...s2.toArray());
@@ -336,29 +396,74 @@ export class TownBuilder {
       g.computeVertexNormals();
       addColored(g, hex);
     };
+    const modern = this.L.modern;
     for (const b of this.L.bridges || []) {
       const span = this.bridgeSpan(b);
       this.bridges.push(span);
       const len = span.tB - span.tA;
-      const steps = Math.max(8, Math.ceil(len / 1.2));
-      const along = (t0, t1) => Array.from({ length: steps + 1 }, (_, k) => t0 + ((t1 - t0) * k) / steps);
+      const steps = Math.max(12, Math.ceil(len / 0.8));
+      const along = (t0, t1, n = steps) => Array.from({ length: n + 1 }, (_, k) => t0 + ((t1 - t0) * k) / n);
       const hw = b.w / 2;
-      // Deck: its top is the road (flush with the street at both ends), 0.55 m thick
-      loft(span, along(span.tA, span.tB), [[-hw, 0], [hw, 0], [hw, -0.55], [-hw, -0.55]], colors.deck);
-      // Parapets on the raised part only, so the ramps meet the street open
+      const walk = modern ? Math.min(2.2, hw * 0.28) : 0; // raised pavements each side
+      const rect = (a0, a1, h0, h1) => [[a0, h1], [a1, h1], [a1, h0], [a0, h0]];
+      // Deck slab under everything, then the road surface and the pavements on top
+      loft(span, along(span.tA, span.tB), rect(-hw, hw, -0.6, -0.02), colors.deck);
+      loft(span, along(span.tA, span.tB), rect(-hw + walk, hw - walk, -0.05, 0), colors.road);
+      if (walk) for (const s of [-1, 1]) loft(span, along(span.tA, span.tB), s < 0 ? rect(-hw, -hw + walk, -0.05, 0.16) : rect(hw - walk, hw, -0.05, 0.16), colors.walk);
+      // Railings on the raised part (the ramps meet the street open)
       const p0 = span.tA + span.ramp * 0.55;
       const p1 = span.tB - span.ramp * 0.55;
       if (p1 > p0) {
-        for (const side of [-1, 1]) {
-          const a0 = side * (hw - 0.05);
-          const a1 = side * (hw - 0.4);
-          loft(span, along(p0, p1), side > 0 ? [[a1, -0.05], [a0, -0.05], [a0, 0.85], [a1, 0.85]] : [[a0, -0.05], [a1, -0.05], [a1, 0.85], [a0, 0.85]], colors.side);
+        for (const s of [-1, 1]) {
+          const out = s * (hw - 0.02);
+          const inn = s * (hw - (modern ? 0.14 : 0.45));
+          const [lo, hi] = s < 0 ? [out, inn] : [inn, out];
+          if (modern) {
+            // Steel railing: a top rail and a mid rail on posts every 2.5 m
+            loft(span, along(p0, p1), rect(lo, hi, 1.02, 1.1), colors.rail);
+            loft(span, along(p0, p1), rect(lo, hi, 0.55, 0.6), colors.rail);
+            for (let t = p0; t <= p1 + 0.01; t += (p1 - p0) / Math.max(1, Math.round((p1 - p0) / 2.5))) loft(span, [t - 0.06, t + 0.06], rect(lo, hi, 0.1, 1.1), colors.rail);
+          } else {
+            // Stone parapet with a coping course and a lip over the deck edge
+            loft(span, along(p0, p1), rect(lo, hi, -0.05, 0.8), colors.side);
+            loft(span, along(p0, p1), s < 0 ? rect(out - 0.08, inn + 0.06, 0.8, 0.95) : rect(inn - 0.06, out + 0.08, 0.8, 0.95), colors.cope);
+            loft(span, along(span.tA, span.tB), s < 0 ? rect(-hw - 0.12, -hw + 0.05, -0.75, -0.55) : rect(hw - 0.05, hw + 0.12, -0.75, -0.55), colors.cope);
+          }
         }
       }
-      // A pier under the middle of a long span
-      if (len > 18) {
-        const y = this.bridgeHeight(span, 0);
-        box(span.x, (y - 0.55 + WATER_Y - 2) / 2, span.z, 1.6, y - 0.55 - WATER_Y + 2, b.w * 0.8, b.yaw, colors.pier);
+      // Under the deck: stone arches, or concrete girders on piers
+      const floor = WATER_Y - 1.5;
+      const bank = (span.tB - span.tA) * 0.5;
+      const mid = (span.tA + span.tB) / 2;
+      if (!modern) {
+        // The arch spans the river itself (its width is what the layout sized the bridge for),
+        // springing from the water line so the opening reads under the deck
+        const river = Math.max(4, b.len - 7);
+        const arches = river > 22 ? 2 : 1;
+        const width = Math.min(bank * 2 * 0.86, river + 3) / arches;
+        const archU = (t) => {
+          // Distance into the nearest arch opening, -1..1 across it
+          const k = Math.floor(((t - mid) / width) + arches / 2);
+          const c = mid + (k + 0.5 - arches / 2) * width;
+          return (t - c) / (width * 0.5);
+        };
+        loft(span, along(span.tA, span.tB, steps * 2), (t, y) => {
+          const u = archU(t);
+          const spring = WATER_Y - 0.2;
+          const bottom = Math.abs(u) < 1 ? spring + (y - 0.95 - spring) * Math.sqrt(1 - u * u) : floor; // the arch intrados
+          return rect(-hw + 0.1, hw - 0.1, bottom - y, -0.6);
+        }, colors.beam);
+        // Abutments where the bridge lands on each bank
+        for (const t of [span.tA + 1.5, span.tB - 1.5]) loft(span, [t - 1.6, t + 1.6], (t2, y) => rect(-hw - 0.2, hw + 0.2, floor - y, -0.55), colors.pier);
+      } else {
+        // Edge girders the length of the span, piers where it is long
+        for (const s of [-1, 1]) loft(span, along(span.tA, span.tB), s < 0 ? rect(-hw, -hw + 0.5, -1.25, -0.6) : rect(hw - 0.5, hw, -1.25, -0.6), colors.beam);
+        const piers = len > 42 ? [-len / 6, len / 6] : len > 18 ? [0] : [];
+        for (const tp of piers) {
+          const t = mid + tp;
+          for (const s of [-1, 1]) loft(span, [t - 0.6, t + 0.6], (t2, y) => rect(s * hw * 0.55 - 0.6, s * hw * 0.55 + 0.6, floor - y, -1.2), colors.pier);
+          loft(span, [t - 0.7, t + 0.7], rect(-hw * 0.8, hw * 0.8, -1.7, -1.2), colors.pier); // pier cap
+        }
       }
     }
     if (!geos.length) return;
@@ -389,8 +494,9 @@ export class TownBuilder {
     const tB = dryAt(1);
     const hA = this.heightAt(b.x + c * tA, b.z + s * tA) + 0.04;
     const hB = this.heightAt(b.x + c * tB, b.z + s * tB) + 0.04;
-    const top = Math.max(hA, hB, WATER_Y + 1.3);
-    const ramp = Math.min(9, (tB - tA) * 0.3);
+    // Stone bridges hump over their arch; modern decks stay level with the street
+    const top = this.L.modern ? Math.max(hA, hB, WATER_Y + 1.3) : Math.max(hA, hB, WATER_Y + 2.4) + ((tB - tA) > 20 ? 0.9 : 0.5);
+    const ramp = Math.min(this.L.modern ? 9 : 12, (tB - tA) * (this.L.modern ? 0.3 : 0.4));
     return { x: b.x, z: b.z, c, s, tA, tB, hA, hB, top, ramp, hl: Math.max(-tA, tB), hw: b.w / 2 };
   }
 

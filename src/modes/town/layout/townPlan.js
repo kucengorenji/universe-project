@@ -83,7 +83,9 @@ export function planBridges(L) {
           const sa = Math.atan2(bz - az, bx - ax);
           const ra = Math.atan2(dz - cz, dx - cx);
           const sin = Math.max(0.35, Math.abs(Math.sin(sa - ra)));
-          L.bridges.push({ x: hit.x, z: hit.z, yaw: sa, len: r.w / sin + 7, w: s.w + 1.2, kind: s.kind, modern: L.modern });
+          // v4: modern bridges carry the street's pavements across
+          const w = s.w + (L.modern && L.layoutVersion >= 4 ? 4.4 : 1.2);
+          L.bridges.push({ x: hit.x, z: hit.z, yaw: sa, len: r.w / sin + 7, w, kind: s.kind, modern: L.modern });
         }
       }
     }

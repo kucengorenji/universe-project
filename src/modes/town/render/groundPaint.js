@@ -76,6 +76,21 @@ export class GroundPaint {
       ctx.globalAlpha = 1;
     }
 
+    // Lot aprons under the buildings: paving (a darker kerb line) in modern towns, packed earth in old ones
+    const APRON = L.modern ? { lot: ['#cdc9be', '#b7b2a5'], plaza: ['#d6d2c8', '#bdb8ac'], yard: ['#b9ab8a', '#a2957a'] } : { lot: ['#b9a888', '#a39271'], plaza: ['#c2b497', '#a8987a'], yard: ['#ad9b76', '#968562'] };
+    for (const a of L.aprons || []) {
+      const [fill, edge] = APRON[a.kind] || APRON.lot;
+      ctx.save();
+      ctx.translate(a.x, a.z);
+      ctx.rotate(a.yaw);
+      ctx.fillStyle = fill;
+      ctx.fillRect(-a.hw, -a.hd, a.hw * 2, a.hd * 2);
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = L.modern ? 0.35 : 0.5;
+      ctx.strokeRect(-a.hw + 0.2, -a.hd + 0.2, a.hw * 2 - 0.4, a.hd * 2 - 0.4);
+      ctx.restore();
+    }
+
     // Streets: kerb / pavement pass first for every street, then the surfaces,
     // so junctions merge into one clean shape.
     const order = L.modern ? ['road', 'residential', 'grid', 'collector', 'main'] : ['road', 'lane', 'ring', 'main'];
@@ -150,6 +165,7 @@ export class GroundPaint {
     const mc=mask.getContext('2d');mc.fillStyle='#000';mc.fillRect(0,0,res,res);
     mc.setTransform(1/m,0,0,1/m,-x0/m,-z0/m);mc.lineCap='round';mc.lineJoin='round';
     const stroke=(pts,w,color)=>{mc.beginPath();mc.moveTo(...pts[0]);for(const p of pts.slice(1))mc.lineTo(...p);mc.strokeStyle=color;mc.lineWidth=w;mc.stroke();};
+    if(L.modern)for(const a of L.aprons||[]){mc.save();mc.translate(a.x,a.z);mc.rotate(a.yaw);mc.fillStyle='#00f';mc.fillRect(-a.hw,-a.hd,a.hw*2,a.hd*2);mc.restore();}
     if(L.modern)for(const s of streets)stroke(s.pts,s.w+(s.kind==='road'?.8:kerb*2),'#00f');
     for(const p of L.paths||[])stroke(p.pts,p.w,L.modern?'#00f':'#000');
     for(const s of streets)stroke(s.pts,s.w,L.modern?'#f00':['main','ring'].includes(s.kind)?'#0f0':'#000');

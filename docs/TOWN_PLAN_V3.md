@@ -95,3 +95,11 @@ Cabang lokal sudah memakai nomor versi 3 untuk lebar jalan praktis, pagar tanama
 - Parameter mengikuti planner 2D lokal: `options: { density: 0.75 | 1 | 1.3, template }` dipetakan ke `sparse | normal | dense`. Jalan selalu dipotong untuk kepadatan normal (`streetDensity`), sehingga mengubah kepadatan di planner hanya menjarangkan/memadatkan kavling tanpa menggeser jalan.
 - Preview 2D: `node tools/plan/preview.mjs --seed 17 --version 4 [--template ring] [--density dense]`.
 
+
+## Integrasi bangunan, jalan, dan pelabuhan (v4, 30 September 2026)
+
+- **Pelataran (apron):** setiap bangunan berdiri di atas pelataran selebar tapaknya plus 1,3–2,2 m (paving di kota modern, tanah padat di kota lama, halaman untuk lumbung). Dilukis di tekstur tanah dan mask permukaan; rumput tidak tumbuh di atasnya. Data: `L.aprons`.
+- **Akses ke jalan:** bangunan yang pintunya tidak langsung menghadap jalan mendapat jalur siku: keluar lurus dari pintu, lalu belok ke jalan terdekat (≤ 45 m), bebas dari bangunan lain. Masuk `L.paths` (kind `frontage`), jadi pejalan kaki ikut memakainya.
+- **Pelabuhan:** dari ujung darat dermaga ada jalan dermaga ke jalan terdekat (lurus, atau keluar dulu ke darat lalu menyilang), bertanda `quay: true`. Mobil dan pejalan kaki bisa mencapai pelabuhan.
+- **Jembatan:** ujung jembatan dicari di tanah kering sepanjang jalannya, sehingga dek rata dengan jalan di kedua ujung. Jembatan modern selebar jalan plus trotoarnya, dengan aspal, trotoar yang ditinggikan, pagar besi, gelagar tepi, dan pilar. Jembatan batu melengkung di atas sungai, dengan pagar bertopi batu dan kepala jembatan.
+- **Streetscape:** set meja kafe berpayung di depan toko dan kedai. Plaza modern mendapat air mancur, bangku, dan kios. Sepanjang jalan modern ada halte bus, hidran, dan tempat sampah. Semuanya aset proto berwarna (`townBuilder.js` → `protoGeometry`: `g_cafe_a/b`, `g_fountain`, `g_kiosk`, `g_bus_stop`, `g_hydrant`, `g_bin`).

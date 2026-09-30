@@ -346,6 +346,7 @@ export class GroundCover {
       }
     };
     for (const bd of L.buildings) addRect(bd.x, bd.z, bd.w / 2 + 0.6, bd.d / 2 + 0.6, bd.yaw);
+    for (const a of L.aprons || []) addRect(a.x, a.z, a.hw, a.hd, a.yaw);
     for (const f of L.fields2 || []) addRect(f.x, f.z, f.w / 2, f.d / 2, f.yaw);
     const blocked = (x, z) => {
       for (const r of occ.get(`${Math.floor(x / cell)},${Math.floor(z / cell)}`) || []) {

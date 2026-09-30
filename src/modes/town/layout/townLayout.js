@@ -417,7 +417,7 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   }
 
   planBridges(layout);
-  planSurroundings(layout, { rng: mulberry32(seedFor(seed, 'surroundings')), noise, at, place, streetClear, claim, free, local, modern, planetType, detail });
+  planSurroundings(layout, { rng: mulberry32(seedFor(seed, 'surroundings')), noise, at, place, streetClear, claim, free, local, modern, planetType, detail, addStreet });
   for (const b of layout.buildings) b.id = buildingId(seed, b);
   planTownGreenery(layout, K);
   planStreetLights(layout, K);
@@ -812,7 +812,7 @@ function planModern(L, K) {
 
 // ---------------------------------------------------------------- outside the walls
 
-function planSurroundings(L, { rng, noise, at, place, streetClear, claim, free, local, modern, planetType, detail }) {
+function planSurroundings(L, { rng, noise, at, place, streetClear, claim, free, local, modern, planetType, detail, addStreet }) {
   const flora = { ice: 'snow', desert: 'dry', lava: 'none', barren: 'none' }[planetType] || 'green';
   // Farmland: long plots with crop rows in their own direction
   const fields = [];
@@ -899,6 +899,7 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, claim, free, 
     if (!free(dockRect, 2)) continue;
     claim(dockRect, false);
     L.docks.push({ asset: modern ? 'm_dock' : 'f_dock', x: d.x, z: d.z, yaw: d.a - Math.PI / 2, len: modern ? 34 : 22 });
+    if (L.layoutVersion >= 4) connectDock(L, d, modern ? 34 : 22, { at, addStreet });
     for(const along of [-.25,.25]){
       const x=d.x+Math.cos(d.a)*along*(modern?34:22)-Math.sin(d.a)*(modern?2.3:1.1);
       const z=d.z+Math.sin(d.a)*along*(modern?34:22)+Math.cos(d.a)*(modern?2.3:1.1);
@@ -912,6 +913,54 @@ function planSurroundings(L, { rng, noise, at, place, streetClear, claim, free, 
   }
   L.isPort = L.docks.length > 0;
   planVegetation(L, { rng: mulberry32(seedFor(L.seed, 'vegetation')), noise, at, place, streetClear, fields: L.fields2, flora, detail });
+}
+
+/**
+ * v4: a harbour is reached by road. From the landward end of the dock a quay road runs to
+ * the nearest street (cars and walkers can get there); skipped when water or a building is in the way.
+ */
+function connectDock(L, d, len, { at, addStreet }) {
+  const land = [d.x - Math.cos(d.a) * len * 0.5, d.z - Math.sin(d.a) * len * 0.5];
+  const inland = [-Math.cos(d.a), -Math.sin(d.a)];
+  const inside = (o, x, z) => {
+    const c = Math.cos(o.yaw), s = Math.sin(o.yaw), dx = x - o.x, dz = z - o.z;
+    return Math.abs(dx * c + dz * s) < o.w / 2 + 1 && Math.abs(-dx * s + dz * c) < o.d / 2 + 1;
+  };
+  // A leg is usable when it stays on land (after the beach at the dock) and clear of buildings
+  const clear = (a, b, beach) => {
+    const n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3));
+    for (let i = 1; i < n; i++) {
+      const x = a[0] + ((b[0] - a[0]) * i) / n;
+      const z = a[1] + ((b[1] - a[1]) * i) / n;
+      if ((!beach || i / n > 0.15) && at(x, z).land < 0.45) return false;
+      if (L.buildings.some((o) => inside(o, x, z))) return false;
+    }
+    return true;
+  };
+  // The nearest point of every street segment, closest first
+  const targets = [];
+  for (const s of L.streets) {
+    for (let i = 0; i + 1 < s.pts.length; i++) {
+      const [ax, az] = s.pts[i];
+      const [bx, bz] = s.pts[i + 1];
+      const dx = bx - ax, dz = bz - az;
+      const t = Math.max(0, Math.min(1, ((land[0] - ax) * dx + (land[1] - az) * dz) / (dx * dx + dz * dz || 1)));
+      const p = [ax + dx * t, az + dz * t];
+      targets.push({ p, dist: Math.hypot(p[0] - land[0], p[1] - land[1]) });
+    }
+  }
+  targets.sort((a, b) => a.dist - b.dist);
+  if (!targets.length || targets[0].dist < 3) return;
+  for (const { p, dist } of targets.slice(0, 40)) {
+    if (dist > 140) break;
+    // Straight to the street, or first a stretch inland from the dock, then across
+    const quay = (pts) => Object.assign(addStreet(pts, L.modern ? 8 : 4.6, L.modern ? 'road' : 'lane'), { quay: true });
+    if (clear(land, p, true)) return quay([land, p]);
+    for (const k of [12, 22, 34]) {
+      const corner = [land[0] + inland[0] * k, land[1] + inland[1] * k];
+      if (clear(land, corner, true) && clear(corner, p, false)) return quay([land, corner, p]);
+    }
+  }
 }
 
 // ---------------------------------------------------------------- navigation graphs

@@ -96,6 +96,25 @@ export function assemble(type, rng) {
 
 export { wrapGeometry };
 
+/**
+ * A vehicle part's geometry for the town's prop material. Its glass must not take the
+ * buildings' lit-window pattern: that pattern is hashed from the instance position, so
+ * on a moving car the panes switched on and off every frame (a flicker). Glass keeps
+ * its dark colour; lamps still glow at night.
+ */
+const vehicleEmissive = new WeakMap();
+export function vehicleGeometry(src) {
+  const g = wrapGeometry(src);
+  const e = src.attributes.emissive;
+  if (!e) return g;
+  if (!vehicleEmissive.has(e)) {
+    const v = Float32Array.from(e.array, (x) => (x > 0.5 && x < 0.99 ? 0 : x));
+    vehicleEmissive.set(e, new THREE.BufferAttribute(v, 1));
+  }
+  g.setAttribute('emissive', vehicleEmissive.get(e));
+  return g;
+}
+
 let kitMat = null;
 /** Toon material that reads the kit's paint (for scenes without the town's prop material). */
 export function kitMaterial(makeToon) {
@@ -121,7 +140,7 @@ export function buildKitModel(kit, pack, material) {
   const add = (asset, matrix, paint) => {
     const lods = pack?.[asset];
     if (!lods) return null;
-    const geo = wrapGeometry(lods[0] || lods[1]);
+    const geo = vehicleGeometry(lods[0] || lods[1]);
     geo.setAttribute('aPaint', new THREE.InstancedBufferAttribute(new Float32Array(paint.toArray()), 3));
     const mesh = new THREE.InstancedMesh(geo, material, 1);
     mesh.setMatrixAt(0, matrix);

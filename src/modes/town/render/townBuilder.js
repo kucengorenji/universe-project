@@ -195,7 +195,9 @@ export class TownBuilder {
     this.buildHeights();
     this.bridges = [];
     const detail = quality.settings.detail;
-    this.paint = new GroundPaint(layout, { res: detail >= 0.75 ? 2048 : 1536, farRes: detail >= 0.75 ? 1024 : 512 });
+    // Streets are painted into the ground texture: at street level 2048 px over the town
+    // (~0.28 m a texel) shows stepped kerbs and crossings, so the high tier doubles it
+    this.paint = new GroundPaint(layout, { res: detail >= 1 ? 4096 : detail >= 0.75 ? 2048 : 1536, farRes: detail >= 0.75 ? 1024 : 512 });
     this.disposables.push(this.paint);
     this.detailTex = this.track(detailNoiseTexture());
     this.material = this.track(this.makePropMaterial());
@@ -303,28 +305,101 @@ export class TownBuilder {
       applySurfaceCoordinates(g, this.L.modern ? 15 : 4);
       geos.push(g);
     };
-    for (const b of this.L.bridges || []) {
-      const c = Math.cos(b.yaw);
-      const s = Math.sin(b.yaw);
-      const ends = [-1, 1].map((k) => this.heightAt(b.x + c * k * b.len * 0.5, b.z + s * k * b.len * 0.5));
-      const y = Math.max(ends[0], ends[1], WATER_Y + 0.9) + 0.12;
-      this.bridges.push({ x: b.x, z: b.z, c, s, hl: b.len / 2, hw: b.w / 2, y });
-      // Deck, parapets along both sides, a pier in the middle
-      box(b.x, y - 0.3, b.z, b.len, 0.6, b.w, b.yaw, colors.deck);
-      for (const side of [-1, 1]) {
-        const ox = -s * side * (b.w / 2 - 0.2);
-        const oz = c * side * (b.w / 2 - 0.2);
-        box(b.x + ox, y + 0.4, b.z + oz, b.len, 0.8, 0.35, b.yaw, colors.side);
+    const addColored = (g, hex) => {
+      const n = g.attributes.position.count;
+      const col = new Float32Array(n * 3);
+      const c = new THREE.Color(hex);
+      for (let k = 0; k < n; k++) c.toArray(col, k * 3);
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      g.setAttribute('emissive', new THREE.BufferAttribute(new Float32Array(n), 1));
+      applySurfaceCoordinates(g, this.L.modern ? 15 : 4);
+      geos.push(g);
+    };
+    /** A strip along the deck: cross-section corners (across, up) at each station, flat shaded. */
+    const loft = (b, stations, section, hex) => {
+      const pts = stations.map((t) => {
+        const y = this.bridgeHeight(b, t);
+        return section.map(([a, h]) => new THREE.Vector3(b.x + b.c * t - b.s * a, y + h, b.z + b.s * t + b.c * a));
+      });
+      const pos = [];
+      const quad = (p, q, r, s2) => pos.push(...p.toArray(), ...q.toArray(), ...r.toArray(), ...p.toArray(), ...r.toArray(), ...s2.toArray());
+      const m = section.length;
+      for (let k = 0; k + 1 < pts.length; k++) for (let e = 0; e < m; e++) quad(pts[k][e], pts[k + 1][e], pts[k + 1][(e + 1) % m], pts[k][(e + 1) % m]);
+      for (const [ring, flip] of [[pts[0], true], [pts[pts.length - 1], false]]) {
+        for (let e = 1; e + 1 < m; e++) {
+          const tri = flip ? [ring[0], ring[e + 1], ring[e]] : [ring[0], ring[e], ring[e + 1]];
+          tri.forEach((v) => pos.push(...v.toArray()));
+        }
       }
-      box(b.x, (y + WATER_Y - 2) / 2, b.z, 1.6, y - WATER_Y + 2, b.w * 0.8, b.yaw, colors.pier);
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.computeVertexNormals();
+      addColored(g, hex);
+    };
+    for (const b of this.L.bridges || []) {
+      const span = this.bridgeSpan(b);
+      this.bridges.push(span);
+      const len = span.tB - span.tA;
+      const steps = Math.max(8, Math.ceil(len / 1.2));
+      const along = (t0, t1) => Array.from({ length: steps + 1 }, (_, k) => t0 + ((t1 - t0) * k) / steps);
+      const hw = b.w / 2;
+      // Deck: its top is the road (flush with the street at both ends), 0.55 m thick
+      loft(span, along(span.tA, span.tB), [[-hw, 0], [hw, 0], [hw, -0.55], [-hw, -0.55]], colors.deck);
+      // Parapets on the raised part only, so the ramps meet the street open
+      const p0 = span.tA + span.ramp * 0.55;
+      const p1 = span.tB - span.ramp * 0.55;
+      if (p1 > p0) {
+        for (const side of [-1, 1]) {
+          const a0 = side * (hw - 0.05);
+          const a1 = side * (hw - 0.4);
+          loft(span, along(p0, p1), side > 0 ? [[a1, -0.05], [a0, -0.05], [a0, 0.85], [a1, 0.85]] : [[a0, -0.05], [a1, -0.05], [a1, 0.85], [a0, 0.85]], colors.side);
+        }
+      }
+      // A pier under the middle of a long span
+      if (len > 18) {
+        const y = this.bridgeHeight(span, 0);
+        box(span.x, (y - 0.55 + WATER_Y - 2) / 2, span.z, 1.6, y - 0.55 - WATER_Y + 2, b.w * 0.8, b.yaw, colors.pier);
+      }
     }
     if (!geos.length) return;
-    const merged = this.track(mergeGeometries(geos));
+    const flat = geos.map((g) => (g.index ? g.toNonIndexed() : g));
+    const merged = this.track(mergeGeometries(flat));
+    flat.forEach((g) => !geos.includes(g) && g.dispose());
     geos.forEach((g) => g.dispose());
     const mesh = new THREE.Mesh(merged, this.material);
     mesh.castShadow = this.quality.settings.shadows;
     mesh.receiveShadow = this.quality.settings.shadows;
     this.group.add(mesh);
+  }
+
+  /**
+   * Where a bridge meets dry ground along its street, and how it rises: flush with the
+   * street at both ends, easing up to a level span that clears the water.
+   */
+  bridgeSpan(b) {
+    const c = Math.cos(b.yaw);
+    const s = Math.sin(b.yaw);
+    const dryAt = (k) => {
+      // Walk out from the crossing until the ground is well above the water, then a little further
+      let t = 0;
+      while (t < 60 && this.heightAt(b.x + c * k * t, b.z + s * k * t) < WATER_Y + 0.7) t += 0.5;
+      return Math.max(b.len * 0.5, t + 2.5) * k;
+    };
+    const tA = dryAt(-1);
+    const tB = dryAt(1);
+    const hA = this.heightAt(b.x + c * tA, b.z + s * tA) + 0.04;
+    const hB = this.heightAt(b.x + c * tB, b.z + s * tB) + 0.04;
+    const top = Math.max(hA, hB, WATER_Y + 1.3);
+    const ramp = Math.min(9, (tB - tA) * 0.3);
+    return { x: b.x, z: b.z, c, s, tA, tB, hA, hB, top, ramp, hl: Math.max(-tA, tB), hw: b.w / 2 };
+  }
+
+  /** Deck height at distance t along a bridge (from its crossing point). */
+  bridgeHeight(b, t) {
+    const ease = (x) => x * x * (3 - 2 * x);
+    if (t < b.tA + b.ramp) return b.hA + (b.top - b.hA) * ease(THREE.MathUtils.clamp((t - b.tA) / b.ramp, 0, 1));
+    if (t > b.tB - b.ramp) return b.hB + (b.top - b.hB) * ease(THREE.MathUtils.clamp((b.tB - t) / b.ramp, 0, 1));
+    return b.top;
   }
 
   track(o) {
@@ -618,7 +693,8 @@ export class TownBuilder {
     for (const b of this.bridges) {
       const dx = x - b.x;
       const dz = z - b.z;
-      if (Math.abs(dx * b.c + dz * b.s) < b.hl && Math.abs(-dx * b.s + dz * b.c) < b.hw) return Math.max(g, b.y);
+      const t = dx * b.c + dz * b.s;
+      if (t > b.tA && t < b.tB && Math.abs(-dx * b.s + dz * b.c) < b.hw) return Math.max(g, this.bridgeHeight(b, t));
     }
     return g;
   }

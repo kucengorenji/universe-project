@@ -144,8 +144,11 @@ export default class TownMode {
     if (shadows) {
       const high = quality.tier === 'high';
       sun.castShadow = true;
-      sun.shadow.mapSize.set(high ? 2048 : 1024, high ? 2048 : 1024);
-      const ext = high ? 150 : 110;
+      sun.shadow.mapSize.set(high ? 4096 : 2048, high ? 4096 : 2048);
+      // The whole table from above; a tight box round the player in the street, so shadow
+      // edges stay crisp (a few cm per shadow texel instead of 15)
+      this.shadowExtents = { diorama: high ? 150 : 110, street: high ? 45 : 38 };
+      const ext = this.shadowExtents.diorama;
       this.shadowExt = ext;
       Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext, near: 10, far: 900 });
       sun.shadow.bias = -0.0006;
@@ -1367,6 +1370,14 @@ export default class TownMode {
     const sun = this.sun;
     const target = _v.set(focus.x, 0, focus.z);
     if (this.shadowExt) {
+      const ext = this.view === 'diorama' || this.tween ? this.shadowExtents.diorama : this.shadowExtents.street;
+      if (ext !== this.shadowExt) {
+        this.shadowExt = ext;
+        Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext });
+        sun.shadow.camera.updateProjectionMatrix();
+        // Normal offset scales with the texel: enough against acne, not so much that shadows lift off
+        sun.shadow.normalBias = ((ext * 2) / sun.shadow.mapSize.x) * 4;
+      }
       const texel = (this.shadowExt * 2) / sun.shadow.mapSize.x;
       const lightRot = new THREE.Matrix4().lookAt(new THREE.Vector3(), this.sunDir.clone().negate(), UP);
       const inv = lightRot.clone().invert();

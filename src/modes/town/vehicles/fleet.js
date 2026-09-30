@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Car, VEHICLE_TYPES } from './vehicle.js';
 import { trafficPose, advanceTraffic } from '../navigation/trafficRoute.js';
-import { assemble, wrapGeometry as wrap } from './vehicleKit.js';
+import { assemble, vehicleGeometry as wrap } from './vehicleKit.js';
 
 // Every vehicle in town: parked cars and carts, traffic running the streets,
 // and the one the player drives. Each is assembled from the kit (body,

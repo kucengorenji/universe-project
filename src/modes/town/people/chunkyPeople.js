@@ -53,6 +53,33 @@ export const FACES = {
 const faceIndex = Object.fromEntries(Object.entries(FACES).map(([k, v]) => [k, v.map((name, i) => EXPR[FEATURES[i]].indexOf(name))]));
 const MOUTH_ON_BEARD = 0.016; // metres the mouth moves forward to sit on the beard
 
+// Soft joints: near each of these pivots the skin is shared between the bone and its
+// parent, so knees, elbows, waist, shoulders and ankles bend instead of showing the
+// rigid pieces cracking apart. [blend radius along the axis, reach across it (m), axis from, axis to]
+const SOFT = {
+  spine: [0.12, 0.3, 'spine', 'chest'], // wide: the shirt's hem follows the hips
+  chest: [0.08, 0.3, 'spine', 'chest'],
+  neck: [0.035, 0.09, 'chest', 'neck'],
+  shoulder_L: [0.055, 0.1, 'shoulder_L', 'elbow_L'],
+  shoulder_R: [0.055, 0.1, 'shoulder_R', 'elbow_R'],
+  elbow_L: [0.055, 0.08, 'elbow_L', 'wrist_L'],
+  elbow_R: [0.055, 0.08, 'elbow_R', 'wrist_R'],
+  wrist_L: [0.03, 0.06, 'elbow_L', 'wrist_L'],
+  wrist_R: [0.03, 0.06, 'elbow_R', 'wrist_R'],
+  hip_L: [0.07, 0.11, 'hip_L', 'knee_L'],
+  hip_R: [0.07, 0.11, 'hip_R', 'knee_R'],
+  knee_L: [0.065, 0.1, 'knee_L', 'ankle_L'],
+  knee_R: [0.065, 0.1, 'knee_R', 'ankle_R'],
+  ankle_L: [0.04, 0.1, 'knee_L', 'ankle_L'],
+  ankle_R: [0.04, 0.1, 'knee_R', 'ankle_R'],
+  toe_L: [0.03, 0.08, 'ankle_L', 'toe_L'],
+  toe_R: [0.03, 0.08, 'ankle_R', 'toe_R']
+};
+const smooth01 = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
 const UNDER = ['#efe6d2', '#d9d4c8', '#3a3f4a', '#c9b99a', '#f4f1ea'];
 const CAPS = ['#2b2f38', '#b0463a', '#3f6fb0', '#d9b25c', '#477652'];
 
@@ -83,6 +110,38 @@ export function buildTemplate(gltf) {
     while (p && !boneOf.has(p)) p = p.parent;
     if (p && node !== source) bones[boneOf.get(p)].add(bones[i]);
   }
+  // Soft joints in the bind pose (root space): pivot, axis, and the bones on either side
+  const pivot = (name) => new THREE.Vector3().setFromMatrixPosition(source.getObjectByName(name).matrixWorld).applyMatrix4(toRoot);
+  const joints = Object.entries(SOFT).map(([name, [r, lat, a, b]]) => {
+    const child = BONES.indexOf(name);
+    let parentNode = source.getObjectByName(name).parent;
+    while (parentNode && !boneOf.has(parentNode)) parentNode = parentNode.parent;
+    return { child, parent: boneOf.get(parentNode), p: pivot(name), axis: pivot(b).sub(pivot(a)).normalize(), r, lat };
+  });
+  const _d = new THREE.Vector3();
+  /** Second bone and its weight for a vertex rigidly on `bone` (0 when it stays rigid). */
+  const soften = (x, y, z, bone) => {
+    let best = null;
+    let bestW = 0;
+    for (const j of joints) {
+      const mine = j.child === bone;
+      if (!mine && j.parent !== bone) continue;
+      _d.set(x, y, z).sub(j.p);
+      const s = _d.dot(j.axis);
+      const lat = _d.addScaledVector(j.axis, -s).length();
+      const f = 1 - smooth01(j.lat, j.lat * 1.6, lat);
+      if (f <= 0) continue;
+      const t = smooth01(-j.r, j.r, s); // the child's share across the joint
+      // A child vertex hands weight to the parent on the parent's side; a parent vertex to
+      // the child around the pivot only (parent geometry reaching past it stays with the parent)
+      const w = mine ? f * (1 - t) : f * t * (1 - smooth01(0, j.r, s));
+      if (w > bestW) {
+        bestW = w;
+        best = mine ? j.parent : j.child;
+      }
+    }
+    return best === null || bestW < 0.02 ? null : [best, bestW];
+  };
   const parts = [];
   let authoredCrown = false;
   source.traverse((o) => o.isMesh && /^hair_.*_crown$/.test(o.name) && (authoredCrown = true));
@@ -95,8 +154,22 @@ export function buildTemplate(gltf) {
     geo.setAttribute('aSlot', new THREE.BufferAttribute(new Float32Array(n).fill(slot), 1));
     geo.setAttribute('aPiece', new THREE.BufferAttribute(new Float32Array(n).fill(piece), 1));
     geo.setAttribute('aExpr', new THREE.BufferAttribute(new Float32Array(n).fill(expr), 1));
-    geo.setAttribute('skinIndex', new THREE.BufferAttribute(new Uint16Array(n * 4).map((_, i) => (i % 4 ? 0 : bone)), 4));
-    geo.setAttribute('skinWeight', new THREE.BufferAttribute(new Float32Array(n * 4).map((_, i) => (i % 4 ? 0 : 1)), 4));
+    const index = new Uint16Array(n * 4);
+    const weight = new Float32Array(n * 4);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < n; i++) {
+      index[i * 4] = bone;
+      weight[i * 4] = 1;
+      // Clothes and skin only: head gear, faces and the cup stay rigid
+      const soft = piece || expr ? null : soften(pos.getX(i), pos.getY(i), pos.getZ(i), bone);
+      if (soft) {
+        index[i * 4 + 1] = soft[0];
+        weight[i * 4] = 1 - soft[1];
+        weight[i * 4 + 1] = soft[1];
+      }
+    }
+    geo.setAttribute('skinIndex', new THREE.BufferAttribute(index, 4));
+    geo.setAttribute('skinWeight', new THREE.BufferAttribute(weight, 4));
     parts.push(geo);
   };
   source.traverse((mesh) => {

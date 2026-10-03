@@ -475,7 +475,7 @@ def lock(piece, theta, phi, length, flow, width=0.03, thick=0.012, bend=0.5, sha
     for k in range(steps + 1):
         t = k / steps
         p = p0 * (1 - t) ** 2 + p1 * 2 * t * (1 - t) + p2 * t * t
-        if p.z > 1.56:
+        if p.z > 1.53:
             # hug the skull: no lock floats off it or sinks into it
             d = p - HEAD_C
             rs = head_radius(d.normalized())
@@ -486,8 +486,9 @@ def lock(piece, theta, phi, length, flow, width=0.03, thick=0.012, bend=0.5, sha
             side = tan.orthogonal().normalized()
         side = Matrix.Rotation(twist * t, 3, tan) @ side
         up = side.cross(tan).normalized()
-        w = width * (1 - t ** 2.2) * (1.0 if t > 0.05 else 0.8) + 0.0015
-        th = thick * (1 - t) + 0.001
+        # clumps with body that still end in a point
+        w = width * (1 - 0.9 * t ** 1.8) * (1.0 if t > 0.05 else 0.8) + 0.0015
+        th = thick * 1.2 * (1 - 0.85 * t) + 0.001
         sec = []
         for i in range(6):
             a = i * TAU / 6
@@ -553,7 +554,7 @@ def build_hair():
     crown("hair3", 12, 1.05, 0.08)
     for i in range(24):
         th = math.pi * 0.32 + i * (math.pi * 1.36 / 23)
-        lock("hair3", th, 0.35, 0.15, (math.sin(th) * 0.25, -math.cos(th) * 0.25, -1.0), 0.032, 0.012, 0.95, "fold" if i % 4 == 0 else "white")
+        lock("hair3", th, 0.35, 0.15, (math.sin(th) * 0.1, -math.cos(th) * 0.1, -1.0), 0.032, 0.012, 0.95, "fold" if i % 4 == 0 else "white")
     for i in range(12):
         th = -0.62 + i * 0.113 + rng.uniform(-0.03, 0.03)
         lock("hair3", th, 0.68 + rng.uniform(-0.04, 0.06), 0.046 + 0.024 * rng.random(), (math.sin(th) * 0.3, -0.35, -1), 0.026, 0.010, 0.8, "fold" if i % 3 == 2 else "white")
@@ -622,6 +623,11 @@ def build_uniform():
         # breast pocket with a pointed flap and its button
         px = sx * 0.07
         B.add(box((px, -0.112, 1.235), (0.062, 0.008, 0.072)), "fold", "tunic", "always", None)
+        if sx > 0 and not LOD:
+            # the unit's emblem on the left sleeve: a disc in the faction's colour round a pale centre
+            c, n = V((0.262, 0.012, 1.262)), V((1.0, 0.0, -0.12)).normalized()
+            B.add(disc_lens(c, n, 0.017), "white", "scarf", "always", "shoulder_L")
+            B.add(disc_lens(c + n * 0.0012, n, 0.009), "#ECE4CC", "keep", "always", "shoulder_L")
         B.add(hull([V((px + dx, -0.118, z)) for dx, z in ((-0.034, 1.285), (0.034, 1.285), (0.0, 1.258)) for _ in (0,)] + [V((px + dx, -0.110, z)) for dx, z in ((-0.034, 1.285), (0.034, 1.285), (0.0, 1.258))]), "crease", "tunic", "always", None)
         B.add(ellipsoid((px, -0.121, 1.264), (0.005, 0.003, 0.005), 8, 5), "#C9A24A", "keep", "always", None)
         # hip pockets on the skirt
@@ -647,10 +653,14 @@ def disc_lens(c, n, r, segs=12):
 
 
 def build_kit():
-    # base: Y-straps front and back, a canteen
+    # base: leather braces front and back with a stripe in the faction's colour down the middle
+    # (the scarf's palette slot), a canteen
     for sx in (1, -1):
-        B.add(strip([(sx * 0.06, -0.104, 1.03), (sx * 0.075, -0.112, 1.18), (sx * 0.092, -0.098, 1.33), (sx * 0.1, -0.05, 1.395), (sx * 0.1, 0.05, 1.395), (sx * 0.09, 0.098, 1.33), (sx * 0.03, 0.104, 1.15)], 0.014, 0.004), "#B49A6A", "keep", "kit_base", "chest")
-        B.add(ellipsoid((sx * 0.083, -0.113, 1.17), (0.008, 0.004, 0.008), 8, 5), "#8D8A80", "keep", "kit_base", "chest")
+        path = [(sx * 0.06, -0.104, 1.03), (sx * 0.075, -0.112, 1.18), (sx * 0.092, -0.098, 1.33), (sx * 0.1, -0.05, 1.395), (sx * 0.1, 0.05, 1.395), (sx * 0.09, 0.098, 1.33), (sx * 0.03, 0.104, 1.15)]
+        B.add(strip(path, 0.017, 0.004), "#6A4A30", "keep", "kit_base", "chest")
+        lift = [(x, y - 0.0035 if y < -0.06 else y + 0.0035 if y > 0.06 else y, z + (0.0035 if abs(y) <= 0.06 else 0.0)) for x, y, z in path]
+        B.add(strip(lift, 0.0055, 0.0015), "white", "scarf", "kit_base", "chest")
+        B.add(ellipsoid((sx * 0.083, -0.118, 1.17), (0.008, 0.004, 0.008), 8, 5), "#C9A24A", "keep", "kit_base", "chest")
     B.add(ellipsoid((-0.15, 0.06, 0.95), (0.034, 0.045, 0.062), 12, 8), "#5A5E62", "keep", "kit_base", "hips")
     B.add(loft([ring((-0.15, 0.06, 1.01), 0.012, 0.012, 8), ring((-0.15, 0.06, 1.03), 0.012, 0.012, 8)]), "#2A2620", "keep", "kit_base", "hips")
     # pouches with flaps and snaps on the belt
@@ -1197,15 +1207,16 @@ def gait(stride, knee_swing, knee_load, lean, bob, arm, run=False):
         th = [(0.0, (-stride, 0, 0)), (0.12, (-stride * 0.6, 0, 0)), (0.5, (stride, 0, 0)), (0.62, (stride * 0.6, 0, 0)), (0.78, (-stride * 0.1, 0, 0))]
         kn = [(0.0, (5, 0, 0)), (0.1, (knee_load, 0, 0)), (0.4, (8, 0, 0)), (0.62, (knee_swing * 0.8, 0, 0)), (0.75, (knee_swing, 0, 0)), (0.92, (20, 0, 0))]
         an = [(0.0, (-12, 0, 0)), (0.1, (2, 0, 0)), (0.45, (12, 0, 0)), (0.58, (25 if run else 18, 0, 0)), (0.78, (-5, 0, 0))]
+        to = [(0.0, (0, 0, 0)), (0.4, (-10, 0, 0)), (0.55, (-35 if run else -28, 0, 0)), (0.68, (0, 0, 0))]  # the toe rolls off
         res = {}
-        for name, ks in (("hip", th), ("knee", kn), ("ankle", an)):
+        for name, ks in (("hip", th), ("knee", kn), ("ankle", an), ("toe", to)):
             pts = sorted(((sh(t) if phase else t), v) for t, v in ks)
             if pts[0][0] > 0:
                 pts = [(0.0, pts[-1][1])] + pts
             res[name] = cycle(pts)
         return res
     L, R = leg(0.0), leg(0.5)
-    keys = {f"hip_L": L["hip"], "knee_L": L["knee"], "ankle_L": L["ankle"], "hip_R": R["hip"], "knee_R": R["knee"], "ankle_R": R["ankle"]}
+    keys = {f"{k}_{side}": leg_[k] for side, leg_ in (("L", L), ("R", R)) for k in ("hip", "knee", "ankle", "toe")}
     keys["spine"] = cycle([(0.0, (lean * 0.5, 4, 0)), (0.5, (lean * 0.5, -4, 0))])
     keys["chest"] = cycle([(0.0, (lean * 0.5, -6, 0)), (0.5, (lean * 0.5, 6, 0))])
     keys["neck"] = cycle([(0.0, (-lean * 0.7, 2, 0)), (0.5, (-lean * 0.7, -2, 0))])
@@ -1219,9 +1230,9 @@ def gait(stride, knee_swing, knee_load, lean, bob, arm, run=False):
 
 
 def build_actions(rig):
-    walk, wh = gait(24, 60, 15, 6, 0.025, 18)
+    walk, wh = gait(24, 60, 15, 8, 0.025, 18)
     key_pose(rig, "walk", 1.0, walk, hips=wh)
-    run, rh = gait(40, 105, 25, 16, 0.05, 30, run=True)
+    run, rh = gait(40, 105, 25, 26, 0.05, 30, run=True)
     key_pose(rig, "run", 0.66, run, hips=rh)
     # crouched walk: low hips, knees always bent, leaning in
     cw, ch = gait(26, 80, 40, 28, 0.02, 10)

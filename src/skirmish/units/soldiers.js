@@ -219,6 +219,13 @@ export function rotate(b, x = 0, y = 0, z = 0) {
 }
 
 const _s = new THREE.Vector3();
+const _f = new THREE.Matrix4();
+const _cp = new THREE.Vector3();
+const _rp = new THREE.Vector3();
+const _cq = new THREE.Quaternion();
+const _rq = new THREE.Quaternion();
+const _q0 = new THREE.Quaternion();
+const CARRY_TURN = 0.35;
 
 /**
  * Weapon transform in the soldier's root space, from the ready carry to the aim. Aimed rifles sit
@@ -227,14 +234,29 @@ const _s = new THREE.Vector3();
  */
 export function placeWeapon(s, a) {
   const { ready, aim } = s.hold;
-  // how far the hands sit lower than standing (a body may say so itself: s.gripDrop)
-  const crouchDrop = s.gripDrop ?? 0.42 * s.crouchBlend * (1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.0));
+  // A body with s.chestRest (its chest bone's rest matrix in root space) carries the weapon on the
+  // chest: the carry moves with the chest and turns with a third of its turn (leans, bobs, sways)
+  // while staying at port. Otherwise the hands sit lower by a drop (s.gripDrop, or the crouch's).
+  let follow = null;
+  if (s.chestRest) {
+    _f.copy(s.root.matrixWorld).invert().multiply(s.bones.chest.node.matrixWorld);
+    _f.decompose(_cp, _cq, _s);
+    s.chestRest.decompose(_rp, _rq, _s);
+    _cq.multiply(_rq.invert());
+    _cq.slerpQuaternions(_q0, _cq, CARRY_TURN);
+    follow = _f.makeRotationFromQuaternion(_cq).setPosition(_cp.sub(_rp.applyQuaternion(_cq)));
+  }
+  const crouchDrop = follow ? 0 : s.gripDrop ?? 0.42 * s.crouchBlend * (1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.0));
   // the aim direction in root space (body yaw stays on the root)
   const aimDir = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(-s.aimPitch - 0.12 * s.recoil, s.aimYaw, 0, 'YXZ'));
   const readyGrip = new THREE.Vector3().fromArray(ready.grip);
   readyGrip.y -= crouchDrop;
+  if (follow) readyGrip.applyMatrix4(follow);
   let aimGrip;
-  if (aim.under) aimGrip = new THREE.Vector3().fromArray(aim.grip).setY(aim.grip[1] - crouchDrop);
+  if (aim.under) {
+    aimGrip = new THREE.Vector3().fromArray(aim.grip).setY(aim.grip[1] - crouchDrop);
+    if (follow) aimGrip.applyMatrix4(follow);
+  }
   else {
     // the shoulder pocket, just inside the right shoulder joint
     s.bones.shoulder_R.node.getWorldPosition(_s);
@@ -246,7 +268,9 @@ export function placeWeapon(s, a) {
     aimGrip = _s.clone().addScaledVector(aimDir, aim.cheek ? 0.3 : 0.22);
   }
   const grip = readyGrip.lerp(aimGrip, a).addScaledVector(aimDir, -0.07 * s.recoil * a);
-  const dir = new THREE.Vector3().fromArray(ready.dir).normalize().lerp(aimDir, a).normalize();
+  const readyDir = new THREE.Vector3().fromArray(ready.dir).normalize();
+  if (follow) readyDir.transformDirection(follow);
+  const dir = readyDir.lerp(aimDir, a).normalize();
   s.gun.position.copy(grip);
   // the barrel (+Z) along dir, kept upright (no roll)
   _m.lookAt(_w.set(0, 0, 0), dir.clone().negate(), UP);

@@ -84,6 +84,10 @@ Halaman terpisah `skirmish.html`: pertempuran regu bergaya Valkyria Chronicles 3
 - Sarung tangan menjadi slot palet sendiri (sebagian karakter bertangan kosong).
 - Pohon ek: batang dan dahan masuk ke kanopi, tidak lagi melayang (`build_town_space.py`, hanya aset `t_oak_*` yang berubah dan AABB-nya tetap).
 - Hasil: model dekat 35,6k / jauh 11,5k segitiga, GLB 2,7 MB + atlas 3,1 MB. GPU 5,2 ms per frame di 2560×1600 (M1 Pro).
+- Lanjutan:
+  - Bretel kulit dengan garis tengah warna faksi (slot syal) dan emblem di lengan kiri.
+  - Rambut lebih berisi dengan ujung tetap runcing; bob jatuh rapat ke wajah; kilau rambut terang tidak lagi memutih.
+  - Lari condong 26° dengan jari kaki menggulung; senjata dibawa di dada (`placeWeapon`: ikut posisi dada, sepertiga rotasinya), jadi ikut condong, memantul, dan berayun dengan klip.
 
 ## Peta kode
 

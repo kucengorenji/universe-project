@@ -36,7 +36,7 @@ const LOOKS = {
   ines: { hair: 4, hairColor: '#1e1c22', skin: '#e9bf99', iris: '#2c4c7c', face: { female: true, eye: { tilt: 0.28, h: 0.018 }, brow: { tilt: 0.3 } } },
   cato: { hair: 1, hairColor: '#b07a3a', skin: '#f0c4a0', iris: '#3a7a5a', gloves: null, face: { eye: { h: 0.02, iris: 0.66 }, mouth: { smile: 0.8 }, freckles: true } },
   lio: { hair: 2, hairColor: '#3a2618', skin: '#c88a62', iris: '#5a3a2a', face: { eye: { tilt: 0.12 }, brow: { thick: 1.2, arch: 0.3 } } },
-  vesna: { hair: 3, hairColor: '#e4d6b0', skin: '#f7dcc4', iris: '#5a8aaa', face: { female: true, eye: { h: 0.0178, tilt: 0.15, iris: 0.58 }, brow: { thick: 0.7 }, blush: 0.4 } }
+  vesna: { hair: 3, hairColor: '#cdb98c', skin: '#f7dcc4', iris: '#5a8aaa', face: { female: true, eye: { h: 0.0178, tilt: 0.15, iris: 0.58 }, brow: { thick: 0.7 }, blush: 0.4 } }
 };
 
 /** Faction trim (the piping on hems, collars, cuffs), gloves and pencil ink. */
@@ -122,7 +122,7 @@ function soldierMaterial(uniforms) {
           vec3 a = texture2D(uAtlas, vAtlasUv).rgb;
           vec3 base = diffuseColor.rgb;
           diffuseColor.rgb *= a.r;
-          if (vHair > 0.5) diffuseColor.rgb = mix(diffuseColor.rgb, base * 1.45 + 0.04, a.g * 0.75);
+          if (vHair > 0.5) diffuseColor.rgb = mix(diffuseColor.rgb, min(base * 1.4 + 0.03, vec3(0.92)), a.g * 0.6);
           else diffuseColor.rgb = mix(diffuseColor.rgb, uTrim * a.r, a.g);
           // pencil: the faction's ink on cloth, a darker shade of the hair colour on hair
           diffuseColor.rgb = mix(diffuseColor.rgb, vHair > 0.5 ? base * 0.45 : mix(uInk, base * 0.3, 0.4), a.b * 0.85);
@@ -173,6 +173,9 @@ export function makeSoldier(template, weapons, { faction = 'fed', cls = 'scout',
   if (far) far.visible = false;
   const bones = {};
   root.traverse((o) => o.isBone && (bones[o.name] = { node: o, rest: o.quaternion.clone() }));
+  // the weapon is carried on the chest (soldiers.placeWeapon): its rest matrix in root space
+  root.updateMatrixWorld(true);
+  const chestRest = root.matrixWorld.clone().invert().multiply(bones.chest.node.matrixWorld);
   const mixer = new THREE.AnimationMixer(root);
   const actions = {};
   for (const clip of template.clips) {
@@ -190,7 +193,7 @@ export function makeSoldier(template, weapons, { faction = 'fed', cls = 'scout',
   return {
     root, mesh, far, material: mesh.material, uniforms, bones, mixer, actions, current: 'idle', faction, cls, gun,
     weapon: weapons[C.weapon], hold: HOLDS[C.hold], aimYaw: 0, aimPitch: 0, aimBlend: 0, crouchBlend: 0,
-    speed: 0, recoil: 0, flinch: 0, blink: 2 + Math.random() * 3, vc: true
+    speed: 0, recoil: 0, flinch: 0, blink: 2 + Math.random() * 3, vc: true, chestRest
   };
 }
 
@@ -254,8 +257,6 @@ export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn
   const a = s.actions[clip];
   a.timeScale = CLIP_SPEED[clip] ? THREE.MathUtils.clamp(v / CLIP_SPEED[clip], 0.5, 1.8) : 1;
   s.mixer.update(dt);
-  // hands sit lower with the hips
-  s.gripDrop = clip === 'kneel' ? 0.42 : clip === 'crouch' ? 0.32 : clip === 'crouch_walk' ? 0.22 : 0;
 
   const B = s.bones;
   const am = s.aimBlend;

@@ -191,7 +191,7 @@ export class SkirmishGame {
       return { ...r, leader: id === this.setup.leader, x: slot.x, z: slot.z };
     });
     this.battle = new Battle({ field, squad, difficulty: this.setup.difficulty });
-    this.views = new UnitViews(this.scene, { templates: A.templates, weapons: A.weapons, arena: this.arena, tank: this.builder.tank, shadows: this.shadows });
+    this.views = new UnitViews(this.scene, { templates: A.templates, weapons: A.weapons, arena: this.arena, tank: this.builder.tank, shadows: this.shadows, camera: this.camera });
     for (const u of this.battle.units) if (u.kind !== 'bunker') this.views.add(u);
     this.effects = new Effects(this.scene, this.camera, this.hud.fxLayer);
     // the minimap shares the big map's drawing

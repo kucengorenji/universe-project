@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { makeSoldier, animateSoldier, disposeSoldier, kick, flinch } from '../units/vcSoldiers.js';
+import { makeSoldier, animateSoldier, disposeSoldier, kick, flinch, setLod } from '../units/vcSoldiers.js';
 
 // 3D bodies for the battle's units: soldiers (one dressed NPC each), the tank (the field
 // builder's model, moved here) and nothing extra for bunkers (static scenery). Each frame
@@ -9,8 +9,9 @@ import { makeSoldier, animateSoldier, disposeSoldier, kick, flinch } from '../un
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class UnitViews {
-  constructor(scene, { templates, weapons, arena, tank, shadows }) {
+  constructor(scene, { templates, weapons, arena, tank, shadows, camera = null }) {
     this.scene = scene;
+    this.camera = camera;
     this.arena = arena;
     this.views = new Map();
     this.templates = templates;
@@ -97,6 +98,7 @@ export class UnitViews {
         v.body.aimPitch = v.look.pitch;
       }
       if (!aiming && v.aimHold <= 0) v.look = null;
+      if (this.camera) setLod(v.body, this.camera.position.distanceTo(v.root.position));
       const lying = u.state === 'down' ? 'down' : u.state === 'dead' ? 'dead' : false;
       animateSoldier(v.body, dt, u.state === 'ok' ? Math.max(v.speed, stepping) : 0, { aim: aiming && u.state === 'ok', crouch: u.stance === 'crouch', down: lying, turn: turnRate });
     }

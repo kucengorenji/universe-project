@@ -11,7 +11,7 @@ import { HOLDS, gunMaterial, placeWeapon, gripWorld, supportWorld, poleR, poleL,
 // upper body is posed in code: the torso turns into the stance, the head follows the aim, the
 // weapon is placed and both arms reach it (two-bone IK from soldiers.js).
 //
-// One mesh, one draw call: the second UV map carries each vertex's palette slot and piece
+// One mesh, one draw call: the UV map carries each vertex's palette slot and piece
 // (docs in soldier_vc.py); the material recolours slots and collapses the pieces not worn.
 
 const KIT = ['base', 'pouches', 'pack_small', 'mags', 'plate', 'armor', 'tubes', 'pack_engineer', 'tools', 'goggles'];
@@ -44,7 +44,6 @@ function soldierMaterial(uniforms) {
     Object.assign(sh.uniforms, uniforms);
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>
-        attribute vec2 uv1;
         uniform vec3 uPalette[8];
         uniform float uHair;
         uniform float uHelm;
@@ -52,7 +51,7 @@ function soldierMaterial(uniforms) {
         uniform float uEyes;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         {
-          float piece = floor(1.0 - uv1.y); // glTF flips V: Blender's v = piece + 0.5
+          float piece = floor(1.0 - uv.y); // the UV map carries (slot, piece); glTF flips V
           bool hide = false;
           if (piece >= 1.0 && piece <= 5.0) hide = piece != uHair;
           else if (piece == 6.0 || piece == 7.0) hide = piece != uHelm;
@@ -62,8 +61,9 @@ function soldierMaterial(uniforms) {
         }`)
       .replace('#include <color_vertex>', `#include <color_vertex>
         {
-          int slot = int(floor(uv1.x));
-          if (slot > 0) vColor.rgb = uPalette[slot - 1];
+          int slot = int(floor(uv.x));
+          // slotted parts: the palette colour, shaded by the authored grey (folds, seams, gradients)
+          if (slot > 0) vColor.rgb *= uPalette[slot - 1];
         }`);
   };
   m.customProgramCacheKey = () => 'skirmish-soldier-vc';
@@ -75,8 +75,9 @@ export function makeSoldier(template, weapons, { faction = 'fed', cls = 'scout',
   const C = CLASSES[cls];
   const F = FACTIONS[faction];
   const root = cloneSkinned(template.scene);
-  let mesh = null;
-  root.traverse((o) => o.isSkinnedMesh && (mesh = o));
+  // the close model, and the far one (fewer segments, no small details) shown past LOD_FAR metres
+  let mesh = null, far = null;
+  root.traverse((o) => o.isSkinnedMesh && (o.name.includes('lod1') ? (far = o) : (mesh = o)));
   const person = personFor(seed);
   const look = (faction === 'fed' && LOOKS[id]) || { hair: faction === 'imp' ? 5 : 1 + (seed % 5), hairColor: person.hair, skin: person.skin, iris: '#3a4a5a' };
   const pal = { skin: look.skin, hair: look.hairColor, tunic: F.top, scarf: F.scarf, pants: F.legs, boots: F.boots, helmet: F.helmet_color, iris: look.iris };
@@ -91,8 +92,13 @@ export function makeSoldier(template, weapons, { faction = 'fed', cls = 'scout',
     uEyes: { value: 20 }
   };
   mesh.material = soldierMaterial(uniforms);
-  mesh.castShadow = shadows;
-  mesh.frustumCulled = false;
+  for (const m of [mesh, far]) {
+    if (!m) continue;
+    m.material = mesh.material;
+    m.castShadow = shadows;
+    m.frustumCulled = false;
+  }
+  if (far) far.visible = false;
   const bones = {};
   root.traverse((o) => o.isBone && (bones[o.name] = { node: o, rest: o.quaternion.clone() }));
   const mixer = new THREE.AnimationMixer(root);
@@ -110,7 +116,7 @@ export function makeSoldier(template, weapons, { faction = 'fed', cls = 'scout',
   gun.castShadow = shadows;
   root.add(gun);
   return {
-    root, mesh, material: mesh.material, uniforms, bones, mixer, actions, current: 'idle', faction, cls, gun,
+    root, mesh, far, material: mesh.material, uniforms, bones, mixer, actions, current: 'idle', faction, cls, gun,
     weapon: weapons[C.weapon], hold: HOLDS[C.hold], aimYaw: 0, aimPitch: 0, aimBlend: 0, crouchBlend: 0,
     speed: 0, recoil: 0, flinch: 0, blink: 2 + Math.random() * 3, vc: true
   };
@@ -121,6 +127,16 @@ export function disposeSoldier(s) {
   s.material.dispose();
   s.gun.removeFromParent();
   s.root.removeFromParent();
+}
+
+export const LOD_FAR = 24;
+
+/** Show the close or the far model by the distance to the camera (with a little hysteresis). */
+export function setLod(s, distance) {
+  if (!s.far) return;
+  const farNow = s.far.visible ? distance > LOD_FAR - 2 : distance > LOD_FAR + 2;
+  s.far.visible = farNow;
+  s.mesh.visible = !farNow;
 }
 
 export const kick = (s) => (s.recoil = 1);

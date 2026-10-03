@@ -3,7 +3,7 @@ for toon shading (about 7.5 heads, 1.72 m), anime face (large painted-shape eyes
 mouth), clumped hair, a field tunic with a short skirt, trousers into boots, webbing and helmets.
 
 One skinned mesh on one armature, so each soldier is one draw call. Per-vertex data the game
-reads (src/skirmish/units/vcSoldiers.js), in the second UV map ("meta"):
+reads (src/skirmish/units/vcSoldiers.js), in its only UV map ("meta", TEXCOORD_0):
   u = palette slot (0 keep the authored colour, 1 skin, 2 hair, 3 tunic, 4 scarf, 5 trousers,
       6 boots, 7 helmet, 8 iris)
   v = piece (0 always shown; 1-5 hair styles; 6 federation helmet; 7 imperial helmet;
@@ -49,6 +49,11 @@ COLOR = {
 }
 
 
+def hexof(name):
+    """A colour by name (COLOR, SHADE) or as '#rrggbb'."""
+    return COLOR.get(name) or SHADE.get(name) or name
+
+
 def srgb(h):
     h = h.lstrip("#")
     f = lambda c: c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
@@ -68,6 +73,11 @@ class Builder:
 
 
 B = Builder()
+LOD = 0  # 0: the close model; 1: the far model (fewer segments, no small details)
+
+
+def lod(a, b):
+    return a if LOD == 0 else b
 
 
 def hull(pts):
@@ -132,52 +142,59 @@ HIP_X, SH_X = 0.085, 0.175
 EL = V((0.235, 0.02, 1.13))
 WR = V((0.265, 0.0, 0.88))
 
+# Slotted parts carry a shade in their vertex colour (white = the palette colour as is; greys make
+# creases, seams and gradients that survive recolouring). Unslotted parts carry their real colour.
+SHADE = {"white": "#FFFFFF", "fold": "#DCDCDC", "crease": "#A8A8A8", "seam": "#8A8A8A", "deep": "#6E6E6E"}
+
 
 def body_skin():
-    """The whole clothed body as one smooth surface: a vertex graph with radii for the Skin
-    modifier, then subdivided. Returns the evaluated mesh object."""
+    """The clothed body as one smooth surface: a vertex graph with radii for the Skin modifier
+    (more nodes than before, so shoulders, elbows, calves and the chest have shape), subdivided."""
     me = bpy.data.meshes.new("body_graph")
     ob = bpy.data.objects.new("body_graph", me)
     COL.objects.link(ob)
-    # (name, position, radius x, radius y)
     nodes = [
         ("pelvis", (0, 0.0, 0.93), 0.150, 0.105),
-        ("waist", (0, 0.0, H["waist"]), 0.135, 0.095),
-        ("chest", (0, -0.005, H["chest"]), 0.150, 0.105),
-        ("upper", (0, 0.0, 1.34), 0.165, 0.098),
-        ("neck0", (0, 0.01, 1.44), 0.052, 0.050),
-        ("neck1", (0, 0.012, 1.505), 0.045, 0.045),
+        ("waist", (0, 0.0, H["waist"]), 0.132, 0.094),
+        ("ribs", (0, -0.004, 1.13), 0.142, 0.100),
+        ("chest", (0, -0.008, H["chest"]), 0.152, 0.106),
+        ("upper", (0, 0.0, 1.33), 0.162, 0.098),
+        ("yoke", (0, 0.004, 1.395), 0.120, 0.080),
+        ("neck0", (0, 0.01, 1.44), 0.050, 0.048),
+        ("neck1", (0, 0.012, 1.505), 0.043, 0.043),
     ]
     for s, sx in (("L", 1), ("R", -1)):
         nodes += [
-            (f"sh{s}", (sx * SH_X, 0.01, 1.385), 0.058, 0.058),
-            (f"el{s}", (sx * EL.x, EL.y, EL.z), 0.042, 0.042),
-            (f"fa{s}", (sx * 0.252, 0.012, 1.00), 0.038, 0.036),
-            (f"wr{s}", (sx * WR.x, WR.y, WR.z), 0.030, 0.026),
-            (f"hd{s}", (sx * 0.275, -0.005, 0.80), 0.036, 0.020),
-            (f"hp{s}", (sx * HIP_X, 0.0, 0.86), 0.085, 0.085),
-            (f"th{s}", (sx * 0.092, -0.005, 0.67), 0.075, 0.075),
-            (f"kn{s}", (sx * 0.095, -0.01, H["knee"]), 0.058, 0.058),
-            (f"sn{s}", (sx * 0.097, 0.0, 0.28), 0.056, 0.056),  # boot top
-            (f"an{s}", (sx * 0.097, 0.01, 0.10), 0.052, 0.058),
-            (f"ft{s}", (sx * 0.097, -0.11, 0.045), 0.048, 0.040),
-            (f"tp{s}", (sx * 0.097, -0.19, 0.040), 0.040, 0.036),
+            (f"sh{s}", (sx * SH_X, 0.01, 1.382), 0.060, 0.058),
+            (f"dl{s}", (sx * 0.202, 0.014, 1.30), 0.050, 0.052),  # deltoid
+            (f"bi{s}", (sx * 0.222, 0.018, 1.21), 0.044, 0.046),
+            (f"el{s}", (sx * EL.x, EL.y, EL.z), 0.038, 0.040),
+            (f"fa{s}", (sx * 0.248, 0.012, 1.03), 0.040, 0.037),
+            (f"wr{s}", (sx * WR.x, WR.y, WR.z + 0.02), 0.028, 0.025),
+            (f"hp{s}", (sx * HIP_X, 0.0, 0.86), 0.086, 0.086),
+            (f"th{s}", (sx * 0.092, -0.008, 0.70), 0.078, 0.076),
+            (f"tl{s}", (sx * 0.094, -0.01, 0.58), 0.064, 0.064),
+            (f"kn{s}", (sx * 0.095, -0.012, H["knee"]), 0.056, 0.058),
+            (f"cf{s}", (sx * 0.096, 0.004, 0.38), 0.058, 0.060),  # calf
+            (f"sn{s}", (sx * 0.097, 0.0, 0.27), 0.058, 0.058),  # boot top
+            (f"an{s}", (sx * 0.097, 0.012, 0.11), 0.050, 0.056),
+            (f"ft{s}", (sx * 0.097, -0.10, 0.048), 0.050, 0.040),
+            (f"tp{s}", (sx * 0.097, -0.19, 0.042), 0.042, 0.036),
         ]
     names = [n[0] for n in nodes]
-    edges = [("pelvis", "waist"), ("waist", "chest"), ("chest", "upper"), ("upper", "neck0"), ("neck0", "neck1")]
+    edges = [("pelvis", "waist"), ("waist", "ribs"), ("ribs", "chest"), ("chest", "upper"), ("upper", "yoke"), ("yoke", "neck0"), ("neck0", "neck1")]
     for s in "LR":
-        edges += [("upper", f"sh{s}"), (f"sh{s}", f"el{s}"), (f"el{s}", f"fa{s}"), (f"fa{s}", f"wr{s}"), (f"wr{s}", f"hd{s}"),
-                  ("pelvis", f"hp{s}"), (f"hp{s}", f"th{s}"), (f"th{s}", f"kn{s}"), (f"kn{s}", f"sn{s}"), (f"sn{s}", f"an{s}"), (f"an{s}", f"ft{s}"), (f"ft{s}", f"tp{s}")]
+        edges += [("upper", f"sh{s}"), (f"sh{s}", f"dl{s}"), (f"dl{s}", f"bi{s}"), (f"bi{s}", f"el{s}"), (f"el{s}", f"fa{s}"), (f"fa{s}", f"wr{s}"),
+                  ("pelvis", f"hp{s}"), (f"hp{s}", f"th{s}"), (f"th{s}", f"tl{s}"), (f"tl{s}", f"kn{s}"), (f"kn{s}", f"cf{s}"), (f"cf{s}", f"sn{s}"), (f"sn{s}", f"an{s}"), (f"an{s}", f"ft{s}"), (f"ft{s}", f"tp{s}")]
     me.from_pydata([n[1] for n in nodes], [(names.index(a), names.index(b)) for a, b in edges], [])
     sk = ob.modifiers.new("skin", "SKIN")
     sk.use_smooth_shade = True
-    sk.branch_smoothing = 0.6
+    sk.branch_smoothing = 0.7
     for i, n in enumerate(nodes):
         me.skin_vertices[0].data[i].radius = (n[2], n[3])
     me.skin_vertices[0].data[0].use_root = True
     sub = ob.modifiers.new("sub", "SUBSURF")
-    sub.levels = 2
-    sub.render_levels = 2
+    sub.levels = lod(2, 1)
     bpy.context.view_layer.update()
     deps = bpy.context.evaluated_depsgraph_get()
     mesh = bpy.data.meshes.new_from_object(ob.evaluated_get(deps))
@@ -188,229 +205,426 @@ def body_skin():
 
 
 def body_slot(c):
-    """Which colour a body face takes, from its centre."""
+    """Colour (shade) and slot of a body face, from its centre: skin above the collar, boots below
+    the boot tops, trousers to the tunic's hem, the tunic above; seams darken along the sides."""
     x, y, z = c
     if z > 1.455:
-        return "skin", "skin"
-    if abs(x) > 0.255 and z < 0.86:
-        return "skin", "skin"  # hands
-    if z < 0.30:
-        return "boots", "boots"
+        return "white", "skin"
+    if abs(x) > 0.25 and z < 0.875:
+        return "white", "skin"  # wrists
+    if z < 0.29:
+        # boot: a darker sole band and toe cap
+        return ("deep" if z < 0.03 else "fold" if y < -0.12 else "white"), "boots"
     if z < 0.93:
-        return "pants", "pants"
-    return "tunic", "tunic"
+        crease = abs(abs(x) - 0.095) < 0.012 and y < -0.05 and z > 0.3  # pressed trouser crease
+        return ("crease" if crease else "white"), "pants"
+    side = abs(y) < 0.012 and abs(x) > 0.12 and z < 1.38  # side seams
+    return ("seam" if side else "white"), "tunic"
 
 
 def build_body():
-    # one connected surface (the automatic weighting needs that); colours are chosen per face
     B.add(body_skin(), body_slot, "skin", "always", "@body", True)
+    build_hands()
 
 
-# ---------------------------------------------------------------- head and face
+# ---------------------------------------------------------------- hands with fingers, gripping
+def finger(bm_list, base, along, curl_axis, lengths, r0, curl):
+    """A tapered finger from base: segments along `along`, each bent by `curl` (radians) about curl_axis."""
+    d = V(along).normalized()
+    p = V(base)
+    rings_ = []
+    radius = r0
+    ax = V(curl_axis).normalized()
+    for k, L in enumerate(lengths):
+        n = d.orthogonal().normalized()
+        w = d.cross(n)
+        rings_.append([p + (n * math.cos(i * TAU / 7) + w * math.sin(i * TAU / 7)) * radius for i in range(7)])
+        p = p + d * L
+        d = Matrix.Rotation(curl, 3, ax) @ d
+        radius *= 0.86
+    n = d.orthogonal().normalized()
+    w = d.cross(n)
+    rings_.append([p + (n * math.cos(i * TAU / 7) + w * math.sin(i * TAU / 7)) * radius * 0.7 for i in range(7)])
+    bm_list.append(loft(rings_))
+
+
+def build_hands():
+    if LOD:
+        for s, sx in (("L", 1), ("R", -1)):
+            B.add(ellipsoid((sx * WR.x, WR.y - 0.01, WR.z - 0.07), (0.022, 0.04, 0.06), 8, 6), "white", "skin", "always", f"wrist_{s}")
+        return
+    for s, sx in (("L", 1), ("R", -1)):
+        w = V((sx * WR.x, WR.y, WR.z))
+        parts = []
+        # the palm hangs below the wrist, its inside facing the body, fingers curled forward round a grip
+        palm_c = w + V((sx * 0.004, -0.004, -0.05))
+        palm = ellipsoid(palm_c, (0.017, 0.038, 0.045), 10, 8)
+        parts.append(palm)
+        for i, (dy, L) in enumerate(((-0.026, 0.026), (-0.009, 0.029), (0.008, 0.028), (0.024, 0.022))):
+            base = w + V((sx * 0.004, dy, -0.088))
+            finger(parts, base, (0, 0, -1), (1, 0, 0), (L, L * 0.75, L * 0.6), 0.0085, -0.9)  # curled forward round a grip
+        thumb_base = w + V((-sx * 0.006, -0.028, -0.035))
+        finger(parts, thumb_base, (-sx * 0.3, -0.7, -0.6), (0, 0, 1), (0.024, 0.02), 0.0095, 0.5 * sx)
+        for bm in parts:
+            B.add(bm, "white", "skin", "always", f"wrist_{s}")
+        # glove cuff
+        B.add(loft([ring((sx * WR.x, WR.y, WR.z + 0.012), 0.030, 0.027, 12), ring((sx * WR.x, WR.y, WR.z - 0.012), 0.029, 0.026, 12)]), "fold", "tunic", "always", f"wrist_{s}")
+
+
+# ---------------------------------------------------------------- head: a sculpted anime head
 HEAD_C = V((0, 0.0, H["head"]))
 
 
 def build_head():
-    # cranium and a tapered jaw: an ellipsoid pulled in below the cheeks
-    bm = ellipsoid(HEAD_C, (0.088, 0.098, 0.112), segs=16, rings=12)
+    bm = ellipsoid(HEAD_C, (0.087, 0.097, 0.110), segs=lod(28, 14), rings=lod(20, 10))
     for v in bm.verts:
         d = v.co - HEAD_C
-        if d.z < 0:
-            k = 1.0 - 0.45 * (-d.z / 0.112) ** 1.6  # narrow toward the chin
+        u = d.z / 0.110  # -1 chin .. 1 crown
+        front = -d.y / 0.097  # 1 at the face
+        if u < 0.05:
+            # the jaw narrows to a small pointed chin; the cheeks stay soft
+            t = (-u + 0.05) / 1.05
+            k = 1.0 - 0.52 * t ** 1.5
             v.co.x = HEAD_C.x + d.x * k
-            v.co.y = HEAD_C.y + d.y * (1.0 - 0.25 * (-d.z / 0.112) ** 2) - 0.012 * (-d.z / 0.112)
-        if d.y < 0 and d.z > -0.02:
-            v.co.y += 0.006  # a flatter face plane
-    B.add(bm, "skin", "skin", "always", "head")
-    # ears and a small nose
+            if front > 0:
+                v.co.y = HEAD_C.y + d.y * (1.0 - 0.18 * t) - 0.012 * t
+            else:
+                v.co.y = HEAD_C.y + d.y * (1.0 - 0.45 * t ** 1.2)
+        if front > 0.55 and -0.35 < u < 0.45:
+            v.co.y += 0.008 * (front - 0.55)  # a flatter face plane
+        # the bridge of a small nose
+        g = math.exp(-((d.x / 0.012) ** 2) - (((d.z + 0.018) / 0.022) ** 2))
+        if front > 0.7:
+            v.co.y -= 0.012 * g
+        # the back of the skull rounder and fuller
+        if front < -0.2 and u > -0.2:
+            v.co.y += 0.006 * (-front - 0.2)
+    B.add(bm, "white", "skin", "always", "head")
     for sx in (1, -1):
-        B.add(ellipsoid((sx * 0.086, 0.008, H["head"] - 0.008), (0.012, 0.024, 0.032)), "skin", "skin", "always", "head")
-    B.add(hull([V((0, -0.098, 1.588)), V((0.009, -0.093, 1.565)), V((-0.009, -0.093, 1.565)), V((0, -0.106, 1.562)), V((0, -0.09, 1.59))]), "skin", "skin", "always", "head")
+        ear = ellipsoid((sx * 0.084, 0.01, H["head"] - 0.01), (0.011, 0.024, 0.033), 10, 8)
+        B.add(ear, "fold", "skin", "always", "head")
+    # nose tip shadow and mouth
+    B.add(disc(0.0, 1.565, 0.010, 0.006, rings=1, segs=8), "#D49A82", "keep", "always", "head", False)
     build_face()
 
 
 def face_y(x, z):
-    """Front surface of the head at (x, z), a little proud of it."""
-    d = ((x / 0.088) ** 2 + ((z - HEAD_C.z) / 0.112) ** 2)
-    return HEAD_C.y - 0.098 * math.sqrt(max(0.0, 1 - d)) - 0.004 + 0.006
+    """Front surface of the head at (x, z)."""
+    d = (x / 0.087) ** 2 + ((z - HEAD_C.z) / 0.110) ** 2
+    y = HEAD_C.y - 0.097 * math.sqrt(max(0.0, 1 - d))
+    if z < HEAD_C.z:
+        t = (HEAD_C.z - z) / 0.110
+        y = HEAD_C.y + (y - HEAD_C.y) * (1.0 - 0.18 * t) - 0.012 * t
+    return y - 0.008 * 0.45 - 0.0015
 
 
-def decal(x, z, w, h, n=10, shape=None, lift=0.0):
-    """A thin patch lying on the face at (x, z): a flattened shape, slightly curved with the head."""
-    pts = []
-    for i in range(n):
-        a = i * TAU / n
+def disc(x, z, w, h, rings=3, segs=16, shape=None, lift=0.0, color_fn=None):
+    """A patch lying on the face: concentric rings round (x, z), following the face's curve, facing out.
+    shape(a, px, pz) may reshape the outline; returns a bmesh (faces keep a 'z' for gradients)."""
+    bm = bmesh.new()
+    # every ring (and the centre) is a scaled copy of the shaped outline round the outline's own
+    # middle, so a shape that moves the outline (a lash above the eye) carries its centre along
+    outline = []
+    for i in range(segs):
+        a = i * TAU / segs
         px, pz = math.cos(a) * w / 2, math.sin(a) * h / 2
         if shape:
             px, pz = shape(a, px, pz)
-        for t in (0.0, 0.002):
-            pts.append(V((x + px, face_y(x + px, z + pz) - t - lift, z + pz)))
-    return hull(pts)
+        outline.append((px, pz))
+    mx = sum(p[0] for p in outline) / segs
+    mz = sum(p[1] for p in outline) / segs
+    at = lambda px, pz: V((x + px, face_y(x + px, z + pz) - lift, z + pz))
+    centre = bm.verts.new(at(mx, mz))
+    prev = None
+    for r in range(1, rings + 1):
+        k = r / rings
+        cur = [bm.verts.new(at(mx + (px - mx) * k, mz + (pz - mz) * k)) for px, pz in outline]
+        for i in range(segs):
+            j = (i + 1) % segs
+            if prev is None:
+                bm.faces.new([centre, cur[i], cur[j]])
+            else:
+                bm.faces.new([prev[i], cur[i], cur[j], prev[j]])
+        prev = cur
+    for f in bm.faces:
+        f.normal_update()
+        if f.normal.y > 0:
+            f.normal_flip()
+    return bm
 
 
 def build_face():
-    ez = 1.585
+    ez = 1.582
     for sx in (1, -1):
-        ex = sx * 0.036
-        # anime eye: a tall white almond, a big iris, a dark pupil, a highlight, a heavy upper lash
-        almond = lambda a, px, pz: (px, pz * (1.0 if pz > 0 else 0.75))
-        B.add(decal(ex, ez, 0.034, 0.030, 14, almond), "white", "keep", "eyes_open", "head", False)
-        B.add(decal(ex + sx * 0.002, ez - 0.002, 0.021, 0.026, 12, lift=0.001), "iris", "iris", "eyes_open", "head", False)
-        B.add(decal(ex + sx * 0.002, ez - 0.003, 0.010, 0.013, 10, lift=0.002), "line", "keep", "eyes_open", "head", False)
-        B.add(decal(ex - sx * 0.004, ez + 0.006, 0.006, 0.007, 8, lift=0.003), "white", "keep", "eyes_open", "head", False)
-        lash = lambda a, px, pz: (px * 1.12, pz * 0.35 + 0.016)
-        B.add(decal(ex, ez, 0.036, 0.016, 10, lash, lift=0.002), "line", "keep", "eyes_open", "head", False)
+        ex = sx * 0.035
+        almond = lambda a, px, pz: (px, pz * (1.0 if pz > 0 else 0.72) + 0.002 * math.cos(a) * sx)
+        # sclera: white, shaded under the upper lid
+        B.add(disc(ex, ez, 0.040, 0.036, 3, 16, almond, 0.0005), lambda c: ("#FFFFFF" if c[2] < ez + 0.006 else "#D8DCE4", "keep"), "keep", "eyes_open", "head", False)
+        # iris: dark at the top, light at the bottom (shades of the soldier's eye colour)
+        def iris_shade(c, ez=ez):
+            t = min(1.0, max(0.0, (c[2] - (ez - 0.016)) / 0.032))
+            g = int(255 - 150 * t ** 1.3)
+            return f"#{g:02X}{g:02X}{g:02X}", "iris"
+        B.add(disc(ex + sx * 0.002, ez - 0.002, 0.024, 0.030, 4, 18, lift=0.0012), iris_shade, "iris", "eyes_open", "head", False)
+        B.add(disc(ex + sx * 0.002, ez - 0.001, 0.010, 0.013, 2, 12, lift=0.0018), "#1A1A22", "keep", "eyes_open", "head", False)
+        if LOD:
+            B.add(disc(ex, ez + 0.012, 0.04, 0.012, 1, 10, lift=0.0028), "#2A2119", "keep", "eyes_open", "head", False)
+            continue
+        B.add(disc(ex - sx * 0.004, ez + 0.007, 0.008, 0.008, 1, 10, lift=0.0024), "#FFFFFF", "keep", "eyes_open", "head", False)
+        B.add(disc(ex + sx * 0.006, ez - 0.009, 0.004, 0.004, 1, 8, lift=0.0024), "#FFFFFF", "keep", "eyes_open", "head", False)
+        # the heavy upper lash line with a flick at the outer corner, a thin lower lash, a lid crease
+        lash = lambda a, px, pz: (px * 1.14 + (sx * 0.004 if px * sx > 0 else 0), 0.016 + pz * 0.3 + (0.003 if px * sx > 0.012 else 0))
+        B.add(disc(ex, ez, 0.040, 0.016, 2, 14, lash, 0.0028), "#2A2119", "keep", "eyes_open", "head", False)
+        low = lambda a, px, pz: (px * 0.8, -0.0165 + pz * 0.15)
+        B.add(disc(ex + sx * 0.003, ez, 0.026, 0.008, 1, 10, low, 0.002), "#6A4A3A", "keep", "eyes_open", "head", False)
+        crease = lambda a, px, pz: (px * 1.0, 0.026 + pz * 0.12 + 0.002 * math.cos(px / 0.02))
+        B.add(disc(ex, ez, 0.034, 0.008, 1, 10, crease, 0.0015), "#B88A70", "keep", "eyes_open", "head", False)
         # closed: a curved lash line
-        shut = lambda a, px, pz: (px * 1.1, pz * 0.25 - 0.002 + 0.006 * math.cos(px / 0.02))
-        B.add(decal(ex, ez, 0.034, 0.012, 10, shut, lift=0.002), "line", "keep", "eyes_closed", "head", False)
-        # brows: thin, slightly raised arcs
-        brow = lambda a, px, pz: (px, pz * 0.4 + 0.004 * math.cos(px / 0.022))
-        B.add(decal(sx * 0.038, 1.616, 0.036, 0.010, 10, brow, lift=0.002), "hair", "hair", "always", "head", False)
-        B.add(decal(sx * 0.052, 1.560, 0.016, 0.008, 8, lift=0.001), "blush", "keep", "always", "head", False)
-    B.add(decal(0, 1.535, 0.018, 0.005, 10, lift=0.002), "mouth", "keep", "always", "head", False)
+        shut = lambda a, px, pz: (px * 1.12, -0.001 + pz * 0.22 + 0.007 * math.cos(px / 0.02))
+        B.add(disc(ex, ez, 0.040, 0.012, 1, 12, shut, 0.0028), "#2A2119", "keep", "eyes_closed", "head", False)
+        # brows: thin tapered arcs in the hair colour
+        brow = lambda a, px, pz: (px, pz * (0.45 - 0.25 * (px * sx + 0.02) / 0.04) + 0.005 * math.cos(px / 0.022))
+        B.add(disc(sx * 0.038, 1.617, 0.040, 0.010, 1, 12, brow, 0.0015), "fold", "hair", "always", "head", False)
+        B.add(disc(sx * 0.050, 1.556, 0.020, 0.010, 2, 10, lift=0.0008), "#F2B4A4", "keep", "always", "head", False)  # blush
+    mouth = lambda a, px, pz: (px, pz * 0.4 + 0.0015 * math.cos(px / 0.008))
+    B.add(disc(0, 1.532, 0.020, 0.006, 1, 10, mouth, 0.0015), "#A85A50", "keep", "always", "head", False)
 
 
-# ---------------------------------------------------------------- hair: clumps from the scalp
+# ---------------------------------------------------------------- hair: flat curved locks
 def scalp_point(theta, phi, grow=0.012):
     """A point on the cranium (theta around from the front, phi up from the equator)."""
-    r = (0.088 + grow, 0.098 + grow, 0.112 + grow)
+    r = (0.087 + grow, 0.097 + grow, 0.110 + grow)
     return V((HEAD_C.x + math.sin(theta) * math.cos(phi) * r[0], HEAD_C.y - math.cos(theta) * math.cos(phi) * r[1], HEAD_C.z + math.sin(phi) * r[2]))
 
 
-def hair_cap(piece, low_back=0.0, fringe_z=1.64):
-    """A shell over the top and back of the head: the base every style builds on."""
+def hair_cap(piece, low_back=0.0, fringe_z=1.64, n=24):
+    """A smooth shell over the top and back of the head: the base every style builds on."""
     rings_ = []
-    for k, phi in enumerate((-0.15 - low_back, 0.15, 0.55, 0.95, 1.35)):
+    for k, phi in enumerate((-0.2 - low_back, 0.1, 0.45, 0.8, 1.15, 1.45)):
         pts = []
-        for i in range(16):
-            th = i * TAU / 16
-            p = scalp_point(th, phi, 0.010 + 0.004 * k)
-            # keep the face open: lift the front of the lower rings to the hairline
-            if math.cos(th) > 0.35 and p.z < fringe_z:
+        for i in range(n):
+            th = i * TAU / n
+            p = scalp_point(th, phi, 0.008 + 0.004 * k)
+            if math.cos(th) > 0.3 and p.z < fringe_z:
                 p.z = fringe_z + (p.z - fringe_z) * 0.15
-                p.y -= 0.005
+                p.y -= 0.004
             pts.append(p)
         rings_.append(pts)
-    bm = loft(rings_)
-    B.add(bm, "hair", "hair", piece, "head")
+    B.add(loft(rings_), "white", "hair", piece, "head")
 
 
-def clump(piece, theta, phi, length, droop, width=0.026, twist=0.0):
-    """A pointed lock of hair from the scalp, out and down."""
-    base = scalp_point(theta, phi, 0.008)
-    out = (base - HEAD_C).normalized()
-    tip = base + out * length * (1 - droop) + V((0, 0, -length * droop)) + V((math.sin(twist) * 0.02, 0, 0))
-    B.add(cone(base, tip, width, 6), "hair", "hair", piece, "head")
+def lock(piece, theta, phi, length, flow, width=0.03, thick=0.012, bend=0.5, shade="white", twist=0.0):
+    global LOCKS
+    LOCKS += 1
+    if LOD and LOCKS % 3:
+        return  # the far model keeps every third lock, a little wider
+    if LOD:
+        width *= 1.4
+    """A lock of hair: a flat, tapering ribbon of lens-shaped sections along a curve that leaves the
+    scalp along its surface, then falls in the `flow` direction (a vector) as it bends."""
+    root = scalp_point(theta, phi, 0.006)
+    normal = (root - HEAD_C).normalized()
+    flow = V(flow).normalized()
+    start_dir = (flow - normal * flow.dot(normal)).normalized() if abs(flow.dot(normal)) < 0.98 else normal.orthogonal()
+    p0 = root
+    p1 = root + start_dir * length * 0.45 + normal * length * 0.18
+    p2 = root + start_dir * length * (1 - bend * 0.3) + flow * length * bend * 0.6 + normal * length * 0.05
+    rings_ = []
+    steps = lod(6, 3)
+    for k in range(steps + 1):
+        t = k / steps
+        p = p0 * (1 - t) ** 2 + p1 * 2 * t * (1 - t) + p2 * t * t
+        tan = ((p1 - p0) * 2 * (1 - t) + (p2 - p1) * 2 * t).normalized()
+        side = tan.cross(normal).normalized()
+        if side.length < 1e-6:
+            side = tan.orthogonal().normalized()
+        side = Matrix.Rotation(twist * t, 3, tan) @ side
+        up = side.cross(tan).normalized()
+        w = width * (1 - t ** 1.4) * (1.0 if t > 0.05 else 0.8) + 0.0015
+        th = thick * (1 - t) + 0.001
+        sec = []
+        for i in range(6):
+            a = i * TAU / 6
+            sec.append(p + side * math.cos(a) * w + up * math.sin(a) * th)
+        rings_.append(sec)
+    B.add(loft(rings_), shade, "hair", piece, "head")
+
+
+LOCKS = 0
+DOWN = V((0, 0, -1))
+FRONT = V((0, -1, 0))
+BACK = V((0, 1, 0))
 
 
 def build_hair():
-    # 1: short and spiky (the scout's)
+    # 1: short and spiky, swept up and back
     hair_cap("hair1")
-    for i in range(14):
-        th = -1.2 + i * (2.4 / 13)
-        clump("hair1", th, 0.75 + 0.25 * math.cos(th * 2), 0.08 + 0.02 * (i % 3), 0.15)
-    for i in range(7):
-        clump("hair1", -0.5 + i * 0.17, 0.25, 0.07, 0.75, 0.022, i)  # fringe
-    # 2: swept fringe, longer at the sides
-    hair_cap("hair2")
+    for i in range(16):
+        th = -1.1 + i * (2.2 / 15) + rng.uniform(-0.05, 0.05)
+        lock("hair1", th, 0.95 + 0.25 * rng.random(), 0.09 + 0.03 * rng.random(), (math.sin(th) * 0.4, 0.6, 0.7), 0.026, 0.011, 0.2, "white" if i % 3 else "fold")
     for i in range(9):
-        clump("hair2", -0.7 + i * 0.16, 0.32, 0.10, 0.65, 0.026, -1)
+        th = math.pi + (i - 4) * 0.28
+        lock("hair1", th, 0.55, 0.08, (math.sin(th) * 0.3, 0.5, -0.8), 0.028, 0.011, 0.6)
+    for i in range(7):
+        th = -0.55 + i * 0.18
+        lock("hair1", th, 0.62, 0.05, (math.sin(th) * 0.6, -0.4, -0.6), 0.024, 0.010, 0.5, "fold" if i % 2 else "white", twist=0.3)
+    # 2: a long swept fringe, longer at the sides
+    hair_cap("hair2")
+    for i in range(11):
+        th = -0.75 + i * 0.15
+        lock("hair2", th, 0.66, 0.075, (0.7, -0.3, -0.6), 0.03, 0.011, 0.55, "fold" if i % 3 == 0 else "white", twist=0.4)
     for s in (1, -1):
-        for i in range(4):
-            clump("hair2", s * (1.3 + i * 0.2), 0.0, 0.09, 0.85, 0.022)
-    # 3: a chin-length bob
-    hair_cap("hair3", low_back=0.35)
-    for i in range(20):
-        th = math.pi * 0.35 + i * (math.pi * 1.3 / 19)
-        clump("hair3", th, 0.05, 0.12, 0.9, 0.03)
-    for i in range(8):
-        clump("hair3", -0.55 + i * 0.16, 0.3, 0.085, 0.8, 0.024)
-    # 4: tied back in a ponytail
-    hair_cap("hair4", low_back=0.1)
-    for i in range(6):
-        clump("hair4", -0.45 + i * 0.18, 0.32, 0.075, 0.7, 0.022)
-    tie = scalp_point(math.pi, 0.35, 0.012)
-    B.add(ellipsoid(tie, (0.022, 0.022, 0.022)), "hair", "hair", "hair4", "head")
-    B.add(cone(tie + V((0, 0.01, 0)), tie + V((0, 0.06, -0.22)), 0.032, 8), "hair", "hair", "hair4", "head")
-    # 5: close crop
-    hair_cap("hair5")
+        for i in range(6):
+            lock("hair2", s * (1.25 + i * 0.22), 0.3, 0.1, (s * 0.2, 0.2, -1.0), 0.028, 0.011, 0.85)
     for i in range(10):
-        clump("hair5", -1.0 + i * 0.22, 0.6, 0.045, 0.2, 0.022)
+        th = math.pi + (i - 4.5) * 0.25
+        lock("hair2", th, 0.45, 0.1, (0, 0.4, -0.9), 0.03, 0.012, 0.7)
+    # 3: a chin-length bob with a straight fringe
+    hair_cap("hair3", low_back=0.3)
+    for i in range(24):
+        th = math.pi * 0.32 + i * (math.pi * 1.36 / 23)
+        lock("hair3", th, 0.35, 0.15, (math.sin(th) * 0.25, -math.cos(th) * 0.25, -1.0), 0.032, 0.012, 0.95, "fold" if i % 4 == 0 else "white")
+    for i in range(10):
+        th = -0.6 + i * 0.133
+        lock("hair3", th, 0.68, 0.058, (0, -0.35, -1), 0.026, 0.010, 0.8, "white")
+    # 4: tied back in a ponytail, a few strands framing the face
+    hair_cap("hair4", low_back=0.1)
+    for i in range(8):
+        th = -0.5 + i * 0.14
+        lock("hair4", th, 0.66, 0.055, (0, 0.5, -0.4), 0.026, 0.010, 0.4)
+    for s in (1, -1):
+        lock("hair4", s * 0.85, 0.35, 0.13, (s * 0.1, -0.2, -1), 0.016, 0.008, 0.95, "fold")
+    tie = scalp_point(math.pi, 0.35, 0.012)
+    B.add(ellipsoid(tie, (0.022, 0.022, 0.022), 10, 8), "fold", "hair", "hair4", "head")
+    for k in range(5):
+        a = k * TAU / 5
+        base = tie + V((math.cos(a) * 0.01, 0.012, math.sin(a) * 0.01))
+        B.add(loft([ring(base, 0.02, 0.016, 7), ring(base + V((0, 0.05, -0.08)), 0.018, 0.014, 7), ring(base + V((0, 0.07, -0.2)), 0.012, 0.01, 7), ring(base + V((0, 0.06, -0.28)), 0.002, 0.002, 7)]), "white" if k % 2 else "fold", "hair", "hair4", "head")
+    # 5: close crop (also what shows under a helmet)
+    hair_cap("hair5")
+    for i in range(12):
+        th = -1.0 + i * 0.18
+        lock("hair5", th, 0.75, 0.045, (0, -0.2, -0.6), 0.022, 0.008, 0.4)
 
 
 # ---------------------------------------------------------------- uniform details, kit, helmets
+def strip(path, width, height, n=4):
+    """A thin raised band along a path of points (seams, piping, straps)."""
+    rings_ = []
+    for k, p in enumerate(path):
+        p = V(p)
+        q = V(path[min(k + 1, len(path) - 1)]) - V(path[max(k - 1, 0)])
+        q.normalize()
+        side = q.cross(V((0, 0, 1)) if abs(q.z) < 0.9 else V((1, 0, 0))).normalized()
+        up = side.cross(q).normalized()
+        rings_.append([p + side * math.cos(i * TAU / n + math.pi / n) * width + up * math.sin(i * TAU / n + math.pi / n) * height for i in range(n)])
+    return loft(rings_)
+
+
+def tunic_front(z):
+    """The tunic's front surface y at the centre line, roughly."""
+    return -0.1 - 0.008 * math.exp(-((z - 1.22) / 0.08) ** 2)
+
+
 def build_uniform():
-    # stand collar and the scarf knotted at the throat
-    B.add(loft([ring((0, 0.008, 1.425), 0.062, 0.058, 14), ring((0, 0.010, 1.47), 0.058, 0.054, 14)]), "tunic", "tunic", "always", None)
-    B.add(loft([ring((0, 0.006, 1.415), 0.068, 0.064, 14), ring((0, 0.008, 1.44), 0.066, 0.062, 14)]), "scarf", "scarf", "always", None)
-    B.add(ellipsoid((0.018, -0.07, 1.41), (0.024, 0.018, 0.022)), "scarf", "scarf", "always", None)
-    B.add(cone((0.02, -0.08, 1.40), (0.04, -0.105, 1.30), 0.018, 6), "scarf", "scarf", "always", None)
-    # the tunic's skirt over the hips, flaring
-    B.add(loft([ring((0, 0.0, 0.99), 0.142, 0.102, 18), ring((0, 0.0, 0.84), 0.168, 0.122, 18)], cap=False), "tunic_dark", "tunic", "always", "hips")
-    # belt, buckle, breast pockets, buttons
-    B.add(loft([ring((0, 0.0, 0.99), 0.140, 0.100, 18), ring((0, 0.0, 1.03), 0.138, 0.098, 18)]), "leather", "keep", "always", None)
-    B.add(box((0, -0.101, 1.01), (0.04, 0.008, 0.032)), "brass", "keep", "always", None)
+    # stand collar with pointed tabs, the scarf knotted at the throat
+    B.add(loft([ring((0, 0.008, 1.425), 0.062, 0.058, 18), ring((0, 0.010, 1.472), 0.058, 0.054, 18)]), "fold", "tunic", "always", None)
     for sx in (1, -1):
-        B.add(box((sx * 0.065, -0.106, 1.245), (0.06, 0.012, 0.07)), "tunic_dark", "tunic", "always", None)
-        # cuffs at the wrists, boot tops
-        B.add(loft([ring((sx * 0.262, 0.0, 0.905), 0.036, 0.034, 10), ring((sx * 0.266, 0.0, 0.875), 0.035, 0.033, 10)]), "tunic_dark", "tunic", "always", None)
-        B.add(loft([ring((sx * 0.097, 0.0, 0.30), 0.062, 0.062, 12), ring((sx * 0.097, 0.0, 0.33), 0.064, 0.064, 12)]), "boots", "boots", "always", None)
-    for z in (1.33, 1.21, 1.09):
-        B.add(ellipsoid((0, -0.106, z), (0.008, 0.004, 0.008), 8, 4), "brass", "keep", "always", None)
+        # collar patches: small flat rectangles lying on the collar's front
+        ang = math.radians(-90 + sx * 38)
+        cx, cy = math.cos(ang) * 0.062, 0.008 + math.sin(ang) * 0.058
+        nx, ny = math.cos(ang), math.sin(ang)
+        tx, ty = -ny, nx
+        B.add(hull([V((cx + nx * d + tx * u, cy + ny * d + ty * u, z)) for d in (0.0, 0.004) for u in (-0.016, 0.016) for z in (1.43, 1.462)]), "crease", "tunic", "always", None)
+    B.add(loft([ring((0, 0.006, 1.412), 0.068, 0.064, 18), ring((0, 0.008, 1.44), 0.066, 0.062, 18)]), "white", "scarf", "always", None)
+    B.add(ellipsoid((0.016, -0.07, 1.408), (0.026, 0.02, 0.024), 12, 8), "fold", "scarf", "always", None)
+    for k, dx in enumerate((0.02, -0.004)):
+        B.add(loft([ring((0.02 + dx, -0.082, 1.398), 0.018, 0.006, 8), ring((0.03 + dx * 1.5, -0.1, 1.33), 0.016, 0.005, 8), ring((0.036 + dx * 2, -0.104, 1.27), 0.012, 0.004, 8)]), "white" if k else "fold", "scarf", "always", None)
+    # the tunic's skirt over the hips, flaring, with a back vent line
+    B.add(loft([ring((0, 0.0, 0.99), 0.140, 0.102, 24), ring((0, 0.0, 0.90), 0.156, 0.114, 24), ring((0, 0.0, 0.83), 0.168, 0.124, 24)], cap=False), lambda c: ("seam" if abs(c[0]) < 0.006 and c[1] > 0 else "fold", "tunic"), "tunic", "always", "hips")
+    # front placket and buttons, shoulder straps (epaulettes)
+    B.add(strip([(0.012, tunic_front(z) - 0.002, z) for z in (1.40, 1.30, 1.20, 1.10, 1.02)], 0.014, 0.003), "crease", "tunic", "always", None)
+    for z in (1.36, 1.27, 1.18, 1.09) if not LOD else ():
+        B.add(ellipsoid((0.012, tunic_front(z) - 0.006, z), (0.0075, 0.004, 0.0075), 8, 5), "#C9A24A", "keep", "always", None)
+    for sx in (1, -1):
+        B.add(box((sx * 0.12, 0.006, 1.402), (0.10, 0.052, 0.012), rot=(0, sx * -16, 0)), "fold", "tunic", "always", None)
+        B.add(ellipsoid((sx * 0.08, 0.004, 1.412), (0.006, 0.006, 0.004), 8, 5), "#C9A24A", "keep", "always", None)
+        # breast pocket with a pointed flap and its button
+        px = sx * 0.07
+        B.add(box((px, -0.112, 1.235), (0.062, 0.008, 0.072)), "fold", "tunic", "always", None)
+        B.add(hull([V((px + dx, -0.118, z)) for dx, z in ((-0.034, 1.285), (0.034, 1.285), (0.0, 1.258)) for _ in (0,)] + [V((px + dx, -0.110, z)) for dx, z in ((-0.034, 1.285), (0.034, 1.285), (0.0, 1.258))]), "crease", "tunic", "always", None)
+        B.add(ellipsoid((px, -0.121, 1.264), (0.005, 0.003, 0.005), 8, 5), "#C9A24A", "keep", "always", None)
+        # hip pockets on the skirt
+        B.add(box((sx * 0.1, -0.122, 0.9), (0.07, 0.008, 0.07), rot=(0, 0, sx * -6)), "crease", "tunic", "always", "hips")
+        # sleeve cuffs with a seam, boot tops, laces
+        B.add(loft([ring((sx * 0.262, 0.004, 0.925), 0.034, 0.032, 14), ring((sx * 0.265, 0.004, 0.895), 0.033, 0.031, 14)]), "crease", "tunic", "always", None)
+        B.add(loft([ring((sx * 0.097, 0.0, 0.272), 0.064, 0.064, 16), ring((sx * 0.097, 0.0, 0.30), 0.066, 0.066, 16)]), "fold", "boots", "always", None)
+        for k in range(5 if not LOD else 0):
+            z = 0.25 - k * 0.035
+            B.add(box((sx * 0.097, -0.054 - k * 0.006, z), (0.03, 0.006, 0.005), rot=(20, 0, 0)), "#D8C8A8", "keep", "always", None)
+        # trousers bloused over the boot tops
+        B.add(loft([ring((sx * 0.097, 0.0, 0.29), 0.066, 0.066, 16), ring((sx * 0.097, 0.0, 0.33), 0.068, 0.068, 16), ring((sx * 0.097, 0.0, 0.36), 0.06, 0.06, 16)], cap=False), "fold", "pants", "always", None)
+    # belt with buckle and holes
+    B.add(loft([ring((0, 0.0, 0.985), 0.141, 0.101, 24), ring((0, 0.0, 1.03), 0.139, 0.099, 24)]), "#5A3E28", "keep", "always", None)
+    B.add(box((0, -0.103, 1.008), (0.046, 0.008, 0.036)), "#C9A24A", "keep", "always", None)
+    B.add(box((0, -0.107, 1.008), (0.028, 0.004, 0.02)), "#5A3E28", "keep", "always", None)
 
 
 def build_kit():
-    # base: Y-straps, canteen
+    # base: Y-straps front and back, a canteen
     for sx in (1, -1):
-        B.add(box((sx * 0.09, -0.098, 1.2), (0.03, 0.01, 0.34), rot=(8, 0, sx * -6)), "web", "keep", "kit_base", "chest")
-        B.add(box((sx * 0.09, 0.098, 1.2), (0.03, 0.01, 0.34), rot=(-8, 0, sx * 6)), "web", "keep", "kit_base", "chest")
-        B.add(box((sx * 0.1, 0.0, 1.385), (0.035, 0.2, 0.012)), "web", "keep", "kit_base", "chest")
-    B.add(ellipsoid((-0.15, 0.06, 0.95), (0.035, 0.045, 0.06)), "metal", "keep", "kit_base", "hips")
-    # pouches on the belt
+        B.add(strip([(sx * 0.06, -0.104, 1.03), (sx * 0.075, -0.112, 1.18), (sx * 0.092, -0.098, 1.33), (sx * 0.1, -0.05, 1.395), (sx * 0.1, 0.05, 1.395), (sx * 0.09, 0.098, 1.33), (sx * 0.03, 0.104, 1.15)], 0.014, 0.004), "#B49A6A", "keep", "kit_base", "chest")
+        B.add(ellipsoid((sx * 0.083, -0.113, 1.17), (0.008, 0.004, 0.008), 8, 5), "#8D8A80", "keep", "kit_base", "chest")
+    B.add(ellipsoid((-0.15, 0.06, 0.95), (0.034, 0.045, 0.062), 12, 8), "#5A5E62", "keep", "kit_base", "hips")
+    B.add(loft([ring((-0.15, 0.06, 1.01), 0.012, 0.012, 8), ring((-0.15, 0.06, 1.03), 0.012, 0.012, 8)]), "#2A2620", "keep", "kit_base", "hips")
+    # pouches with flaps and snaps on the belt
     for x in (0.05, 0.1):
         for sx in (1, -1):
-            B.add(box((sx * x, -0.112, 0.99), (0.046, 0.03, 0.055)), "pouch", "keep", "kit_pouches", "spine")
-    # magazines on the chest
+            B.add(box((sx * x, -0.114, 0.985), (0.046, 0.03, 0.052)), "#9C8558", "keep", "kit_pouches", "spine")
+            B.add(box((sx * x, -0.13, 1.008), (0.05, 0.006, 0.026), rot=(-12, 0, 0)), "#86714A", "keep", "kit_pouches", "spine")
+            B.add(ellipsoid((sx * x, -0.135, 0.998), (0.004, 0.003, 0.004), 6, 4), "#8D8A80", "keep", "kit_pouches", "spine")
     for sx in (1, -1):
         for dx in (0.0, 0.03):
-            B.add(box((sx * (0.06 + dx), -0.12, 1.18), (0.026, 0.024, 0.11)), "pouch", "keep", "kit_mags", "chest")
-    # packs
-    B.add(box((0, 0.15, 1.2), (0.22, 0.09, 0.21)), "pack", "keep", "kit_pack_small", "chest")
-    B.add(ellipsoid((0, 0.155, 1.33), (0.11, 0.04, 0.035)), "pack", "keep", "kit_pack_small", "chest")
-    B.add(box((0, 0.17, 1.18), (0.26, 0.13, 0.28)), "pack", "keep", "kit_pack_engineer", "chest")
-    B.add(box((0, 0.25, 1.08), (0.2, 0.05, 0.08)), "metal", "keep", "kit_tools", "chest")
-    B.add(cone((0.12, 0.25, 1.43), (-0.09, 0.25, 1.04), 0.012, 4), "leather", "keep", "kit_tools", "chest")
+            B.add(box((sx * (0.058 + dx), -0.122, 1.17), (0.026, 0.024, 0.11)), "#9C8558", "keep", "kit_mags", "chest")
+            B.add(box((sx * (0.058 + dx), -0.135, 1.22), (0.028, 0.006, 0.03), rot=(-10, 0, 0)), "#86714A", "keep", "kit_mags", "chest")
+    # packs with a rolled blanket, straps
+    B.add(box((0, 0.15, 1.2), (0.22, 0.09, 0.21)), "#6E6A4A", "keep", "kit_pack_small", "chest")
+    B.add(box((0, 0.198, 1.245), (0.2, 0.008, 0.11)), "#5E5A3E", "keep", "kit_pack_small", "chest")
+    B.add(loft([ring((-0.12, 0.155, 1.335), 0.035, 0.035, 10), ring((0.12, 0.155, 1.335), 0.035, 0.035, 10)]), "#8A7A5A", "keep", "kit_pack_small", "chest")
+    B.add(box((0, 0.17, 1.18), (0.26, 0.13, 0.28)), "#6E6A4A", "keep", "kit_pack_engineer", "chest")
+    B.add(box((0, 0.237, 1.22), (0.22, 0.006, 0.18)), "#5E5A3E", "keep", "kit_pack_engineer", "chest")
+    B.add(box((0, 0.25, 1.08), (0.2, 0.05, 0.08)), "#5A5E62", "keep", "kit_tools", "chest")
+    B.add(cone((0.12, 0.25, 1.43), (-0.09, 0.25, 1.04), 0.012, 6), "#5A3E28", "keep", "kit_tools", "chest")
+    B.add(box((0.13, 0.25, 1.45), (0.07, 0.015, 0.09)), "#5A5E62", "keep", "kit_tools", "chest")
     # shock trooper breastplate, lancer armour and lance rack
-    B.add(hull([V((x * k, -0.118 - d, z)) for x, z in ((0.11, 1.33), (0.12, 1.15)) for k in (1, -1) for d in (0.0, 0.014)] + [V((0, -0.145, 1.25))]), "armor", "keep", "kit_plate", "chest")
-    B.add(hull([V((x * k, -0.12 - d, z)) for x, z, kk in ((0.14, 1.36, 1), (0.15, 1.2, 1), (0.13, 1.13, 1)) for k in (1, -1) for d in (0.0, 0.018)] + [V((0, -0.152, 1.25))]), "armor", "keep", "kit_armor", "chest")
+    B.add(hull([V((x * k, -0.118 - d, z)) for x, z in ((0.11, 1.33), (0.12, 1.15)) for k in (1, -1) for d in (0.0, 0.014)] + [V((0, -0.145, 1.25))]), "#7C8A94", "keep", "kit_plate", "chest")
+    B.add(hull([V((x * k, -0.12 - d, z)) for x, z in ((0.14, 1.36), (0.15, 1.2), (0.13, 1.13)) for k in (1, -1) for d in (0.0, 0.018)] + [V((0, -0.152, 1.25))]), "#7C8A94", "keep", "kit_armor", "chest")
     for sx in (1, -1):
-        B.add(ellipsoid((sx * 0.19, 0.01, 1.39), (0.075, 0.07, 0.05), 12, 6), "armor", "keep", "kit_armor", "clavicle_L" if sx > 0 else "clavicle_R")
+        B.add(ellipsoid((sx * 0.19, 0.01, 1.39), (0.075, 0.07, 0.05), 14, 8), "#7C8A94", "keep", "kit_armor", "clavicle_L" if sx > 0 else "clavicle_R")
     for dx in (-0.07, 0.0, 0.07):
-        B.add(loft([ring((dx, 0.17, 1.04), 0.03, 0.03, 8), ring((dx, 0.17, 1.40), 0.03, 0.03, 8)]), "metal", "keep", "kit_tubes", "chest")
-    # sniper goggles on the helmet brim
+        B.add(loft([ring((dx, 0.17, 1.04), 0.03, 0.03, 10), ring((dx, 0.17, 1.40), 0.03, 0.03, 10)]), "#5A5E62", "keep", "kit_tubes", "chest")
     for sx in (1, -1):
-        B.add(loft([ring((sx * 0.04, -0.118, 1.665), 0.02, 0.008, 10), ring((sx * 0.04, -0.13, 1.665), 0.019, 0.007, 10)]), "metal", "keep", "kit_goggles", "head")
+        B.add(loft([ring((sx * 0.04, -0.118, 1.665), 0.02, 0.008, 12), ring((sx * 0.04, -0.13, 1.665), 0.019, 0.007, 12)]), "#5A5E62", "keep", "kit_goggles", "head")
 
 
 def build_helmets():
-    # federation: a smooth dome with a narrow brim
     rings_ = []
     for k, (z, r) in enumerate(((1.615, 1.0), (1.64, 1.0), (1.70, 0.96), (1.75, 0.82), (1.78, 0.6), (1.795, 0.3))):
-        rings_.append(ring((0, 0.005, z), 0.108 * r, 0.12 * r, 20))
-    B.add(loft(rings_), "helmet", "helmet", "helm_fed", "head")
-    B.add(loft([ring((0, 0.005, 1.612), 0.128, 0.142, 20), ring((0, 0.005, 1.624), 0.124, 0.138, 20)]), "helmet", "helmet", "helm_fed", "head")
-    # imperial: deep, a flared skirt over ears and nape, open face
+        rings_.append(ring((0, 0.005, z), 0.108 * r, 0.12 * r, 28))
+    B.add(loft(rings_), "white", "helmet", "helm_fed", "head")
+    B.add(loft([ring((0, 0.005, 1.612), 0.128, 0.142, 28), ring((0, 0.005, 1.624), 0.124, 0.138, 28)]), "fold", "helmet", "helm_fed", "head")
     rings_ = []
     for z, rx, ry, front in ((1.54, 0.122, 0.13, 0.03), (1.6, 0.12, 0.128, -0.04), (1.65, 0.112, 0.124, -0.11), (1.72, 0.104, 0.118, -0.11), (1.77, 0.08, 0.09, -0.08), (1.795, 0.035, 0.04, -0.035)):
-        pts = ring((0, 0.008, z), rx, ry, 20)
+        pts = ring((0, 0.008, z), rx, ry, 28)
         for p in pts:
             if p.y < front:
-                p.y = front  # the face opening
+                p.y = front
         rings_.append(pts)
-    B.add(loft(rings_), "helmet", "helmet", "helm_imp", "head")
+    B.add(loft(rings_), "white", "helmet", "helm_imp", "head")
     for helm in ("helm_fed", "helm_imp"):
         for sx in (1, -1):
-            B.add(box((sx * 0.072, -0.03, 1.50), (0.008, 0.012, 0.12), rot=(0, sx * -12, 0)), "leather", "keep", helm, "head")
+            # chin strap: a thin leather band from the helmet's side along the jaw to under the chin
+            B.add(strip([(sx * 0.084, 0.0, 1.60), (sx * 0.078, -0.03, 1.53), (sx * 0.05, -0.06, 1.48), (0.0, -0.07, 1.465)], 0.004, 0.0015, 4), "#5A3E28", "keep", helm, "head")
 
 
 # ---------------------------------------------------------------- armature
@@ -466,15 +680,14 @@ def assemble(rig):
         bm.free()
         for p in me.polygons:
             p.use_smooth = smooth
-        ca = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
-        me.uv_layers.new(name="UVMap")
-        meta = me.uv_layers.new(name="meta")
+        ca = me.color_attributes.new("Col", "BYTE_COLOR", "CORNER")
+        meta = me.uv_layers.new(name="meta")  # the only UV map: exported as TEXCOORD_0
         for poly in me.polygons:
             if callable(color):
                 cname, sname = color(tuple(poly.center))
-                c, sl = srgb(COLOR[cname]) + [1.0], SLOT[sname]
+                c, sl = srgb(hexof(cname)) + [1.0], SLOT[sname]
             else:
-                c, sl = srgb(COLOR[color]) + [1.0], slot
+                c, sl = srgb(hexof(color)) + [1.0], slot
             for li in poly.loop_indices:
                 ca.data[li].color = c
                 meta.data[li].uv = (sl + 0.5, piece + 0.5)
@@ -517,7 +730,7 @@ def assemble(rig):
     only(body)
     bpy.ops.object.vertex_group_limit_total(limit=4)
     bpy.ops.object.vertex_group_normalize_all(lock_active=False)
-    m = bpy.data.materials.new("M_soldier")
+    m = bpy.data.materials.get("M_soldier") or bpy.data.materials.new("M_soldier")
     m.use_nodes = True
     body.data.materials.append(m)
     return body
@@ -656,17 +869,28 @@ def build_actions(rig):
         key_pose(rig, name, 0.7, fall, loop=False, hips=drop)
 
 
-def build_all():
+def build_model():
     build_body()
     build_head()
     build_hair()
     build_uniform()
     build_kit()
     build_helmets()
+
+
+def build_all():
+    """The close model and the far model, both skinned to one armature."""
+    global B, LOD, LOCKS
     rig = build_armature()
-    body = assemble(rig)
+    meshes = []
+    for level in (0, 1):
+        B, LOD, LOCKS = Builder(), level, 0
+        build_model()
+        body = assemble(rig)
+        body.name = body.data.name = "soldier" if level == 0 else "soldier_lod1"
+        meshes.append(body)
     build_actions(rig)
-    return rig, body
+    return rig, meshes[0], meshes[1]
 
 
 def export(path):
@@ -675,15 +899,16 @@ def export(path):
         o.select_set(True)
     bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_yup=True, export_apply=False,
                               export_animations=True, export_animation_mode="NLA_TRACKS", export_skins=True,
+                              export_force_sampling=False, export_optimize_animation_size=True,
                               export_vertex_color="ACTIVE", export_all_vertex_colors=False, export_texcoords=True,
                               export_normals=True, export_cameras=False, export_lights=False)
 
 
 if __name__ == "__main__":
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    rig, body = build_all()
-    tris = sum(len(p.vertices) - 2 for p in body.data.polygons)
-    print(f"soldier vc: {tris} triangles, {len(body.data.vertices)} verts, {len(rig.data.bones)} bones, {len(bpy.data.actions)} actions")
+    rig, body, far = build_all()
+    tris = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
+    print(f"soldier vc: close {tris(body)} triangles ({len(body.data.vertices)} verts), far {tris(far)}; {len(rig.data.bones)} bones, {len(bpy.data.actions)} actions")
     if argv:
         export(argv[0])
         print("exported", argv[0])

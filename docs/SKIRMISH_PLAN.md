@@ -61,6 +61,11 @@ Halaman terpisah `skirmish.html`: pertempuran regu bergaya Valkyria Chronicles 3
 - Tembakan: bintang moncong, asap, selongsong, getar kamera, dentum rendah; penembak intercept berbalik dan membidik dulu.
 - Tentara baru ala VC1 (`soldier_vc.glb`): mulus, proporsi anime, wajah dengan mata besar, 9 karakter unik (rambut/warna), musuh berhelm; klip animasi Blender di AnimationMixer + IK untuk memegang senjata; satu draw call per tentara.
 
+### Detail karakter dan kamera (grill kelima, 4 Oktober 2026)
+
+- Kamera di browser tanpa pointer lock mengikuti gerak mouse langsung (movementX/Y), reticle di tengah, tetap berputar saat kursor mentok di tepi jendela.
+- Tentara ±25k segitiga + LOD ±10k (>24 m): tangan berjari menggenggam, kepala dipahat (dagu runcing, batang hidung), mata anime (iris bergradasi, dua highlight, bulu mata, garis kelopak), rambut dari helai pipih melengkung, seragam dengan jahitan, saku bertutup, kancing kuningan, epolet, tali sepatu bot, lipatan celana. Warna palet dikalikan vertex color agar lipatan/gradasi tetap saat diwarnai ulang. GLB 1,7 MB. GPU 7,3 ms per frame di 2560×1600 (M1 Pro).
+
 ## Peta kode
 
 ```text

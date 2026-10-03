@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateField, heightAt, HALF, COVER, HOUSES } from '../src/skirmish/battlefield/generateField.js';
+import { generateField, heightAt, walk, HALF, COVER, HOUSES } from '../src/skirmish/battlefield/generateField.js';
 import { kitTag, CLASSES } from '../src/skirmish/units/soldierLook.js';
 
 const SEEDS = [1, 42, 777, 2026, 99991];
@@ -40,8 +40,11 @@ test('every road that crosses the river has a bridge, and the trench is cut into
   for (const seed of SEEDS) {
     const f = generateField(seed, { river: 'yes' });
     assert.ok(f.river && f.bridges.length >= 1, `seed ${seed}: bridged river`);
-    const t = f.trenches[0].pts[3];
-    assert.ok(heightAt(f, t[0], t[1]) < heightAt(f, t[0], t[1] + 6) - 0.8, `seed ${seed}: trench depth`);
+    // mid-trench, the floor sits well below the ground either side of it
+    const pts = walk(f.trenches[0].pts, 1);
+    const p = pts[Math.floor(pts.length / 2)];
+    const side = (d) => heightAt(f, p.x - p.tz * d, p.z + p.tx * d);
+    assert.ok(heightAt(f, p.x, p.z) < Math.max(side(5), side(-5)) - 0.8, `seed ${seed}: trench depth`);
   }
   assert.equal(generateField(5, { river: 'no' }).river, null);
 });

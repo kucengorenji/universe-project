@@ -31,14 +31,14 @@ export const WEAPONS = {
   bunker_mg: { shots: 3, damage: 12, range: 30, spread: [2.5, 2.5], interval: 0.1, vsArmor: 0, intercept: true }
 };
 
-/** Classes: HP, AP (metres of movement per action), weapon. */
+/** Classes: HP, AP (metres of movement per action; 2.5x the first draft, so a scout crosses a third of the map), weapon. */
 export const STATS = {
-  scout: { hp: 240, ap: 30, weapon: 'rifle' },
-  shocktrooper: { hp: 380, ap: 18, weapon: 'smg' },
-  lancer: { hp: 300, ap: 15, weapon: 'lance' },
-  engineer: { hp: 220, ap: 24, weapon: 'rifle_eng', resupply: true },
-  sniper: { hp: 180, ap: 12, weapon: 'sniper' },
-  tank: { hp: 2400, ap: 40, weapon: 'tank_cannon', intercept: 'tank_mg', cp: 2, armor: true, weakpoint: 3 },
+  scout: { hp: 240, ap: 75, weapon: 'rifle' },
+  shocktrooper: { hp: 380, ap: 45, weapon: 'smg' },
+  lancer: { hp: 300, ap: 38, weapon: 'lance' },
+  engineer: { hp: 220, ap: 60, weapon: 'rifle_eng', resupply: true },
+  sniper: { hp: 180, ap: 30, weapon: 'sniper' },
+  tank: { hp: 2400, ap: 100, weapon: 'tank_cannon', intercept: 'tank_mg', cp: 2, armor: true, weakpoint: 3 },
   bunker: { hp: 1500, ap: 0, weapon: null, intercept: 'bunker_mg', armor: true }
 };
 

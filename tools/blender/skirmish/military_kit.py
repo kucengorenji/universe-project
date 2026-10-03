@@ -39,6 +39,8 @@ PAL = {
     "concrete": "#A7A396", "concrete_dark": "#86827A", "brick": "#9C5A44", "brick_dark": "#7C4636", "mortar": "#C9BCA2",
     "paint": "#FFFFFF", "rope": "#8C7A55", "radiator": "#E0602C", "rubber": "#2A2826", "plaster": "#E6D8BA",
     "roof": "#7A4A3A", "sail": "#E8DDC2", "glass": "#3A4A55",
+    "stone": "#B3A88F", "stone_light": "#C9BFA6", "stone_dark": "#8C826E",
+    "leaf": "#5E8A3E", "leaf_dark": "#4C7334", "leaf_light": "#73A04A",
 }
 _mats = {}
 
@@ -209,42 +211,51 @@ def grenade():
 
 
 # ================================================================ fortifications
-def bag(a, c, yaw=0.0, key="burlap", s=(0.62, 0.34, 0.16)):
-    """One sandbag: a squashed pillow."""
-    R = Matrix.Rotation(yaw, 3, "Z")
+def bag(a, c, yaw=0.0, key="burlap", s=(0.6, 0.33, 0.17), tilt=0.0):
+    """One sandbag: a filled pillow, rounded in plan (a superellipse), thinner at its tied ends."""
+    R = Matrix.Rotation(yaw, 3, "Z") @ Matrix.Rotation(tilt, 3, "X")
     pts = []
-    for z, k in ((-s[2] / 2, 0.82), (-s[2] / 4, 0.98), (s[2] / 4, 0.98), (s[2] / 2, 0.72)):
-        for q in circle((0, 0, 0), 1.0, 10, sx=s[0] / 2 * k, sy=s[1] / 2 * k):
-            pts.append(R @ (q + V((0, 0, z))) + V(c))
+    for zk, k in ((-0.5, 0.86), (-0.22, 1.0), (0.18, 0.98), (0.5, 0.74)):
+        for i in range(10):
+            ang = i * TAU / 10
+            ca, sa = math.cos(ang), math.sin(ang)
+            u = math.copysign(abs(ca) ** 0.55, ca)
+            v = math.copysign(abs(sa) ** 0.55, sa)
+            z = zk * s[2] * (1.0 - 0.45 * abs(u) ** 3)  # the tied ends pinch flat
+            pts.append(R @ V((u * s[0] / 2 * k, v * s[1] / 2 * k, z)) + V(c))
     a.hull(key, pts)
 
 
+def course(a, length, z, depth_y=0.0, offset=0.0, rng=None, keys=("burlap", "burlap", "burlap_dark")):
+    """A row of bags laid end to end along X, centred, touching."""
+    L = 0.58
+    n = int(round(length / L))
+    x0 = -n * L / 2 + L / 2 + offset
+    for i in range(n):
+        j = (hash((round(z * 100), i, round(depth_y * 100))) % 1000) / 1000
+        bag(a, (x0 + i * L, depth_y + (j - 0.5) * 0.03, z), yaw=(j - 0.5) * 0.12, key=keys[(i + int(z * 10)) % len(keys)], tilt=(j - 0.5) * 0.08)
+
+
 def sandbag_wall():
-    a = Asset("p_sandbag_wall")  # 2.4 m straight, 0.92 m high
-    for row in range(5):
-        z = 0.08 + row * 0.165
-        off = 0.0 if row % 2 == 0 else 0.30
-        n = 4 if row % 2 == 0 else 3
-        for i in range(n):
-            x = -0.90 + off + i * 0.60
-            bag(a, (x, 0.0, z), yaw=(i * 0.07 - 0.1) * (1 if row % 2 else -1), key="burlap" if (i + row) % 3 else "burlap_dark")
-        if row < 2:  # the base is two bags deep
-            for i in range(n):
-                x = -0.90 + off + i * 0.60
-                bag(a, (x, 0.32, z), key="burlap_dark")
+    a = Asset("p_sandbag_wall")  # 2.4 m long, 0.85 m high: five courses in front, two behind
+    for k in range(5):
+        z = 0.085 + k * 0.15
+        course(a, 2.4 if k % 2 == 0 else 1.8, z, 0.0, 0.0)
+    for k in range(2):
+        course(a, 2.4 if k % 2 else 1.8, 0.085 + k * 0.15, 0.32)
     return a.done()
 
 
 def sandbag_arc():
     a = Asset("p_sandbag_arc")  # a quarter ring, radius 1.8 m, open toward +Y (behind)
     R = 1.8
-    for row in range(5):
-        z = 0.08 + row * 0.165
-        n = 5 if row % 2 == 0 else 4
+    for k in range(5):
+        z = 0.085 + k * 0.15
+        n = 5 if k % 2 == 0 else 4
         for i in range(n):
-            t = (i + (0 if row % 2 == 0 else 0.5)) / 4.0
+            t = (i + (0 if k % 2 == 0 else 0.5)) / 4.0
             ang = math.radians(-135 + 90 * t)
-            bag(a, (math.cos(ang) * R, math.sin(ang) * R + R, z), yaw=ang + math.pi / 2, key="burlap" if (i + row) % 3 else "burlap_dark")
+            bag(a, (math.cos(ang) * R, math.sin(ang) * R + R, z), yaw=ang + math.pi / 2, key="burlap" if (i + k) % 3 else "burlap_dark")
     return a.done()
 
 
@@ -300,19 +311,23 @@ def drum():
 
 
 def flagpole():
-    a = Asset("p_flag_camp")  # base camp: 6 m pole, a faction flag, a sandbag ring
-    a.cyl("wood_dark", (0, 0, 0), (0, 0, 6.0), 0.06, 6)
-    a.hull("brass", circle((0, 0, 6.0), 0.07, 6) + [V((0, 0, 6.14))])
-    W, H = 1.9, 1.2
-    for i in range(6):  # the cloth ripples in a few vertical strips
-        x0, x1 = 0.06 + W * i / 6, 0.06 + W * (i + 1) / 6
-        y0, y1 = 0.06 * math.sin(i * 1.3), 0.06 * math.sin((i + 1) * 1.3)
-        sag = 0.05 * i
-        a.hull("paint", [V((x0, y0 + d, 5.85 - sag * 0.4)) for d in (-0.01, 0.01)] + [V((x0, y0 + d, 5.85 - H - sag * 0.2)) for d in (-0.01, 0.01)] +
-               [V((x1, y1 + d, 5.85 - sag * 0.4 - 0.02)) for d in (-0.01, 0.01)] + [V((x1, y1 + d, 5.85 - H - sag * 0.2 - 0.02)) for d in (-0.01, 0.01)])
-    for i in range(10):
-        ang = i * TAU / 10
-        bag(a, (math.cos(ang) * 0.8, math.sin(ang) * 0.8, 0.09), yaw=ang + math.pi / 2, s=(0.56, 0.32, 0.18))
+    a = Asset("p_flag_camp")  # base camp: 6 m pole, a waving faction flag, a stone plinth ringed by bags
+    a.cyl("wood_dark", (0, 0, 0.3), (0, 0, 6.0), 0.055, 8)
+    a.hull("brass", circle((0, 0, 6.0), 0.07, 8) + [V((0, 0, 6.16))])
+    a.hull("concrete", circle((0, 0, 0), 0.55, 8) + circle((0, 0, 0.32), 0.45, 8))
+    W, H, n = 1.8, 1.1, 10
+    for i in range(n):  # the cloth in thin vertical strips along a wave
+        x0, x1 = 0.06 + W * i / n, 0.06 + W * (i + 1) / n
+        y0, y1 = 0.15 * math.sin(i * 0.9), 0.15 * math.sin((i + 1) * 0.9)
+        d0, d1 = 0.04 * i, 0.04 * (i + 1)  # the free end droops
+        pts = []
+        for x, y, d in ((x0, y0, d0), (x1, y1, d1)):
+            for t in (-0.008, 0.008):
+                pts += [V((x, y + t, 5.9 - d)), V((x, y + t, 5.9 - H - d * 0.5))]
+        a.hull("paint", pts)
+    for i in range(8):
+        ang = i * TAU / 8
+        bag(a, (math.cos(ang) * 0.82, math.sin(ang) * 0.82, 0.085), yaw=ang + math.pi / 2, s=(0.62, 0.32, 0.17))
     return a.done()
 
 
@@ -329,46 +344,61 @@ def tent():
 
 
 def watchtower():
-    a = Asset("p_watchtower")  # 6.5 m wooden tower
+    a = Asset("p_watchtower")  # 6.5 m wooden tower with a ladder
     for x in (-1.1, 1.1):
         for y in (-1.1, 1.1):
-            a.cyl("wood_dark", (x * 1.15, y * 1.15, 0), (x * 0.95, y * 0.95, 5.2), 0.09, 4)
+            a.cyl("wood_dark", (x * 1.15, y * 1.15, 0), (x * 0.95, y * 0.95, 5.2), 0.09, 6)
     for z in (1.6, 3.2):
-        for s in (1, -1):
-            a.cyl("wood", (-1.1, s * 1.05, z - 0.8), (1.1, s * 1.05, z + 0.6), 0.05, 4)
-            a.cyl("wood", (s * 1.05, -1.1, z + 0.6), (s * 1.05, 1.1, z - 0.8), 0.05, 4)
+        for s_ in (1, -1):
+            a.cyl("wood", (-1.1, s_ * 1.05, z - 0.8), (1.1, s_ * 1.05, z + 0.6), 0.05, 4)
+            a.cyl("wood", (s_ * 1.05, -1.1, z + 0.6), (s_ * 1.05, 1.1, z - 0.8), 0.05, 4)
     a.box("wood", (0, 0, 4.4), (2.6, 2.6, 0.14))
-    for s in (1, -1):
-        a.box("wood_light", (0, s * 1.25, 4.95), (2.6, 0.06, 0.9))
-        a.box("wood_light", (s * 1.25, 0, 4.95), (0.06, 2.6, 0.9))
+    for s_ in (1, -1):
+        a.box("wood_light", (0, s_ * 1.25, 4.95), (2.6, 0.06, 0.9))
+        a.box("wood_light", (s_ * 1.25, 0.15, 4.95), (0.06, 2.3, 0.9))
     for x in (-1.2, 1.2):
         for y in (-1.2, 1.2):
             a.box("wood_dark", (x, y, 5.7), (0.08, 0.08, 1.6))
     a.hull("canvas_dark", [V((x, y, 6.5)) for x in (-1.5, 1.5) for y in (-1.5, 1.5)] + [V((0, 0, 7.1))])
-    a.hull("wood_dark", boxpts((0, -1.6, 2.2), (0.7, 0.08, 0.08)) + boxpts((0, -2.6, 0.02), (0.7, 0.08, 0.08)))  # ladder
+    # the ladder: two rails from the ground to the platform's front edge, rungs every 30 cm
+    foot, top = V((0, -2.5, 0.0)), V((0, -1.32, 4.45))
+    for x in (-0.28, 0.28):
+        a.cyl("wood_dark", foot + V((x, 0, 0)), top + V((x, 0, 0.4)), 0.035, 4)
+    L = (top - foot).length
+    for k in range(1, int(L / 0.3)):
+        p = foot.lerp(top, k * 0.3 / L)
+        a.cyl("wood", p + V((-0.28, 0, 0)), p + V((0.28, 0, 0)), 0.022, 4)
     return a.done()
 
 
 def bunker():
-    a = Asset("p_bunker")  # concrete pillbox: hexagonal, 4.4 m across, firing slit to the front
-    n = 6
-    rot = math.pi / 6
-    a.hull("concrete", circle((0, 0, 0), 2.3, n, rot=rot) + circle((0, 0, 0.95), 2.2, n, rot=rot))
-    a.hull("concrete", circle((0, 0, 1.30), 2.15, n, rot=rot) + circle((0, 0, 1.75), 2.1, n, rot=rot))
-    a.hull("concrete_dark", circle((0, 0, 0.95), 2.0, n, rot=rot) + circle((0, 0, 1.30), 2.0, n, rot=rot))  # the slit's shadow band
-    # the slit lip and pillars between the openings
+    a = Asset("p_bunker")  # concrete pillbox: battered octagonal walls, a slit to the front, an overhanging roof
+    n, rot = 8, math.pi / 8
+    a.hull("concrete", circle((0, 0, -0.2), 2.45, n, rot=rot) + circle((0, 0, 1.0), 2.25, n, rot=rot))
+    a.hull("concrete_dark", circle((0, 0, 0.95), 1.95, n, rot=rot) + circle((0, 0, 1.35), 1.95, n, rot=rot))  # inside, seen through the slit
+    corners = [V((math.cos(rot + i * TAU / n), math.sin(rot + i * TAU / n), 0)) for i in range(n)]
     for i in range(n):
-        ang = rot + i * TAU / n + TAU / (2 * n)
-        if math.sin(ang) > 0.2:  # back wall: closed
-            a.box("concrete", (math.cos(ang) * 2.12, math.sin(ang) * 2.12, 1.12), (1.6, 0.3, 0.36), rot=(0, 0, math.degrees(ang) + 90))
-    a.hull("concrete", circle((0, 0, 1.75), 2.35, n, rot=rot) + circle((0, 0, 1.95), 2.3, n, rot=rot))  # roof slab
-    a.hull("concrete_dark", circle((0, 0, 1.95), 1.6, n, rot=rot) + circle((0, 0, 2.15), 1.2, n, rot=rot))
-    a.box("steel_dark", (0, -2.2, 1.12), (0.08, 0.6, 0.08))  # the MG barrel poking out
-    for i in range(8):  # sandbags piled against the front
-        ang = math.radians(-160 + i * 20)
-        bag(a, (math.cos(ang) * 2.55, math.sin(ang) * 2.55, 0.09), yaw=ang + math.pi / 2)
-        if i % 2:
-            bag(a, (math.cos(ang) * 2.5, math.sin(ang) * 2.5, 0.26), yaw=ang + math.pi / 2 + 0.1, key="burlap_dark")
+        c0, c1 = corners[i], corners[(i + 1) % n]
+        mid = (c0 + c1) / 2
+        front = mid.y < -0.3  # the three sides facing -Y stay open: the firing slit
+        if not front:
+            a.hull("concrete", [c * r + V((0, 0, z)) for c in (c0, c1) for r in (1.98, 2.25) for z in (0.98, 1.32)])
+        else:
+            a.hull("concrete", [c * r + V((0, 0, z)) for c in (c0, c1) for r in (1.98, 2.3) for z in (0.94, 1.0)])  # the sill
+    a.hull("concrete", circle((0, 0, 1.3), 2.25, n, rot=rot) + circle((0, 0, 1.75), 2.2, n, rot=rot))
+    a.hull("concrete", circle((0, 0, 1.72), 2.6, n, rot=rot) + circle((0, 0, 1.95), 2.6, n, rot=rot) + circle((0, 0, 2.15), 2.2, n, rot=rot))  # roof slab
+    a.hull("concrete_dark", circle((0, 0, 2.15), 0.35, 6) + circle((0, 0, 2.45), 0.3, 6))  # periscope housing
+    a.cyl("steel_dark", (0.0, -1.6, 1.12), (0.0, -2.55, 1.12), 0.045, 6)  # the MG barrel in the slit
+    a.box("steel_dark", (0, -1.55, 1.1), (0.25, 0.3, 0.18))
+    a.box("wood_dark", (0, 2.3, 0.65), (0.9, 0.1, 1.3))  # door at the back
+    # bags banked against the front, two courses, touching
+    R = 2.8
+    for k in range(2):
+        z = 0.085 + k * 0.15
+        steps = 15 - k
+        for i in range(steps):
+            ang = math.radians(-165 + (150 / (steps - 1)) * i + (5 if k else 0))
+            bag(a, (math.cos(ang) * (R - k * 0.1), math.sin(ang) * (R - k * 0.1), z), yaw=ang + math.pi / 2, key="burlap" if (i + k) % 3 else "burlap_dark")
     return a.done()
 
 
@@ -387,73 +417,134 @@ def ruin_wall():
 
 
 # ================================================================ the enemy tank
-def track(a, sx):
-    L, R = 3.4, 0.42
-    a.hull("rubber", circle((sx, -L, 0.55), R, 10, "X") + circle((sx, L, 0.55), R, 10, "X") +
-           [V((sx + d, y, 0.0)) for y in (-L + 0.4, L - 0.4) for d in (-0.32, 0.32)] +
-           [V((sx + d, y, 0.55)) for y in (-L, L) for d in (-0.32, 0.32)])
-    a.box("steel_dark", (sx, 0, 1.05), (0.7, 7.2, 0.08))  # track guard
-    for i in range(7):
-        y = -2.7 + i * 0.9
-        a.cyl("steel", (sx - 0.34, y, 0.42), (sx + 0.34, y, 0.42), 0.34, 8)
-
-
 def tank():
     a = Asset("p_tank_hull")  # heavy tank, 7.4 m long; front toward -Y
     for sx in (-1.45, 1.45):
-        track(a, sx)
+        # running gear: eight road wheels, a drive sprocket at the front, an idler at the back
+        for i in range(8):
+            y = -2.55 + i * 0.73
+            a.cyl("steel_dark", (sx - 0.22, y, 0.36), (sx + 0.22, y, 0.36), 0.3, 10)
+            a.cyl("rubber", (sx - 0.24, y, 0.36), (sx + 0.24, y, 0.36), 0.22, 10)
+        for y, r in ((-3.25, 0.4), (3.25, 0.36)):
+            a.cyl("steel", (sx - 0.26, y, 0.62), (sx + 0.26, y, 0.62), r, 10)
+        for i in range(4):  # return rollers
+            a.cyl("steel", (sx - 0.15, -2.1 + i * 1.4, 0.98), (sx + 0.15, -2.1 + i * 1.4, 0.98), 0.1, 8)
+        # the track: lower run, upper run, wrapped round sprocket and idler
+        a.box("rubber", (sx, 0, 0.05), (0.62, 6.2, 0.1))
+        a.box("rubber", (sx, 0, 1.12), (0.62, 6.5, 0.08))
+        for y in (-3.25, 3.25):
+            pts = []
+            for i in range(9):
+                ang = (-math.pi / 2 + i * math.pi / 8) * (1 if y < 0 else -1)
+                r = 0.52
+                py, pz = y + (-math.cos(ang) * r if y < 0 else math.cos(ang) * r), 0.6 + math.sin(ang) * r
+                for x in (sx - 0.31, sx + 0.31):
+                    pts.append(V((x, py, pz)))
+            a.hull("rubber", pts)
+        a.box("steel_dark", (sx, 0, 1.24), (0.72, 7.0, 0.06))  # track guard
     # hull: a sloped glacis, flat deck, raised engine deck at the back
-    a.hull("paint", [V((x, y, z)) for x in (-1.1, 1.1) for y, z in ((-3.5, 0.55), (-3.6, 1.0), (-2.6, 1.55), (3.4, 1.55), (3.6, 0.6))])
-    a.hull("paint", boxpts((0, 0.3, 1.25), (3.6, 4.6, 0.55)))
-    a.hull("paint", boxpts((0, 2.6, 1.72), (2.4, 1.7, 0.36)))  # engine deck
-    # the radiator: a glowing grille at the back of the engine deck, the weak point
-    for i in range(6):
-        a.box("radiator", (-0.75 + i * 0.3, 3.46, 1.45), (0.18, 0.06, 0.42))
-    a.box("steel_dark", (0, 3.5, 1.45), (2.0, 0.04, 0.5))
-    # hull MG and headlights
-    a.cyl("steel_dark", (0.7, -3.0, 1.30), (0.7, -3.6, 1.30), 0.04, 6)
+    a.hull("paint", [V((x, y, z)) for x in (-1.05, 1.05) for y, z in ((-3.35, 0.55), (-3.55, 1.0), (-2.55, 1.6), (3.3, 1.6), (3.5, 0.6))])
+    a.hull("paint", boxpts((0, 0.3, 1.3), (3.4, 4.8, 0.6)))
+    a.hull("paint", boxpts((0, 2.6, 1.78), (2.4, 1.7, 0.36)))
+    for i in range(6):  # the radiator: a glowing grille at the back, the weak point
+        a.box("radiator", (-0.75 + i * 0.3, 3.46, 1.5), (0.18, 0.06, 0.42))
+    a.box("steel_dark", (0, 3.5, 1.5), (2.0, 0.04, 0.5))
+    a.cyl("steel_dark", (0.7, -3.0, 1.35), (0.7, -3.65, 1.35), 0.045, 6)  # hull MG
+    a.box("steel_dark", (0.7, -3.05, 1.35), (0.3, 0.2, 0.3))
     for sx in (-1, 1):
-        a.cyl("steel", (sx * 1.25, -3.55, 1.2), (sx * 1.25, -3.65, 1.2), 0.11, 8)
-        a.cyl("glass", (sx * 1.25, -3.65, 1.2), (sx * 1.25, -3.67, 1.2), 0.09, 8)
-    # exhausts
+        a.cyl("steel", (sx * 1.25, -3.5, 1.3), (sx * 1.25, -3.62, 1.3), 0.11, 8)
+        a.cyl("glass", (sx * 1.25, -3.62, 1.3), (sx * 1.25, -3.64, 1.3), 0.09, 8)
+    a.box("steel_dark", (-0.7, -2.3, 1.62), (0.6, 0.5, 0.06))  # driver's hatch
+    a.box("wood", (1.2, 1.2, 1.64), (0.12, 1.6, 0.1))  # tools on the deck
     for sx in (-0.9, 0.9):
-        a.cyl("steel_dark", (sx, 3.4, 1.9), (sx, 3.4, 2.3), 0.08, 6)
-    a.mark("turret", (0, -0.2, 1.52))
+        a.cyl("steel_dark", (sx, 3.4, 1.95), (sx, 3.4, 2.35), 0.08, 8)
+    a.mark("turret", (0, -0.2, 1.6))
     a.done()
 
     t = Asset("p_tank_turret")  # origin on the turret ring
-    t.hull("paint", circle((0, 0.2, 0.0), 1.35, 8, sx=1.0, sy=1.15, rot=math.pi / 8) + circle((0, 0.3, 0.85), 1.05, 8, sx=1.0, sy=1.1, rot=math.pi / 8))
-    t.hull("paint", boxpts((0, -1.05, 0.45), (1.2, 0.5, 0.7)))  # gun mantlet
-    t.cyl("steel_dark", (0, -1.2, 0.45), (0, -4.6, 0.45), 0.10, 8)
-    t.cyl("steel_dark", (0, -4.3, 0.45), (0, -4.7, 0.45), 0.15, 8)  # muzzle brake
-    t.hull("paint", circle((0.45, 0.5, 0.85), 0.36, 8) + circle((0.45, 0.5, 1.15), 0.32, 8))  # cupola
-    t.hull("steel_dark", circle((0.45, 0.5, 1.15), 0.30, 8) + circle((0.45, 0.5, 1.2), 0.30, 8))
-    t.box("steel_dark", (-0.8, 1.4, 0.5), (0.12, 0.12, 1.4), rot=(0, 0, 0))  # antenna mount
-    t.cyl("steel", (-0.8, 1.4, 1.1), (-0.8, 1.5, 3.2), 0.012, 3)
-    t.mark("muzzle", (0, -4.7, 0.45))
+    t.hull("paint", circle((0, 0.2, 0.0), 1.35, 10, sx=1.0, sy=1.15, rot=math.pi / 10) + circle((0, 0.3, 0.8), 1.05, 10, sx=1.0, sy=1.1, rot=math.pi / 10))
+    t.hull("paint", boxpts((0, -1.05, 0.42), (1.2, 0.5, 0.66)))  # gun mantlet
+    t.cyl("steel_dark", (0, -1.2, 0.42), (0, -4.4, 0.42), 0.1, 10)
+    t.cyl("steel_dark", (0, -4.1, 0.42), (0, -4.6, 0.42), 0.15, 10)  # muzzle brake
+    t.hull("paint", circle((0.45, 0.5, 0.8), 0.36, 10) + circle((0.45, 0.5, 1.1), 0.32, 10))  # cupola
+    t.hull("steel_dark", circle((0.45, 0.5, 1.1), 0.3, 10) + circle((0.45, 0.5, 1.15), 0.3, 10))
+    t.box("paint", (0, 1.45, 0.45), (1.6, 0.5, 0.55))  # bustle
+    t.cyl("steel", (-0.8, 1.4, 0.75), (-0.8, 1.5, 3.0), 0.012, 3)
+    t.mark("muzzle", (0, -4.6, 0.42))
     t.done()
 
 
-# ================================================================ village landmark
 def windmill():
     a = Asset("p_windmill_body")  # tower mill, 11 m to the cap
-    a.hull("plaster", circle((0, 0, 0), 2.6, 8, rot=math.pi / 8) + circle((0, 0, 8.4), 1.7, 8, rot=math.pi / 8))
-    a.hull("roof", circle((0, 0, 8.3), 2.0, 8, rot=math.pi / 8) + circle((0, 0.2, 9.7), 1.0, 8, sx=1, sy=1.4, rot=math.pi / 8) + [V((0, 0.4, 10.6))])
-    a.box("wood_dark", (0, -2.55, 1.0), (1.0, 0.12, 2.0))  # door
+    a.hull("plaster", circle((0, 0, 0), 2.6, 10, rot=math.pi / 10) + circle((0, 0, 8.4), 1.7, 10, rot=math.pi / 10))
+    a.hull("roof", circle((0, 0, 8.3), 2.0, 10, rot=math.pi / 10) + circle((0, 0.2, 9.8), 1.1, 10, sx=1, sy=1.3, rot=math.pi / 10) + [V((0, 0.3, 10.6))])
+    a.box("wood_dark", (0, -2.55, 1.0), (1.0, 0.14, 2.0))  # door
     for z in (3.4, 6.0):
-        a.box("glass", (0, -2.3 + (z - 3.4) * 0.11, z), (0.6, 0.12, 0.8), rot=(-5, 0, 0))
-    a.hull("wood", boxpts((0, -2.0, 9.0), (0.3, 0.6, 0.3)) + boxpts((0, -2.6, 9.2), (0.3, 0.2, 0.3)))
-    a.mark("hub", (0, -2.7, 9.2))
+        a.box("glass", (0, -2.3 + (z - 3.4) * 0.11, z), (0.6, 0.14, 0.8), rot=(-5, 0, 0))
+    a.cyl("wood_dark", (0, -1.2, 9.2), (0, -2.35, 9.2), 0.16, 8)  # the wind shaft, out of the cap to the hub
+    a.mark("hub", (0, -2.35, 9.2))
     a.done()
-    s = Asset("p_windmill_sails")  # origin on the hub; sails turn about the Y axis
-    s.cyl("wood_dark", (0, 0.1, 0), (0, -0.3, 0), 0.25, 8)
+    s = Asset("p_windmill_sails")  # origin on the hub; the sails turn about the Y axis
+    s.cyl("wood_dark", (0, 0.15, 0), (0, -0.35, 0), 0.3, 10)
     for i in range(4):
         ang = i * TAU / 4 + 0.3
         d = V((math.cos(ang), 0, math.sin(ang)))
         n = V((-math.sin(ang), 0, math.cos(ang)))
-        s.cyl("wood_dark", d * 0.2, d * 6.2, 0.07, 4)
-        s.hull("sail", [d * r + n * w + V((0, -0.12, 0)) for r in (1.2, 6.0) for w in (0.05, 1.1)] + [d * r + n * w + V((0, -0.16, 0)) for r in (1.2, 6.0) for w in (0.05, 1.1)])
+        s.cyl("wood_dark", d * 0.25, d * 6.0, 0.07, 4)  # the stock
+        for k in range(6):  # laths across the sail frame
+            r = 1.3 + k * 0.9
+            s.cyl("wood", d * r + n * 0.05, d * r + n * 1.05, 0.025, 4)
+        s.cyl("wood", d * 1.3 + n * 1.05, d * 5.8 + n * 1.05, 0.03, 4)  # the outer rail
+        s.hull("sail", [d * r + n * w + V((0, y, 0)) for r in (1.35, 5.75) for w in (0.08, 1.0) for y in (0.06, 0.08)])
     s.done()
+
+
+def bridge():
+    """Stone road bridge, 18 m end to end and 7 m wide (the game scales the width to the road): a deck
+    on one segmental arch, parapets with coping, the arch ring picked out in darker stone. Origin on
+    the middle of the deck surface; the road runs along Y."""
+    a = Asset("p_bridge")
+    W, L, span, rise, spring = 3.5, 9.0, 6.0, 2.6, -3.4
+
+    def soffit(y):  # underside of the arch at y
+        if abs(y) >= span:
+            return spring
+        return spring + rise * math.sqrt(1 - (y / span) ** 2)
+
+    a.hull("stone_light", boxpts((0, 0, -0.25), (2 * W, 2 * L, 0.5)))  # the deck
+    ys = [-L + i * 0.75 for i in range(int(2 * L / 0.75) + 1)]
+    for y0, y1 in zip(ys, ys[1:]):
+        for sx in (-1, 1):
+            # spandrel wall down to the arch, and the ring of voussoirs along its edge
+            pts = [V((sx * x, y, z)) for x in (W - 0.4, W) for y in (y0, y1) for z in (-0.4, soffit(y))]
+            a.hull("stone", pts)
+            pts = [V((sx * (W + 0.03), y, z)) for y in (y0, y1) for z in (soffit(y), soffit(y) + 0.45)] + [V((sx * (W - 0.1), y, soffit(y))) for y in (y0, y1)]
+            if abs((y0 + y1) / 2) < span:
+                a.hull("stone_dark", pts)
+        # the vault under the deck
+        a.hull("stone_dark", [V((x, y, z)) for x in (-W + 0.4, W - 0.4) for y in (y0, y1) for z in (soffit(y), soffit(y) + 0.3)])
+    for sx in (-1, 1):
+        a.hull("stone", boxpts((sx * (W - 0.2), 0, 0.42), (0.4, 2 * L - 0.6, 0.84)))  # parapet
+        a.hull("stone_light", boxpts((sx * (W - 0.2), 0, 0.89), (0.52, 2 * L - 0.4, 0.12)))  # coping
+        for y in (-L + 0.3, L - 0.3):
+            a.hull("stone_light", boxpts((sx * (W - 0.2), y, 0.6), (0.6, 0.6, 1.2)))  # end posts
+    return a.done()
+
+
+def hedge():
+    """A stretch of hedgerow, 1.8 m along X, 1.4 m tall: overlapping faceted leaf clumps, no flowers."""
+    a = Asset("p_hedge")
+    import random
+    r = random.Random(11)
+    for i, (x, z, rad, key) in enumerate(((-0.6, 0.62, 0.62, "leaf"), (0.05, 0.72, 0.7, "leaf_dark"), (0.65, 0.6, 0.6, "leaf"), (-0.15, 1.1, 0.48, "leaf_light"), (0.45, 1.05, 0.45, "leaf"))):
+        pts = []
+        for k in range(14):
+            u, v = r.uniform(-1, 1), r.uniform(0, TAU)
+            w = math.sqrt(1 - u * u)
+            rr = rad * r.uniform(0.85, 1.05)
+            pts.append(V((x + w * math.cos(v) * rr, w * math.sin(v) * rr * 0.75, z + u * rr * 0.9)))
+        a.hull(key, pts)
+    return a.done()
 
 
 def build_all():
@@ -476,6 +567,8 @@ def build_all():
     ruin_wall()
     tank()
     windmill()
+    bridge()
+    hedge()
 
 
 def export(path):

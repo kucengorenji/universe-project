@@ -396,3 +396,137 @@ body[data-phase='action'][data-input='cursor'] #stage { cursor: none; }
   body[data-phase='command'] .mapwrap { right: 0; bottom: 40vh; }
   .cmd { top: auto; height: 40vh; width: 100%; }
 }
+
+/* ------------------------------------------------------------------ tactical desk (prep and command) */
+:root {
+  --wood: #6b4a30;
+  --wood-dark: #4a321f;
+  --brass: #c9a24a;
+  --stamp: #a8322d;
+}
+body[data-phase='prep'],
+body[data-phase='command'] {
+  background:
+    radial-gradient(ellipse at 40% 45%, rgba(255, 230, 190, 0.18), transparent 60%),
+    repeating-linear-gradient(92deg, rgba(0, 0, 0, 0.05) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(88deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 23px),
+    linear-gradient(180deg, var(--wood) 0%, var(--wood-dark) 100%);
+}
+body[data-phase='prep'] #stage,
+body[data-phase='command'] #stage { visibility: hidden; }
+.mapwrap { background: transparent; padding: 10px; }
+.map { cursor: pointer; }
+body[data-phase='prep'] .mapwrap { right: min(420px, 42vw); }
+body[data-phase='command'] .mapwrap { right: min(340px, 36vw); }
+
+/* dossier panels */
+.prep,
+.cmd {
+  background: var(--paper);
+  border: 0;
+  box-shadow: -6px 0 18px rgba(0, 0, 0, 0.35);
+  background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(47, 79, 122, 0.08) 27px 28px);
+}
+.prep { width: min(420px, 42vw); }
+.cmd { width: min(340px, 36vw); top: 56px; }
+.prep__title,
+.cmd__title {
+  margin: -16px -18px 10px;
+  padding: 12px 18px 10px;
+  background: var(--wood-dark);
+  color: var(--paper);
+  font-size: 24px;
+  letter-spacing: 0.12em;
+}
+.cmd__title { margin: -14px -16px 6px; }
+.prep__sec h3 { border-bottom: 1.5px solid var(--ink); padding-bottom: 2px; }
+
+/* the turn bar: a dark strip with brass medals */
+.topbar {
+  height: 56px;
+  background: linear-gradient(180deg, #2f2218, #20170f);
+  color: var(--paper);
+  border-bottom: 2px solid var(--brass);
+}
+body[data-phase='action'] .topbar,
+body[data-phase='enemy'] .topbar { color: var(--paper); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.topbar__turn { font-weight: 600; letter-spacing: 0.1em; }
+.topbar__cp { gap: 6px; }
+.cp__label { font-size: 13px; letter-spacing: 0.12em; opacity: 0.8; margin-right: 6px; }
+.medal {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50%;
+  transform: none !important;
+  border: 2px solid var(--brass) !important;
+  background: transparent;
+}
+.medal.on { background: radial-gradient(circle at 35% 35%, #ffe79a, var(--brass) 55%, #8a6a22) !important; box-shadow: 0 0 6px rgba(255, 210, 100, 0.5); }
+.topbar__cp b { font-size: 22px; margin: 0 0 0 8px; color: var(--brass); }
+
+/* class emblems: round seals in the faction colour */
+.emblem {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+  flex: none;
+}
+.emblem--fed { background: var(--fed); }
+.emblem--imp { background: var(--imp); }
+
+.unitrow {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  border: 0;
+  background: #fbf6ea;
+  box-shadow: 0 1px 0 rgba(42, 33, 25, 0.25), 0 2px 6px rgba(42, 33, 25, 0.12);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.unitrow__body { display: grid; gap: 2px; }
+.unitrow--ready:hover { transform: translateX(-3px); box-shadow: 3px 3px 0 var(--ink); background: #fff; }
+.unitrow--dead, .unitrow--evac { opacity: 0.45; }
+.stamp {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-8deg);
+  padding: 1px 8px;
+  border: 2px solid var(--stamp);
+  color: var(--stamp);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* stamp buttons */
+.btn--primary,
+.cmd__end,
+.p-start {
+  background: var(--stamp) !important;
+  border: 2px solid #6e1d1a !important;
+  color: #fff4e4 !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25), 0 3px 0 #6e1d1a;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+}
+.btn--primary:hover, .cmd__end:hover, .p-start:hover { filter: brightness(1.08); }
+.btn--primary:active, .cmd__end:active, .p-start:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25), 0 1px 0 #6e1d1a; }
+
+.roster__row { grid-template-columns: auto 1fr 36px; }
+.roster__pick { display: flex; align-items: center; gap: 6px; }
+.roster__pick .emblem { width: 30px; height: 30px; font-size: 13px; }
+.roster__row.on { background: #fbf6ea; border-color: transparent; box-shadow: 0 1px 0 rgba(42, 33, 25, 0.25), 0 2px 6px rgba(42, 33, 25, 0.12); }
+
+.toast { background: var(--wood-dark); border: 1.5px solid var(--brass); }

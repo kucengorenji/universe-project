@@ -34,6 +34,9 @@ export class Effects {
     this.blastMat = new THREE.MeshToonMaterial({ color: '#f2a046', emissive: '#f07a2a', emissiveIntensity: 1.4, transparent: true });
     this.smokeMat = new THREE.MeshToonMaterial({ color: '#7a7064', transparent: true });
     this.ball = new THREE.IcosahedronGeometry(1, 1);
+    this.smokeSprite = new THREE.SpriteMaterial({ map: this.tex, depthWrite: false, color: '#d8d0c0', transparent: true, fog: false });
+    this.shellGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.045, 5);
+    this.brassMat = new THREE.MeshToonMaterial({ color: '#c9a24a' });
     this.shake = 0;
   }
 
@@ -53,6 +56,43 @@ export class Effects {
       geo.dispose();
       if (color) mat.dispose();
     };
+  }
+
+  /**
+   * A shot leaving the barrel: a bright star, a puff of smoke drifting off, and (for rifles and
+   * SMGs) a brass case flicked out to the right. Shakes the camera by the blast and the distance.
+   */
+  muzzle(at, d, weapon) {
+    const big = weapon === 'lance' || weapon === 'tank_cannon';
+    const size = big ? 1.6 : weapon === 'sniper' ? 0.9 : weapon === 'smg' || weapon.endsWith('_mg') ? 0.55 : 0.75;
+    this.flash(at, size);
+    this.flash({ x: at.x + d.x * size * 0.4, y: at.y + d.y * size * 0.4, z: at.z + d.z * size * 0.4 }, size * 0.6);
+    const smoke = new THREE.Sprite(this.smokeSprite.clone());
+    smoke.position.set(at.x + d.x * 0.2, at.y, at.z + d.z * 0.2);
+    smoke.scale.setScalar(size * 0.5);
+    this.add(smoke, big ? 1.4 : 0.7, (o, k, dt) => {
+      o.scale.setScalar(size * (0.5 + 1.4 * k));
+      o.material.opacity = 0.55 * (1 - k);
+      o.position.y += dt * 0.5;
+      o.position.x += d.x * dt * 0.6;
+      o.position.z += d.z * dt * 0.6;
+    });
+    smoke.userData.dispose = () => smoke.material.dispose();
+    if (!big) {
+      const shell = new THREE.Mesh(this.shellGeo, this.brassMat);
+      shell.position.set(at.x - d.x * 0.5, at.y, at.z - d.z * 0.5);
+      const v = new THREE.Vector3(-d.z * 2.2 + (Math.random() - 0.5), 2.2 + Math.random(), d.x * 2.2 + (Math.random() - 0.5));
+      const spin = new THREE.Vector3(Math.random() * 20, Math.random() * 20, 0);
+      this.add(shell, 0.7, (o, k, dt) => {
+        v.y -= 9.8 * dt;
+        o.position.addScaledVector(v, dt);
+        o.rotation.x += spin.x * dt;
+        o.rotation.y += spin.y * dt;
+      });
+    }
+    const dist = this.camera.position.distanceTo(new THREE.Vector3(at.x, at.y, at.z));
+    const kick = (big ? 0.5 : weapon === 'sniper' ? 0.18 : 0.07) / Math.max(1, dist * 0.4);
+    this.shake = Math.max(this.shake, kick);
   }
 
   flash(at, size = 0.5) {
@@ -160,7 +200,8 @@ export class Effects {
   dispose() {
     this.clear();
     this.tex.dispose();
-    for (const m of [this.flashMat, this.dustMat, this.tracerMat, this.blastMat, this.smokeMat]) m.dispose();
+    for (const m of [this.flashMat, this.dustMat, this.tracerMat, this.blastMat, this.smokeMat, this.smokeSprite, this.brassMat]) m.dispose();
     this.ball.dispose();
+    this.shellGeo.dispose();
   }
 }

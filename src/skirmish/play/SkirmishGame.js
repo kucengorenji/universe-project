@@ -9,6 +9,7 @@ import { loadSoldierTemplates, loadWeapons } from '../units/soldiers.js';
 import { Arena } from '../game/arena.js';
 import { Battle } from '../game/battle.js';
 import { ROSTER, DEFAULT_SQUAD } from '../game/roster.js';
+import { MIN_AP_SHARE, RESELECT_AP } from '../game/rules.js';
 import { TacticalMap } from '../ui/tacticalMap.js';
 import { PrepPanel, COVER_LEVELS } from '../ui/prepPanel.js';
 import { Hud } from '../ui/hud.js';
@@ -316,7 +317,14 @@ export class SkirmishGame {
     if (p === 'command') {
       const b = this.battle;
       const pickable = new Set(b.units.filter((u) => b.canSelect(u)).map((u) => u.id));
-      this.map.draw(dt, { units: b.units, camps: b.camps, pickable });
+      // hovering one of ours shows how far it could go (straight-line AP, the next selection's share)
+      let range = null;
+      const h = this.map.hover;
+      if (h) {
+        const u = b.units.find((k) => k.side === 'fed' && k.state === 'ok' && Math.hypot(k.x - h[0], k.z - h[1]) < PICK_RADIUS);
+        if (u) range = { x: u.x, z: u.z, r: u.apMax * Math.max(MIN_AP_SHARE, RESELECT_AP ** u.picks) };
+      }
+      this.map.draw(dt, { units: b.units, camps: b.camps, pickable, range, selected: range ? null : undefined });
     }
     if (p === 'action') {
       this.control.update(dt);

@@ -183,7 +183,8 @@ export function generateField(seed, params = {}) {
   const tz = enemy.z + R(26, 34);
   const trench = [];
   for (let x = -40; x <= 40; x += 8) trench.push([enemy.x * 0.4 + x, tz + ((x / 8) % 2 ? 2.5 : -2.5) + R(-1, 1)]);
-  field.trenches = [{ width: 1.8, depth: 1.5, pts: trench }];
+  // corners cut once, so the plank walls and banks turn without folding over
+  field.trenches = [{ width: 1.8, depth: 1.5, pts: chaikin(trench, 1) }];
   const trenchDist = (x, z) => Math.min(...field.trenches.map((t) => lineDist(x, z, t.pts) - t.width / 2));
 
   // --- terrain heights
@@ -247,6 +248,25 @@ export function generateField(seed, params = {}) {
     }
   }
   field.houses = houses;
+  // each house stands on a level pad: the ground under it is levelled to its corners' mean
+  for (const h of houses) {
+    const c = Math.cos(h.yaw), sn = Math.sin(h.yaw);
+    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => heightAt(field, h.x + (u * h.w) / 2 * c + (v * h.d) / 2 * sn, h.z - (u * h.w) / 2 * sn + (v * h.d) / 2 * c));
+    const target = corners.reduce((a, b) => a + b, 0) / 4;
+    const R0 = Math.max(h.w, h.d) / 2 + 1, R1 = R0 + 3;
+    const [i0, i1] = [Math.max(0, Math.floor((h.x - R1 + HALF) / RES)), Math.min(n - 1, Math.ceil((h.x + R1 + HALF) / RES))];
+    const [j0, j1] = [Math.max(0, Math.floor((h.z - R1 + HALF) / RES)), Math.min(n - 1, Math.ceil((h.z + R1 + HALF) / RES))];
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const x = -HALF + i * RES, z = -HALF + j * RES;
+        // distance in the house's own frame (a rounded rectangle)
+        const u = Math.abs((x - h.x) * c - (z - h.z) * sn) - h.w / 2, v = Math.abs((x - h.x) * sn + (z - h.z) * c) - h.d / 2;
+        const d = Math.hypot(Math.max(u, 0), Math.max(v, 0));
+        const k = 1 - smooth(1, 4, d);
+        if (k > 0) heights[j * n + i] = lerp(heights[j * n + i], target, k);
+      }
+    }
+  }
 
   // --- landmark: a windmill on the hill
   field.windmill = null;
@@ -324,7 +344,7 @@ export function generateField(seed, params = {}) {
   for (const hs of houses) {
     if (rng() < 0.5) {
       const x = hs.x - Math.sin(hs.yaw) * (hs.d / 2 + 4), z = hs.z - Math.cos(hs.yaw) * (hs.d / 2 + 4);
-      if (treeOk(x, z, 2)) trees.push({ kind: pick(['t_fruit', 't_oak', 't_birch']), x, z, s: R(0.7, 1), yaw: R(0, TAU) });
+      if (treeOk(x, z, 2)) trees.push({ kind: pick(['t_oak', 't_birch', 't_oak']), x, z, s: R(0.7, 1), yaw: R(0, TAU) });
     }
   }
   field.trees = trees;

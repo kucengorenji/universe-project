@@ -54,5 +54,27 @@ export class Sound {
     g.gain.exponentialRampToValueAtTime(0.0001, t + v.len);
     src.connect(f).connect(g).connect(this.master);
     src.start(t, Math.random() * 0.5, v.len + 0.05);
+    // the punch: a short low thump under the crack, and a faint tail for distance
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(v.freq > 1000 ? 140 : 70, t);
+    o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(vol * 0.9, t);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    o.connect(og).connect(this.master);
+    o.start(t);
+    o.stop(t + 0.2);
+    const tail = ctx.createBufferSource();
+    tail.buffer = this.noise;
+    const tf = ctx.createBiquadFilter();
+    tf.type = 'lowpass';
+    tf.frequency.value = 600;
+    const tg = ctx.createGain();
+    tg.gain.setValueAtTime(0.0001, t);
+    tg.gain.linearRampToValueAtTime(vol * 0.12, t + 0.05);
+    tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.6 + v.len);
+    tail.connect(tf).connect(tg).connect(this.master);
+    tail.start(t, Math.random() * 0.5, 0.8 + v.len);
   }
 }

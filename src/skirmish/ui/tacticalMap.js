@@ -5,7 +5,8 @@ import { mulberry32 } from '../../math/random.js';
 // The flat tactical map (Preparation and Command Mode): the battlefield drawn as an ink-and-wash
 // field map on paper, from the same field data as the 3D scene. The static map is drawn once
 // per field into an offscreen canvas; units, camps, deploy slots and the selection are drawn
-// on top every frame. Wheel zooms about the cursor, dragging pans, a click picks.
+// on top every frame. The map always fits its box; its edges fade out like a wet wash, so it
+// lies on the desk behind it. A click picks.
 
 const PX = 10; // static map pixels per metre
 const INK = '#2a2119';
@@ -26,37 +27,11 @@ export class TacticalMap {
   }
 
   listen() {
+    // the map is fixed (always fitted): a click picks, the pointer only hovers
     const c = this.canvas;
-    let drag = null;
-    c.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const before = this.toWorld(e.offsetX, e.offsetY);
-      this.view.scale = Math.min(14, Math.max(this.minScale(), this.view.scale * Math.exp(-e.deltaY * 0.0015)));
-      const after = this.toWorld(e.offsetX, e.offsetY);
-      this.view.x += before[0] - after[0];
-      this.view.z += before[1] - after[1];
-      this.clampView();
-    }, { passive: false });
-    c.addEventListener('pointerdown', (e) => {
-      drag = { x: e.offsetX, y: e.offsetY, vx: this.view.x, vz: this.view.z, moved: false };
-      c.setPointerCapture(e.pointerId);
-    });
-    c.addEventListener('pointermove', (e) => {
-      this.hover = this.toWorld(e.offsetX, e.offsetY);
-      if (!drag) return;
-      const dx = e.offsetX - drag.x, dy = e.offsetY - drag.y;
-      if (Math.hypot(dx, dy) > 5) drag.moved = true;
-      if (drag.moved) {
-        this.view.x = drag.vx - dx / this.view.scale;
-        this.view.z = drag.vz - dy / this.view.scale;
-        this.clampView();
-      }
-    });
-    c.addEventListener('pointerup', (e) => {
-      if (drag && !drag.moved) this.onPick?.(...this.toWorld(e.offsetX, e.offsetY), e);
-      drag = null;
-    });
+    c.addEventListener('pointermove', (e) => (this.hover = this.toWorld(e.offsetX, e.offsetY)));
     c.addEventListener('pointerleave', () => (this.hover = null));
+    c.addEventListener('click', (e) => this.onPick?.(...this.toWorld(e.offsetX, e.offsetY), e));
   }
 
   get width() {
@@ -68,7 +43,7 @@ export class TacticalMap {
   }
 
   minScale() {
-    return Math.min(this.width, this.height) / (SIZE + 20);
+    return Math.min(this.width, this.height) / (SIZE + 2);
   }
 
   fit() {
@@ -107,7 +82,7 @@ export class TacticalMap {
       this.canvas.height = h;
     }
     this.dpr = dpr;
-    if (this.view.scale < this.minScale()) this.fit();
+    if (!this.mini) this.fit();
   }
 
   /**
@@ -120,8 +95,11 @@ export class TacticalMap {
     const g = this.g;
     const { scale } = this.view;
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    g.fillStyle = PAPER;
-    g.fillRect(0, 0, this.width, this.height);
+    g.clearRect(0, 0, this.width, this.height);
+    if (this.mini) {
+      g.fillStyle = PAPER;
+      g.fillRect(0, 0, this.width, this.height);
+    }
     if (!this.base) return;
     const [ox, oy] = this.toScreen(-HALF, -HALF);
     g.imageSmoothingQuality = 'high';
@@ -521,13 +499,40 @@ function drawStatic(g, field, arena) {
     g.lineTo(n, p);
     g.stroke();
     if (k < 10) {
-      g.fillText('ABCDEFGHIJ'[k], p + 8, 28);
-      g.fillText(String(k + 1), 8, p + 30);
+      g.fillText('ABCDEFGHIJ'[k], p + 8, n * 0.075);
+      g.fillText(String(k + 1), n * 0.065, p + 30);
     }
   }
-  g.strokeStyle = INK;
-  g.lineWidth = 6;
-  g.strokeRect(3, 3, n - 6, n - 6);
+  fadeEdges(g, n, rng);
+}
+
+/** Feather the map's edges to transparent with a ragged, blurred mask (a wash that ran dry). */
+function fadeEdges(g, n, rng) {
+  const mk = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(n, n) : Object.assign(document.createElement('canvas'), { width: n, height: n });
+  const m = mk.getContext('2d');
+  const inset = n * 0.05;
+  m.filter = `blur(${Math.round(n * 0.012)}px)`;
+  m.fillStyle = '#000';
+  m.beginPath();
+  // a wobbly rectangle: points along each side pushed in and out
+  const pts = [];
+  const side = (x0, y0, x1, y1) => {
+    for (let k = 0; k < 24; k++) {
+      const t = k / 24, j = (rng() - 0.5) * n * 0.025;
+      const nx = y1 - y0, ny = x0 - x1, L = Math.hypot(nx, ny);
+      pts.push([x0 + (x1 - x0) * t + (nx / L) * j, y0 + (y1 - y0) * t + (ny / L) * j]);
+    }
+  };
+  side(inset, inset, n - inset, inset);
+  side(n - inset, inset, n - inset, n - inset);
+  side(n - inset, n - inset, inset, n - inset);
+  side(inset, n - inset, inset, inset);
+  pts.forEach(([x, y], i) => (i ? m.lineTo(x, y) : m.moveTo(x, y)));
+  m.closePath();
+  m.fill();
+  g.globalCompositeOperation = 'destination-in';
+  g.drawImage(mk, 0, 0);
+  g.globalCompositeOperation = 'source-over';
 }
 
 function inside(x, z, poly) {

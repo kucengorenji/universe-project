@@ -6,6 +6,7 @@ import { TURN_LIMIT, WEAPONS } from '../game/rules.js';
 // Which parts show is set by the phase class on <body> (see skirmish.css).
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const SHORT = { ...Object.fromEntries(Object.entries(CLASSES).map(([k, v]) => [k, v.short])), tank: 'TK', bunker: 'BK' };
 const CLASS_LABEL = { ...Object.fromEntries(Object.entries(CLASSES).map(([k, v]) => [k, v.label])), tank: 'Tank', bunker: 'Bunker' };
 
 export class Hud {
@@ -80,18 +81,21 @@ export class Hud {
     this.el.turn.textContent = `Giliran ${Math.min(b.turn, TURN_LIMIT)} / ${TURN_LIMIT}`;
     this.el.side.textContent = b.side === 'fed' ? 'Federasi' : 'Imperium';
     this.el.side.dataset.side = b.side;
-    this.el.cp.innerHTML = `CP <b>${b.cp}</b>` + Array.from({ length: b.cpFor(b.side) }, (_, i) => `<i class="${i < b.cp ? 'on' : ''}"></i>`).join('');
+    this.el.cp.innerHTML = `<span class="cp__label">Command Point</span>` + Array.from({ length: b.cpFor(b.side) }, (_, i) => `<i class="medal ${i < b.cp ? 'on' : ''}"></i>`).join('') + `<b>${b.cp}</b>`;
     const mine = b.units.filter((u) => u.side === 'fed');
     this.el.units.innerHTML = mine
       .map((u) => {
-        const state = { ok: '', down: `Tumbang (${u.downTurns})`, dead: 'Gugur', evac: 'Dievakuasi' }[u.state];
+        const state = { ok: '', down: `Tumbang · ${u.downTurns}`, dead: 'Gugur', evac: 'Evakuasi' }[u.state];
         const ammo = u.ammo === Infinity ? '' : ` · amunisi ${u.ammo}`;
         const can = b.canSelect(u) && this.game.phase === 'command';
         return `<li data-unit="${u.id}" class="unitrow ${can ? 'unitrow--ready' : ''} unitrow--${u.state}">
-          <span class="unitrow__name">${u.leader ? '★ ' : ''}${esc(u.name)}</span>
-          <span class="unitrow__meta">${CLASS_LABEL[u.cls]}${ammo}${u.picks ? ` · dipakai ${u.picks}×` : ''}</span>
-          <span class="unitrow__hp"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></span>
-          ${state ? `<span class="unitrow__state">${state}</span>` : ''}
+          <span class="emblem emblem--${u.side}">${SHORT[u.cls] || '?'}</span>
+          <span class="unitrow__body">
+            <span class="unitrow__name">${u.leader ? '★ ' : ''}${esc(u.name)}</span>
+            <span class="unitrow__meta">${CLASS_LABEL[u.cls]} · AP ${u.apMax} m${ammo}${u.picks ? ` · dipakai ${u.picks}×` : ''}</span>
+            <span class="unitrow__hp"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></span>
+          </span>
+          ${state ? `<span class="stamp">${state}</span>` : ''}
         </li>`;
       })
       .join('');

@@ -73,7 +73,7 @@ export class Combat {
     const maxT = W.range * 1.6;
     const hit = this.arena.bullet(o, d, maxT, this.battle.units, u);
     const end = hit ? hit.point : { x: o.x + d.x * maxT, y: o.y + d.y * maxT, z: o.z + d.z * maxT };
-    fx.flash(o, W.splash ? 0.9 : 0.4);
+    fx.muzzle(o, d, weapon);
     this.game.views.kick(u);
     fx.tracer(o, end, weapon === 'lance' ? '#ff8a3a' : weapon === 'sniper' ? '#ffffff' : null);
     this.game.audio?.shot(weapon, o);
@@ -126,10 +126,15 @@ export class Combat {
       if (t <= 0) {
         t = INTERCEPT.every * (0.8 + Math.random() * 0.4);
         if (this.arena.sees(s, mover)) {
-          const p = this.arena.aimPoint(mover);
-          this.game.views.aimAt(s, p, 0.7);
+          // turn and raise the weapon first, then fire at where the mover is by then
+          this.game.views.aimAt(s, this.arena.aimPoint(mover), 1.2);
           const infantry = s.kind === 'infantry';
-          this.burst(s, { point: p }, { weapon: s.intercept, spreadMul: infantry ? INTERCEPT.spread : 1.4, scale: infantry ? INTERCEPT.damage : 1, shots: infantry ? INTERCEPT.shots : W.shots });
+          this.game.after(0.32, () => {
+            if (s.state !== 'ok' || mover.state !== 'ok') return;
+            const p = this.arena.aimPoint(mover);
+            this.game.views.aimAt(s, p, 0.8);
+            this.burst(s, { point: p }, { weapon: s.intercept, spreadMul: infantry ? INTERCEPT.spread : 1.4, scale: infantry ? INTERCEPT.damage : 1, shots: infantry ? INTERCEPT.shots : W.shots });
+          });
         }
       }
       this.timers.set(s.id, t);

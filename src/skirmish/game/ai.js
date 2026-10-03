@@ -6,7 +6,8 @@ import { GN } from './arena.js';
 // shoots. Utility scoring over a lattice of reachable cells: expected damage from there, the
 // cover there, how many player guns can see it, and progress toward the player's base.
 
-const LATTICE = 3; // sample every 3rd cell of the reach
+// sample every 3rd cell of the reach, every 4th for long-legged units (the work grows with AP squared)
+const latticeFor = (ap) => (ap > 40 ? 4 : 3);
 
 /** Expected damage of a full attack from `from` on target t (rough: falloff and a hit chance by distance). */
 function expected(W, d, t, crouched) {
@@ -59,10 +60,11 @@ function planFor(battle, arena, u, ap, foes, home) {
   }));
   const r = reach(arena, u.x, u.z, ap, { clearance: tank ? 2 : 0, occupied });
   const homeD0 = Math.hypot(u.x - home.x, u.z - home.z);
+  const lattice = latticeFor(ap);
   let best = null;
   for (const [cell, used] of r.dist) {
     const i = cell % GN, j = (cell - i) / GN;
-    if (cell !== r.start && (i % LATTICE || j % LATTICE)) continue;
+    if (cell !== r.start && (i % lattice || j % lattice)) continue;
     const [x, z] = arena.cellCentre(i, j);
     const probe = { ...u, x, z, stance: 'stand' };
     // nearest foe, for cover direction

@@ -12,7 +12,8 @@ import { FACTIONS } from '../units/soldierLook.js';
 // Everything repeated is instanced; every material is toon, so the canvas hatching reaches it.
 
 const ROOF = new THREE.Color('#9a5a42');
-const TREE_KIND = { t_oak: 3, t_birch: 2, t_pine: 2, t_spruce: 2, t_fruit: 2 };
+// green summer variants only (t_oak_v2 and t_birch_v1 are autumn trees, t_fruit blossoms pink)
+const TREE_KIND = { t_oak: 2, t_birch: 1, t_pine: 2, t_spruce: 2 };
 const TREE_H = { t_oak: 9, t_birch: 9, t_pine: 12, t_spruce: 13, t_fruit: 6 };
 
 /** Toon material for pack geometry: vertex colours, M_paint tinted per instance, roofs painted, M_radiator glowing. */
@@ -165,45 +166,76 @@ export class FieldBuilder {
     water.receiveShadow = this.shadows;
     water.name = 'water';
 
-    // stone bridges: a deck on a low arch, parapets either side
-    const stone = new THREE.Color('#b8ae98'), dark = new THREE.Color('#8c826e');
-    for (const b of f.bridges) {
-      const parts = [];
-      const box = (w, h, d, x, y, z, c) => {
-        const g = new THREE.BoxGeometry(w, h, d).translate(x, y, z).toNonIndexed();
-        g.setAttribute('color', new THREE.Float32BufferAttribute(Array.from({ length: g.attributes.position.count }, () => [c.r, c.g, c.b]).flat(), 3));
-        parts.push(g);
-      };
-      const deckY = Math.max(this.y(b.x + Math.sin(b.yaw) * b.length / 2, b.z + Math.cos(b.yaw) * b.length / 2), this.y(b.x - Math.sin(b.yaw) * b.length / 2, b.z - Math.cos(b.yaw) * b.length / 2), 0.1);
-      box(b.width, 0.5, b.length + 4, 0, deckY - 0.2, 0, stone);
-      for (const s of [-1, 1]) box(0.45, 0.8, b.length + 4, s * (b.width / 2 - 0.2), deckY + 0.4, 0, dark);
-      box(b.width - 1, 1.4, 3, 0, WATER_Y + 0.3, 0, dark); // the pier
-      const geo2 = ensureAttrs(mergeGeometries(parts));
-      geo2.computeVertexNormals();
-      const mesh = this.own(new THREE.Mesh(geo2, this.material));
-      mesh.position.set(b.x, 0, b.z);
-      mesh.rotation.y = b.yaw;
-      mesh.castShadow = mesh.receiveShadow = this.shadows;
-    }
+    // stone bridges from the kit (18 m long, 7 m wide; the width is scaled to the road), decks
+    // at the height arena.js walks them at
+    const mil = this.packs.military || {};
+    const items = f.bridges.map((b) => {
+      const ex = Math.sin(b.yaw) * (b.length / 2), ez = Math.cos(b.yaw) * (b.length / 2);
+      const deck = Math.max(this.y(b.x + ex, b.z + ez), this.y(b.x - ex, b.z - ez), 0.1) + 0.05;
+      return { x: b.x, z: b.z, y: deck, yaw: b.yaw, scale: new THREE.Vector3(b.width / 7, 1, 1) };
+    });
+    this.instance(mil.p_bridge?.[0], items, { name: 'bridge' });
   }
 
-  // ---------------------------------------------------------------- trenches: plank walls and duckboards
+  // ---------------------------------------------------------------- trenches: plank walls, spoil banks, duckboards
+  /**
+   * Each trench is three ribbons per side following its line: a plank wall from the floor to just
+   * above the rim, and a bank of thrown-up earth from the wall top down to the ground 1.8 m out
+   * (it covers the coarse terrain cut); and a duckboard floor down the middle.
+   */
   buildTrenches() {
-    const plank = new THREE.BoxGeometry(0.08, 1, 1);
-    const items = [];
+    const pos = [];
+    const col = [];
+    const plank = [new THREE.Color('#7a5a3a'), new THREE.Color('#6a4c30'), new THREE.Color('#84633f')];
+    const earth = new THREE.Color('#7c6a4c'), earthDark = new THREE.Color('#665640'), board = new THREE.Color('#9a7a52');
+    const quad = (a, b, c, d, ca, cb = ca) => {
+      pos.push(...a, ...b, ...c, ...a, ...c, ...d);
+      for (const k of [ca, ca, cb, ca, cb, cb]) col.push(k.r, k.g, k.b);
+    };
     for (const t of this.field.trenches) {
-      for (const s of walk(t.pts, 1)) {
+      const pts = walk(t.pts, 0.5);
+      const hw = t.width / 2;
+      for (let i = 1; i < pts.length; i++) {
+        const [p, q] = [pts[i - 1], pts[i]];
+        const floorP = this.y(p.x, p.z) + 0.02, floorQ = this.y(q.x, q.z) + 0.02;
         for (const side of [-1, 1]) {
-          const x = s.x - s.tz * side * (t.width / 2), z = s.z + s.tx * side * (t.width / 2);
-          items.push({ x, z, y: this.y(s.x, s.z) + 0.55, yaw: Math.atan2(s.tx, s.tz), sx: 1, sy: 1.4, sz: 1.02 });
+          const off = (s, d) => [s.x - s.tz * side * d, s.z + s.tx * side * d];
+          const [pwx, pwz] = off(p, hw), [qwx, qwz] = off(q, hw);
+          const [pox, poz] = off(p, hw + 1.8), [qox, qoz] = off(q, hw + 1.8);
+          const [prx, prz] = off(p, hw + 2.6), [qrx, qrz] = off(q, hw + 2.6);
+          const rimP = this.y(prx, prz) + 0.3, rimQ = this.y(qrx, qrz) + 0.3;
+          const outP = this.y(pox, poz) - 0.02, outQ = this.y(qox, qoz) - 0.02;
+          const c = plank[i % 3];
+          // wall (faces the trench: winding depends on the side)
+          const wall = [[pwx, floorP - 0.05, pwz], [qwx, floorQ - 0.05, qwz], [qwx, rimQ, qwz], [pwx, rimP, pwz]];
+          if (side > 0) quad(...wall, c);
+          else quad(wall[1], wall[0], wall[3], wall[2], c);
+          // spoil bank
+          const bank = [[pwx, rimP, pwz], [qwx, rimQ, qwz], [qox, Math.max(outQ, rimQ - 0.6), qoz], [pox, Math.max(outP, rimP - 0.6), poz]];
+          if (side > 0) quad(...bank, earth, earthDark);
+          else quad(bank[1], bank[0], bank[3], bank[2], earth, earthDark);
+          // the bank's outer face down to the ground
+          const face = [[pox, Math.max(outP, rimP - 0.6), poz], [qox, Math.max(outQ, rimQ - 0.6), qoz], [qox, outQ - 0.3, qoz], [pox, outP - 0.3, poz]];
+          if (side > 0) quad(...face, earthDark);
+          else quad(face[1], face[0], face[3], face[2], earthDark);
         }
-        if (Math.round(s.x * 7 + s.z * 3) % 2 === 0) items.push({ x: s.x, z: s.z, y: this.y(s.x, s.z) + 0.05, yaw: Math.atan2(s.tx, s.tz) + Math.PI / 2, sx: 4, sy: 0.08, sz: 0.5 });
+        // duckboards: slats across the floor
+        if (i % 2 === 0) {
+          const w = hw * 0.7;
+          const a = [p.x - p.tz * w, floorP + 0.06, p.z + p.tx * w], b = [p.x + p.tz * w, floorP + 0.06, p.z - p.tx * w];
+          const m = (k) => [p.x + (q.x - p.x) * k, p.z + (q.z - p.z) * k];
+          const [mx, mz] = m(0.6);
+          const c2 = [mx + p.tz * w, floorP + 0.06, mz - p.tx * w], d2 = [mx - p.tz * w, floorP + 0.06, mz + p.tx * w];
+          quad(a, d2, c2, b, board);
+        }
       }
     }
-    const mat = new THREE.MeshToonMaterial({ color: '#7a5a3a', gradientMap: getToonGradient() });
-    const mesh = this.own(new THREE.InstancedMesh(plank, mat, items.length));
-    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
-    items.forEach((it, i) => mesh.setMatrixAt(i, m.compose(new THREE.Vector3(it.x, it.y, it.z), q.setFromEuler(e.set(0, it.yaw, 0)), new THREE.Vector3(it.sx, it.sy, it.sz))));
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.computeVertexNormals();
+    const mesh = this.own(new THREE.Mesh(geo, new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getToonGradient(), side: THREE.DoubleSide })));
+    mesh.name = 'trench';
     mesh.castShadow = mesh.receiveShadow = this.shadows;
   }
 
@@ -255,9 +287,9 @@ export class FieldBuilder {
       this.instance(mil.p_windmill_body?.[0], [{ x: w.x, z: w.z, y, yaw: w.yaw }], { name: 'windmill' });
       const sails = this.instance(mil.p_windmill_sails?.[0], [{ x: 0, z: 0, y: 0 }], { name: 'windmill_sails' });
       if (sails) {
-        // the hub is 2.7 m in front of the tower, 9.2 m up (military_kit.py)
+        // the hub is 2.35 m in front of the tower, 9.2 m up (military_kit.py)
         const pivot = new THREE.Group();
-        pivot.position.set(w.x + Math.sin(w.yaw) * 2.7, y + 9.2, w.z + Math.cos(w.yaw) * 2.7);
+        pivot.position.set(w.x + Math.sin(w.yaw) * 2.35, y + 9.2, w.z + Math.cos(w.yaw) * 2.35);
         pivot.rotation.y = w.yaw;
         this.group.add(pivot);
         sails.removeFromParent();
@@ -281,14 +313,18 @@ export class FieldBuilder {
     for (const [key, g] of groups) this.instance(town[key][0], g.items, { fit: { h: g.h }, name: key });
   }
 
+  /** Hedgerows: the kit's leafy hedge stretch laid end to end along each line, slightly varied. */
   buildHedges() {
-    const town = this.packs.town || {};
-    const items = [[], []];
+    const mil = this.packs.military || {};
+    const items = [];
     const rng = mulberry32(this.field.seed ^ 0x4ed9e);
     for (const h of this.field.hedges) {
-      for (const s of walk(h.pts, 1.3)) items[rng() < 0.5 ? 0 : 1].push({ x: s.x, z: s.z, y: this.y(s.x, s.z) - 0.1, yaw: rng() * 6.28, s: 0.8 + rng() * 0.45 });
+      for (const s of walk(h.pts, 1.5)) {
+        const k = 0.85 + rng() * 0.35;
+        items.push({ x: s.x, z: s.z, y: this.y(s.x, s.z) - 0.1, yaw: Math.atan2(-s.tz, s.tx) + (rng() - 0.5) * 0.3, scale: new THREE.Vector3(1, k, 0.9 + rng() * 0.3) });
+      }
     }
-    items.forEach((list, v) => this.instance(town[`b_bush_v${v}`]?.[0], list, { fit: { w: 2.0 }, name: 'hedge' }));
+    this.instance(mil.p_hedge?.[0], items, { name: 'hedge' });
   }
 
   // ---------------------------------------------------------------- tall grass: faceted tufts

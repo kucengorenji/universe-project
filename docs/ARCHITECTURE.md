@@ -60,8 +60,8 @@ Mode baru ditambahkan dengan mendaftarkannya di `MODES` dan `LABELS` pada `direc
 ## 3. Engine, kualitas, post-processing
 
 - `core/engine.js`: renderer `alpha: true`, ACES Filmic, exposure 1,05. Loop memanggil `mode.update` dan `mode.render` di dalam try/catch; error terakhir disimpan di `engine.lastError`. `afterFrame()` menunggu satu frame (dipakai untuk capture dan QA). Jam engine berhenti saat menu jeda terbuka.
-- `core/quality.js`: preset `auto | high | medium | low`. `high` = pixel ratio ≤2, shadow, `detail: 1`; `medium` = ≤1,5, shadow, `detail: 0.75`; `low` = ≤1, tanpa shadow, `detail: 0.5`. Pada `auto`, pixel ratio naik turun mengikuti FPS. Modul lain membaca `quality.settings.detail`.
-- `core/post.js`: MSAA → UnrealBloom → OutputPass (tone mapping) → grade (saturasi, kontras, gain, vinyet). Tampilan per mode ada di tabel `LOOKS` (`space`, `planet`, `town`, `interior`). Tier low mematikan seluruh rantai. Blend bloom dipatch agar tidak menulis alpha di atas canvas transparan.
+- `core/quality.js`: preset `auto | high | medium | low`. `high` = pixel ratio ≤2, shadow, `detail: 1`; `medium` = ≤1,5, shadow, `detail: 0.75`; `low` = ≤1, tanpa shadow, `detail: 0.5`. Pada `auto`, pixel ratio naik turun mengikuti FPS dan, bila browser punya `EXT_disjoint_timer_query_webgl2`, waktu GPU per frame (turun di atas 90% anggaran 16,7 ms, naik bila perkiraan rasio berikutnya di bawah 70%). Engine menggambar paling banyak 60 frame per detik (layar 120 Hz tidak menggandakan beban GPU). Modul lain membaca `quality.settings.detail`.
+- `core/post.js`: scene dirender sekali ke target MSAA (HalfFloat; 2 sampel di layar Retina, 4 di high biasa), bloom dibuat dari target itu di seperempat resolusi tanpa ditulis balik, lalu satu pass akhir menambahkan bloom, tone mapping, sRGB, dan grade (saturasi, kontras, gain, vinyet) langsung ke layar. Tampilan per mode ada di tabel `LOOKS` (`space`, `planet`, `town`, `interior`). Tier low mematikan seluruh rantai; canvas hanya memakai MSAA bawaan bila rantai mati saat start. Bloom hanya menambah warna, tidak menulis alpha di atas canvas transparan. `core/engine.js` juga mengganti kernel PCFSoft three (16 tap) dengan B-spline 9 tap.
 
 ## 4. Dunia dan state (lapisan data)
 
@@ -105,7 +105,7 @@ map + cityIndex + footprints (bbox dari town.glb) + variant + options.density
              colliders, walkGraph, driveGraph, rivers, wards, farmCells, bridges, relief, spawn }
 
 TownMode.enter()
-  ├─ TownBuilder(layout, packs)      townBuilder.js: terrain, groundPaint, air, instance per chunk/LOD,
+  ├─ TownBuilder(layout, packs)      townBuilder.js: terrain, groundPaint, air, instance per chunk (LOD per item menurut ukuran di layar),
   │                                  jembatan, roadMarkings, groundCover, farTrees
   ├─ StreetLighting, TownSky
   ├─ Crowd + Pedestrians             crowd.js, walkNetwork.js, pedestrianRoutes.js

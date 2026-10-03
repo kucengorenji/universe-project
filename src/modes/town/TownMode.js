@@ -59,8 +59,12 @@ const packs = () =>
   ]);
 
 const UP = new THREE.Vector3(0, 1, 0);
+const ORIGIN = new THREE.Vector3();
 const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const _v = new THREE.Vector3();
+const _v2 = new THREE.Vector3();
+const _lightRot = new THREE.Matrix4();
+const _lightInv = new THREE.Matrix4();
 
 export default class TownMode {
   static prepare() {
@@ -144,7 +148,10 @@ export default class TownMode {
     if (shadows) {
       const high = quality.tier === 'high';
       sun.castShadow = true;
-      sun.shadow.mapSize.set(high ? 4096 : 2048, high ? 4096 : 2048);
+      // 2048 is enough: from the table a texel is under a screen pixel, in the street a few cm.
+      // A 4096 map cost the high tier about 12 ms a frame on an M1 Pro for no visible gain.
+      const size = high ? 2048 : 1024;
+      sun.shadow.mapSize.set(size, size);
       // The whole table from above; a tight box round the player in the street, so shadow
       // edges stay crisp (a few cm per shadow texel instead of 15)
       this.shadowExtents = { diorama: high ? 150 : 110, street: high ? 45 : 38 };
@@ -152,7 +159,10 @@ export default class TownMode {
       this.shadowExt = ext;
       Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext, near: 10, far: 900 });
       sun.shadow.bias = -0.0006;
-      sun.shadow.normalBias = 0.6;
+      sun.shadow.normalBias = ((ext * 2) / size) * 4;
+      // Redrawn on demand (updateEnvironment): from the table only the people and cars move
+      sun.shadow.autoUpdate = false;
+      this.shadowTick = 0;
     }
     this.sun = sun;
     this.scene.add(sun, sun.target);
@@ -184,6 +194,15 @@ export default class TownMode {
     if (this.npcPack) this.rigged = new ChunkyPeople(this.npcPack, this.scene, { count: rigCount, shadows, seed: this.layout.seed });
     else if (character) this.rigged = new RiggedPeople(character, this.scene, { count: rigCount, modern: this.layout.modern, shadows, seed: this.layout.seed });
     this.buildFleet(rng, shadows);
+    // Lamp posts light the street at night only: compile that variant of every material now, the
+    // hidden townsfolk pool and LOD levels included, so dusk does not stall on shader compiles
+    // (by day the lights are out of the shaders entirely)
+    const hidden = [];
+    this.scene.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+    this.streetLighting.setActive(true);
+    engine.post.compileAsync(this.scene, this.camera).catch(() => {});
+    this.streetLighting.setActive(false);
+    hidden.forEach((o) => (o.visible = false));
     this.chase = new ChaseCamera(this.camera);
     this.chase.baseFov = STREET_FOV;
 
@@ -1379,15 +1398,21 @@ export default class TownMode {
         sun.shadow.normalBias = ((ext * 2) / sun.shadow.mapSize.x) * 4;
       }
       const texel = (this.shadowExt * 2) / sun.shadow.mapSize.x;
-      const lightRot = new THREE.Matrix4().lookAt(new THREE.Vector3(), this.sunDir.clone().negate(), UP);
-      const inv = lightRot.clone().invert();
-      target.applyMatrix4(inv);
+      const lightRot = _lightRot.lookAt(ORIGIN, _v2.copy(this.sunDir).negate(), UP);
+      target.applyMatrix4(_lightInv.copy(lightRot).invert());
       target.x = Math.round(target.x / texel) * texel;
       target.y = Math.round(target.y / texel) * texel;
       target.applyMatrix4(lightRot);
     }
     sun.target.position.copy(target);
     sun.position.copy(target).addScaledVector(this.sunDir, 400);
+    if (this.shadowExt) {
+      // The box follows the player in the street, so it is redrawn every frame; from the table every
+      // third frame is plenty. A skipped frame keeps the previous map with its own light matrix, so
+      // shadows never slide, they only lag the people and cars by a frame or two.
+      this.shadowTick = (this.shadowTick + 1) % 3;
+      sun.shadow.needsUpdate = street === 1 || this.shadowTick === 0 || !sun.shadow.map;
+    }
   }
 
   render() {

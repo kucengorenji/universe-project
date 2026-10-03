@@ -1,41 +1,73 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
-// Post-processing shared by every mode: MSAA scene target -> bloom -> tone
-// mapping (OutputPass) -> a small grade (saturation, contrast, warmth,
-// vignette). Modes pick a look with configure(); the Low tier (or the setting)
-// switches it all off and the renderer draws straight to the screen.
+// Post-processing shared by every mode: the scene renders once into an MSAA
+// target, bloom is built from it at a quarter of the resolution, and a single
+// final pass adds the bloom, tone maps and grades (saturation, contrast,
+// warmth, vignette) straight onto the screen. Modes pick a look with
+// configure(); the Low tier (or the setting) switches it all off and the
+// renderer draws straight to the screen.
+//
+// One final pass on purpose: the stock composer blended the bloom back into
+// the multisampled target and copied it through two more full-screen passes,
+// which cost over 30 ms a frame at Retina size on an M1 Pro.
 
 const PREF_KEY = 'planet_globe_post';
 
-const GradeShader = {
+const FinalShader = {
   uniforms: {
-    tDiffuse: { value: null },
+    tScene: { value: null },
+    tBloom: { value: null },
+    uBloom: { value: 1 },
+    toneMappingExposure: { value: 1 },
     uSaturation: { value: 1 },
     uContrast: { value: 1 },
     uGain: { value: new THREE.Vector3(1, 1, 1) },
     uVignette: { value: 0.25 }
   },
   vertexShader: /* glsl */ `
+    precision highp float;
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+    attribute vec3 position;
+    attribute vec2 uv;
     varying vec2 vUv;
     void main() {
       vUv = uv;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }`,
   fragmentShader: /* glsl */ `
-    uniform sampler2D tDiffuse;
+    precision highp float;
+    uniform sampler2D tScene;
+    uniform sampler2D tBloom;
+    uniform float uBloom;
     uniform float uSaturation;
     uniform float uContrast;
     uniform vec3 uGain;
     uniform float uVignette;
+    #include <tonemapping_pars_fragment>
+    #include <colorspace_pars_fragment>
     varying vec2 vUv;
     void main() {
-      vec4 c = texture2D(tDiffuse, vUv);
-      vec3 col = c.rgb;
+      vec4 c = texture2D(tScene, vUv);
+      // Bloom adds light, never opacity: the canvas is transparent where a mode shows a CSS backdrop
+      vec3 col = c.rgb + texture2D(tBloom, vUv).rgb * uBloom;
+      #if defined( ACES_FILMIC_TONE_MAPPING )
+        col = ACESFilmicToneMapping(col);
+      #elif defined( NEUTRAL_TONE_MAPPING )
+        col = NeutralToneMapping(col);
+      #elif defined( AGX_TONE_MAPPING )
+        col = AgXToneMapping(col);
+      #elif defined( REINHARD_TONE_MAPPING )
+        col = ReinhardToneMapping(col);
+      #elif defined( LINEAR_TONE_MAPPING )
+        col = LinearToneMapping(col);
+      #endif
+      #ifdef SRGB_TRANSFER
+        col = sRGBTransferOETF(vec4(col, 1.0)).rgb;
+      #endif
+      // Grade in display space, as the old separate grade pass did
       float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
       col = mix(vec3(l), col, uSaturation);
       col = (col - 0.5) * uContrast + 0.5;
@@ -45,6 +77,46 @@ const GradeShader = {
       gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
     }`
 };
+
+const TONE_DEFINES = {
+  [THREE.ACESFilmicToneMapping]: 'ACES_FILMIC_TONE_MAPPING',
+  [THREE.NeutralToneMapping]: 'NEUTRAL_TONE_MAPPING',
+  [THREE.AgXToneMapping]: 'AGX_TONE_MAPPING',
+  [THREE.ReinhardToneMapping]: 'REINHARD_TONE_MAPPING',
+  [THREE.LinearToneMapping]: 'LINEAR_TONE_MAPPING'
+};
+
+/** UnrealBloomPass without its last step: the blurred glow stays in its own texture for the final pass. */
+class Glow extends UnrealBloomPass {
+  render(renderer, input) {
+    this.highPassUniforms.tDiffuse.value = input;
+    this.highPassUniforms.luminosityThreshold.value = this.threshold;
+    this.fsQuad.material = this.materialHighPassFilter;
+    renderer.setRenderTarget(this.renderTargetBright);
+    this.fsQuad.render(renderer);
+    let from = this.renderTargetBright;
+    for (let i = 0; i < this.nMips; i++) {
+      const blur = this.separableBlurMaterials[i];
+      this.fsQuad.material = blur;
+      blur.uniforms.colorTexture.value = from.texture;
+      blur.uniforms.direction.value = UnrealBloomPass.BlurDirectionX;
+      renderer.setRenderTarget(this.renderTargetsHorizontal[i]);
+      this.fsQuad.render(renderer);
+      blur.uniforms.colorTexture.value = this.renderTargetsHorizontal[i].texture;
+      blur.uniforms.direction.value = UnrealBloomPass.BlurDirectionY;
+      renderer.setRenderTarget(this.renderTargetsVertical[i]);
+      this.fsQuad.render(renderer);
+      from = this.renderTargetsVertical[i];
+    }
+    const composite = this.compositeMaterial;
+    this.fsQuad.material = composite;
+    composite.uniforms.bloomStrength.value = this.strength;
+    composite.uniforms.bloomRadius.value = this.radius;
+    renderer.setRenderTarget(this.renderTargetsHorizontal[0]);
+    this.fsQuad.render(renderer);
+    return this.renderTargetsHorizontal[0].texture;
+  }
+}
 
 /** Looks per mode; configure() mixes one in. */
 export const LOOKS = {
@@ -58,8 +130,7 @@ export const LOOKS = {
 export class Post {
   constructor(engine) {
     this.engine = engine;
-    this.renderer = engine.renderer;
-    this.composer = null;
+    this.target = null;
     let saved = null;
     try {
       saved = localStorage.getItem(PREF_KEY);
@@ -69,6 +140,10 @@ export class Post {
     this.pref = saved === 'on' || saved === 'off' ? saved : 'auto';
     this.look = LOOKS.town;
     this.boost = 0; // extra bloom a mode can add at night
+  }
+
+  get renderer() {
+    return this.engine.renderer;
   }
 
   /** Effects are on unless switched off, or on the Low tier in auto. */
@@ -87,56 +162,55 @@ export class Post {
     }
   }
 
-  /** MSAA samples for the scene target: phones get fewer. */
+  /**
+   * MSAA samples for the scene target: phones get fewer, and so do Retina screens, whose pixels
+   * are small enough that 2 look like 4. Keyed to the screen, not the governed pixel ratio, so
+   * stepping the resolution down never raises the sample count.
+   */
   get samples() {
     const tier = this.engine.quality.tier;
-    return tier === 'high' ? 4 : tier === 'medium' ? 2 : 0;
+    const n = tier === 'high' ? 4 : tier === 'medium' ? 2 : 0;
+    return (window.devicePixelRatio || 1) >= 1.75 ? Math.min(n, 2) : n;
   }
 
   build() {
-    const r = this.renderer;
-    const composer = new EffectComposer(r);
     const samples = this.samples;
-    composer.renderTarget1.samples = samples;
-    composer.renderTarget2.samples = samples;
     this.builtSamples = samples;
-    this.renderPass = new RenderPass(new THREE.Scene(), new THREE.PerspectiveCamera());
-    composer.addPass(this.renderPass);
-    const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.5, 0.9);
-    // Bloom at half the usual resolution: it is blurry anyway, and cheaper on an iGPU
-    const setSize = bloom.setSize.bind(bloom);
-    bloom.setSize = (w, h) => setSize(Math.max(64, w * 0.5), Math.max(64, h * 0.5));
-    // Add light, never opacity: the canvas is transparent where a mode shows a CSS backdrop
-    const bm = bloom.blendMaterial;
-    bm.blending = THREE.CustomBlending;
-    bm.blendEquation = THREE.AddEquation;
-    bm.blendSrc = THREE.OneFactor;
-    bm.blendDst = THREE.OneFactor;
-    bm.blendSrcAlpha = THREE.ZeroFactor;
-    bm.blendDstAlpha = THREE.OneFactor;
-    this.bloom = bloom;
-    composer.addPass(bloom);
-    composer.addPass(new OutputPass());
-    this.grade = new ShaderPass(GradeShader);
-    composer.addPass(this.grade);
-    this.composer = composer;
+    this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples });
+    this.target.texture.name = 'Post.scene';
+    this.bloom = new Glow(new THREE.Vector2(256, 256), 0.3, 0.5, 0.9);
+    this.material = new THREE.RawShaderMaterial({
+      name: 'Post.final',
+      uniforms: THREE.UniformsUtils.clone(FinalShader.uniforms),
+      vertexShader: FinalShader.vertexShader,
+      fragmentShader: FinalShader.fragmentShader,
+      depthTest: false,
+      depthWrite: false
+    });
+    this.toneKey = null;
+    this.quad = new FullScreenQuad(this.material);
     this.resize();
     this.applyLook();
   }
 
   dispose() {
-    if (!this.composer) return;
-    this.composer.passes.forEach((p) => p.dispose?.());
-    this.composer.renderTarget1.dispose();
-    this.composer.renderTarget2.dispose();
-    this.composer = null;
+    if (!this.target) return;
+    this.target.dispose();
+    this.bloom.dispose();
+    this.material.dispose();
+    this.quad.dispose();
+    this.target = null;
   }
 
   resize() {
-    if (!this.composer) return;
+    if (!this.target) return;
     const { width, height } = this.engine.size;
-    this.composer.setPixelRatio(this.renderer.getPixelRatio());
-    this.composer.setSize(width, height);
+    const pr = this.renderer.getPixelRatio();
+    const w = Math.max(1, Math.floor(width * pr));
+    const h = Math.max(1, Math.floor(height * pr));
+    this.target.setSize(w, h);
+    // The glow starts at a quarter of the screen: it is blurry anyway, and cheaper on an iGPU
+    this.bloom.setSize(Math.max(64, w * 0.5), Math.max(64, h * 0.5));
   }
 
   /** Pick a look (a LOOKS key or an object), optionally with extra bloom. */
@@ -155,28 +229,64 @@ export class Post {
   }
 
   applyLook() {
-    if (!this.composer) return;
+    if (!this.target) return;
     const { bloom, grade } = this.look;
     this.bloom.strength = bloom.strength + this.boost;
     this.bloom.radius = bloom.radius;
     this.bloom.threshold = bloom.threshold - this.boost * 0.25;
-    const u = this.grade.uniforms;
+    const u = this.material.uniforms;
     u.uSaturation.value = grade.saturation;
     u.uContrast.value = grade.contrast;
     u.uGain.value.fromArray(grade.gain);
     u.uVignette.value = grade.vignette;
   }
 
+  /** Tone mapping and output transfer follow the renderer, as OutputPass did. */
+  syncDefines() {
+    const r = this.renderer;
+    const key = `${r.toneMapping}:${r.outputColorSpace}`;
+    if (key === this.toneKey) return;
+    this.toneKey = key;
+    const defines = {};
+    if (THREE.ColorManagement.getTransfer(r.outputColorSpace) === THREE.SRGBTransfer) defines.SRGB_TRANSFER = '';
+    if (TONE_DEFINES[r.toneMapping]) defines[TONE_DEFINES[r.toneMapping]] = '';
+    this.material.defines = defines;
+    this.material.needsUpdate = true;
+  }
+
+  /**
+   * Compile a scene's shaders ahead of use, for the target it will really be drawn into: the
+   * post target and the screen get different programs (tone mapping, output colour space).
+   */
+  compileAsync(scene, camera) {
+    const r = this.renderer;
+    if (this.enabled && !this.target) this.build();
+    const prev = r.getRenderTarget();
+    r.setRenderTarget(this.enabled ? this.target : null);
+    const done = r.compileAsync(scene, camera);
+    r.setRenderTarget(prev);
+    return done;
+  }
+
   render(scene, camera) {
+    const r = this.renderer;
     if (!this.enabled) {
-      if (this.composer) this.dispose();
-      this.renderer.render(scene, camera);
+      if (this.target) this.dispose();
+      r.render(scene, camera);
       return;
     }
-    if (this.composer && this.builtSamples !== this.samples) this.dispose();
-    if (!this.composer) this.build();
-    this.renderPass.scene = scene;
-    this.renderPass.camera = camera;
-    this.composer.render();
+    if (this.target && this.builtSamples !== this.samples) this.dispose();
+    if (!this.target) this.build();
+    r.setRenderTarget(this.target);
+    r.render(scene, camera);
+    const u = this.material.uniforms;
+    const glow = this.bloom.strength > 0.01;
+    if (glow) u.tBloom.value = this.bloom.render(r, this.target.texture);
+    u.uBloom.value = glow ? 1 : 0;
+    u.tScene.value = this.target.texture;
+    u.toneMappingExposure.value = r.toneMappingExposure;
+    this.syncDefines();
+    r.setRenderTarget(null);
+    this.quad.render(r);
   }
 }

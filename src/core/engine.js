@@ -2,6 +2,29 @@ import * as THREE from 'three';
 import { Quality } from './quality.js';
 import { Post } from './post.js';
 
+const MAX_FPS = 60;
+
+// Soft shadow edges from 9 depth taps (quadratic B-spline weights over 3x3 texels) instead of
+// three's 16: nearly the same softness, at about half the cost on every pixel that receives shadow
+const PCF_SOFT = /(#elif defined\( SHADOWMAP_TYPE_PCF_SOFT \))[\s\S]*?(#elif defined\( SHADOWMAP_TYPE_VSM \))/;
+THREE.ShaderChunk.shadowmap_pars_fragment = THREE.ShaderChunk.shadowmap_pars_fragment.replace(PCF_SOFT, `$1
+      vec2 texelSize = vec2( 1.0 ) / shadowMapSize;
+      vec2 p = shadowCoord.xy * shadowMapSize - 0.5;
+      vec2 c = floor( p + 0.5 );
+      vec2 t = p - c;
+      vec2 w0 = 0.5 * ( 0.5 - t ) * ( 0.5 - t );
+      vec2 w1 = 0.75 - t * t;
+      vec2 w2 = 0.5 * ( 0.5 + t ) * ( 0.5 + t );
+      vec2 uv = ( c + 0.5 ) * texelSize;
+      float z = shadowCoord.z;
+      float dx = texelSize.x;
+      float dy = texelSize.y;
+      shadow =
+        w0.y * ( w0.x * texture2DCompare( shadowMap, uv + vec2( -dx, -dy ), z ) + w1.x * texture2DCompare( shadowMap, uv + vec2( 0.0, -dy ), z ) + w2.x * texture2DCompare( shadowMap, uv + vec2( dx, -dy ), z ) ) +
+        w1.y * ( w0.x * texture2DCompare( shadowMap, uv + vec2( -dx, 0.0 ), z ) + w1.x * texture2DCompare( shadowMap, uv, z ) + w2.x * texture2DCompare( shadowMap, uv + vec2( dx, 0.0 ), z ) ) +
+        w2.y * ( w0.x * texture2DCompare( shadowMap, uv + vec2( -dx, dy ), z ) + w1.x * texture2DCompare( shadowMap, uv + vec2( 0.0, dy ), z ) + w2.x * texture2DCompare( shadowMap, uv + vec2( dx, dy ), z ) );
+    $2`);
+
 /**
  * One WebGL context for the whole app, one render loop. Exactly one mode is
  * active at a time; the engine only drives it (update + render) and forwards
@@ -11,16 +34,19 @@ import { Post } from './post.js';
 export class Engine {
   constructor(container) {
     this.container = container;
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    this.quality = new Quality(this);
+    this.post = new Post(this);
+    // The post chain antialiases its own target: a multisampled canvas under it would only cost memory
+    this.renderer = new THREE.WebGLRenderer({ antialias: !this.post.enabled, alpha: true, powerPreference: 'high-performance' });
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     container.appendChild(this.renderer.domElement);
-    this.quality = new Quality(this);
+    this.quality.attach(this.renderer);
     this.renderer.setPixelRatio(this.quality.ratio);
-    this.post = new Post(this);
     this.mode = null;
     this.time = performance.now() / 1000; // game clock: stops while paused
     this.last = 0;
+    this.lastDraw = -Infinity;
     this.frameHooks = [];
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -51,6 +77,9 @@ export class Engine {
   }
 
   frame(ts) {
+    // 120 Hz displays would draw every scene twice as often for little gain: at most 60 frames a second
+    if (ts - this.lastDraw < 1000 / MAX_FPS - 2) return;
+    this.lastDraw = ts;
     const now = ts * 0.001;
     const dt = Math.min(0.1, now - (this.last || now));
     this.last = now;
@@ -66,8 +95,11 @@ export class Engine {
     // A mode that throws must not stop the loop (three.js drops the loop on an uncaught error)
     try {
       this.mode.update(this.paused ? 0 : dt, t, t * 1000);
+      this.quality.beginGpu();
       this.mode.render();
+      this.quality.endGpu();
     } catch (err) {
+      this.quality.endGpu();
       if (!this.lastError || this.lastError.message !== err.message) console.error(err);
       this.lastError = err;
     }

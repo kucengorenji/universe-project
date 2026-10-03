@@ -18,6 +18,7 @@ const PALETTES = {
 
 const smooth = THREE.MathUtils.smoothstep;
 const col = (h) => new THREE.Color(h);
+const DAY_FILL = new THREE.Color(0.6, 0.65, 0.8);
 
 function cloudTexture(seed, dark) {
   const W = 1024;
@@ -194,7 +195,7 @@ export class TownSky {
       L.sunIntensity = 0.32 * smooth(-e, 0.04, 0.2);
     }
     // Nights stay readable: a cool blue fill instead of black
-    L.hemiSky.copy(this.nightFill).lerp(P.dayTop, day).lerp(new THREE.Color(0.6, 0.65, 0.8), 0.3 * day);
+    L.hemiSky.copy(this.nightFill).lerp(P.dayTop, day).lerp(DAY_FILL, 0.3 * day);
     L.hemiIntensity = 0.55 + day * 0.5;
     L.ambient = 0.12 + day * 0.1;
     L.fog.copy(hor);

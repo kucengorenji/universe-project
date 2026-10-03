@@ -22,9 +22,12 @@ export class StreetLighting{
     this.geometry=pieces.length?mergeGeometries(pieces):new THREE.BufferGeometry();pieces.forEach(g=>g.dispose());
     this.glow=new THREE.Mesh(this.geometry,this.material);this.glow.renderOrder=1;this.group.add(this.glow);
     this.lights=Array.from({length:4},()=>{const light=new THREE.PointLight(layout.modern?0xffd59a:0xffba66,0,18,2);this.group.add(light);return light;});
+    this.setActive(false);
   }
+  /** A light with zero intensity still costs every lit pixel: by day all four leave the scene (two shader variants, never five). */
+  setActive(on){if(this.active===on)return;this.active=on;this.lights.forEach(light=>light.visible=on);}
   update(camera,night){
-    this.material.opacity=night*.85;this.glow.visible=night>.01;
+    this.material.opacity=night*.85;this.glow.visible=night>.01;this.setActive(night>.01&&this.lamps.length>0);
     const near=night>.01?this.lamps.map(p=>({p,d:(camera.position.x-p.x)**2+(camera.position.y-p.y-p.h)**2+(camera.position.z-p.z)**2})).filter(p=>p.d<10000).sort((a,b)=>a.d-b.d):[];
     this.lights.forEach((light,i)=>{const lamp=near[i]?.p;light.intensity=lamp?night*48:0;if(lamp)light.position.set(lamp.x,lamp.y+lamp.h,lamp.z);});
   }

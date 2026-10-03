@@ -15,11 +15,14 @@ import { ENVIRONMENT } from './environmentKit.js';
 // Turns a town layout into a tabletop diorama: one terrain disc (heights and
 // colours from the blended hex fields), street ribbons, water, a soil skirt
 // around the rim, and every building / tree / prop as instanced meshes split
-// into spatial chunks with per-chunk LOD.
+// into spatial chunks, each item at its own level of detail.
 
 const CHUNKS = 6;
-const LOD_NEAR = 260;
-const LOD_MID = 620;
+// LOD by size on screen (model radius / distance, at a 55 degree lens): full detail above
+// the first, the middle level above the second, the lightest model below it. The lightest
+// models lose the leaf cut-outs and timber framing, so they only stand in for specks.
+const LOD_SIZE = [0.065, 0.008];
+const AUTUMN = new THREE.Color(1.7, 0.85, 0.38);
 
 /**
  * Town catalogue. `fb` = fallback asset from the planet pack (scaled to the
@@ -645,10 +648,14 @@ export class TownBuilder {
           float g = texture2D(uDetail, vGround.xz * 0.11).r * 0.6 + texture2D(uDetail, vGround.xz * 0.023).r * 0.4;
           diffuseColor.rgb *= mix(0.86 + g * 0.26, 0.95 + g * 0.1, paint.a);
           diffuseColor.rgb = mix(diffuseColor.rgb, paint.rgb * (0.94 + g * 0.1), paint.a);
-          ${this.surfaceAtlas?`vec3 surface=(pn.a>.02?texture2D(uSurfaceNear,un):texture2D(uSurfaceFar,uf)).rgb;
-          float earth=max(0.0,1.0-surface.r-surface.g-surface.b);
-          float paving=mix(groundTile(vGround.xz,15.0,3.2),groundTile(vGround.xz,11.0,1.1),.35)*surface.r+groundTile(vGround.xz,9.0,2.4)*surface.g+
-            groundTile(vGround.xz,10.0,4.0)*surface.b+groundTile(vGround.xz,11.0,2.4)*earth;
+          ${this.surfaceAtlas?`float paving=0.0;
+          // Most of the disc is unpainted grass: skip the six paving lookups there
+          if(paint.a>.004){
+            vec3 surface=(pn.a>.02?texture2D(uSurfaceNear,un):texture2D(uSurfaceFar,uf)).rgb;
+            float earth=max(0.0,1.0-surface.r-surface.g-surface.b);
+            paving=mix(groundTile(vGround.xz,15.0,3.2),groundTile(vGround.xz,11.0,1.1),.35)*surface.r+groundTile(vGround.xz,9.0,2.4)*surface.g+
+              groundTile(vGround.xz,10.0,4.0)*surface.b+groundTile(vGround.xz,11.0,2.4)*earth;
+          }
           float turf=groundTile(vGround.xz,12.0,2.0);
           diffuseColor.rgb*=mix(.8+turf*.24,.42+paving*.66,paint.a);`:''}`
         );
@@ -1201,10 +1208,8 @@ export class TownBuilder {
       const i = k % CHUNKS;
       const j = Math.floor(k / CHUNKS);
       const group = new THREE.Group();
-      const levels = [0, 1, 2].map(() => new THREE.Group());
-      levels.forEach((l) => group.add(l));
       this.group.add(group);
-      return { cx: -R + (i + 0.5) * cellW, cz: -R + (j + 0.5) * cellW, group, levels, buckets: new Map(), level: -1 };
+      return { cx: -R + (i + 0.5) * cellW, cz: -R + (j + 0.5) * cellW, group, buckets: new Map(), sets: [] };
     });
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
@@ -1244,40 +1249,126 @@ export class TownBuilder {
     for (const r of this.rows || []) add(r, { span: r.len, shadow: false });
 
     const shadows = this.quality.settings.shadows;
-    const color = new THREE.Color();
     for (const chunk of this.chunks) {
-      for (const [, { res, items, shadow }] of chunk.buckets) {
-        for (let lvl = 0; lvl < 3; lvl++) {
-          for (const part of res.parts?.[lvl] || [{ geometry: res.lods[lvl], material: this.material }]) {
-          const foliage = part.material.name === 'Foliage_cutout' || part.material.name.startsWith('ENV_leaf');
-          // Palette roofs: a wrapper shares the pack buffers and carries one colour per instance
-          const roofs = part.material === this.material && items.some((it) => it.roof);
-          const geometry = roofs ? wrapGeometry(part.geometry) : part.geometry;
-          if (roofs) {
-            const data = new Float32Array(items.length * 3).fill(-1);
-            items.forEach((it, i) => it.roof && color.set(it.roof).toArray(data, i * 3));
-            geometry.setAttribute('aRoof', new THREE.InstancedBufferAttribute(data, 3));
-          }
-          const inst = new THREE.InstancedMesh(geometry, foliage ? this.foliageMaterial(part.material) : part.material, items.length);
-          items.forEach((it, i) => {
-            inst.setMatrixAt(i, it.m);
-            if (Array.isArray(it.tint)) color.setRGB(it.tint[0], it.tint[1], it.tint[2]);
-            else color.setScalar(it.tint);
-            if(foliage && it.autumn)color.multiply(new THREE.Color(1.7,.85,.38));
-            inst.setColorAt(i, color);
-          });
-          inst.instanceMatrix.needsUpdate = true;
-          inst.computeBoundingSphere();
-          inst.castShadow = shadows && shadow && lvl < 2;
-          inst.receiveShadow = shadows && lvl === 0;
-          chunk.levels[lvl].add(inst);
-          // The builder owns the wrapper and its roof buffer; the pack geometry stays cached
-          this.disposables.push({ dispose: () => { inst.dispose(); if (roofs) geometry.dispose(); } });
-          }
-        }
-      }
-      chunk.levels.forEach((l) => (l.visible = false));
+      for (const [, { res, items, shadow }] of chunk.buckets) chunk.sets.push(this.instanceSet(chunk, res, items, shadow && shadows, shadows));
     }
+    this.lodView = null;
+  }
+
+  /**
+   * One asset in one chunk: an InstancedMesh per LOD level (and per material part), all
+   * sized for every item. update() sorts the items into the levels by how large each one
+   * is on screen, so only nearby models are drawn at full detail; the chunk's bounding
+   * sphere still culls what is out of view.
+   */
+  instanceSet(chunk, res, items, cast, shadows) {
+    const n = items.length;
+    const lodParts = (lvl) => res.parts?.[lvl] || [{ geometry: res.lods[lvl], material: this.material }];
+    const same = (a, b) => a.length === b.length && a.every((p, i) => p.geometry === b[i].geometry);
+    // Levels that reuse the same models collapse into one: nothing to sort
+    const levels = same(lodParts(0), lodParts(1)) && same(lodParts(1), lodParts(2)) ? 1 : 3;
+    const matrices = new Float32Array(n * 16);
+    const colors = new Float32Array(n * 3);
+    const autumn = items.some((it) => it.autumn) ? new Float32Array(n * 3) : null;
+    const roofs = items.some((it) => it.roof) ? new Float32Array(n * 3).fill(-1) : null;
+    const where = new Float32Array(n * 4); // x, y, z and the model's radius at its scale
+    let radius = 0;
+    for (const part of lodParts(0)) {
+      part.geometry.boundingSphere || part.geometry.computeBoundingSphere();
+      radius = Math.max(radius, part.geometry.boundingSphere.radius);
+    }
+    const color = new THREE.Color();
+    items.forEach((it, i) => {
+      it.m.toArray(matrices, i * 16);
+      if (Array.isArray(it.tint)) color.setRGB(it.tint[0], it.tint[1], it.tint[2]);
+      else color.setScalar(it.tint);
+      color.toArray(colors, i * 3);
+      if (autumn) (it.autumn ? color.multiply(AUTUMN) : color).toArray(autumn, i * 3);
+      if (roofs && it.roof) color.set(it.roof).toArray(roofs, i * 3);
+      where.set([it.m.elements[12], it.m.elements[13], it.m.elements[14], radius * it.m.getMaxScaleOnAxis()], i * 4);
+    });
+    const all = new THREE.InstancedBufferAttribute(matrices, 16);
+    const set = { n, levels, matrices, colors, autumn, roofs, where, level: new Int8Array(n).fill(-1), lods: [] };
+    for (let lvl = 0; lvl < levels; lvl++) {
+      const lod = {
+        matrix: new THREE.InstancedBufferAttribute(levels > 1 ? new Float32Array(n * 16) : matrices, 16),
+        color: new THREE.InstancedBufferAttribute(levels > 1 ? new Float32Array(n * 3) : colors, 3),
+        autumn: autumn ? new THREE.InstancedBufferAttribute(levels > 1 ? new Float32Array(n * 3) : autumn, 3) : null,
+        roof: roofs ? new THREE.InstancedBufferAttribute(levels > 1 ? new Float32Array(n * 3) : roofs, 3) : null,
+        meshes: []
+      };
+      if (levels > 1) [lod.matrix, lod.color, lod.autumn, lod.roof].forEach((a) => a?.setUsage(THREE.DynamicDrawUsage));
+      for (const part of lodParts(lvl)) {
+        const foliage = part.material.name === 'Foliage_cutout' || part.material.name.startsWith('ENV_leaf');
+        // Palette roofs: a wrapper shares the pack buffers and carries one colour per instance
+        const roofed = roofs && part.material === this.material;
+        const geometry = roofed ? wrapGeometry(part.geometry) : part.geometry;
+        if (roofed) geometry.setAttribute('aRoof', lod.roof);
+        const inst = new THREE.InstancedMesh(geometry, foliage ? this.foliageMaterial(part.material) : part.material, n);
+        inst.instanceMatrix = all;
+        inst.computeBoundingSphere(); // over every item, whatever level each one is drawn at
+        inst.instanceMatrix = lod.matrix;
+        inst.instanceColor = foliage && lod.autumn ? lod.autumn : lod.color;
+        inst.castShadow = cast;
+        inst.receiveShadow = shadows && lvl < 2;
+        inst.count = levels > 1 ? 0 : n;
+        inst.visible = levels === 1;
+        chunk.group.add(inst);
+        lod.meshes.push(inst);
+        // The builder owns the wrapper and its roof buffer; the pack geometry stays cached
+        this.disposables.push({ dispose: () => { inst.dispose(); if (roofed) geometry.dispose(); } });
+      }
+      set.lods.push(lod);
+    }
+    return set;
+  }
+
+  /** Sort a set's items into its LOD levels; uploads only when an item changed level. */
+  sortSet(set, view) {
+    const { n, where, level } = set;
+    const { x, y, z, orbit, zoom2, k } = view;
+    // Size on screen ~ radius / distance, scaled for the field of view and the quality tier
+    const classify = (s) => (s > LOD_SIZE[0] ? 0 : s > LOD_SIZE[1] ? 1 : 2);
+    let changed = false;
+    for (let i = 0; i < n; i++) {
+      const o = i * 4;
+      const dx = where[o] - x;
+      const dz = where[o + 2] - z;
+      // From the table: distance to the point it circles, so orbiting never swaps levels
+      const d = orbit ? Math.sqrt(zoom2 + dx * dx + dz * dz) : Math.hypot(dx, where[o + 1] - y, dz);
+      const s = (where[o + 3] * k) / Math.max(d, 1);
+      let lvl = classify(s);
+      const cur = level[i];
+      // Hysteresis: only move once clearly past the line
+      if (cur >= 0 && lvl !== cur && classify(lvl < cur ? s / 1.15 : s * 1.15) === cur) lvl = cur;
+      if (lvl !== cur) {
+        level[i] = lvl;
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    const counts = [0, 0, 0];
+    for (let i = 0; i < n; i++) {
+      const lod = set.lods[level[i]];
+      const j = counts[level[i]]++;
+      lod.matrix.array.set(set.matrices.subarray(i * 16, i * 16 + 16), j * 16);
+      lod.color.array.set(set.colors.subarray(i * 3, i * 3 + 3), j * 3);
+      lod.autumn?.array.set(set.autumn.subarray(i * 3, i * 3 + 3), j * 3);
+      lod.roof?.array.set(set.roofs.subarray(i * 3, i * 3 + 3), j * 3);
+    }
+    set.lods.forEach((lod, lvl) => {
+      const c = counts[lvl];
+      for (const [a, size] of [[lod.matrix, 16], [lod.color, 3], [lod.autumn, 3], [lod.roof, 3]]) {
+        if (!a || !c) continue;
+        a.clearUpdateRanges();
+        a.addUpdateRange(0, c * size);
+        a.needsUpdate = true;
+      }
+      for (const m of lod.meshes) {
+        m.count = c;
+        m.visible = c > 0;
+      }
+    });
   }
 
   foliageMaterial(source) {
@@ -1300,32 +1391,22 @@ export class TownBuilder {
   }
 
   /**
-   * Per-chunk LOD by distance from the camera. From the diorama (orbit = the
-   * point it circles around) the distance is measured so that it does not
-   * change while orbiting: otherwise the near and far sides swap levels on
-   * every turn of the table and the town flickers.
+   * Per-instance LOD. From the diorama (orbit = the point it circles around) the
+   * distance is measured so that it does not change while orbiting: otherwise the
+   * near and far sides swap levels on every turn of the table and the town flickers.
+   * Items are only re-sorted once the view has moved a little.
    */
   update(camera, orbit = null) {
     const p = camera.position;
-    // Lower quality tiers switch to lighter models sooner
-    const k = this.quality.settings.detail;
-    const near = LOD_NEAR * k;
-    const mid = LOD_MID * (0.5 + k * 0.5);
-    const zoom = orbit ? p.distanceTo(orbit) : 0;
     this.groundCover?.update(camera, orbit);
-    for (const c of this.chunks) {
-      const d = orbit ? Math.max(0, zoom * 0.85 + Math.hypot(c.cx - orbit.x, c.cz - orbit.z) * 0.35 - 110) : Math.max(0, Math.hypot(c.cx - p.x, c.cz - p.z, p.y * 0.5) - 110);
-      // Hysteresis: a chunk only changes level once it is clearly past the line
-      const h = c.level === -1 ? 1 : 0.12;
-      let level = c.level;
-      if (c.level === -1 || d < near * (1 - h) || (c.level === 0 && d > near * (1 + h)) || d > mid * (1 + h) || (c.level === 2 && d < mid * (1 - h))) {
-        level = d < near ? 0 : d < mid ? 1 : 2;
-      }
-      if (level !== c.level) {
-        c.level = level;
-        c.levels.forEach((l, i) => (l.visible = i === level));
-      }
-    }
+    const zoom = orbit ? p.distanceTo(orbit) : 0;
+    const at = orbit || p;
+    // Lower quality tiers switch to lighter models sooner; a narrow lens keeps detail further out
+    const k = this.quality.settings.detail * (Math.tan(THREE.MathUtils.degToRad(27.5)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+    const v = this.lodView;
+    if (v && !!v.orbit === !!orbit && Math.abs(v.x - at.x) < 1.5 && Math.abs(v.y - at.y) < 1.5 && Math.abs(v.z - at.z) < 1.5 && Math.abs(v.zoom - zoom) < Math.max(1.5, zoom * 0.02) && Math.abs(v.k - k) < 0.01) return;
+    this.lodView = { x: at.x, y: at.y, z: at.z, orbit: !!orbit, zoom, zoom2: zoom * zoom, k };
+    for (const c of this.chunks) for (const set of c.sets) if (set.levels > 1) this.sortSet(set, this.lodView);
   }
 
   dispose() {

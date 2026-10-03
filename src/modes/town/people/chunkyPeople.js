@@ -11,24 +11,27 @@ import { seedFor } from '../../../world/identity.js';
 // low-poly adult built from rigid parts under pivot empties (hips > hip > knee >
 // ankle, spine > shoulder > elbow > wrist, neck > head). At load the parts
 // merge into one rigidly skinned mesh, one draw call per person. Colours and
-// the optional pieces (glasses, beard, cap, the take-away cup) vary per person
-// in the shader; the walk is posed in code from the walker's speed.
+// the optional pieces (glasses, beard, cap, tie, the take-away cup) vary per
+// person in the shader; the walk is posed in code from the walker's speed.
 
 const TAU = Math.PI * 2;
 const BONES = ['NPC_C01', 'hips', 'spine', 'chest', 'neck', 'head',
   'clavicle_L', 'shoulder_L', 'elbow_L', 'wrist_L', 'clavicle_R', 'shoulder_R', 'elbow_R', 'wrist_R', 'cup',
   'hip_L', 'knee_L', 'ankle_L', 'toe_L', 'hip_R', 'knee_R', 'ankle_R', 'toe_R'];
 
-// Material -> [palette slot (0 = keep the authored colour), shade within the slot]
+// Material -> [palette slot (0 = keep the authored colour), shade within the slot].
+// Slot 4 is the tie on the office model (docs/art-direction/npc-v1/blender/office_faceted.py),
+// the undershirt on the older C01 pack; the belt and penny strap are darker shades of the shoes.
 const SLOTS = {
   M_skin: [1, 1], M_skin_dark: [1, 0.76], M_hair: [2, 1], M_beard: [2, 0.92],
-  M_shirt_stripe: [3, 1], M_shirt_dark: [3, 0.55], M_under: [4, 1],
-  M_pants: [5, 1], M_cuff: [5, 1.35], M_shoe_upper: [6, 1], M_cap: [7, 1]
+  M_shirt: [3, 1], M_shirt_fold: [3, 0.86], M_shirt_stripe: [3, 1], M_shirt_dark: [3, 0.55],
+  M_tie: [4, 1], M_under: [4, 1],
+  M_pants: [5, 1], M_cuff: [5, 1.35], M_shoe_upper: [6, 1], M_shoe_strap: [6, 0.72], M_belt: [6, 0.5], M_cap: [7, 1]
 };
 // Mesh name -> optional piece (1 glasses, 2 beard and the mouth drawn on it, 3 cap,
-// 4 cup, 5 hair crown). R04 hair is only the crop under the cap, so the crown shows
+// 4 cup, 5 hair crown, 6 tie). R04 hair is only the crop under the cap, so the crown shows
 // whenever the cap is off; a pack without an authored crown gets one made at load.
-const PIECE = [[/^glasses_/, 1], [/^beard_B02/, 2], [/^hat_/, 3], [/^prop_cup/, 4], [/^hair_.*_crown$/, 5]];
+const PIECE = [[/^glasses_/, 1], [/^beard_B02/, 2], [/^hat_/, 3], [/^prop_cup/, 4], [/^hair_.*_crown$/, 5], [/^tie_/, 6]];
 // Facial expression assets: expr_<feature>_<variant> meshes, one variant per feature shown
 // (the order is the variant index; see docs/art-direction/npc-v1/blender/c01_faceted.py).
 export const EXPR = {
@@ -80,7 +83,7 @@ const smooth01 = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 
-const UNDER = ['#efe6d2', '#d9d4c8', '#3a3f4a', '#c9b99a', '#f4f1ea'];
+const TIES = ['#3e5433', '#2f3b5c', '#6b2a2f', '#3a3a40', '#8a6a2a'];
 const CAPS = ['#2b2f38', '#b0463a', '#3f6fb0', '#d9b25c', '#477652'];
 
 /** Load npc.glb and turn it into a rigidly skinned template. */
@@ -219,16 +222,17 @@ export function buildTemplate(gltf) {
 
 /** Per-person material: palette slots and hidden pieces in uniforms, one shared program. */
 function npcMaterial() {
-  const uniforms = { uPalette: { value: Array.from({ length: 7 }, () => new THREE.Color()) }, uHide: { value: new THREE.Vector4() }, uExpr: { value: new THREE.Vector3() } };
+  const uniforms = { uPalette: { value: Array.from({ length: 7 }, () => new THREE.Color()) }, uHide: { value: new THREE.Vector4() }, uTie: { value: 0 }, uExpr: { value: new THREE.Vector3() } };
   const m = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getToonGradient() });
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aSlot;\nattribute float aPiece;\nattribute float aExpr;\nuniform vec3 uPalette[7];\nuniform vec4 uHide;\nuniform vec3 uExpr;')
+      .replace('#include <common>', '#include <common>\nattribute float aSlot;\nattribute float aPiece;\nattribute float aExpr;\nuniform vec3 uPalette[7];\nuniform vec4 uHide;\nuniform float uTie;\nuniform vec3 uExpr;\nvarying vec3 vBind;\nvarying float vDepth;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vBind = position;
         // A hidden piece collapses onto its bone: degenerate, never rasterised
         int piece = int(aPiece + 0.5);
-        if ((piece > 0 && piece < 5 && uHide[piece - 1] > 0.5) || (piece == 5 && uHide[2] < 0.5)) transformed = vec3(0.0);
+        if ((piece > 0 && piece < 5 && uHide[piece - 1] > 0.5) || (piece == 5 && uHide[2] < 0.5) || (piece == 6 && uTie < 0.5)) transformed = vec3(0.0);
         // Expressions: only the chosen variant of each feature is drawn
         int ex = int(aExpr + 0.5);
         if (ex > 0) {
@@ -239,9 +243,17 @@ function npcMaterial() {
         }`)
       .replace('#include <color_vertex>', `#include <color_vertex>
         int slot = int(aSlot + 0.5);
-        if (slot > 0) vColor.rgb *= uPalette[slot - 1];`);
+        if (slot > 0) vColor.rgb *= uPalette[slot - 1];`)
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvDepth = -mvPosition.z;');
+    // Painted pixels, as in the reference art: 2 cm cells of the bind pose, each a shade lighter
+    // or darker. They stick to the cloth as it moves and fade out before they could shimmer.
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBind;\nvarying float vDepth;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float px = fract(sin(dot(floor(vBind * 45.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+        diffuseColor.rgb *= 1.0 + (px - 0.5) * 0.13 * (1.0 - smoothstep(5.0, 16.0, vDepth));`);
   };
-  m.customProgramCacheKey = () => 'npc-v1';
+  m.customProgramCacheKey = () => 'npc-v1-pixels';
   m.userData.uniforms = uniforms;
   return m;
 }
@@ -249,17 +261,18 @@ function npcMaterial() {
 /** Dress a person from an identity seed; the same seed gives the same look (colours match the far crowd). */
 export function dressNpc(person, identity) {
   const a = appearanceFor(identity);
-  const [skin, hair, top, under, legs, shoes, cap] = person.material.userData.uniforms.uPalette.value;
+  const [skin, hair, top, tie, legs, shoes, cap] = person.material.userData.uniforms.uPalette.value;
   skin.setHex(a.skin);
   hair.setHex(a.hair);
   top.setHex(a.top);
-  under.set(UNDER[seedFor(identity, 'under') % UNDER.length]);
+  tie.set(TIES[seedFor(identity, 'tie-colour') % TIES.length]);
   legs.setHex(a.legs);
   shoes.setHex(a.shoes);
   cap.set(CAPS[seedFor(identity, 'cap') % CAPS.length]);
   const roll = (key, p) => (seedFor(identity, key) % 1000) / 1000 < p;
   const cup = roll('cup', 0.18);
   person.material.userData.uniforms.uHide.value.set(roll('glasses', 0.3) ? 0 : 1, roll('beard', 0.28) ? 0 : 1, roll('cap', 0.35) ? 0 : 1, cup ? 0 : 1);
+  person.material.userData.uniforms.uTie.value = roll('tie', 0.45) ? 1 : 0;
   person.cup = cup;
   // Everyone walks and rests a little differently, and has a usual face
   const u = (key) => (seedFor(identity, key) % 1000) / 1000;
@@ -268,17 +281,18 @@ export function dressNpc(person, identity) {
   person.time = person.style.seed;
 }
 
-/** The player: the C01 hero look (cap, glasses, beard) in the faction's colour. */
+/** The player: the office reference look (pale shirt, loosened tie, brown loafers), the tie in the faction's colour. */
 export function dressPlayer(person, { top = 0x027b49 } = {}) {
-  const [skin, hair, shirt, under, legs, shoes, cap] = person.material.userData.uniforms.uPalette.value;
-  skin.setHex(0xe39e6e);
-  hair.setHex(0x2a2422);
-  shirt.setHex(top);
-  under.set('#efe6d2');
-  legs.setHex(0x2b2c30);
-  shoes.setHex(0x26272c);
+  const [skin, hair, shirt, tie, legs, shoes, cap] = person.material.userData.uniforms.uPalette.value;
+  skin.setHex(0xd99b73);
+  hair.setHex(0x2e211b);
+  shirt.set('#d3d2b9');
+  tie.setHex(top);
+  legs.setHex(0x46464b);
+  shoes.setHex(0x7a4a2c);
   cap.setHex(0x25262b);
-  person.material.userData.uniforms.uHide.value.set(0, 0, 0, 1);
+  person.material.userData.uniforms.uHide.value.set(1, 1, 1, 1);
+  person.material.userData.uniforms.uTie.value = 1;
   person.cup = false;
   person.style = { stride: 1, arm: 1, bounce: 1, lean: 0, sway: 1, seed: 0 };
   person.mood = 'content';

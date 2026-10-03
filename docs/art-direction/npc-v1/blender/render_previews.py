@@ -1,6 +1,8 @@
-"""Preview renders for c01_faceted.py: turnaround stills and an expression sheet.
+"""Preview renders for a faceted NPC builder: turnaround stills and an expression sheet.
 
-Run:  Blender -b --factory-startup --python render_previews.py -- <out_dir>
+Run:  Blender -b --factory-startup --python render_previews.py -- <out_dir> [builder.py]
+The builder defaults to c01_faceted.py (shown with its cap, glasses, beard and cup);
+office_faceted.py is shown bare, as in its reference.
 """
 import os
 import sys
@@ -10,10 +12,13 @@ import numpy as np
 from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else HERE
+ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+OUT = ARGS[0] if ARGS else HERE
+BUILDER = ARGS[1] if len(ARGS) > 1 else "c01_faceted.py"
+STEM = os.path.splitext(BUILDER)[0]
 sys.argv = sys.argv[:1]  # the builder must not export
 g = {"__name__": "__main__"}
-exec(open(os.path.join(HERE, "c01_faceted.py")).read(), g)
+exec(open(os.path.join(HERE, BUILDER)).read(), g)
 exec(open(os.path.join(HERE, "studio.py")).read(), {"__name__": "studio"})
 EXPR, objs = g["EXPR"], g["objs"]
 sc = bpy.context.scene
@@ -54,9 +59,13 @@ hc.location = (0.42, -1.25, 1.64)
 hc.constraints[0].target = t
 
 show()
-beard(True)
+hero = STEM == "c01_faceted"
+beard(hero)
+for name, o in objs.items():
+    if name.startswith(("glasses_", "hat_", "prop_cup")):
+        o.hide_render = not hero
 for view in ("three", "front", "side", "back", "head"):
-    render(f"Cam_C01_{view}", os.path.join(OUT, f"preview_c01_faceted_{view}.png"))
+    render(f"Cam_C01_{view}", os.path.join(OUT, f"preview_{STEM}_{view}.png"))
 
 # expression sheet (beard off so the mouth reads)
 PRESETS = [
@@ -89,7 +98,7 @@ for i, tile in enumerate(tiles):
     sheet[(rows - 1 - r) * H:(rows - r) * H, c * W:(c + 1) * W] = tile  # Blender images start at the bottom row
 out = bpy.data.images.new("expr_sheet", cols * W, rows * H, alpha=True)
 out.pixels[:] = sheet.ravel()
-out.filepath_raw = os.path.join(OUT, "preview_c01_expressions.png")
+out.filepath_raw = os.path.join(OUT, f"preview_{STEM.replace('_faceted', '')}_expressions.png")
 out.file_format = "PNG"
 out.save()
 print("expressions:", ", ".join(n for n, _ in PRESETS))

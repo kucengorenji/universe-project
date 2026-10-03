@@ -6,15 +6,18 @@ import { WEAPONS, WALK_SPEED, RUN_SPEED, RUN_AP_COST } from '../game/rules.js';
 // mouse fires one burst per action, Space ends the action. Right click toggles the aim; holding
 // it aims until it is let go. Two ways to look around:
 //   lock    pointer lock (a normal browser tab): the mouse turns the camera freely
-//   cursor  when the page may not lock the pointer (embedded browsers refuse it): the reticle
-//           follows the cursor, the camera turns while the cursor nears the screen's edges,
+//   cursor  when the page may not lock the pointer (embedded browsers refuse it): mouse movement
+//           still turns the camera (movementX/Y work without a lock), the cursor is hidden and
+//           the reticle stays in the centre; where the cursor is stopped by the window's edge
+//           the camera keeps turning that way,
 //           and Q/E (or the arrow keys) turn it too.
 // The mode is found out by asking for the lock once; a refusal switches to cursor mode for good.
 
 const CROUCH_SPEED = 1.6;
 const TURN_KEYS = 1.9; // rad/s, Q/E and arrows
-const EDGE = 0.55; // past this share of the half screen the camera starts to turn
-const EDGE_TURN = 2.6; // rad/s at the very edge
+const EDGE_PX = 10; // a cursor this close to the window's edge keeps the camera turning
+const EDGE_TURN = 2.2; // rad/s while it does
+const LOOK = 0.0024; // rad per pixel of mouse movement
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class ActionControl {
@@ -43,11 +46,11 @@ export class ActionControl {
     };
     this.onMouseMove = (e) => {
       if (!this.active) return;
-      if (this.locked) {
-        const k = this.aiming ? (this.scope ? 0.0005 : 0.0011) : 0.0024;
-        this.camYaw -= e.movementX * k;
-        this.camPitch = THREE.MathUtils.clamp(this.camPitch - e.movementY * k, -1.1, 0.75);
-      } else {
+      if (!this.locked && this.mode !== 'cursor') return;
+      const k = this.aiming ? (this.scope ? 0.0005 : 0.0011) : LOOK;
+      this.camYaw -= e.movementX * k;
+      this.camPitch = THREE.MathUtils.clamp(this.camPitch - e.movementY * k, -1.1, 0.75);
+      if (!this.locked) {
         const r = dom.getBoundingClientRect();
         this.cursor.x = e.clientX - r.left;
         this.cursor.y = e.clientY - r.top;
@@ -179,10 +182,10 @@ export class ActionControl {
     this.onEnd?.();
   }
 
-  /** Screen point of the reticle (CSS px in the canvas): the centre when locked, else the cursor. */
+  /** Screen point of the reticle (CSS px in the canvas): always the centre. */
   reticlePos() {
     const r = this.dom.getBoundingClientRect();
-    return this.mode === 'cursor' ? { x: this.cursor.x, y: this.cursor.y } : { x: r.width / 2, y: r.height / 2 };
+    return { x: r.width / 2, y: r.height / 2 };
   }
 
   /** Where the reticle points in the world (the first thing the ray through it meets). */
@@ -198,7 +201,7 @@ export class ActionControl {
     return { x: o.x + dir.x * t, y: o.y + dir.y * t, z: o.z + dir.z * t };
   }
 
-  /** Turn the camera: keys always; the cursor near the edges in cursor mode. */
+  /** Turn the camera with the keys; in cursor mode also while the cursor is held at the window's edge. */
   turn(dt) {
     const k = this.keys;
     const slow = this.aiming ? (this.scope ? 0.2 : 0.45) : 1;
@@ -208,10 +211,11 @@ export class ActionControl {
     this.camPitch += pitchKeys * TURN_KEYS * 0.6 * slow * dt;
     if (this.mode === 'cursor' && this.cursor.inside) {
       const r = this.dom.getBoundingClientRect();
-      const nx = (this.cursor.x / r.width) * 2 - 1, ny = (this.cursor.y / r.height) * 2 - 1;
-      const push = (n) => Math.sign(n) * Math.max(0, (Math.abs(n) - EDGE) / (1 - EDGE)) ** 1.6;
-      this.camYaw -= push(nx) * EDGE_TURN * slow * dt;
-      this.camPitch -= push(ny) * EDGE_TURN * 0.5 * slow * dt;
+      const { x, y } = this.cursor;
+      const px = x < EDGE_PX ? -1 : x > r.width - EDGE_PX ? 1 : 0;
+      const py = y < EDGE_PX ? -1 : y > r.height - EDGE_PX ? 1 : 0;
+      this.camYaw -= px * EDGE_TURN * slow * dt;
+      this.camPitch -= py * EDGE_TURN * 0.4 * slow * dt;
     }
     this.camPitch = THREE.MathUtils.clamp(this.camPitch, -1.1, 0.75);
   }

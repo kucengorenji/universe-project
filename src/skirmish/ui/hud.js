@@ -147,7 +147,7 @@ export class Hud {
     document.body.dataset.input = mode;
     this.el.keys.textContent =
       mode === 'cursor'
-        ? 'WASD gerak · Q/E atau kursor ke tepi: putar kamera · Shift lari · C jongkok · Klik kanan bidik · Klik kiri tembak · Space selesai'
+        ? 'WASD gerak · Mouse: kamera (Q/E juga) · Shift lari · C jongkok · Klik kanan bidik · Klik kiri tembak · Space selesai'
         : 'WASD gerak · Mouse: kamera · Shift lari · C jongkok · Klik kanan bidik · Klik kiri tembak · Space selesai';
   }
 

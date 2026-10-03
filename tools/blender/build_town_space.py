@@ -1123,19 +1123,26 @@ def canopy(mats, center, radius, count, spread, seed, squash=0.85, sub=2):
         sphere(mats[(k + 1) % len(mats)], p, r, (1, 1, squash), sub=sub - (0 if r > 0.8 else 1))
 
 
-def trunk(mat, h, r0, r1, lean=(0, 0), seg=10, branches=0, seed=1):
+def trunk(mat, h, r0, r1, lean=(0, 0), seg=10, branches=0, seed=1, crown=None):
+    """`crown` (height of the canopy centre) runs the stem and the branches up into the leaves,
+    so none of them end in the air below the canopy."""
     g = random.Random(seed)
-    cyl(mat, (0, 0, 0), r0, h, seg, r2=r1, rx=lean[0], ry=lean[1])
+    stem = h if crown is None else h + (crown - h) * 0.6
+    cyl(mat, (0, 0, 0), r0, stem, seg, r2=r1, rx=lean[0], ry=lean[1])
     if Q == 0:
         for k in range(branches):
             a = k / max(1, branches) * TAU + g.random()
             z = h * (0.55 + g.random() * 0.3)
-            cyl(mat, (0, 0, z), r1 * 0.6, h * 0.35, 6, r2=r1 * 0.25, rx=math.cos(a) * 0.9, ry=math.sin(a) * 0.9)
+            if crown is None:
+                cyl(mat, (0, 0, z), r1 * 0.6, h * 0.35, 6, r2=r1 * 0.25, rx=math.cos(a) * 0.9, ry=math.sin(a) * 0.9)
+            else:
+                tilt = 0.55
+                cyl(mat, (0, 0, z), r1 * 0.6, (crown - 0.6 - z) / math.cos(tilt), 6, r2=r1 * 0.25, rx=math.cos(a) * tilt, ry=math.sin(a) * tilt)
 
 
 def t_oak(v):
     h = 3.6 + v * 0.6
-    trunk('bark', h, 0.42, 0.28, branches=4, seed=10 + v)
+    trunk('bark', h, 0.42, 0.28, branches=4, seed=10 + v, crown=h + 2.4)
     cols = (['leaf_a', 'leaf_b', 'leaf_c'] if v < 2 else ['autumn_a', 'autumn_b', 'autumn_c'])
     canopy(cols, (0, 0, h + 2.4), 2.6, 9, 1.0, 20 + v)
 

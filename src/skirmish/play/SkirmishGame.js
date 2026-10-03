@@ -80,7 +80,7 @@ export class SkirmishGame {
     this.assets = Promise.all([
       loadAssetPack(ASSETS.townPack),
       loadAssetPack(ASSETS.militaryPack, { glow: { M_radiator: 1 } }),
-      loadSoldierTemplates(ASSETS.soldierPack)
+      loadSoldierTemplates(ASSETS.soldierPack, ASSETS.soldierAtlas)
     ]).then(async ([town, military, templates]) => ({ town, military, templates, weapons: await loadWeapons(ASSETS.militaryPack, military) }));
     // portraits of the nine, rendered from the 3D model once it has loaded
     this.assets.then((A) => {

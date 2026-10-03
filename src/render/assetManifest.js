@@ -15,6 +15,7 @@ export const ASSET_FILES = {
   furniturePack: 'models/furniture.glb', // interior furniture and loose items
   spacePack: 'models/space.glb', // ships and the planet rover
   soldierPack: 'models/soldier_vc.glb', // skirmish soldiers: skinned anime-style figure, hair styles, helmets, class kit, animation clips
+  soldierAtlas: 'textures/soldier_atlas.png', // skirmish soldiers' painted atlas (shade, trim, ink; hair strands)
   militaryPack: 'models/military.glb', // skirmish kit: weapons, fortifications, camp props, tank, windmill
   interiorAtlas: 'textures/interior_atlas.jpg', // floor and wall tiles
   townSurfaces: 'textures/town_surfaces.png' // neutral modulation atlas for buildings and ground

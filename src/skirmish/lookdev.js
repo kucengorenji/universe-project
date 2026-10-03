@@ -39,7 +39,7 @@ export class LookDev {
     const [town, military, templates] = await Promise.all([
       loadAssetPack(ASSETS.townPack),
       loadAssetPack(ASSETS.militaryPack, { glow: { M_radiator: 1 } }),
-      loadSoldierTemplates(ASSETS.soldierPack)
+      loadSoldierTemplates(ASSETS.soldierPack, ASSETS.soldierAtlas)
     ]);
     this.packs = { town, military };
     this.templates = templates;

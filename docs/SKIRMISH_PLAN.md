@@ -66,6 +66,25 @@ Halaman terpisah `skirmish.html`: pertempuran regu bergaya Valkyria Chronicles 3
 - Kamera di browser tanpa pointer lock mengikuti gerak mouse langsung (movementX/Y), reticle di tengah, tetap berputar saat kursor mentok di tepi jendela.
 - Tentara ±25k segitiga + LOD ±10k (>24 m): tangan berjari menggenggam, kepala dipahat (dagu runcing, batang hidung), mata anime (iris bergradasi, dua highlight, bulu mata, garis kelopak), rambut dari helai pipih melengkung, seragam dengan jahitan, saku bertutup, kancing kuningan, epolet, tali sepatu bot, lipatan celana. Warna palet dikalikan vertex color agar lipatan/gradasi tetap saat diwarnai ulang. GLB 1,7 MB. GPU 7,3 ms per frame di 2560×1600 (M1 Pro).
 
+### Karakter bertekstur ala VC PS3 (grill keenam, 4 Oktober 2026)
+
+- Keputusan: gaya VC dengan desain sendiri (bukan replika Welkin; karakter Sega). Pipeline tetap Blender headless dengan tekstur lukis, ±40k segitiga, garis pensil dan arsiran dilukis di tekstur. Hybrid: atlas bersama + palet untuk badan, wajah unik per karakter. Wajah dilukis di tekstur, tanpa checkpoint (iterasi sendiri dengan render pembanding).
+- Kepala di-loft dari profil samping dan lebar. Hidung, bibir, dan dagu hanya mengubah siluet. Normal wajah diambil dari bentuk pipih supaya wajah terang rata seperti lukisan, dan bayangan jatuh di wajah dilemahkan 75%.
+- Wajah dilukis di runtime (`facePainter.js`, Canvas 2D) per karakter:
+  - mata almond dengan garis bulu mata tebal dan kibasan, iris bergradasi, highlight, kelopak ganda;
+  - alis tipis, hidung dan mulut beberapa goresan, rona, bintik/tahi lalat/bekas luka;
+  - separuh kanan kanvas berisi mata tertutup (kedip, tumbang);
+  - tekstur diproyeksikan dari depan ke bagian `face`.
+- Atlas 2048² dibuat `soldier_vc.py`:
+  - unwrap otomatis;
+  - bake AO, posisi, normal, dan slot;
+  - numpy melukis gradasi cat air, jahitan dan jahitan putus-putus, lipatan siku/lutut/selangkangan, piping di ujung rok, kerah, dan manset (warna piping per faksi);
+  - helai rambut dengan pita kilau.
+- Rambut menempel ke tengkorak, dengan normal dari cangkang halus. Lock mahkota hanya di samping dan belakang; poni tidak rata.
+- Sarung tangan menjadi slot palet sendiri (sebagian karakter bertangan kosong).
+- Pohon ek: batang dan dahan masuk ke kanopi, tidak lagi melayang (`build_town_space.py`, hanya aset `t_oak_*` yang berubah dan AABB-nya tetap).
+- Hasil: model dekat 35,6k / jauh 11,5k segitiga, GLB 2,7 MB + atlas 3,1 MB. GPU 5,2 ms per frame di 2560×1600 (M1 Pro).
+
 ## Peta kode
 
 ```text
@@ -90,8 +109,10 @@ src/skirmish/render/
   skyLight.js                      kubah langit, matahari, fog per waktu
 src/skirmish/units/
   soldierLook.js                   kelas, faksi, kit (data)
-  soldiers.js                      template per faksi × kelas, senjata, stance, IK dua tulang
-tools/blender/skirmish/            soldier_faceted.py, military_kit.py, preview_soldiers.py
+  soldiers.js                      senjata, pegangan, IK dua tulang (dipakai vcSoldiers)
+  vcSoldiers.js                    tentara VC: material (palet, atlas, wajah), klip, LOD, potret
+  facePainter.js                   wajah lukis per karakter (Canvas 2D), mata buka/tutup
+tools/blender/skirmish/            soldier_vc.py (tentara + atlas), military_kit.py, soldier_faceted.py, preview_soldiers.py
 ```
 
 ## Catatan teknis

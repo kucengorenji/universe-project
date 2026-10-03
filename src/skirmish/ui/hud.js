@@ -29,6 +29,7 @@ export class Hud {
         <div class="reticle" aria-hidden="true"></div>
         <canvas class="minimap" aria-label="Minimap"></canvas>
         <div class="unitcard">
+          <img class="unitcard__portrait" alt="" />
           <div class="unitcard__name"></div>
           <div class="unitcard__class"></div>
           <div class="bar bar--hp"><i></i><span></span></div>
@@ -89,7 +90,7 @@ export class Hud {
         const ammo = u.ammo === Infinity ? '' : ` · amunisi ${u.ammo}`;
         const can = b.canSelect(u) && this.game.phase === 'command';
         return `<li data-unit="${u.id}" class="unitrow ${can ? 'unitrow--ready' : ''} unitrow--${u.state}">
-          <span class="emblem emblem--${u.side}">${SHORT[u.cls] || '?'}</span>
+          <span class="seal">${this.portraits?.[u.id] ? `<img class="portrait" src="${this.portraits[u.id]}" alt="" />` : ''}<span class="emblem emblem--${u.side}">${SHORT[u.cls] || '?'}</span></span>
           <span class="unitrow__body">
             <span class="unitrow__name">${u.leader ? '★ ' : ''}${esc(u.name)}</span>
             <span class="unitrow__meta">${CLASS_LABEL[u.cls]} · AP ${u.apMax} m${ammo}${u.picks ? ` · dipakai ${u.picks}×` : ''}</span>
@@ -106,6 +107,9 @@ export class Hud {
     const u = ctrl.unit;
     if (!u) return;
     this.el.name.textContent = `${u.leader ? '★ ' : ''}${u.name}`;
+    const img = this.el.name.parentElement.querySelector('.unitcard__portrait');
+    const src = this.portraits?.[u.id] || '';
+    if (img.getAttribute('src') !== src) src ? img.setAttribute('src', src) : img.removeAttribute('src');
     this.el.cls.textContent = `${CLASS_LABEL[u.cls]} · ${u.stance === 'crouch' ? 'jongkok' : 'berdiri'}${ctrl.attacked ? ' · sudah menyerang' : ''}`;
     this.el.hp.querySelector('i').style.width = `${(100 * u.hp) / u.maxHp}%`;
     this.el.hp.querySelector('span').textContent = `${u.hp} / ${u.maxHp}`;

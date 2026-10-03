@@ -82,12 +82,17 @@ export class PrepPanel {
     this.el.roster.innerHTML = ROSTER.map((r) => {
       const on = s.squad.includes(r.id);
       return `<li data-id="${r.id}" class="roster__row ${on ? 'on' : ''}">
-        <label class="roster__pick"><input type="checkbox" ${on ? 'checked' : ''} aria-label="Ikut: ${esc(r.name)}" /><span class="emblem emblem--fed">${CLASSES[r.cls].short}</span></label>
+        <label class="roster__pick"><input type="checkbox" ${on ? 'checked' : ''} aria-label="Ikut: ${esc(r.name)}" />${this.portraits?.[r.id] ? `<img class="portrait" src="${this.portraits[r.id]}" alt="" />` : ''}<span class="emblem emblem--fed">${CLASSES[r.cls].short}</span></label>
         <span class="roster__who"><b>${esc(r.name)}</b><small>${CLASSES[r.cls].label} · ${esc(r.note)}</small></span>
         <label class="roster__lead" title="Leader"><input type="radio" name="leader" ${s.leader === r.id ? 'checked' : ''} ${on ? '' : 'disabled'} aria-label="Leader: ${esc(r.name)}" />★</label>
       </li>`;
     }).join('');
     this.el.start.disabled = !s.squad.length;
+  }
+
+  setPortraits(p) {
+    this.portraits = p;
+    this.renderRoster();
   }
 
   showBriefing(field) {

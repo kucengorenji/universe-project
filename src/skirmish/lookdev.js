@@ -6,7 +6,8 @@ import { generateField, heightAt } from './battlefield/generateField.js';
 import { FieldBuilder } from './battlefield/fieldBuilder.js';
 import { CanvasPost, installCanvasShading } from './render/canvasStyle.js';
 import { SkyLight } from './render/skyLight.js';
-import { loadSoldierTemplates, loadWeapons, makeSoldier, animateSoldier, disposeSoldier } from './units/soldiers.js';
+import { loadWeapons } from './units/soldiers.js';
+import { loadSoldierTemplates, makeSoldier, animateSoldier, disposeSoldier } from './units/vcSoldiers.js';
 import { CLASSES } from './units/soldierLook.js';
 
 // Look-development scene for the skirmish art direction: a generated battlefield, both
@@ -71,7 +72,8 @@ export class LookDev {
     this.lineupAt = base;
     ['fed', 'imp'].forEach((faction, row) => {
       classes.forEach((cls, i) => {
-        const s = makeSoldier(this.templates, this.weapons, { faction, cls, seed: row * 10 + i + 3, shadows: this.shadows });
+        const ids = ['arlen', 'brann', 'otto', 'cato', 'vesna'];
+        const s = makeSoldier(this.templates, this.weapons, { faction, cls, seed: row * 10 + i + 3, id: faction === 'fed' ? ids[i] : null, shadows: this.shadows });
         const x = base.x + (i - 2) * 1.6, z = base.z + row * 2.4;
         s.root.position.set(x, heightAt(d, x, z), z);
         s.root.rotation.y = Math.PI; // face north, toward the camera preset

@@ -5,7 +5,8 @@ import { generateField } from '../battlefield/generateField.js';
 import { FieldBuilder } from '../battlefield/fieldBuilder.js';
 import { CanvasPost, installCanvasShading } from '../render/canvasStyle.js';
 import { SkyLight } from '../render/skyLight.js';
-import { loadSoldierTemplates, loadWeapons } from '../units/soldiers.js';
+import { loadWeapons } from '../units/soldiers.js';
+import { loadSoldierTemplates, portrait } from '../units/vcSoldiers.js';
 import { Arena } from '../game/arena.js';
 import { Battle } from '../game/battle.js';
 import { ROSTER, DEFAULT_SQUAD } from '../game/roster.js';
@@ -81,6 +82,13 @@ export class SkirmishGame {
       loadAssetPack(ASSETS.militaryPack, { glow: { M_radiator: 1 } }),
       loadSoldierTemplates(ASSETS.soldierPack)
     ]).then(async ([town, military, templates]) => ({ town, military, templates, weapons: await loadWeapons(ASSETS.militaryPack, military) }));
+    // portraits of the nine, rendered from the 3D model once it has loaded
+    this.assets.then((A) => {
+      this.portraits = Object.fromEntries(ROSTER.map((r) => [r.id, portrait(engine.renderer, A.templates, A.weapons, { faction: 'fed', cls: r.cls, id: r.id, seed: r.face })]));
+      this.prep.setPortraits(this.portraits);
+      this.hud.portraits = this.portraits;
+      this.hud.update();
+    });
     this.setPhase('prep');
     this.regenerate();
   }

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { makeSoldier, animateSoldier, disposeSoldier, kick, flinch } from '../units/soldiers.js';
+import { makeSoldier, animateSoldier, disposeSoldier, kick, flinch } from '../units/vcSoldiers.js';
 
 // 3D bodies for the battle's units: soldiers (one dressed NPC each), the tank (the field
 // builder's model, moved here) and nothing extra for bunkers (static scenery). Each frame
@@ -22,7 +22,7 @@ export class UnitViews {
   add(u) {
     const v = { unit: u, speed: 0, lx: u.x, lz: u.z, aim: false, aimYaw: 0, aimPitch: 0, aimHold: 0, look: null };
     if (u.kind === 'infantry') {
-      v.body = makeSoldier(this.templates, this.weapons, { faction: u.side, cls: u.cls, seed: u.face, shadows: this.shadows });
+      v.body = makeSoldier(this.templates, this.weapons, { faction: u.side, cls: u.cls, seed: u.face, id: u.id, shadows: this.shadows });
       v.root = v.body.root;
       this.scene.add(v.root);
     } else if (u.kind === 'tank' && this.tankModel) {

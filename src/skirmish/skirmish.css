@@ -530,3 +530,14 @@ body[data-phase='enemy'] .topbar { color: var(--paper); text-shadow: 0 1px 3px r
 .roster__row.on { background: #fbf6ea; border-color: transparent; box-shadow: 0 1px 0 rgba(42, 33, 25, 0.25), 0 2px 6px rgba(42, 33, 25, 0.12); }
 
 .toast { background: var(--wood-dark); border: 1.5px solid var(--brass); }
+
+/* portraits: the soldier's face in a round frame, the class seal pinned to its corner */
+.seal { position: relative; display: inline-block; flex: none; }
+.portrait { width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--ink); object-fit: cover; display: block; background: var(--paper); }
+.seal .portrait + .emblem,
+.roster__pick .portrait + .emblem { position: absolute; right: -6px; bottom: -4px; width: 22px; height: 22px; font-size: 10px; border-width: 1.5px; }
+.roster__pick { position: relative; }
+.roster__pick .portrait { width: 44px; height: 44px; }
+.unitcard { padding-left: 84px; min-height: 96px; }
+.unitcard__portrait { position: absolute; left: 10px; top: 12px; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); }
+.unitcard__portrait:not([src]) { display: none; }

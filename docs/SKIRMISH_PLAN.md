@@ -53,6 +53,14 @@ Halaman terpisah `skirmish.html`: pertempuran regu bergaya Valkyria Chronicles 3
 - **Animasi**: bidik dengan popor di bahu dan dua tangan, recoil, sentakan saat terkena, jatuh (gugur tertelungkup, tumbang telentang), jalan jongkok, langkah saat berputar di tempat.
 - **Performa** (Chrome headless, Metal, M1 Pro, 2560×1600): 9,1 → 5,0 ms GPU per frame. Tanpa MSAA bila pixel ratio ≥ 1,75 (−3 ms), shadow map 2048 yang mengikuti aksi (±70 m, di-snap ke texel), preset Grafis di Persiapan (Tinggi: shadow 2048 + supersampling 1,5× di layar 1×; Sedang: 1024, rumput 60%; Rendah: tanpa shadow dan MSAA, rumput 35%). `core/quality.js`: dengan GPU timer, resolusi hanya turun bila GPU memang penuh (fps rendah karena host men-throttle tidak lagi menurunkan resolusi).
 
+### Polish (grill keempat, 3 Oktober 2026)
+
+- AP ×2,5 (Scout 75 m, Shocktrooper 45, Lancer 38, Engineer 60, Sniper 30, tank 100).
+- Peta 2D tetap pas layar (tidak bisa di-drag), tepi memudar transparan di atas meja kayu; UI meja taktis (panel dosir, medali CP, tombol stempel, segel kelas, potret wajah 3D); hover unit menampilkan jangkauan AP.
+- Aset dibangun ulang: karung pasir berbentuk bantal, bunker dengan celah tembak dan karung pasir menempel, jembatan batu lengkung, kincir dengan bilah berkisi pada porosnya, menara dengan tangga, roda dan rantai tank, bendera berombak, semak pagar tanpa bunga, pohon musim panas; parit = dinding papan + timbunan tanah + papan lantai; tanah di bawah rumah diratakan.
+- Tembakan: bintang moncong, asap, selongsong, getar kamera, dentum rendah; penembak intercept berbalik dan membidik dulu.
+- Tentara baru ala VC1 (`soldier_vc.glb`): mulus, proporsi anime, wajah dengan mata besar, 9 karakter unik (rambut/warna), musuh berhelm; klip animasi Blender di AnimationMixer + IK untuk memegang senjata; satu draw call per tentara.
+
 ## Peta kode
 
 ```text

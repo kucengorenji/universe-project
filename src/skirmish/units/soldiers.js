@@ -45,14 +45,14 @@ export async function loadWeapons(url, pack) {
 }
 
 let weaponMaterial = null;
-const gunMaterial = () => (weaponMaterial ||= new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getToonGradient() }));
+export const gunMaterial = () => (weaponMaterial ||= new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getToonGradient() }));
 
 /**
  * Stances: how the weapon sits relative to the body (grip position in the body frame, metres,
  * +Z forward, -X the soldier's right; aim = the barrel follows the aim direction), and how
  * the torso turns. Lances are held under the arm, never shouldered.
  */
-const HOLDS = {
+export const HOLDS = {
   rifle: {
     ready: { grip: [-0.13, 1.02, 0.2], dir: [0.42, 0.62, 0.66], torso: 0 },
     aim: { grip: [-0.1, 1.36, 0.16], torso: -0.55, cheek: true }
@@ -214,7 +214,7 @@ function pose(b, x = 0, y = 0, z = 0) {
   b.node.quaternion.copy(b.rest).multiply(_q.setFromEuler(new THREE.Euler(x, y, z)));
 }
 
-function rotate(b, x = 0, y = 0, z = 0) {
+export function rotate(b, x = 0, y = 0, z = 0) {
   b.node.quaternion.multiply(_q.setFromEuler(new THREE.Euler(x, y, z)));
 }
 
@@ -225,9 +225,10 @@ const _s = new THREE.Vector3();
  * with the butt in the right shoulder (the shoulder bone, wherever the turned torso put it), SMGs
  * a hand lower, lances under the arm. Recoil pushes the weapon back and tips the muzzle up.
  */
-function placeWeapon(s, a) {
+export function placeWeapon(s, a) {
   const { ready, aim } = s.hold;
-  const crouchDrop = 0.42 * s.crouchBlend * (1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.0));
+  // how far the hands sit lower than standing (a body may say so itself: s.gripDrop)
+  const crouchDrop = s.gripDrop ?? 0.42 * s.crouchBlend * (1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.0));
   // the aim direction in root space (body yaw stays on the root)
   const aimDir = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(-s.aimPitch - 0.12 * s.recoil, s.aimYaw, 0, 'YXZ'));
   const readyGrip = new THREE.Vector3().fromArray(ready.grip);
@@ -253,14 +254,14 @@ function placeWeapon(s, a) {
   s.gun.updateMatrixWorld(true);
 }
 
-const gripWorld = (s) => s.gun.localToWorld(new THREE.Vector3(0, -0.02, 0.0));
-const supportWorld = (s) => s.gun.localToWorld(s.weapon.support.clone());
+export const gripWorld = (s) => s.gun.localToWorld(new THREE.Vector3(0, -0.02, 0.0));
+export const supportWorld = (s) => s.gun.localToWorld(s.weapon.support.clone());
 // elbows point down and out
-const poleR = (s) => s.root.localToWorld(new THREE.Vector3(-0.6, 0.4, -0.2));
-const poleL = (s) => s.root.localToWorld(new THREE.Vector3(0.5, 0.5, 0.2));
+export const poleR = (s) => s.root.localToWorld(new THREE.Vector3(-0.6, 0.4, -0.2));
+export const poleL = (s) => s.root.localToWorld(new THREE.Vector3(0.5, 0.5, 0.2));
 
 /** Two-bone IK: rotate shoulder then elbow so the wrist lands on target, the elbow toward the pole. */
-function reachArm(s, side, target, pole) {
+export function reachArm(s, side, target, pole) {
   const S = s.bones[`shoulder_${side}`].node;
   const E = s.bones[`elbow_${side}`].node;
   const W = s.bones[`wrist_${side}`].node;

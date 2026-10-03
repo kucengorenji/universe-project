@@ -14,6 +14,8 @@ export const ASSET_FILES = {
   characterPack: 'models/character.glb', // shared rig, outfits, clips
   furniturePack: 'models/furniture.glb', // interior furniture and loose items
   spacePack: 'models/space.glb', // ships and the planet rover
+  soldierPack: 'models/soldier.glb', // skirmish soldiers: the NPC rig in uniform, both factions' helmets, class gear
+  militaryPack: 'models/military.glb', // skirmish kit: weapons, fortifications, camp props, tank, windmill
   interiorAtlas: 'textures/interior_atlas.jpg', // floor and wall tiles
   townSurfaces: 'textures/town_surfaces.png' // neutral modulation atlas for buildings and ground
 };

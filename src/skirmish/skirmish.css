@@ -1,0 +1,92 @@
+/* Skirmish page: field-manual paper, ink, one faction blue. */
+:root {
+  --paper: #efe6d2;
+  --paper-dark: #e2d6bc;
+  --ink: #2a2119;
+  --ink-soft: #5a4c3d;
+  --fed: #2f4f7a;
+  --imp: #7a2420;
+  --font: 'Barlow Condensed', 'Archivo Narrow', ui-sans-serif, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  font: 500 16px/1.3 var(--font);
+}
+
+#stage { position: fixed; inset: 0; }
+#stage canvas { display: block; }
+
+.loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+.ready .loading { display: none; }
+
+.panel {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: min(300px, calc(100vw - 32px));
+  padding: 14px 16px 12px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  border: 1.5px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  display: grid;
+  gap: 8px;
+}
+
+.panel__title {
+  margin: 0 0 2px;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.panel__title span { color: var(--fed); font-weight: 500; font-size: 16px; }
+
+.row {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+.row--check { grid-template-columns: auto 1fr; text-transform: none; font-size: 16px; letter-spacing: 0; }
+.row select { grid-column: 2 / span 2; }
+
+input, select, button {
+  font: 500 16px var(--font);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  padding: 4px 8px;
+  min-height: 32px;
+}
+input[type='number'] { width: 100%; }
+input[type='checkbox'] { min-height: 0; width: 18px; height: 18px; accent-color: var(--fed); }
+button { cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; }
+button:hover { background: var(--paper-dark); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--fed); outline-offset: 2px; }
+
+.views { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.views button { padding: 4px 2px; font-size: 14px; }
+
+.stats { margin: 2px 0 0; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }

@@ -108,9 +108,16 @@ export function disposeSoldier(s) {
 /**
  * Pose a soldier for this frame: the walk from chunkyPeople, then crouch, the torso turned into
  * the stance, the weapon placed and both hands brought to it.
- *   speed: ground speed (m/s); aim: true while aiming (aimYaw/aimPitch relative to the body)
+ *   speed: ground speed (m/s); aim: true while aiming (aimYaw/aimPitch relative to the body);
+ *   down: lying (downed or dead)
  */
-export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn = 0 } = {}) {
+export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn = 0, down = false } = {}) {
+  // downed or dead: lying on the back, the weapon dropped
+  s.gun.visible = !down;
+  if (down) {
+    animateNpc(s, dt, 0, { pose: 'sleep' });
+    return;
+  }
   const k = 1 - Math.exp(-dt * 10);
   s.aimBlend += ((aim ? 1 : 0) - s.aimBlend) * k;
   s.crouchBlend += ((crouch ? 1 : 0) - s.crouchBlend) * k;

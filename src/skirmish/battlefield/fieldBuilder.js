@@ -330,6 +330,10 @@ export class FieldBuilder {
     }
     if (!items.length) return;
     const mat = new THREE.MeshToonMaterial({ gradientMap: getToonGradient(), side: THREE.DoubleSide });
+    // both faces of a blade light like the ground (a double-sided material flips the back face's normal)
+    mat.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = normalize(vNormal);');
+    };
     this.disposables.push(mat);
     const mesh = new THREE.InstancedMesh(geo, mat, items.length);
     mesh.name = 'tall_grass';

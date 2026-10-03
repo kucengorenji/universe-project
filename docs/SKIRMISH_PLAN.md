@@ -20,10 +20,28 @@ Halaman terpisah `skirmish.html`: pertempuran regu bergaya Valkyria Chronicles 3
 | Art | CANVAS: arsiran pensil di bayangan, outline tinta, kertas, tepi frame cat air, onomatope |
 | Kontrol | Desktop: pointer lock di Action Mode, Shift lari, C jongkok/tiarap, G granat, Esc jeda |
 
+### Keputusan M1 (grill kedua, 3 Oktober 2026)
+
+| Aspek | Keputusan |
+|---|---|
+| Gaya | Outline lebih tebal dan arsiran lebih kuat dari look-dev M0 |
+| Peta Command Mode | Peta 2D gambar tangan yang sama dengan Prep (zoom/pan, ikon unit); pilih unit lalu kamera terjun ke 3D; minimap saat Action Mode |
+| Kamera aksi | Pointer lock; mouse memutar kamera orbit di belakang unit; WASD relatif kamera; klik kanan = over-the-shoulder, waktu berhenti |
+| Hit | Setiap peluru raycast dalam kerucut reticle (mengecil saat jongkok/tiarap); tertahan cover, rumah, pohon; kepala ×2; damage turun dengan jarak |
+| Navigasi | Collider untuk rumah, cover, pohon, bunker, tank; sungai hanya lewat jembatan; parit bisa dimasuki; AI: grid 1 m + A* dengan peta biaya |
+| Roster | 9 karakter bernama (2 SC, 2 ST, 2 LN, 2 EN, 1 SN), pilih maks. 6 di Prep, 1 Leader (+1 CP selama hidup) |
+| Stat | SC 240 HP/30 m AP/5×22/45 m · ST 380/18/15×10/20 m · LN 300/15/1×300 AT (40 vs infanteri)/40 m · EN 220/24/4×18/45 m · SN 180/12/1×160/120 m; musuh ×0,9; tank 2400 HP (radiator ×3, meriam ledakan 4 m 120 dmg, MG 20 m); bunker 1500 HP (MG 30 m) |
+| Tumbang | 3 giliran untuk diselamatkan kawan (evakuasi); disentuh musuh atau lewat batas = gugur (hanya memengaruhi peringkat) |
+| Kesulitan | Mudah/Normal/Sulit: infanteri 6/9/12, CP musuh 4/5/6, akurasi AI 0,7/0,85/1 |
+| Intercept | Dua arah: unit yang melihat target bergerak dalam jarak senjata menembak pendek berakurasi rendah; tidak saat membidik, jongkok, atau tiarap |
+| Amunisi | Lancer 3, Sniper 6; Engineer mengisi ulang di dekatnya; kelas lain tak terbatas; 1 granat untuk SC/ST/EN (aktif di M3) |
+| Look-dev | Tetap tersedia di `skirmish.html?lookdev` |
+
 ## Milestone
 
 - **M0 look-dev (selesai, branch `feat/skirmish-vc`)**: `soldier.glb` (2 faksi × 5 kelas), `military.glb` (21 aset), generator medan, builder 3D, post CANVAS, langit dan cahaya siang/senja/malam, halaman look-dev dengan preset kamera dan pose (siaga, bidik, jongkok, jalan, lari).
-- **M1 loop BLiTZ (greybox)**: peta datar prep + deploy + briefing, Command/Action Mode, AP, tembak dan hit, interception fire, AI musuh, tank, bunker, menang/kalah, collider dan navigasi grid.
+- **M1 loop BLiTZ (selesai)**: `skirmish.html` membuka game; `?lookdev` membuka scene look-dev. Prep (peta 2D, setup, regu 6 dari 9, deploy dengan klik token lalu slot, briefing), Command Mode di peta 2D, Action Mode TPS (pointer lock, AP, lari, jongkok, bidik dengan waktu berhenti, burst peluru fisik, kamera tidak menembus dinding, minimap), tembakan balasan otomatis dua arah (infanteri, tank, bunker), giliran musuh dengan AI dan kamera follow (Space mempercepat), tumbang/evakuasi/gugur, isi ulang amunisi Engineer, capture camp, menang/kalah dan peringkat, main lagi. Dites: `tests/skirmish-battle.test.js` dan autoplay 3 giliran di Chrome headless tanpa error.
+  - Belum: Engineer memperbaiki karung pasir, tank musuh jarang bergerak (AI menilai posisinya sudah bagus), suara masih sintetis sederhana, pose aim tangan kiri belum rapi.
 - **M2 polish aset**: jembatan batu lengkung, pose tiarap/terkena/tumbang, efek tembakan dan ledakan, onomatope, lampu malam.
 - **M3 mekanik lanjutan**: fog of war, granat dan cover hancur, rumput tinggi dan parit sebagai concealment/cover penuh.
 
@@ -31,8 +49,17 @@ Halaman terpisah `skirmish.html`: pertempuran regu bergaya Valkyria Chronicles 3
 
 ```text
 skirmish.html                      halaman + panel look-dev
-src/skirmish/main.js               boot: Engine + LookDev
+src/skirmish/main.js               boot: Engine + SkirmishGame (atau LookDev dengan ?lookdev)
 src/skirmish/lookdev.js            scene look-dev (mode engine)
+src/skirmish/game/                 murni, tanpa three.js:
+  rules.js                         angka: stat, senjata, CP, intercept, kesulitan, peringkat
+  roster.js                        9 karakter, pasukan musuh per kesulitan, briefing
+  arena.js                         rintangan, collider, grid 1 m, garis pandang, raycast peluru
+  nav.js                           Dijkstra dalam jangkauan AP, jalur
+  battle.js                        state pertempuran: giliran, CP, damage, tumbang, capture, hasil
+  ai.js                            AI musuh berbasis utilitas
+src/skirmish/play/                 SkirmishGame (fase), ActionControl, EnemyTurn, Combat, UnitViews, Effects, Sound
+src/skirmish/ui/                   TacticalMap (peta 2D + minimap), PrepPanel, Hud
 src/skirmish/battlefield/
   generateField.js                 generator murni (seed -> data medan), dites di tests/skirmish-field.test.js
   groundPaint.js                   tekstur tanah dari data medan (canvas 2D)

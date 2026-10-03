@@ -39,12 +39,12 @@ export function installCanvasShading() {
         float paint = dot(material.diffuseColor, vec3(0.3333)) * RECIPROCAL_PI * sun;
         float lit = clamp(dot(reflectedLight.directDiffuse, vec3(0.3333)) / max(paint, 1e-4), 0.0, 1.0);
         vec2 px = gl_FragCoord.xy;
-        float h1 = canvasStroke(px, 0.95, 5.0, 0.16) * (1.0 - smoothstep(0.5, 0.62, lit));
-        float h2 = canvasStroke(px, -0.62, 6.5, 0.12) * (1.0 - smoothstep(0.12, 0.3, lit));
-        float hatch = max(h1 * 0.55, h2 * 0.5);
+        float h1 = canvasStroke(px, 0.95, 4.5, 0.2) * (1.0 - smoothstep(0.55, 0.7, lit));
+        float h2 = canvasStroke(px, -0.62, 5.5, 0.16) * (1.0 - smoothstep(0.15, 0.38, lit));
+        float hatch = max(h1 * 0.75, h2 * 0.7);
         // strokes fade with distance (vViewPosition is the view-space position)
         hatch *= 1.0 - smoothstep(35.0, 90.0, length(vViewPosition));
-        outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.55, 0.5, 0.5), hatch);
+        outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.42, 0.38, 0.38), hatch);
       }
       #endif`);
 }
@@ -66,7 +66,7 @@ const CanvasShader = {
     uPaper: { value: srgb(PAPER) },
     uInk: { value: srgb(INK) },
     tNoise: { value: null },
-    uLine: { value: 1 },
+    uLine: { value: 1.6 }, // outline width in screen pixels (x device pixel ratio)
     uWash: { value: 1 },
     toneMappingExposure: { value: 1 }
   },

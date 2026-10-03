@@ -113,7 +113,10 @@ export class Quality {
     const target = this.mobile ? 30 : 55;
     const cap = Math.min(window.devicePixelRatio || 1, this.settings.maxRatio);
     const now = performance.now();
-    if ((fps < target || (gpuMs !== null && gpuMs > BUDGET_MS * 0.9)) && this.ratio > this.floor) {
+    // With GPU timings, resolution only steps down when the GPU is the bottleneck: a low frame rate
+    // with GPU time to spare comes from elsewhere (CPU, or a host that throttles the frame loop)
+    const heavy = gpuMs !== null ? gpuMs > BUDGET_MS * 0.9 : fps < target;
+    if (heavy && this.ratio > this.floor) {
       this.tooHeavy.set(this.ratio, now);
       this.ratio = Math.max(this.floor, this.ratio - 0.25);
       this.apply();

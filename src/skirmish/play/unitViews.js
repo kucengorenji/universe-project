@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { makeSoldier, animateSoldier, disposeSoldier } from '../units/soldiers.js';
+import { makeSoldier, animateSoldier, disposeSoldier, kick, flinch } from '../units/soldiers.js';
 
 // 3D bodies for the battle's units: soldiers (one dressed NPC each), the tank (the field
 // builder's model, moved here) and nothing extra for bunkers (static scenery). Each frame
@@ -54,6 +54,18 @@ export class UnitViews {
     v.aimHold = hold;
   }
 
+  /** A round fired: recoil. */
+  kick(u) {
+    const v = this.views.get(u.id);
+    if (v?.body) kick(v.body);
+  }
+
+  /** A round struck: flinch. */
+  flinch(u) {
+    const v = this.views.get(u.id);
+    if (v?.body && u.state === 'ok') flinch(v.body);
+  }
+
   update(dt) {
     for (const v of this.views.values()) {
       const u = v.unit;
@@ -73,8 +85,11 @@ export class UnitViews {
         if (v.aimHold <= 0) v.look = null;
         continue;
       }
-      // the body turns smoothly to the unit's facing
-      v.root.rotation.y += wrap(u.yaw - v.root.rotation.y) * (1 - Math.exp(-dt * 12));
+      // the body turns smoothly to the unit's facing; turning on the spot takes small steps
+      const dyaw = wrap(u.yaw - v.root.rotation.y) * (1 - Math.exp(-dt * 12));
+      v.root.rotation.y += dyaw;
+      const turnRate = dt > 0 ? dyaw / dt : 0;
+      const stepping = Math.min(1.1, Math.abs(turnRate) * 0.5);
       v.aimHold -= dt;
       const aiming = v.aim || v.aimHold > 0;
       if (v.look) {
@@ -82,7 +97,8 @@ export class UnitViews {
         v.body.aimPitch = v.look.pitch;
       }
       if (!aiming && v.aimHold <= 0) v.look = null;
-      animateSoldier(v.body, dt, u.state === 'ok' ? v.speed : 0, { aim: aiming && u.state === 'ok', crouch: u.stance === 'crouch', down: u.state === 'down' || u.state === 'dead' });
+      const lying = u.state === 'down' ? 'down' : u.state === 'dead' ? 'dead' : false;
+      animateSoldier(v.body, dt, u.state === 'ok' ? Math.max(v.speed, stepping) : 0, { aim: aiming && u.state === 'ok', crouch: u.stance === 'crouch', down: lying, turn: turnRate });
     }
   }
 

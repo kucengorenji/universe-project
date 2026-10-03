@@ -13,7 +13,7 @@ import { CLASSES } from './units/soldierLook.js';
 // factions' soldiers in a lineup, the canvas post on or off, times of day and camera presets.
 // Runs as an engine mode (update/render/resize), see src/core/engine.js.
 
-const POSES = ['ready', 'aim', 'crouch', 'crouch-aim', 'walk', 'run'];
+const POSES = ['ready', 'aim', 'crouch', 'crouch-aim', 'walk', 'run', 'crouch-walk', 'down', 'dead'];
 
 export class LookDev {
   constructor(engine, ui) {
@@ -123,8 +123,8 @@ export class LookDev {
     this.sky.dome.position.copy(this.camera.position);
     this.field?.update(dt);
     const pose = this.pose;
-    const walking = pose === 'walk' || pose === 'run';
-    const speed = pose === 'walk' ? 1.4 : pose === 'run' ? 4.2 : 0;
+    const walking = pose === 'walk' || pose === 'run' || pose === 'crouch-walk';
+    const speed = pose === 'walk' ? 1.4 : pose === 'run' ? 4.2 : pose === 'crouch-walk' ? 1.6 : 0;
     this.soldiers.forEach((s, i) => {
       if (walking) {
         // pace up and down in front of the line
@@ -140,7 +140,7 @@ export class LookDev {
       }
       s.aimYaw = Math.sin(t * 0.6 + i) * 0.15;
       s.aimPitch = Math.sin(t * 0.4 + i * 2) * 0.08;
-      animateSoldier(s, dt, walking ? speed : 0, { aim: pose === 'aim' || pose === 'crouch-aim', crouch: pose.startsWith('crouch') });
+      animateSoldier(s, dt, walking ? speed : 0, { aim: pose === 'aim' || pose === 'crouch-aim', crouch: pose.startsWith('crouch'), down: pose === 'down' || pose === 'dead' ? pose : false });
     });
   }
 

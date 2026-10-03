@@ -36,10 +36,12 @@ export class SkirmishGame {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.15, 2500);
     this.post = new CanvasPost(engine.renderer);
-    this.shadows = engine.quality.settings.shadows;
-    engine.renderer.shadowMap.enabled = this.shadows;
+    // shadows are always built; the quality tier sets their map size (or turns them off)
+    this.shadows = true;
+    engine.renderer.shadowMap.enabled = true;
     engine.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.sky = new SkyLight(this.scene, { shadows: this.shadows, mapSize: engine.quality.tier === 'high' ? 4096 : 2048 });
+    this.sky = new SkyLight(this.scene, { shadows: true, mapSize: 2048, extent: 70 });
+    engine.quality.onChange(() => this.applyQuality());
     this.clock = 0;
     this.tasks = [];
     this.sound = new Sound(this.camera);
@@ -56,7 +58,12 @@ export class SkirmishGame {
       squad: [...DEFAULT_SQUAD],
       leader: DEFAULT_SQUAD[0]
     };
-    this.prep = new PrepPanel(prepEl, this.setup, { onChange: (s, { field }) => (field ? this.regenerate() : this.assignDeploy()), onStart: () => this.start() });
+    this.prep = new PrepPanel(prepEl, this.setup, {
+      onChange: (s, { field }) => (field ? this.regenerate() : this.assignDeploy()),
+      onStart: () => this.start(),
+      quality: engine.quality.preset,
+      onQuality: (q) => engine.quality.setPreset(q)
+    });
     this.fast = false;
     this.onKey = (e) => {
       if (e.key === ' ' && this.phase === 'enemy') {
@@ -165,7 +172,8 @@ export class SkirmishGame {
     this.setPhase('loading');
     const A = await this.assets;
     const field = this.field;
-    this.builder = new FieldBuilder(field, { town: A.town, military: A.military }, { shadows: this.shadows });
+    this.applyQuality();
+    this.builder = new FieldBuilder(field, { town: A.town, military: A.military }, { shadows: this.shadows, grass: this.q.grass });
     this.scene.add(this.builder.group);
     this.arena = new Arena(field);
     const squad = this.setup.squad.filter((id) => this.deploy.has(id)).map((id) => {
@@ -178,7 +186,7 @@ export class SkirmishGame {
     for (const u of this.battle.units) if (u.kind !== 'bunker') this.views.add(u);
     this.effects = new Effects(this.scene, this.camera, this.hud.fxLayer);
     // the minimap shares the big map's drawing
-    this.minimap ||= new TacticalMap(this.hud.el.minimap);
+    this.minimap ||= new TacticalMap(this.hud.el.minimap, { mini: true });
     this.minimap.field = field;
     this.minimap.base = this.map.base;
     this.combat = new Combat(this);
@@ -257,12 +265,38 @@ export class SkirmishGame {
     this.builder = this.views = this.effects = this.battle = this.arena = null;
   }
 
+  // ---------------------------------------------------------------- quality
+  /**
+   * Per tier: shadow map size (0 = off), share of the tall grass, and the scene's MSAA (none at
+   * pixel ratios of 1.75 and up: the ink lines already hide the steps, and it saves ~3 ms at Retina).
+   */
+  applyQuality() {
+    const tier = this.engine.quality.tier;
+    this.q = { high: { shadow: 2048, grass: 1 }, medium: { shadow: 1024, grass: 0.6 }, low: { shadow: 0, grass: 0.35 } }[tier];
+    // High on a 1x screen supersamples (1.5x, scaled down by the browser): crisper ink lines
+    const Q = this.engine.quality;
+    if (Q.preset === 'high' && (window.devicePixelRatio || 1) < 1.5 && Q.ratio < 1.5) {
+      Q.ratio = 1.5;
+      Q.apply();
+    }
+    this.sky.setShadows(this.q.shadow);
+    this.engine.renderer.shadowMap.enabled = this.q.shadow > 0;
+    this.scene.traverse((o) => o.material && (o.material.needsUpdate = true));
+    this.syncSamples();
+  }
+
+  syncSamples() {
+    const pr = this.engine.renderer.getPixelRatio();
+    this.post.setSamples(pr >= 1.75 || this.engine.quality.tier === 'low' ? 0 : 2);
+  }
+
   // ---------------------------------------------------------------- engine mode
   resize(w, h) {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     const pr = this.engine.renderer.getPixelRatio();
     this.post.setSize(Math.floor(w * pr), Math.floor(h * pr));
+    this.syncSamples();
   }
 
   update(dt) {
@@ -289,9 +323,10 @@ export class SkirmishGame {
       if (this.control.moving && !this.control.frozen) this.combat.intercept(dt, this.control.unit);
       this.hud.action(this.control);
       const u = this.control.unit;
-      this.minimap.view = { x: u.x, z: u.z, scale: 1.5 };
+      this.minimap.view = { x: u.x, z: u.z, scale: 1.3 };
       this.minimap.draw(dt, { units: this.battle.units, camps: this.battle.camps, selected: u.id });
-    }
+      this.updateMarkers(dt, u);
+    } else this.hud.markers([]);
     if (p === 'enemy') {
       this.enemy.update(dt);
       if (this.enemy.moving) this.combat.intercept(dt, this.enemy.moving);
@@ -302,6 +337,9 @@ export class SkirmishGame {
     const shake = this.effects.shakeOffset();
     if (shake) this.camera.position.add(shake);
     this.sky.dome.position.copy(this.camera.position);
+    // shadows follow the action
+    const f = p === 'action' ? this.control.unit : p === 'enemy' ? this.enemy.focus : null;
+    if (f) this.sky.follow({ x: f.x, z: f.z });
     const events = this.battle.drain();
     if (events.length) {
       this.hud.update();
@@ -312,6 +350,24 @@ export class SkirmishGame {
       }
     }
     if (this.battle.over && (p === 'action' || p === 'enemy') && !this.control.firing && !this.enemy.running) this.finish();
+  }
+
+  /** Red markers over the enemies the acting soldier can see (sight re-checked a few times a second). */
+  updateMarkers(dt, u) {
+    this.sightTimer = (this.sightTimer || 0) - dt;
+    if (this.sightTimer <= 0) {
+      this.sightTimer = 0.2;
+      this.seen = this.battle.units.filter((e) => e.side !== u.side && e.state === 'ok' && Math.hypot(e.x - u.x, e.z - u.z) < 150 && this.arena.sees(u, e));
+    }
+    const r = this.engine.renderer.domElement.getBoundingClientRect();
+    const v = new THREE.Vector3();
+    const list = [];
+    for (const e of this.seen || []) {
+      const g = this.arena.ground(e.x, e.z);
+      v.set(e.x, g + (e.kind === 'tank' ? 3.4 : e.kind === 'bunker' ? 2.8 : e.stance === 'crouch' ? 1.6 : 2.05), e.z).project(this.camera);
+      if (v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1) list.push({ x: ((v.x + 1) / 2) * r.width, y: ((1 - v.y) / 2) * r.height });
+    }
+    this.hud.markers(list);
   }
 
   render() {

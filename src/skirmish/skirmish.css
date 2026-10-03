@@ -271,34 +271,37 @@ body[data-phase='enemy'] .topbar { background: transparent; border: 0; color: va
 .bar { position: relative; height: 14px; background: #d6cbb3; border: 1.5px solid var(--ink); margin: 6px 0; }
 .bar i { display: block; height: 100%; background: #6f9a4a; transition: width 0.1s linear; }
 .bar span { position: absolute; inset: 0; font-size: 11px; line-height: 11px; text-align: center; }
-.apgauge {
-  position: absolute;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
-  width: min(420px, 50vw);
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--paper);
-  text-shadow: 0 1px 2px var(--ink);
-}
-.bar--ap { height: 16px; margin: 0; }
+.unitcard__ap { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; font-size: 15px; }
+.unitcard__ap .bar { margin: 0; }
+.bar--ap { height: 16px; }
 .bar--ap i { background: linear-gradient(90deg, #d9a62e, #f0c75a); }
 .keys {
   position: absolute;
   right: 16px;
   bottom: 16px;
-  max-width: 320px;
+  max-width: min(340px, calc(100vw - 360px));
   margin: 0;
   padding: 6px 10px;
   font-size: 14px;
   text-align: right;
   background: color-mix(in srgb, var(--paper) 85%, transparent);
   border: 1px solid var(--ink);
+}
+body[data-input='cursor'] .lockhint { display: none; }
+body[data-phase='action'][data-input='cursor'] #stage { cursor: none; }
+.reticle--idle { border-width: 1.5px; opacity: 0.8; }
+.reticle--idle::after { display: none; }
+.markers { position: absolute; inset: 0; }
+.markers i {
+  position: absolute;
+  left: -8px;
+  top: -14px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 13px solid #c0392b;
+  filter: drop-shadow(0 0 1.5px #2a2119) drop-shadow(0 0 1px #2a2119);
 }
 .lockhint {
   position: absolute;
@@ -377,6 +380,15 @@ body[data-phase='enemy'] .topbar { background: transparent; border: 0; color: va
 .fx-word--crit { color: #ffd34d; font-size: 32px; }
 .fx-word--sfx { color: #ffb15c; font-size: 40px; font-style: italic; letter-spacing: 0.04em; }
 .fx-word--info { font-size: 22px; letter-spacing: 0.08em; }
+
+@media (max-width: 900px) {
+  .keys { display: none; }
+  .minimap { width: 150px; height: 150px; top: 60px; }
+  .unitcard { width: min(280px, calc(100vw - 32px)); padding: 8px 10px; }
+  .unitcard__name { font-size: 19px; }
+  .topbar { gap: 10px; font-size: 15px; padding: 0 10px; }
+  .topbar__cp i { width: 10px; height: 10px; }
+}
 
 @media (max-width: 720px) {
   body[data-phase='prep'] .mapwrap { bottom: 55vh; right: 0; }

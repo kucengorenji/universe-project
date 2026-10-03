@@ -51,7 +51,7 @@ const SkyShader = {
 };
 
 export class SkyLight {
-  constructor(scene, { shadows = true, mapSize = 4096 } = {}) {
+  constructor(scene, { shadows = true, mapSize = 4096, extent = 115 } = {}) {
     this.scene = scene;
     this.material = new THREE.ShaderMaterial({ ...SkyShader, uniforms: THREE.UniformsUtils.clone(SkyShader.uniforms), side: THREE.BackSide, depthWrite: false, fog: false });
     this.dome = new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 16), this.material);
@@ -61,8 +61,10 @@ export class SkyLight {
     this.sun.castShadow = shadows;
     const sc = this.sun.shadow;
     sc.mapSize.set(mapSize, mapSize);
-    sc.camera.left = sc.camera.bottom = -115;
-    sc.camera.right = sc.camera.top = 115;
+    sc.camera.left = sc.camera.bottom = -extent;
+    sc.camera.right = sc.camera.top = extent;
+    this.extent = extent;
+    this.focus = new THREE.Vector3();
     sc.camera.near = 10;
     sc.camera.far = 520;
     sc.bias = -0.0004;
@@ -83,8 +85,8 @@ export class SkyLight {
     const el = THREE.MathUtils.degToRad(T.elev), az = THREE.MathUtils.degToRad(T.az);
     const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
     u.uSunDir.value.copy(dir);
-    this.sun.position.copy(dir).multiplyScalar(260);
-    this.sun.target.position.set(0, 0, 0);
+    this.sunDir = dir.clone();
+    this.place();
     this.sun.color.set(T.sun);
     this.sun.intensity = T.sunI;
     this.hemi.color.set(T.sky);
@@ -93,6 +95,35 @@ export class SkyLight {
     this.scene.fog.color.set(T.horizon);
     this.time = time;
     return T.exposure;
+  }
+
+  /**
+   * Centre the shadow frustum on a point (the action), snapped to whole shadow texels so the
+   * shadow edges do not crawl as it moves.
+   */
+  follow(p) {
+    const texel = (2 * this.extent) / this.sun.shadow.mapSize.x;
+    const q = new THREE.Vector3(Math.round(p.x / texel) * texel, 0, Math.round(p.z / texel) * texel);
+    if (q.distanceToSquared(this.focus) < 1e-6) return;
+    this.focus.copy(q);
+    this.place();
+  }
+
+  place() {
+    if (!this.sunDir) return;
+    this.sun.target.position.copy(this.focus);
+    this.sun.position.copy(this.focus).addScaledVector(this.sunDir, 260);
+    this.sun.target.updateMatrixWorld();
+  }
+
+  /** Shadow map size (0 switches the shadows off). */
+  setShadows(size) {
+    this.sun.castShadow = size > 0;
+    if (size > 0 && this.sun.shadow.mapSize.x !== size) {
+      this.sun.shadow.map?.dispose();
+      this.sun.shadow.map = null;
+      this.sun.shadow.mapSize.set(size, size);
+    }
   }
 
   dispose() {

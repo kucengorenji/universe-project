@@ -39,12 +39,12 @@ export function installCanvasShading() {
         float paint = dot(material.diffuseColor, vec3(0.3333)) * RECIPROCAL_PI * sun;
         float lit = clamp(dot(reflectedLight.directDiffuse, vec3(0.3333)) / max(paint, 1e-4), 0.0, 1.0);
         vec2 px = gl_FragCoord.xy;
-        float h1 = canvasStroke(px, 0.95, 4.5, 0.2) * (1.0 - smoothstep(0.55, 0.7, lit));
-        float h2 = canvasStroke(px, -0.62, 5.5, 0.16) * (1.0 - smoothstep(0.15, 0.38, lit));
-        float hatch = max(h1 * 0.75, h2 * 0.7);
+        float h1 = canvasStroke(px, 0.95, 4.5, 0.18) * (1.0 - smoothstep(0.22, 0.38, lit));
+        float h2 = canvasStroke(px, -0.62, 5.5, 0.14) * (1.0 - smoothstep(0.03, 0.12, lit));
+        float hatch = max(h1 * 0.45, h2 * 0.35); // cast shadow only: the dark side of the ramp stays clean
         // strokes fade with distance (vViewPosition is the view-space position)
         hatch *= 1.0 - smoothstep(35.0, 90.0, length(vViewPosition));
-        outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.42, 0.38, 0.38), hatch);
+        outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.55, 0.5, 0.5), hatch);
       }
       #endif`);
 }
@@ -66,7 +66,7 @@ const CanvasShader = {
     uPaper: { value: srgb(PAPER) },
     uInk: { value: srgb(INK) },
     tNoise: { value: null },
-    uLine: { value: 1.6 }, // outline width in screen pixels (x device pixel ratio)
+    uLine: { value: 1.25 }, // outline width in screen pixels (x device pixel ratio)
     uWash: { value: 1 },
     toneMappingExposure: { value: 1 }
   },
@@ -136,29 +136,29 @@ const CanvasShader = {
       float edgeC = smoothstep(0.12, 0.28, length(vec2(gx, gy)));
       float sky = step(0.9999, texture2D(tDepth, vUv).x);
       // lines thin out and lighten with distance, like pencil pressure easing off
-      float far = smoothstep(40.0, 160.0, zc);
-      float ink = clamp(max(edgeZ, edgeC * 0.7) * (1.0 - far * 0.7), 0.0, 1.0) * (1.0 - sky);
+      float far = smoothstep(25.0, 110.0, zc);
+      float ink = clamp(max(edgeZ, edgeC * 0.6) * (1.0 - far * 0.8), 0.0, 1.0) * (1.0 - sky);
       ink *= 0.7 + 0.3 * texture2D(tNoise, px / (90.0 * uPx)).r;
 
       // paper grade: warm, a little desaturated, shadows lifted toward sepia
       float l = luma(col);
-      col = mix(vec3(l), col, 0.86);
-      col = mix(col, col * vec3(1.04, 0.99, 0.9), 0.6);
-      col = mix(uPaper * 0.32, vec3(1.0), col);
+      col = mix(vec3(l), col, 0.97);
+      col = mix(col, col * vec3(1.04, 0.99, 0.9), 0.3);
+      col = mix(uPaper * 0.2, vec3(1.0), col);
 
       // distance wash: the far field dissolves into paper
-      col = mix(col, uPaper, smoothstep(70.0, 240.0, zc) * 0.55 * (1.0 - sky));
-      col = mix(col, uInk, ink * 0.92);
+      col = mix(col, uPaper, smoothstep(80.0, 260.0, zc) * 0.4 * (1.0 - sky));
+      col = mix(col, uInk, ink * 0.82);
 
       // paper: fibres and grain, stronger in the light
       float grain = texture2D(tNoise, px / (200.0 * uPx)).r * 0.6 + texture2D(tNoise, px / (1600.0 * uPx)).g * 0.4;
-      col *= 0.93 + 0.1 * grain;
+      col *= 0.965 + 0.05 * grain;
 
       // the frame fades into the paper with a ragged watercolour edge
       vec2 q = vUv * 2.0 - 1.0;
       float edge = max(abs(q.x) * 0.92, abs(q.y));
       float rag = (texture2D(tNoise, vUv * vec2(1.6, 1.1)).g - 0.5) * 0.14;
-      float wash = smoothstep(0.86, 1.02, edge + rag) * uWash;
+      float wash = smoothstep(0.92, 1.05, edge + rag) * uWash;
       col = mix(col, uPaper * (0.97 + 0.05 * grain), wash);
 
       gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
@@ -214,10 +214,9 @@ function noiseTexture(N = 256) {
 
 /** Scene -> multisampled target with depth -> one canvas pass to the screen. */
 export class CanvasPost {
-  constructor(renderer) {
+  constructor(renderer, { samples = 2 } = {}) {
     this.renderer = renderer;
     this.enabled = true;
-    const samples = (window.devicePixelRatio || 1) >= 1.75 ? 2 : 4;
     this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples });
     this.target.depthTexture = new THREE.DepthTexture(1, 1, THREE.FloatType);
     this.material = new THREE.RawShaderMaterial({
@@ -232,6 +231,15 @@ export class CanvasPost {
     this.noise = noiseTexture();
     this.material.uniforms.tNoise.value = this.noise;
     this.quad = new FullScreenQuad(this.material);
+  }
+
+  /** MSAA samples of the scene target: none at high pixel ratios, where the ink lines hide the steps. */
+  setSamples(n) {
+    if (this.target.samples === n) return;
+    const { width, height } = this.target;
+    this.target.dispose();
+    this.target.samples = n;
+    this.target.setSize(width, height);
   }
 
   setSize(w, h) {

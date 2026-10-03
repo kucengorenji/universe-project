@@ -45,6 +45,14 @@ Halaman terpisah `skirmish.html`: pertempuran regu bergaya Valkyria Chronicles 3
 - **M2 polish aset**: jembatan batu lengkung, pose tiarap/terkena/tumbang, efek tembakan dan ledakan, onomatope, lampu malam.
 - **M3 mekanik lanjutan**: fog of war, granat dan cover hancur, rumput tinggi dan parit sebagai concealment/cover penuh.
 
+### Perbaikan setelah M1 (grill ketiga, 3 Oktober 2026)
+
+- **Kontrol hybrid**: pointer lock bila diizinkan; bila ditolak (mis. browser pane aplikasi Claude, `SecurityError`), otomatis mode kursor: reticle mengikuti kursor, kamera berputar saat kursor di tepi layar, Q/E dan panah memutar kamera. Klik kanan = toggle bidik (tahan juga bisa).
+- **HUD**: AP di dalam kartu unit (tidak bertumpuk), petunjuk tombol disembunyikan di jendela sempit, minimap tanpa label, penanda merah di atas musuh yang terlihat.
+- **Gaya lebih ringan**: arsiran hanya di bayangan jatuh, outline lebih tipis dan memudar di jarak, warna lebih jenuh, kertas lebih halus.
+- **Animasi**: bidik dengan popor di bahu dan dua tangan, recoil, sentakan saat terkena, jatuh (gugur tertelungkup, tumbang telentang), jalan jongkok, langkah saat berputar di tempat.
+- **Performa** (Chrome headless, Metal, M1 Pro, 2560×1600): 9,1 → 5,0 ms GPU per frame. Tanpa MSAA bila pixel ratio ≥ 1,75 (−3 ms), shadow map 2048 yang mengikuti aksi (±70 m, di-snap ke texel), preset Grafis di Persiapan (Tinggi: shadow 2048 + supersampling 1,5× di layar 1×; Sedang: 1024, rumput 60%; Rendah: tanpa shadow dan MSAA, rumput 35%). `core/quality.js`: dengan GPU timer, resolusi hanya turun bila GPU memang penuh (fps rendah karena host men-throttle tidak lagi menurunkan resolusi).
+
 ## Peta kode
 
 ```text

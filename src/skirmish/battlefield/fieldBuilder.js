@@ -51,10 +51,11 @@ export class FieldBuilder {
    * @param field  generateField() output
    * @param packs  { town, military } from loadAssetPack (asset -> {0: geometry})
    */
-  constructor(field, packs, { shadows = true } = {}) {
+  constructor(field, packs, { shadows = true, grass = 1 } = {}) {
     this.field = field;
     this.packs = packs;
     this.shadows = shadows;
+    this.grassDensity = grass; // share of the tall grass tufts (quality tiers thin it out)
     this.group = new THREE.Group();
     this.group.name = 'battlefield';
     this.disposables = [];
@@ -318,7 +319,7 @@ export class FieldBuilder {
     for (const g of f.grass) {
       const xs = g.poly.map((p) => p[0]), zs = g.poly.map((p) => p[1]);
       const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
-      const step = g.kind === 'wheat' ? 0.85 : 0.75;
+      const step = (g.kind === 'wheat' ? 0.85 : 0.75) / Math.sqrt(this.grassDensity);
       for (let z = z0; z < z1; z += step) {
         for (let x = x0; x < x1; x += step) {
           const px = x + (rng() - 0.5) * step, pz = z + (rng() - 0.5) * step;

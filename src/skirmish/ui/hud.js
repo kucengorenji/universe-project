@@ -24,17 +24,18 @@ export class Hud {
         <button type="button" class="btn btn--primary cmd__end">Akhiri giliran</button>
       </aside>
       <div class="action">
+        <div class="markers" aria-hidden="true"></div>
         <div class="reticle" aria-hidden="true"></div>
         <canvas class="minimap" aria-label="Minimap"></canvas>
         <div class="unitcard">
           <div class="unitcard__name"></div>
           <div class="unitcard__class"></div>
           <div class="bar bar--hp"><i></i><span></span></div>
+          <div class="unitcard__ap"><b>AP</b><div class="bar bar--ap"><i></i><span></span></div></div>
           <div class="unitcard__ammo"></div>
         </div>
-        <div class="apgauge"><div class="apgauge__label">AP</div><div class="bar bar--ap"><i></i></div></div>
-        <p class="keys">WASD gerak · Shift lari · C jongkok · Klik kanan bidik · Klik kiri tembak · Space selesai</p>
-        <button type="button" class="lockhint">Klik untuk mengendalikan unit (Esc melepas mouse)</button>
+        <p class="keys"></p>
+        <button type="button" class="lockhint">Klik untuk mengunci mouse (Esc melepas)</button>
       </div>
       <div class="banner"><strong>Giliran musuh</strong><span>Tahan Space untuk mempercepat</span></div>
       <div class="result" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
@@ -56,7 +57,7 @@ export class Hud {
       turn: $('.topbar__turn'), side: $('.topbar__side'), cp: $('.topbar__cp'),
       units: $('.cmd__units'), end: $('.cmd__end'),
       reticle: $('.reticle'), name: $('.unitcard__name'), cls: $('.unitcard__class'), hp: $('.bar--hp'), ammo: $('.unitcard__ammo'), ap: $('.bar--ap'),
-      lock: $('.lockhint'), minimap: $('.minimap'), result: $('.result'), toast: $('.toast'), fx: $('.fx')
+      lock: $('.lockhint'), minimap: $('.minimap'), markers: $('.markers'), keys: $('.keys'), result: $('.result'), toast: $('.toast'), fx: $('.fx')
     };
     this.el.end.addEventListener('click', () => game.endPlayerTurn());
     this.el.lock.addEventListener('click', () => game.engine.renderer.domElement.requestPointerLock?.());
@@ -104,18 +105,42 @@ export class Hud {
     this.el.cls.textContent = `${CLASS_LABEL[u.cls]} · ${u.stance === 'crouch' ? 'jongkok' : 'berdiri'}${ctrl.attacked ? ' · sudah menyerang' : ''}`;
     this.el.hp.querySelector('i').style.width = `${(100 * u.hp) / u.maxHp}%`;
     this.el.hp.querySelector('span').textContent = `${u.hp} / ${u.maxHp}`;
+    this.el.ap.querySelector('i').style.width = `${(100 * ctrl.ap) / ctrl.apMax}%`;
+    this.el.ap.querySelector('span').textContent = `${Math.round(ctrl.ap)} / ${Math.round(ctrl.apMax)} m`;
     const W = WEAPONS[u.weapon];
     this.el.ammo.textContent = u.ammo === Infinity ? `${W.shots} peluru per tembakan` : `Amunisi ${u.ammo} / ${u.maxAmmo}`;
-    this.el.ap.querySelector('i').style.width = `${(100 * ctrl.ap) / ctrl.apMax}%`;
     const aiming = ctrl.aiming || ctrl.firing;
-    const r = Math.max(6, ctrl.reticle());
-    this.el.reticle.style.display = aiming ? '' : 'none';
-    this.el.reticle.style.width = this.el.reticle.style.height = `${r * 2}px`;
-    this.el.reticle.classList.toggle('reticle--scope', !!ctrl.scope && aiming);
+    const cursor = ctrl.mode === 'cursor';
+    const ret = this.el.reticle;
+    // the reticle shows while aiming; in cursor mode a small ring marks the cursor all the time
+    ret.style.display = aiming || cursor ? '' : 'none';
+    const r = aiming ? Math.max(6, ctrl.reticle()) : 7;
+    ret.style.width = ret.style.height = `${r * 2}px`;
+    const p = ctrl.reticlePos();
+    ret.style.left = `${p.x}px`;
+    ret.style.top = `${p.y}px`;
+    ret.classList.toggle('reticle--idle', !aiming);
+    ret.classList.toggle('reticle--scope', !!ctrl.scope && aiming);
   }
 
-  setLocked(locked) {
+  /** Red markers over enemies the acting soldier can see: [{ x, y }] in CSS px. */
+  markers(list) {
+    const box = this.el.markers;
+    while (box.children.length < list.length) box.appendChild(document.createElement('i'));
+    [...box.children].forEach((el, i) => {
+      const m = list[i];
+      el.style.display = m ? '' : 'none';
+      if (m) el.style.transform = `translate(${m.x}px, ${m.y}px)`;
+    });
+  }
+
+  setLocked(locked, mode = 'lock') {
     document.body.classList.toggle('locked', locked);
+    document.body.dataset.input = mode;
+    this.el.keys.textContent =
+      mode === 'cursor'
+        ? 'WASD gerak · Q/E atau kursor ke tepi: putar kamera · Shift lari · C jongkok · Klik kanan bidik · Klik kiri tembak · Space selesai'
+        : 'WASD gerak · Mouse: kamera · Shift lari · C jongkok · Klik kanan bidik · Klik kiri tembak · Space selesai';
   }
 
   toast(text) {

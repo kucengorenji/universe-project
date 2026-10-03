@@ -14,8 +14,9 @@ export const SIDE_COLOR = { fed: FACTIONS.fed.flag, imp: FACTIONS.imp.flag };
 const SHORT = { ...Object.fromEntries(Object.entries(CLASSES).map(([k, v]) => [k, v.short])), tank: 'TK', bunker: 'BK' };
 
 export class TacticalMap {
-  constructor(canvas, { onPick } = {}) {
+  constructor(canvas, { onPick, mini = false } = {}) {
     this.canvas = canvas;
+    this.mini = mini; // the round minimap: small tokens, no labels, compass or scale
     this.g = canvas.getContext('2d');
     this.onPick = onPick;
     this.view = { x: 0, z: 0, scale: 3 }; // world centre and screen pixels per metre
@@ -151,6 +152,7 @@ export class TacticalMap {
     for (const c of o.camps || []) this.drawCamp(c);
     const units = [...(o.units || [])].sort((a, b) => (a.state === 'ok') - (b.state === 'ok'));
     for (const u of units) this.drawUnit(u, u.id === o.selected, o.pickable?.has(u.id));
+    if (this.mini) return;
     // compass and scale bar
     g.save();
     g.translate(this.width - 44, this.height - 54);
@@ -177,7 +179,7 @@ export class TacticalMap {
   drawCamp(c) {
     const g = this.g;
     const [x, y] = this.toScreen(c.x, c.z);
-    const s = Math.max(1, this.view.scale / 3);
+    const s = this.mini ? 0.5 : Math.max(1, this.view.scale / 3);
     g.strokeStyle = INK;
     g.lineWidth = 2;
     g.beginPath();
@@ -204,7 +206,7 @@ export class TacticalMap {
     const g = this.g;
     const [x, y] = this.toScreen(u.x, u.z);
     const big = u.kind !== 'infantry';
-    const r = Math.max(big ? 13 : 10, this.view.scale * (big ? 2.4 : 1.3));
+    const r = this.mini ? (big ? 7 : selected ? 6 : 4.5) : Math.max(big ? 13 : 10, this.view.scale * (big ? 2.4 : 1.3));
     if (u.state === 'evac') return;
     if (u.state === 'dead') {
       g.strokeStyle = 'rgba(42,33,25,0.55)';
@@ -247,6 +249,7 @@ export class TacticalMap {
     g.beginPath();
     g.arc(x, y, r + 2.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f);
     g.stroke();
+    if (this.mini) return;
     g.fillStyle = '#fff';
     g.font = `600 ${Math.round(r * 0.95)}px "Barlow Condensed", sans-serif`;
     g.textAlign = 'center';

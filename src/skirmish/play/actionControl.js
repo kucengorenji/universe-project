@@ -1,12 +1,20 @@
 import * as THREE from 'three';
 import { WEAPONS, WALK_SPEED, RUN_SPEED, RUN_AP_COST } from '../game/rules.js';
 
-// Action Mode for the player's unit: pointer-locked third-person control. Mouse turns the
-// camera round the soldier, WASD moves relative to it (spending AP), Shift runs, C crouches,
-// right mouse aims over the shoulder (time stops), left mouse fires one burst per action,
-// Space ends the action.
+// Action Mode for the player's unit, third person. WASD moves relative to the camera
+// (spending AP), Shift runs, C crouches, right mouse aims over the shoulder (time stops), left
+// mouse fires one burst per action, Space ends the action. Right click toggles the aim; holding
+// it aims until it is let go. Two ways to look around:
+//   lock    pointer lock (a normal browser tab): the mouse turns the camera freely
+//   cursor  when the page may not lock the pointer (embedded browsers refuse it): the reticle
+//           follows the cursor, the camera turns while the cursor nears the screen's edges,
+//           and Q/E (or the arrow keys) turn it too.
+// The mode is found out by asking for the lock once; a refusal switches to cursor mode for good.
 
 const CROUCH_SPEED = 1.6;
+const TURN_KEYS = 1.9; // rad/s, Q/E and arrows
+const EDGE = 0.55; // past this share of the half screen the camera starts to turn
+const EDGE_TURN = 2.6; // rad/s at the very edge
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class ActionControl {
@@ -16,6 +24,9 @@ export class ActionControl {
     this.active = false;
     this.camYaw = 0;
     this.camPitch = -0.15;
+    this.mode = 'lock';
+    this.cursor = { x: 0, y: 0, inside: false };
+    this.look = { yaw: 0, pitch: 0 };
     const dom = game.engine.renderer.domElement;
     this.dom = dom;
     this.onKey = (e) => {
@@ -26,40 +37,81 @@ export class ActionControl {
           e.preventDefault();
           if (!e.repeat) this.finish();
         } else if (k === 'c' && !e.repeat) this.toggleCrouch();
+        if (k.startsWith('arrow')) e.preventDefault();
         this.keys.add(k);
       } else this.keys.delete(k);
     };
     this.onMouseMove = (e) => {
-      if (!this.active || document.pointerLockElement !== dom) return;
-      const k = this.aiming ? (this.scope ? 0.0005 : 0.0011) : 0.0024;
-      this.camYaw -= e.movementX * k;
-      this.camPitch = THREE.MathUtils.clamp(this.camPitch - e.movementY * k, -1.1, 0.75);
+      if (!this.active) return;
+      if (this.locked) {
+        const k = this.aiming ? (this.scope ? 0.0005 : 0.0011) : 0.0024;
+        this.camYaw -= e.movementX * k;
+        this.camPitch = THREE.MathUtils.clamp(this.camPitch - e.movementY * k, -1.1, 0.75);
+      } else {
+        const r = dom.getBoundingClientRect();
+        this.cursor.x = e.clientX - r.left;
+        this.cursor.y = e.clientY - r.top;
+        this.cursor.inside = this.cursor.x >= 0 && this.cursor.y >= 0 && this.cursor.x <= r.width && this.cursor.y <= r.height;
+      }
     };
+    this.onLeave = () => (this.cursor.inside = false);
     this.onMouseDown = (e) => {
       if (!this.active) return;
-      if (document.pointerLockElement !== dom) {
-        dom.requestPointerLock?.();
-        return;
+      if (this.mode === 'lock' && !this.locked) {
+        this.requestLock();
+        if (e.button !== 2) return;
       }
-      if (e.button === 2) this.setAim(true);
+      // right button: a click toggles aiming, holding it aims until release
+      if (e.button === 2 && !this.firing) {
+        if (this.aiming) this.setAim(false);
+        else {
+          this.setAim(true);
+          this.aimPressed = performance.now();
+        }
+      }
       if (e.button === 0 && this.aiming) this.fire();
     };
     this.onMouseUp = (e) => {
-      if (this.active && e.button === 2 && !this.firing) this.setAim(false);
+      if (this.active && e.button === 2 && !this.firing && this.aiming && performance.now() - this.aimPressed > 350) this.setAim(false);
     };
     this.onContext = (e) => this.active && e.preventDefault();
     this.onLock = () => {
       // a lock granted after the action already ended (the request is asynchronous) is released
       if (document.pointerLockElement === dom && !this.active) document.exitPointerLock();
-      game.hud.setLocked(document.pointerLockElement === dom && this.active);
+      game.hud.setLocked(this.locked, this.mode);
     };
+    this.onLockError = () => this.useCursor();
     window.addEventListener('keydown', this.onKey);
     window.addEventListener('keyup', this.onKey);
     window.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('mouseleave', this.onLeave);
     dom.addEventListener('mousedown', this.onMouseDown);
     window.addEventListener('mouseup', this.onMouseUp);
     dom.addEventListener('contextmenu', this.onContext);
     document.addEventListener('pointerlockchange', this.onLock);
+    document.addEventListener('pointerlockerror', this.onLockError);
+  }
+
+  get locked() {
+    return document.pointerLockElement === this.dom;
+  }
+
+  requestLock() {
+    if (this.mode !== 'lock' || !this.dom.requestPointerLock) return this.useCursor();
+    try {
+      const p = this.dom.requestPointerLock();
+      p?.catch?.(() => this.useCursor());
+    } catch {
+      this.useCursor();
+    }
+  }
+
+  useCursor() {
+    if (this.mode === 'cursor') return;
+    this.mode = 'cursor';
+    const r = this.dom.getBoundingClientRect();
+    this.cursor = { x: r.width / 2, y: r.height / 2, inside: false };
+    this.game.hud.setLocked(false, 'cursor');
   }
 
   /** Take control of a unit with an AP budget (metres). */
@@ -77,14 +129,17 @@ export class ActionControl {
     this.camPitch = -0.12;
     this.weapon = WEAPONS[u.weapon];
     this.scope = !!this.weapon?.scope;
-    this.dom.requestPointerLock?.();
+    const r = this.dom.getBoundingClientRect();
+    this.cursor = { x: r.width / 2, y: r.height * 0.45, inside: false };
+    this.requestLock();
+    this.game.hud.setLocked(this.locked, this.mode);
   }
 
   stop() {
     this.active = false;
     this.aiming = false;
     this.keys.clear();
-    if (document.pointerLockElement === this.dom) document.exitPointerLock();
+    if (this.locked) document.exitPointerLock();
   }
 
   get frozen() {
@@ -124,15 +179,41 @@ export class ActionControl {
     this.onEnd?.();
   }
 
-  /** The camera's forward ray: where the reticle points in the world. */
+  /** Screen point of the reticle (CSS px in the canvas): the centre when locked, else the cursor. */
+  reticlePos() {
+    const r = this.dom.getBoundingClientRect();
+    return this.mode === 'cursor' ? { x: this.cursor.x, y: this.cursor.y } : { x: r.width / 2, y: r.height / 2 };
+  }
+
+  /** Where the reticle points in the world (the first thing the ray through it meets). */
   aimPoint() {
     const cam = this.game.camera;
-    const dir = new THREE.Vector3();
-    cam.getWorldDirection(dir);
+    const r = this.dom.getBoundingClientRect();
+    const p = this.reticlePos();
+    const ndc = new THREE.Vector3((p.x / r.width) * 2 - 1, -(p.y / r.height) * 2 + 1, 0.5).unproject(cam);
+    const dir = ndc.sub(cam.position).normalize();
     const o = { x: cam.position.x, y: cam.position.y, z: cam.position.z };
     const hit = this.game.arena.bullet(o, dir, 260, this.game.battle.units, this.unit);
     const t = hit ? hit.t : 260;
     return { x: o.x + dir.x * t, y: o.y + dir.y * t, z: o.z + dir.z * t };
+  }
+
+  /** Turn the camera: keys always; the cursor near the edges in cursor mode. */
+  turn(dt) {
+    const k = this.keys;
+    const slow = this.aiming ? (this.scope ? 0.2 : 0.45) : 1;
+    const yawKeys = (k.has('q') || k.has('arrowleft') ? 1 : 0) - (k.has('e') || k.has('arrowright') ? 1 : 0);
+    const pitchKeys = (k.has('arrowup') ? 1 : 0) - (k.has('arrowdown') ? 1 : 0);
+    this.camYaw += yawKeys * TURN_KEYS * slow * dt;
+    this.camPitch += pitchKeys * TURN_KEYS * 0.6 * slow * dt;
+    if (this.mode === 'cursor' && this.cursor.inside) {
+      const r = this.dom.getBoundingClientRect();
+      const nx = (this.cursor.x / r.width) * 2 - 1, ny = (this.cursor.y / r.height) * 2 - 1;
+      const push = (n) => Math.sign(n) * Math.max(0, (Math.abs(n) - EDGE) / (1 - EDGE)) ** 1.6;
+      this.camYaw -= push(nx) * EDGE_TURN * slow * dt;
+      this.camPitch -= push(ny) * EDGE_TURN * 0.5 * slow * dt;
+    }
+    this.camPitch = THREE.MathUtils.clamp(this.camPitch, -1.1, 0.75);
   }
 
   update(dt) {
@@ -141,6 +222,7 @@ export class ActionControl {
     const game = this.game;
     const view = game.views.get(u.id);
     if (u.state !== 'ok') return this.finish();
+    this.turn(dt);
     // movement (not while aiming or firing)
     let moving = false;
     if (!this.aiming && !this.firing && this.ap > 0) {
@@ -150,7 +232,7 @@ export class ActionControl {
         const run = this.keys.has('shift') && u.stance === 'stand';
         const speed = u.stance === 'crouch' ? CROUCH_SPEED : run ? RUN_SPEED : WALK_SPEED;
         const cost = run ? RUN_AP_COST : 1;
-        // camera forward is (sin yaw, cos yaw); right is (-cos yaw, sin yaw) for a camera looking down +z
+        // camera forward is (sin yaw, cos yaw); its right is (-cos yaw, sin yaw)
         const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
         let dx = fx * f - fz * s, dz = fz * f + fx * s;
         const L = Math.hypot(dx, dz);
@@ -171,14 +253,21 @@ export class ActionControl {
       }
     }
     this.moving = moving;
+    this.placeCamera(dt);
     if (view) {
       view.aim = this.aiming || this.firing;
+      if (view.aim && !this.firing) {
+        // the body and weapon follow the reticle's world point
+        const p = this.aimPoint();
+        const e = game.arena.eye(u);
+        this.look.yaw = Math.atan2(p.x - e.x, p.z - e.z);
+        this.look.pitch = Math.atan2(p.y - e.y, Math.hypot(p.x - e.x, p.z - e.z));
+      }
       if (view.aim) {
-        u.yaw = this.camYaw;
-        view.look = { yaw: this.camYaw, pitch: this.camPitch };
+        u.yaw = this.look.yaw;
+        view.look = { yaw: this.look.yaw, pitch: this.look.pitch };
       }
     }
-    this.placeCamera(dt);
   }
 
   placeCamera() {
@@ -188,8 +277,8 @@ export class ActionControl {
     const aim = this.aiming || this.firing;
     const g = game.arena.ground(u.x, u.z);
     const head = g + (u.stance === 'crouch' ? 1.15 : 1.6);
-    const dist = aim ? (this.scope ? 0.2 : 1.9) : 3.4;
-    const side = aim ? (this.scope ? 0 : 0.85) : 0.7;
+    const dist = aim ? (this.scope ? 0.2 : 2.1) : 3.6;
+    const side = aim ? (this.scope ? 0 : 0.85) : 0.75;
     const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
     const cp = Math.cos(this.camPitch), sp = Math.sin(this.camPitch);
     const target = new THREE.Vector3(u.x, head + (aim ? 0.05 : 0.15), u.z);
@@ -210,6 +299,7 @@ export class ActionControl {
       cam.fov += (fov - cam.fov) * 0.35;
       cam.updateProjectionMatrix();
     }
+    cam.updateMatrixWorld();
   }
 
   /** Reticle radius in CSS pixels for the current weapon and stance. */
@@ -226,9 +316,11 @@ export class ActionControl {
     window.removeEventListener('keydown', this.onKey);
     window.removeEventListener('keyup', this.onKey);
     window.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseleave', this.onLeave);
     this.dom.removeEventListener('mousedown', this.onMouseDown);
     window.removeEventListener('mouseup', this.onMouseUp);
     this.dom.removeEventListener('contextmenu', this.onContext);
     document.removeEventListener('pointerlockchange', this.onLock);
+    document.removeEventListener('pointerlockerror', this.onLockError);
   }
 }

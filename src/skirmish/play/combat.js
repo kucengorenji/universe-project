@@ -74,11 +74,13 @@ export class Combat {
     const hit = this.arena.bullet(o, d, maxT, this.battle.units, u);
     const end = hit ? hit.point : { x: o.x + d.x * maxT, y: o.y + d.y * maxT, z: o.z + d.z * maxT };
     fx.flash(o, W.splash ? 0.9 : 0.4);
+    this.game.views.kick(u);
     fx.tracer(o, end, weapon === 'lance' ? '#ff8a3a' : weapon === 'sniper' ? '#ffffff' : null);
     this.game.audio?.shot(weapon, o);
     if (!hit) return;
     if (hit.unit) {
       const r = this.battle.hit(hit.unit, { weapon, part: hit.part, dist: hit.t, shooter: u, scale });
+      if (r.damage > 0) this.game.views.flinch(hit.unit);
       this.report(hit.unit, r, end);
     } else if (!W.splash) fx.dust(end, 0.5);
     if (W.splash) {

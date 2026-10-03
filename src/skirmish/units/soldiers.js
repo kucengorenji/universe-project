@@ -106,18 +106,22 @@ export function disposeSoldier(s) {
 }
 
 /**
- * Pose a soldier for this frame: the walk from chunkyPeople, then crouch, the torso turned into
- * the stance, the weapon placed and both hands brought to it.
+ * Pose a soldier for this frame: the walk from chunkyPeople, then crouch (kneeling when still,
+ * a low walk when moving), the torso turned into the stance, recoil and hit flinches, the weapon
+ * placed and both hands brought to it. Downed and dead soldiers fall and lie still.
  *   speed: ground speed (m/s); aim: true while aiming (aimYaw/aimPitch relative to the body);
- *   down: lying (downed or dead)
+ *   down: 'down' (on the back, rescuable) | 'dead' (face down) | false
  */
 export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn = 0, down = false } = {}) {
-  // downed or dead: lying on the back, the weapon dropped
-  s.gun.visible = !down;
+  s.recoil = (s.recoil || 0) * Math.exp(-dt * 14);
+  s.flinch = (s.flinch || 0) * Math.exp(-dt * 5);
   if (down) {
-    animateNpc(s, dt, 0, { pose: 'sleep' });
+    s.gun.visible = false;
+    fall(s, dt, down === 'dead');
     return;
   }
+  s.gun.visible = true;
+  s.fallT = 0;
   const k = 1 - Math.exp(-dt * 10);
   s.aimBlend += ((aim ? 1 : 0) - s.aimBlend) * k;
   s.crouchBlend += ((crouch ? 1 : 0) - s.crouchBlend) * k;
@@ -127,9 +131,9 @@ export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn
   const c = s.crouchBlend;
   const hold = s.hold;
 
-  // Kneel: right knee to the ground, left foot planted ahead
   if (c > 0.001) {
-    const still = 1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.2);
+    const still = 1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.0);
+    // kneel: right knee to the ground, left foot planted ahead
     const kc = c * still;
     B.hips.node.position.y -= 0.42 * kc;
     rotate(B.hip_L, -1.35 * kc, 0, 0.05 * kc);
@@ -140,15 +144,26 @@ export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn
     rotate(B.ankle_R, 0.55 * kc);
     rotate(B.toe_R, -0.6 * kc);
     rotate(B.spine, 0.12 * kc);
+    // moving crouched: hips low, knees bent, leaning into the walk
+    const km = c * (1 - still);
+    B.hips.node.position.y -= 0.3 * km;
+    for (const side of ['L', 'R']) {
+      rotate(B[`hip_${side}`], -0.5 * km);
+      rotate(B[`knee_${side}`], 0.85 * km);
+      rotate(B[`ankle_${side}`], -0.35 * km);
+    }
+    rotate(B.spine, 0.32 * km);
+    rotate(B.neck, -0.25 * km);
   }
 
-  // Torso turns sideways into the shot; the head keeps looking along the aim
+  // Torso turns sideways into the shot; the head keeps looking along the aim and leans to the stock
   const torso = THREE.MathUtils.lerp(hold.ready.torso, hold.aim.torso, a);
-  rotate(B.spine, 0, torso * 0.4 + s.aimYaw * a * 0.3);
-  rotate(B.chest, -s.aimPitch * a * 0.4, torso * 0.6 + s.aimYaw * a * 0.4);
-  rotate(B.neck, 0, -torso * 0.4);
-  rotate(B.head, s.aimPitch * a * 0.5, -torso * 0.6 + s.aimYaw * a * 0.3);
-  if (a > 0.5) setFace(s, 'focused');
+  rotate(B.spine, -0.1 * s.flinch, torso * 0.4 + s.aimYaw * a * 0.3);
+  rotate(B.chest, -s.aimPitch * a * 0.4 - 0.25 * s.flinch - 0.05 * s.recoil, torso * 0.6 + s.aimYaw * a * 0.4);
+  rotate(B.neck, 0.15 * s.flinch, -torso * 0.4);
+  rotate(B.head, s.aimPitch * a * 0.5 + (hold.aim.cheek ? 0.12 * a : 0), -torso * 0.6 + s.aimYaw * a * 0.3, hold.aim.cheek ? -0.22 * a : 0);
+  if (s.flinch > 0.3) setFace(s, 'worried');
+  else if (a > 0.5) setFace(s, 'focused');
 
   s.root.updateMatrixWorld(true);
   placeWeapon(s, a);
@@ -156,21 +171,81 @@ export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn
   if (s.weapon.support) reachArm(s, 'L', supportWorld(s), poleL(s));
 }
 
+/** A round leaves the barrel: the weapon kicks back and up. */
+export function kick(s) {
+  s.recoil = 1;
+}
+
+/** Struck by a round: the body jerks back. */
+export function flinch(s) {
+  s.flinch = 1;
+}
+
+/**
+ * Falling down (half a second), then lying still: the dead face down, the downed on their back
+ * with knees up. The hips drop to the ground and turn a quarter round about the body's side axis.
+ */
+function fall(s, dt, dead) {
+  s.fallT = Math.min(1, (s.fallT || 0) + dt * 2.2);
+  const t = s.fallT;
+  const e = t < 1 ? 1 - (1 - t) ** 3 : 1;
+  const B = s.bones;
+  animateNpc(s, 0, 0);
+  const lie = dead ? Math.PI / 2 : -Math.PI / 2;
+  B.hips.node.position.set(0, THREE.MathUtils.lerp(B.hips.y, 0.16, e), (dead ? 0.35 : -0.35) * e);
+  pose(B.hips, lie * e, 0, 0);
+  for (const side of ['L', 'R']) {
+    const sx = side === 'L' ? 1 : -1;
+    pose(B[`hip_${side}`], dead ? 0.08 * e : -0.55 * e, 0, sx * 0.12 * e);
+    pose(B[`knee_${side}`], dead ? 0.15 * e : 1.0 * e);
+    pose(B[`ankle_${side}`], dead ? 0.6 * e : -0.3 * e);
+    pose(B[`shoulder_${side}`], (dead ? -0.4 : 0.15) * e, 0, sx * (dead ? 0.9 : 0.45) * e);
+    pose(B[`elbow_${side}`], -0.6 * e);
+  }
+  pose(B.spine, 0);
+  pose(B.chest, 0);
+  pose(B.neck, 0, dead ? 0.6 * e : 0.3 * e);
+  pose(B.head, dead ? -0.2 * e : 0.1 * e, dead ? 0.5 * e : 0);
+  setFace(s, dead ? 'asleep' : 'worried');
+}
+
+/** Set a bone to its rest rotation times an Euler offset. */
+function pose(b, x = 0, y = 0, z = 0) {
+  b.node.quaternion.copy(b.rest).multiply(_q.setFromEuler(new THREE.Euler(x, y, z)));
+}
+
 function rotate(b, x = 0, y = 0, z = 0) {
   b.node.quaternion.multiply(_q.setFromEuler(new THREE.Euler(x, y, z)));
 }
 
-/** Weapon transform in the soldier's root space: from the ready carry to the aim. */
+const _s = new THREE.Vector3();
+
+/**
+ * Weapon transform in the soldier's root space, from the ready carry to the aim. Aimed rifles sit
+ * with the butt in the right shoulder (the shoulder bone, wherever the turned torso put it), SMGs
+ * a hand lower, lances under the arm. Recoil pushes the weapon back and tips the muzzle up.
+ */
 function placeWeapon(s, a) {
   const { ready, aim } = s.hold;
-  const crouchDrop = 0.42 * s.crouchBlend * (1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.2));
-  const grip = new THREE.Vector3().fromArray(ready.grip).lerp(_v.fromArray(aim.grip), a);
-  grip.y -= crouchDrop;
+  const crouchDrop = 0.42 * s.crouchBlend * (1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.0));
   // the aim direction in root space (body yaw stays on the root)
-  const aimDir = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(-s.aimPitch, s.aimYaw, 0, 'YXZ'));
+  const aimDir = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(-s.aimPitch - 0.12 * s.recoil, s.aimYaw, 0, 'YXZ'));
+  const readyGrip = new THREE.Vector3().fromArray(ready.grip);
+  readyGrip.y -= crouchDrop;
+  let aimGrip;
+  if (aim.under) aimGrip = new THREE.Vector3().fromArray(aim.grip).setY(aim.grip[1] - crouchDrop);
+  else {
+    // the shoulder pocket, just inside the right shoulder joint
+    s.bones.shoulder_R.node.getWorldPosition(_s);
+    s.root.worldToLocal(_s);
+    _s.x += 0.05;
+    _s.y -= aim.cheek ? 0.03 : 0.16;
+    _s.z += 0.04;
+    // the grip sits forward of the butt by the stock's length
+    aimGrip = _s.clone().addScaledVector(aimDir, aim.cheek ? 0.3 : 0.22);
+  }
+  const grip = readyGrip.lerp(aimGrip, a).addScaledVector(aimDir, -0.07 * s.recoil * a);
   const dir = new THREE.Vector3().fromArray(ready.dir).normalize().lerp(aimDir, a).normalize();
-  // pull the grip toward the aiming shoulder line as the torso turns
-  if (aim.cheek) grip.x += 0.04 * a;
   s.gun.position.copy(grip);
   // the barrel (+Z) along dir, kept upright (no roll)
   _m.lookAt(_w.set(0, 0, 0), dir.clone().negate(), UP);

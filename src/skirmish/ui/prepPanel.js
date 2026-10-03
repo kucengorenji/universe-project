@@ -14,7 +14,7 @@ export class PrepPanel {
    * setup: { seed, difficulty, cover, time, river, squad: [ids], leader }
    * onChange(setup, { field: true when the battlefield must be regenerated }), onStart()
    */
-  constructor(root, setup, { onChange, onStart }) {
+  constructor(root, setup, { onChange, onStart, quality = 'auto', onQuality }) {
     this.setup = setup;
     this.onChange = onChange;
     const opt = (obj, cur) => Object.entries(obj).map(([k, v]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${v}</option>`).join('');
@@ -27,6 +27,7 @@ export class PrepPanel {
         <label class="row">Cover <select class="p-cover">${opt(Object.fromEntries(Object.entries(COVER_LEVELS).map(([k, v]) => [k, v.label])), setup.cover)}</select></label>
         <label class="row">Waktu <select class="p-time">${opt({ day: 'Siang', dusk: 'Senja', night: 'Malam' }, setup.time)}</select></label>
         <label class="row">Sungai <select class="p-river">${opt({ auto: 'Acak', yes: 'Ada', no: 'Tidak ada' }, setup.river)}</select></label>
+        <label class="row">Grafis <select class="p-gfx">${opt({ auto: 'Otomatis', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' }, quality)}</select></label>
       </section>
       <section class="prep__sec" aria-labelledby="squadHead">
         <h3 id="squadHead">Regu <span class="p-count"></span></h3>
@@ -50,6 +51,7 @@ export class PrepPanel {
     field('cover', '.p-cover');
     field('time', '.p-time');
     field('river', '.p-river');
+    $('.p-gfx').addEventListener('change', (e) => onQuality?.(e.target.value));
     $('.p-roll').addEventListener('click', () => {
       setup.seed = 1 + Math.floor(Math.random() * 999999);
       this.el.seed.value = setup.seed;

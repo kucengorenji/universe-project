@@ -9,6 +9,7 @@ import { SkyLight } from './render/skyLight.js';
 import { loadWeapons } from './units/soldiers.js';
 import { loadSoldierTemplates, makeSoldier, animateSoldier, disposeSoldier } from './units/vcSoldiers.js';
 import { CLASSES } from './units/soldierLook.js';
+import { ROSTER } from './game/roster.js';
 
 // Look-development scene for the skirmish art direction: a generated battlefield, both
 // factions' soldiers in a lineup, the canvas post on or off, times of day and camera presets.
@@ -39,7 +40,7 @@ export class LookDev {
     const [town, military, templates] = await Promise.all([
       loadAssetPack(ASSETS.townPack),
       loadAssetPack(ASSETS.militaryPack, { glow: { M_radiator: 1 } }),
-      loadSoldierTemplates(ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead)
+      loadSoldierTemplates({ m: [ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead], f: [ASSETS.soldierPackF, ASSETS.soldierAtlasF, ASSETS.soldierHeadF] })
     ]);
     this.packs = { town, military };
     this.templates = templates;
@@ -63,18 +64,17 @@ export class LookDev {
     this.ui?.onBuilt?.(this);
   }
 
-  /** Both squads in two rows in front of the player's camp, facing the camera. */
+  /** The roster in front (all nine) and one enemy of each class behind, before the player's camp, facing the camera. */
   lineup() {
     const d = this.data;
     const camp = d.camps[0];
-    const classes = Object.keys(CLASSES);
     const base = new THREE.Vector3(camp.x, 0, camp.z - 13);
     this.lineupAt = base;
-    ['fed', 'imp'].forEach((faction, row) => {
-      classes.forEach((cls, i) => {
-        const ids = ['arlen', 'brann', 'otto', 'cato', 'vesna'];
-        const s = makeSoldier(this.templates, this.weapons, { faction, cls, seed: row * 10 + i + 3, id: faction === 'fed' ? ids[i] : null, shadows: this.shadows });
-        const x = base.x + (i - 2) * 1.6, z = base.z + row * 2.4;
+    const rows = [ROSTER.map((r) => ({ faction: 'fed', cls: r.cls, id: r.id })), Object.keys(CLASSES).map((cls) => ({ faction: 'imp', cls, id: null }))];
+    rows.forEach((members, row) => {
+      members.forEach(({ faction, cls, id }, i) => {
+        const s = makeSoldier(this.templates, this.weapons, { faction, cls, seed: row * 10 + i + 3, id, shadows: this.shadows });
+        const x = base.x + (i - (members.length - 1) / 2) * 1.35, z = base.z + row * 2.4;
         s.root.position.set(x, heightAt(d, x, z), z);
         s.root.rotation.y = Math.PI; // face north, toward the camera preset
         s.home = s.root.position.clone();
@@ -99,7 +99,7 @@ export class LookDev {
     const at = (x, z, dy = 0) => new THREE.Vector3(x, heightAt(d, x, z) + dy, z);
     const L = this.lineupAt;
     const presets = {
-      lineup: [at(L.x, L.z - 7.5, 1.6), at(L.x, L.z + 1.2, 1.0)],
+      lineup: [at(L.x, L.z - 10.5, 1.6), at(L.x, L.z + 1.2, 1.0)],
       portrait: [at(L.x + 1.4, L.z - 3.2, 1.65), at(L.x + 1.6, L.z, 1.35)],
       village: [at(d.camps[2].x + 26, d.camps[2].z + 30, 14), at(d.camps[2].x, d.camps[2].z, 1)],
       enemy: [at(d.tank.x + 14, d.tank.z + 22, 6), at(d.tank.x, d.tank.z - 4, 1.5)],

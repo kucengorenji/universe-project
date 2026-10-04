@@ -17,6 +17,10 @@ export const ASSET_FILES = {
   soldierPack: 'models/soldier_v5_m.glb', // skirmish soldiers: VRoid anime body in a VC1 uniform, hair styles, helmets, class kit, animation clips
   soldierAtlas: 'textures/soldier_v5_m_cloth.png', // skirmish soldiers' cloth atlas (shade, trim piping, pencil ink)
   soldierHead: 'textures/soldier_v5_m_head.png', // skirmish soldiers' head atlas (VRoid face, eyes, hair)
+  soldierPackF: 'models/soldier_v5_f.glb', // skirmish soldiers, the women's body (same pieces and clips)
+  soldierAtlasF: 'textures/soldier_v5_f_cloth.png', // the women's cloth atlas
+  soldierHeadF: 'textures/soldier_v5_f_head.png', // the women's head atlas
+  soldierPortraits: 'textures/soldier_portraits.png', // the nine heroes' painted portraits, 3 x 3 in roster order
   militaryPack: 'models/military.glb', // skirmish kit: weapons, fortifications, camp props, tank, windmill
   interiorAtlas: 'textures/interior_atlas.jpg', // floor and wall tiles
   townSurfaces: 'textures/town_surfaces.png' // neutral modulation atlas for buildings and ground

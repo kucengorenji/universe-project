@@ -249,12 +249,14 @@ export function placeWeapon(s, a) {
   const crouchDrop = follow ? 0 : s.gripDrop ?? 0.42 * s.crouchBlend * (1 - THREE.MathUtils.smoothstep(s.speed, 0.2, 1.0));
   // the aim direction in root space (body yaw stays on the root)
   const aimDir = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(-s.aimPitch - 0.12 * s.recoil, s.aimYaw, 0, 'YXZ'));
-  const readyGrip = new THREE.Vector3().fromArray(ready.grip);
+  // the carry is laid out for the men's body: a smaller one carries it scaled down
+  const readyGrip = new THREE.Vector3().fromArray(ready.grip).multiplyScalar(s.bodyScale ?? 1);
   readyGrip.y -= crouchDrop;
   if (follow) readyGrip.applyMatrix4(follow);
   let aimGrip;
   if (aim.under) {
-    aimGrip = new THREE.Vector3().fromArray(aim.grip).setY(aim.grip[1] - crouchDrop);
+    aimGrip = new THREE.Vector3().fromArray(aim.grip).multiplyScalar(s.bodyScale ?? 1);
+    aimGrip.y -= crouchDrop;
     if (follow) aimGrip.applyMatrix4(follow);
   }
   else {

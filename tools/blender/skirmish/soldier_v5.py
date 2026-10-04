@@ -64,11 +64,17 @@ for o in list(bpy.data.objects):
 COL = bpy.context.scene.collection
 
 BASE = {"m": "base_male/Base_Male.vrm", "f": "base_female/Base_Female.vrm"}
-# hero -> donor of the hair (None: the base's own short back-swept hair)
+# hero -> donor of the hair. Every donor's small extra materials (hair clips, ribbons, horns, cat
+# ears: fewer than ACCESSORY faces) are left behind
 HAIR = {
-    "m": {"arlen": "hairsample_male/HairSample_Male.vrm"},
-    "f": {},
+    "m": {"arlen": "hairsample_male/HairSample_Male.vrm", "otto": "sakurada_fumiriya/Sakurada Fumiriya.vrm",
+          "cato": "avatarsample_f/AvatarSample_F.vrm", "lio": "avatarsample_d_darkness/AvatarSample_D_Darkness.vrm"},
+    "f": {"mira": "avatarsample_g/AvatarSample_G.vrm", "sela": "avatarsample_d_0/AvatarSample_D.vrm",
+          "ines": "hairsample_female/HairSample_Female.vrm", "vesna": "sendagaya_shino/Sendagaya Shino.vrm"},
 }
+ACCESSORY = 1500
+# ornaments modelled as locks (cat ears): islands of the hair rising this far above the face's top
+EARS = {"ines": 0.045}
 ONLY = arg("--heroes")
 if ONLY:
     HAIR = {s: {h: d for h, d in v.items() if h in ONLY.split(",")} for s, v in HAIR.items()}
@@ -126,10 +132,13 @@ def to_world(ob):
     ob.matrix_world = Matrix.Identity(4)
 
 
-def transplant_hair(name, donor_rel, arm):
+def transplant_hair(name, donor_rel, arm, face_top=None):
     """The donor's hair, scaled and moved so its eyes land on the body's, bound rigidly to the head."""
     darm, dmeshes = import_vrm(donor_rel)
     hair = dmeshes.get("Hair001")
+    small = {i for i in range(len(hair.data.materials)) if sum(1 for p in hair.data.polygons if p.material_index == i) < ACCESSORY}
+    if small and len(small) < len(hair.data.materials):
+        delete_faces(hair, lambda f: f.material_index in small)
     (c0, w0), (c1, w1) = eyes(darm), eyes(arm)
     s = w1 / w0
     to_world(hair)
@@ -138,6 +147,8 @@ def transplant_hair(name, donor_rel, arm):
         if o is not hair:
             bpy.data.objects.remove(o, do_unlink=True)
     bpy.data.objects.remove(darm, do_unlink=True)
+    if name in EARS:
+        drop_islands(hair, lambda isl: max(v.co.z for v in isl) > face_top + EARS[name])
     hair.vertex_groups.clear()
     g = hair.vertex_groups.new(name="J_Bip_C_Head")
     g.add(range(len(hair.data.vertices)), 1.0, "REPLACE")
@@ -212,8 +223,9 @@ def joint(arm, name):
 def build_base():
     arm, meshes = import_vrm(BASE[SEX])
     arm.name = arm.data.name = "rig"
-    hairs = {h: transplant_hair(h, d, arm) for h, d in HAIR[SEX].items() if d}
     body, face = meshes["Body"], meshes["Face"]
+    face_top = max((face.matrix_world @ v.co).z for v in face.data.vertices)
+    hairs = {h: transplant_hair(h, d, arm, face_top) for h, d in HAIR[SEX].items() if d}
     parts = [body, face, *hairs.values()]
     for ob in parts:
         if ob.parent is not None and ob.matrix_world != Matrix.Identity(4):
@@ -272,7 +284,12 @@ def skin_part(body, name, keep, color):
     bmesh.ops.delete(bm, geom=bad, context="FACES")
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)  # VRoid splits the skin at UV seams
-    return mesh_obj(name, bm, color)
+    ob = mesh_obj(name, bm, color)
+    # VRoid's custom normals would keep shading the skin's anatomy on the smoothed cloth
+    if ob.data.has_custom_normals:
+        select_only(ob)
+        bpy.ops.mesh.customdata_custom_splitnormals_clear()
+    return ob
 
 
 def relax(ob, iterations=8, factor=0.5, pin_boundary=True):
@@ -284,6 +301,56 @@ def relax(ob, iterations=8, factor=0.5, pin_boundary=True):
         bmesh.ops.smooth_vert(bm, verts=verts, factor=factor, use_axis_x=True, use_axis_y=True, use_axis_z=True)
     bm.to_mesh(ob.data)
     bm.free()
+
+
+def drop_islands(ob, bad):
+    """Delete the connected pieces of a mesh for which bad(list of bmesh verts) holds."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    seen, gone = set(), []
+    for v0 in bm.verts:
+        if v0.index in seen:
+            continue
+        isl, stack = [], [v0]
+        seen.add(v0.index)
+        while stack:
+            v = stack.pop()
+            isl.append(v)
+            for e in v.link_edges:
+                w = e.other_vert(v)
+                if w.index not in seen:
+                    seen.add(w.index)
+                    stack.append(w)
+        if bad(isl):
+            gone += isl
+    bmesh.ops.delete(bm, geom=gone, context="VERTS")
+    bm.to_mesh(ob.data)
+    bm.free()
+
+
+def relax_front(ob, inside, radius=0.03, iterations=3):
+    """Smooth a front-facing patch as a height field: each vertex where inside(co) holds keeps its
+    x and z and takes the weighted mean depth (y) of the patch around it, so dense clusters (the
+    bust's points) flatten without folding."""
+    from mathutils.kdtree import KDTree
+    me = ob.data
+    idx = [v.index for v in me.vertices if inside(v.co)]
+    for _ in range(iterations):
+        tree = KDTree(len(idx))
+        for k, i in enumerate(idx):
+            c = me.vertices[i].co
+            tree.insert(V((c.x, 0.0, c.z)), k)
+        tree.balance()
+        ys = [me.vertices[i].co.y for i in idx]
+        for k, i in enumerate(idx):
+            c = me.vertices[i].co
+            acc = wsum = 0.0
+            for _, j, d in tree.find_range(V((c.x, 0.0, c.z)), radius):
+                w = 1.0 - d / radius
+                acc += ys[j] * w
+                wsum += w
+            me.vertices[i].co.y = acc / wsum
+    me.update()
 
 
 def ease(ob, amount):
@@ -429,7 +496,13 @@ def dress(arm, body):
     upper = {"hips", "spine", "spine", "chest", "neck", "clavicle", "shoulder", "elbow", "wrist"}
     tunic = skin_part(body, "tunic", lambda co, b: bone_kind(b) in upper and co.z > L["waist_z"] - 0.07 and co.z < L["neck"].z + 0.02
                       and not past_wrist(co, -0.03) and bone_kind(b) not in FINGER, TUNIC)
+    # VRoid lays little patches over the skin (the chest's): stray islands go
+    total = len(tunic.data.vertices)
+    drop_islands(tunic, lambda isl: len(isl) < 0.02 * total)
     relax(tunic, 12, 0.6)
+    if SEX == "f":  # cloth over the bust: a smooth swell, no anatomy
+        cz = L["chest"].z
+        relax_front(tunic, lambda co: abs(co.z - cz) < 0.15 and co.y < L["chest"].y - 0.04 and abs(co.x) < 0.15)
     sx = L["shoulder_L"].x
 
     def tunic_ease(co):
@@ -716,12 +789,12 @@ def fittings(parts, L, body):
             out.append(tag(sphere_obj(f"button{k}", p + nrm * 0.007, V((0.0065, 0.0065, 0.0065)), BRASS, 8, 4), "brass", bone="chest" if z > cz - 0.08 else "spine_mid"))
     # breast pockets with flaps and buttons
     pz = L["shoulder_L"].z - 0.12
-    for s in (1, -1):
+    for s in ((1, -1) if SEX == "m" else ()):  # women's tunics (as Alicia's) have no breast pockets
         pk = patch(f"pocket_{s}", tree, V((s * 0.078, 0, pz - 0.012)), Y, X, Z, 0.085, 0.08, 0.004, TUNIC, n=5)
         fl = patch(f"flap_{s}", tree, V((s * 0.078, 0, pz + 0.03)), Y, X, Z, 0.092, 0.034, 0.008, TUNIC, n=5, taper=0.15)
         out += [tag(o, "tunic") for o in (pk, fl) if o]
         p, nrm = ray(tree, V((s * 0.078, -0.5, pz + 0.02)), Y)
-        if p is not None:
+        if p is not None and fl:
             out.append(tag(sphere_obj(f"pocket_button_{s}", p + nrm * 0.012, V((0.006, 0.006, 0.006)), BRASS, 8, 4), "brass", bone="chest"))
     # shoulder straps (epaulettes) from the collar to the shoulder seam
     for s, sd in ((1, "L"), (-1, "R")):
@@ -906,7 +979,7 @@ HEAD_ATLAS = 2048
 HEAD_PARTS = [
     ("Face_00_SKIN", "skin", (512, 512)), ("EyeIris", "iris", (512, 256)), ("EyeHighlight", "face", (256, 128)),
     ("EyeWhite", "face", (512, 256)), ("FaceEyeline", "face", (1024, 256)), ("FaceEyelash", "face", (512, 128)),
-    ("FaceBrow", "hair", (512, 128)), ("FaceMouth", "face", (256, 256)), ("HAIR", "hair", (512, 512)),
+    ("FaceBrow", "hair", (512, 128)), ("FaceMouth", "face", (256, 256)), ("HAIR", "hair", (384, 384)),
 ]
 SOURCES = {}  # material name -> (base colour factor, alpha mode) from the VRM files read
 
@@ -1638,6 +1711,7 @@ def retarget(src, rig, ref, clip, name, loop):
     speed = (max(foot) - min(foot)) / (duration * 0.5) if loop and duration > 0 else 0
     print("CLIP", name, "from", clip, "frames", f1 - f0 + 1, "dur", round(duration, 2), "speed~", round(speed, 2))
     out.use_fake_user = True
+    out["speed"] = round(speed, 2)
     return out
 
 
@@ -1649,6 +1723,256 @@ def build_actions(rig):
     actions = {name: retarget(src, rig, ref, clip, name, loop) for name, (clip, loop) in CLIPS.items()}
     bpy.data.objects.remove(src, do_unlink=True)
     return actions
+
+
+# ---------------------------------------------------------------- portraits
+LOOKS_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../src/skirmish/units/heroLooks.json")
+PORTRAIT = 384
+# the Federation's cloth colours: mirrors FACTIONS.fed (soldierLook.js) and DRESS.fed (vcSoldiers.js)
+FED = {"tunic": "#4f6f8f", "scarf": "#c8a23a", "pants": "#3d4f63", "boots": "#4a3222", "helmet": "#55705a", "glove": "#4a3a30",
+       "leather": "#6a4a30", "brass": "#c9a24a", "metal": "#5f7462", "canvas": "#7a7d5c", "lens": "#9ab4c0", "face": "#ffffff"}
+FED_TRIM, FED_INK, PAPER = "#ece4cc", "#2c2a30", "#efe6d2"
+
+
+def hexc(h):
+    h = h.lstrip("#")
+    return [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+
+
+def lin(c):
+    return [(x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4) for x in c]
+
+
+def portrait_material(head_img, cloth_img, pal_img):
+    """The game's soldier shading in nodes (vcSoldiers.js): slot palette, head and cloth atlases, a
+    three-step toon ramp, alpha-clipped hair and lashes."""
+    m = bpy.data.materials.new("portrait")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    N = lambda t, **kw: (lambda n: ([setattr(n, k, v) for k, v in kw.items()], n)[1])(nt.nodes.new(t))
+    link = nt.links.new
+
+    def math(op, a, b=None, clamp=False):
+        n = N("ShaderNodeMath", operation=op, use_clamp=clamp)
+        for i, v in enumerate((a, b)):
+            if v is None:
+                continue
+            if isinstance(v, (int, float)):
+                n.inputs[i].default_value = v
+            else:
+                link(v, n.inputs[i])
+        return n.outputs[0]
+
+    def mix(fac, a, b):
+        n = N("ShaderNodeMix", data_type="RGBA")
+        for sock, v in ((n.inputs[0], fac), (n.inputs[6], a), (n.inputs[7], b)):
+            if isinstance(v, (int, float)):
+                sock.default_value = v
+            elif isinstance(v, (list, tuple)):
+                sock.default_value = list(v) + [1.0]
+            else:
+                link(v, sock)
+        return n.outputs[2]
+
+    def vmul(a, b):
+        n = N("ShaderNodeVectorMath", operation="MULTIPLY")
+        for i, v in enumerate((a, b)):
+            if isinstance(v, (list, tuple)):
+                n.inputs[i].default_value = v
+            else:
+                link(v, n.inputs[i])
+        return n.outputs[0]
+
+    uv_a, uv_m = N("ShaderNodeUVMap", uv_map="atlas"), N("ShaderNodeUVMap", uv_map="meta")
+    head = N("ShaderNodeTexImage", image=head_img)
+    cloth = N("ShaderNodeTexImage", image=cloth_img)
+    link(uv_a.outputs[0], head.inputs[0])
+    link(uv_a.outputs[0], cloth.inputs[0])
+    sep = N("ShaderNodeSeparateXYZ")
+    link(uv_m.outputs[0], sep.inputs[0])
+    x = sep.outputs[0]  # slot + 0.5
+    comb = N("ShaderNodeCombineXYZ")
+    link(math("DIVIDE", math("SUBTRACT", x, 1.0), 16.0), comb.inputs[0])  # slot s is palette pixel s - 1
+    comb.inputs[1].default_value = 0.5
+    pal = N("ShaderNodeTexImage", image=pal_img, interpolation="Closest")
+    link(comb.outputs[0], pal.inputs[0])
+    is_head = math("ADD", math("LESS_THAN", x, 3.0), math("GREATER_THAN", x, 14.0), clamp=True)
+    gray = math("ADD", math("COMPARE", x, 2.5), math("COMPARE", x, 15.5), clamp=True)
+    for n in nt.nodes:  # COMPARE's epsilon is its third input
+        if n.type == "MATH" and n.operation == "COMPARE":
+            n.inputs[2].default_value = 0.2
+    hs = N("ShaderNodeSeparateColor")
+    link(head.outputs[0], hs.inputs[0])
+    head_c = mix(gray, vmul(head.outputs[0], pal.outputs[0]), vmul(hs.outputs[0], pal.outputs[0]))
+    cs = N("ShaderNodeSeparateColor")
+    link(cloth.outputs[0], cs.inputs[0])
+    shade = cs.outputs[0]
+    # base * a.r, trim * a.r, mixed by a.g; then the ink by a.b
+    rrr = N("ShaderNodeCombineXYZ")
+    for i in range(3):
+        link(shade, rrr.inputs[i])
+    c_base = vmul(pal.outputs[0], rrr.outputs[0])
+    c_trim = vmul(lin(hexc(FED_TRIM)), rrr.outputs[0])
+    c = mix(cs.outputs[1], c_base, c_trim)
+    ink_c = mix(0.4, lin(hexc(FED_INK)), vmul(pal.outputs[0], (0.3, 0.3, 0.3)))
+    c = mix(math("MULTIPLY", cs.outputs[2], 0.85), c, ink_c)
+    albedo = mix(is_head, c, head_c)
+    # toon light: a diffuse response stepped in three
+    diff = N("ShaderNodeBsdfDiffuse")
+    s2r = N("ShaderNodeShaderToRGB")
+    link(diff.outputs[0], s2r.inputs[0])
+    ramp = N("ShaderNodeValToRGB")
+    ramp.color_ramp.interpolation = "CONSTANT"
+    el = ramp.color_ramp.elements
+    el[0].position, el[0].color = 0.0, (0.6, 0.58, 0.62, 1)
+    el[1].position, el[1].color = 0.55, (1, 1, 1, 1)
+    e = el.new(0.18)
+    e.color = (0.8, 0.79, 0.82, 1)
+    bw = N("ShaderNodeRGBToBW")
+    link(s2r.outputs[0], bw.inputs[0])
+    link(bw.outputs[0], ramp.inputs[0])
+    lit = vmul(albedo, ramp.outputs[0])
+    emit = N("ShaderNodeEmission")
+    link(lit, emit.inputs[0])
+    alpha = mix(is_head, (1, 1, 1), head.outputs[1])
+    bw2 = N("ShaderNodeRGBToBW")
+    link(alpha, bw2.inputs[0])
+    cut = math("GREATER_THAN", bw2.outputs[0], 0.5)
+    trans = N("ShaderNodeBsdfTransparent")
+    mixs = N("ShaderNodeMixShader")
+    link(cut, mixs.inputs[0])
+    link(trans.outputs[0], mixs.inputs[1])
+    link(emit.outputs[0], mixs.inputs[2])
+    out = N("ShaderNodeOutputMaterial")
+    link(mixs.outputs[0], out.inputs[0])
+    return m
+
+
+def portrait_compositor(scene):
+    """Kuwahara over the colour for brush strokes, Freestyle ink on top, paper behind."""
+    ng = bpy.data.node_groups.new("portrait_comp", "CompositorNodeTree")
+    ng.interface.new_socket(name="Image", in_out="OUTPUT", socket_type="NodeSocketColor")
+    rl = ng.nodes.new("CompositorNodeRLayers")
+    kw = ng.nodes.new("CompositorNodeKuwahara")
+    kw.inputs["Size"].default_value = 5
+    ng.links.new(rl.outputs["Image"], kw.inputs["Image"])
+    paper = ng.nodes.new("CompositorNodeAlphaOver")
+    paper.inputs["Background"].default_value = lin(hexc(PAPER)) + [1.0]
+    sa = ng.nodes.new("CompositorNodeSetAlpha")
+    ng.links.new(kw.outputs[0], sa.inputs["Image"])
+    ng.links.new(rl.outputs["Alpha"], sa.inputs["Alpha"])
+    ng.links.new(sa.outputs[0], paper.inputs["Foreground"])
+    last = paper.outputs[0]
+    if "Freestyle" in rl.outputs:
+        ink = ng.nodes.new("CompositorNodeAlphaOver")
+        ng.links.new(last, ink.inputs["Background"])
+        ng.links.new(rl.outputs["Freestyle"], ink.inputs["Foreground"])
+        last = ink.outputs[0]
+    go = ng.nodes.new("NodeGroupOutput")
+    ng.links.new(last, go.inputs[0])
+    scene.compositing_node_group = ng
+
+
+def portraits(model, arm, pieces, head_png, cloth_png, sheet):
+    """A painted head-and-shoulders portrait of each hero of this body, into its cell of the 3 x 3
+    sheet (roster order, heroLooks.json) that the game cuts up for the Prep cards and the HUD."""
+    import json
+    import numpy as np
+    looks = json.load(open(LOOKS_JSON))
+    order = list(looks)
+    sc = bpy.context.scene
+    arm.animation_data.action = bpy.data.actions["idle"]
+    sc.frame_set(12)
+    head_img = bpy.data.images.load(head_png)
+    cloth_img = bpy.data.images.load(cloth_png)
+    cloth_img.colorspace_settings.name = "Non-Color"
+    pal_img = bpy.data.images.new("palette", 16, 1, alpha=False)
+    mat = portrait_material(head_img, cloth_img, pal_img)
+    sc.render.engine = "BLENDER_EEVEE"
+    sc.view_settings.view_transform = "Standard"
+    sc.render.film_transparent = True
+    sc.render.resolution_x = sc.render.resolution_y = PORTRAIT
+    sc.render.use_freestyle = True
+    sc.render.line_thickness_mode = "ABSOLUTE"
+    sc.render.line_thickness = 1.1
+    vl = sc.view_layers[0]
+    vl.freestyle_settings.as_render_pass = True
+    ls = vl.freestyle_settings.linesets[0] if vl.freestyle_settings.linesets else vl.freestyle_settings.linesets.new("ink")
+    ls.select_by_visibility = True
+    ls.select_silhouette = ls.select_border = ls.select_crease = True
+    # no ink round the painted eyes, lashes and brows (VRoid's layered eye meshes)
+    ls.select_by_face_marks = True
+    ls.face_mark_negation = "EXCLUSIVE"
+    ls.face_mark_condition = "ONE"
+    ls.linestyle.color = lin(hexc(FED_INK))
+    portrait_compositor(sc)
+    if "portrait_sun" not in bpy.data.objects:
+        sun = bpy.data.objects.new("portrait_sun", bpy.data.lights.new("portrait_sun", "SUN"))
+        COL.objects.link(sun)
+        sun.rotation_euler = (math.radians(55), 0, math.radians(-35))
+        sun.data.energy = 3.5
+    cam = bpy.data.objects.new("portrait_cam", bpy.data.cameras.new("portrait_cam"))
+    COL.objects.link(cam)
+    cam.data.lens = 85
+    sc.camera = cam
+    hj = arm.matrix_world @ arm.pose.bones["head"].head
+    target = hj + V((0, 0, 0.065))
+    cam.location = hj + V((0.34, -1.3, 0.1))
+    cam.rotation_euler = (target - cam.location).to_track_quat("-Z", "Y").to_euler()
+    size = 3 * PORTRAIT
+    if os.path.exists(sheet):
+        im = bpy.data.images.load(sheet)
+        grid = pixels(im).copy()
+    else:
+        grid = np.zeros((size, size, 4), dtype=np.float32)
+        grid[..., :3] = hexc(PAPER)
+        grid[..., 3] = 1.0
+    meta = metas(model.data)
+    for hero in order:
+        look = looks[hero]
+        if look.get("sex", "m") != SEX:
+            continue
+        wanted = {"always", "face", look.get("helmet") or look["hair"]} | ({"scarf"} if look.get("scarf") else set())
+        if look.get("helmet") or look.get("underlay", True):  # as vcSoldiers.makeSoldier
+            wanted.add("hair_base")
+        keep = {pieces.index(p) for p in wanted if p in pieces}
+        ob = model.copy()
+        ob.data = model.data.copy()
+        COL.objects.link(ob)
+        bm = bmesh.new()
+        bm.from_mesh(ob.data)
+        bm.faces.ensure_lookup_table()
+        bmesh.ops.delete(bm, geom=[f for f, (_, pc) in zip(bm.faces, meta) if pc not in keep], context="FACES")
+        bm.to_mesh(ob.data)
+        bm.free()
+        marks = ob.data.attributes.get("freestyle_face") or ob.data.attributes.new("freestyle_face", "BOOLEAN", "FACE")
+        for i, (sl, _) in enumerate(metas(ob.data)):
+            marks.data[i].value = sl in (SLOT["face"], SLOT["iris"])
+        ob.data.materials.clear()
+        ob.data.materials.append(mat)
+        pal = {**FED, "skin": look.get("skin", "#ffffff"), "hair": look["hairColor"], "iris": look["iris"]}
+        px = np.ones((1, 16, 4), dtype=np.float32)
+        for k, v in pal.items():
+            px[0, SLOT[k] - 1, :3] = hexc(v)
+        pal_img.pixels.foreach_set(px.ravel())
+        pal_img.update()
+        for o in bpy.data.objects:
+            o.hide_render = o.type == "MESH" and o is not ob
+        path = os.path.join(bpy.app.tempdir or "/tmp", f"portrait_{hero}.png")
+        sc.render.filepath = path
+        bpy.ops.render.render(write_still=True)
+        shot = pixels(bpy.data.images.load(path))
+        k = order.index(hero)
+        r, c = 2 - k // 3, k % 3  # rows run bottom to top in Blender's pixels
+        grid[r * PORTRAIT:(r + 1) * PORTRAIT, c * PORTRAIT:(c + 1) * PORTRAIT] = shot
+        bpy.data.objects.remove(ob, do_unlink=True)
+        print("PORTRAIT", hero)
+    out = bpy.data.images.new("portraits", size, size, alpha=False)
+    out.pixels.foreach_set(grid.ravel())
+    out.filepath_raw = sheet
+    out.file_format = "PNG"
+    out.save()
 
 
 def export(path, rig, meshes):
@@ -1750,6 +2074,9 @@ def main():
                 lancer = [body, face, hair_base, *parts, *[o for o in kits if o["piece"] in ("kit_base", "kit_armor", "kit_tubes")], *[o for o in helms if o["piece"] == "helm_fed"]]
                 enemy = [body, hair_base, *parts, *[o for o in kits if o["piece"] in ("kit_base", "kit_mags", "kit_plate", "kit_pack_small")], *[o for o in helms if o["piece"] == "helm_imp"]]
                 engineer = [body, face, hair, *parts, *[o for o in kits if o["piece"] in ("kit_base", "kit_pouches", "kit_pack_engineer", "kit_tools", "kit_goggles")]]
+                head = L["head"]
+                for hh, hob in hairs.items():
+                    preview(f"hair_{hh}", [body, face, hair_base, hob], views=(("front", 0), ("three", 35), ("back", 180)), size=(500, 500), ortho=0.42, focus=head + V((0, 0, 0.06)))
                 preview("kit_lancer", lancer, views=(("front", 0), ("three", 30), ("back", 180)))
                 preview("kit_enemy", enemy, views=(("front", 0), ("three", 30), ("back", 180)))
                 preview("kit_engineer", engineer, views=(("front", 0), ("three", 30), ("back", 180)))
@@ -1776,6 +2103,12 @@ def main():
     actions = build_actions(arm)
     tris = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
     print(f"SOLDIER close {tris(model)} triangles, far {tris(far)}; pieces {pieces}")
+    # the ground speed each moving clip covers at 1x (the game scales playback to the real speed)
+    model["clip_speed"] = {n: a["speed"] for n, a in actions.items() if a.get("speed")}
+    if arg("--portraits") and arg("--head") and arg("--atlas"):
+        print("STEP portraits")
+        portraits(model, arm, pieces, arg("--head"), arg("--atlas"), arg("--portraits"))
+        arm.animation_data.action = None
     if PREVIEW:
         for o in (model, far):
             o.data.materials[0].diffuse_color = (0.55, 0.6, 0.68, 1)

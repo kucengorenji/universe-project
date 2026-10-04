@@ -1,0 +1,11 @@
+{
+  "arlen": { "hair": "hair_arlen", "hairColor": "#6b4a32", "iris": "#5a7fb0" },
+  "mira": { "sex": "f", "hair": "hair_mira", "underlay": false, "hairColor": "#c9803a", "iris": "#4a8a4a", "scarf": true },
+  "brann": { "hair": "hair_base", "hairColor": "#2a221c", "iris": "#4a3424", "skin": "#e8c4a8", "helmet": "helm_fed" },
+  "sela": { "sex": "f", "hair": "hair_sela", "hairColor": "#8a3a30", "iris": "#6a4a8a" },
+  "otto": { "hair": "hair_otto", "hairColor": "#a89060", "iris": "#4a6a7a", "skin": "#f2d6c0" },
+  "ines": { "sex": "f", "hair": "hair_ines", "hairColor": "#262430", "iris": "#2c4c7c" },
+  "cato": { "hair": "hair_cato", "hairColor": "#c07a3a", "iris": "#3a7a5a", "scarf": true },
+  "lio": { "hair": "hair_lio", "hairColor": "#3a2618", "iris": "#5a3a2a", "skin": "#e0b898" },
+  "vesna": { "sex": "f", "hair": "hair_vesna", "hairColor": "#e0cfa0", "iris": "#5a8aaa" }
+}

@@ -6,7 +6,7 @@ import { FieldBuilder } from '../battlefield/fieldBuilder.js';
 import { CanvasPost, installCanvasShading } from '../render/canvasStyle.js';
 import { SkyLight } from '../render/skyLight.js';
 import { loadWeapons } from '../units/soldiers.js';
-import { loadSoldierTemplates, portrait } from '../units/vcSoldiers.js';
+import { loadSoldierTemplates, loadPortraits } from '../units/vcSoldiers.js';
 import { Arena } from '../game/arena.js';
 import { Battle } from '../game/battle.js';
 import { Spotting } from '../game/spotting.js';
@@ -88,11 +88,11 @@ export class SkirmishGame {
     this.assets = Promise.all([
       loadAssetPack(ASSETS.townPack),
       loadAssetPack(ASSETS.militaryPack, { glow: { M_radiator: 1 } }),
-      loadSoldierTemplates(ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead)
+      loadSoldierTemplates({ m: [ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead], f: [ASSETS.soldierPackF, ASSETS.soldierAtlasF, ASSETS.soldierHeadF] })
     ]).then(async ([town, military, templates]) => ({ town, military, templates, weapons: await loadWeapons(ASSETS.militaryPack, military) }));
-    // portraits of the nine, rendered from the 3D model once it has loaded
-    this.assets.then((A) => {
-      this.portraits = Object.fromEntries(ROSTER.map((r) => [r.id, portrait(engine.renderer, A.templates, A.weapons, { faction: 'fed', cls: r.cls, id: r.id, seed: r.face })]));
+    // the nine's painted portraits (one sheet rendered in Blender)
+    loadPortraits(ASSETS.soldierPortraits).then((portraits) => {
+      this.portraits = portraits;
       this.prep.setPortraits(this.portraits);
       this.hud.portraits = this.portraits;
       this.hud.update();

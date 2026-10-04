@@ -14,6 +14,8 @@ export const RUN_AP_COST = 1.3; // AP metres per metre when running
 export const CROUCH_DAMAGE = 0.8; // damage taken while crouched (on top of what cover stops)
 export const HEADSHOT = 2;
 export const ENEMY_SCALE = 0.9; // enemy HP and damage
+export const SPOT_RANGE = 90; // how far a soldier spots enemies (m); a sniper's scope reaches further
+export const SPOT_RANGE_SCOPE = 130;
 
 /**
  * Weapons. spread: half-angle of the reticle cone (degrees) standing / crouched; interval:

@@ -120,7 +120,10 @@ Milestone:
   - HUD baru (`ui/hud.js`, `ui/actionHud.js`, `ui/hud.css`, `ui/emblems.js`): strip TURN/PHASE/CP, kartu unit, gauge AP bergaris per 5 m dengan chip (sikap, lari, serangan, SPOTTED ×n), panel TARGET (HP dengan potongan perkiraan damage dari `Battle.estimate`, zona kepala/titik lemah/armor, jarak efektif), tag HP di atas musuh terlihat dengan ikon mata bila musuh bisa intercept, panah musuh di luar layar, vignette merah saat bergerak di bawah ancaman, kilat merah saat terkena, banner PLAYER/ENEMY PHASE, cut-in Leader, laporan operasi dengan stempel rank. Onomatope komik (BLAM!, RATATAT!, CRACK!, FWOOSH!, BOOM!, CLANG!).
   - GPU (Chrome headless Metal, M1 Pro, 2560×1600, Action Mode): 5,6 → 7,2–7,5 ms per frame.
   - Referensi VC1 hanya dilihat lewat browser (tidak diunduh); belum ada salinan lokal di `docs/references/vc1/`.
-- **M-B**: overview map baru + spotting + kamera terjun peta → unit.
+- **M-B (selesai)**: overview map baru + spotting + kamera terjun peta → unit.
+  - Spotting (`game/spotting.js`, dites): musuh terlihat bila dilihat unit kita dalam 90 m (Sniper 130 m, `SPOT_RANGE`); musuh yang menembak regu ikut ketahuan; setelah hilang dari pandangan tampil sebagai hantu (perisai putus-putus, "?", giliran terakhir terlihat); yang gugur tetap ditandai X. Peta komando dan minimap hanya menggambar yang diketahui. AI musuh tetap tahu semuanya.
+  - Peta: token perisai kelas berwarna faksi dengan baji arah hadap, HP di bawah, bintang Leader; unit yang sudah tak bisa dipilih redup. Kursor kuningan (sudut berputar) mengikuti pointer, atau Tab/panah, dengan label kertas (nama, kelas, AP pilihan berikutnya; musuh: HP). Enter memerintah unit di bawah kursor. Baris daftar komando dan kursor peta saling mengikuti. Label peta memakai Courier Prime, kompas "N".
+  - Transisi: memilih unit memperbesar peta ke titik unit sambil memudar, lalu kamera turun dari 60 m di atas (orientasi sama dengan peta) ke bahu unit dalam ±1 detik (kontrol menunggu, flag `hold`). Akhir aksi: kamera naik ke atas unit (0,6 detik), lalu peta kembali dengan zoom keluar.
 - **M-C**: Prep gaya buku/dosir.
 - **M-D**: `town_canvas.glb` / `military_canvas.glb` dengan atlas lukis.
 - **M-E**: kamera sinematik giliran musuh, kill/down cam, dan sisa polish.
@@ -138,6 +141,7 @@ src/skirmish/game/                 murni, tanpa three.js:
   nav.js                           Dijkstra dalam jangkauan AP, jalur
   battle.js                        state pertempuran: giliran, CP, damage, tumbang, capture, hasil
   ai.js                            AI musuh berbasis utilitas
+  spotting.js                      apa yang diketahui satu pihak tentang musuh (fog of war sederhana)
 src/skirmish/play/                 SkirmishGame (fase), ActionControl, EnemyTurn, Combat, UnitViews, Effects, Sound
 src/skirmish/ui/                   TacticalMap (peta 2D + minimap), PrepPanel, Hud (hud.js shell, actionHud.js Action Mode,
                                    hud.css gaya buku catatan perang, emblems.js perisai SVG)

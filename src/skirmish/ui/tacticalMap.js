@@ -1,18 +1,26 @@
 import { HALF, SIZE, walk } from '../battlefield/generateField.js';
-import { CLASSES, FACTIONS } from '../units/soldierLook.js';
+import { FACTIONS } from '../units/soldierLook.js';
 import { mulberry32 } from '../../math/random.js';
+import { SHORT, CLASS_NAME } from './emblems.js';
 
-// The flat tactical map (Preparation and Command Mode): the battlefield drawn as an ink-and-wash
-// field map on paper, from the same field data as the 3D scene. The static map is drawn once
-// per field into an offscreen canvas; units, camps, deploy slots and the selection are drawn
-// on top every frame. The map always fits its box; its edges fade out like a wet wash, so it
-// lies on the desk behind it. A click picks.
+// The flat tactical map (Preparation and Command Mode, and the round minimap): the battlefield
+// drawn as an ink-and-wash field map on paper, from the same field data as the 3D scene. The
+// static map is drawn once per field into an offscreen canvas; on top, every frame: camps,
+// deploy slots, and the units as class shields in their faction's colour with an arrow for
+// where they face. Enemies out of sight are drawn as ghosts at their last known position. A
+// selector cursor (brass corner brackets) sits on the unit under the pointer or picked with
+// the keyboard, with a paper label: name, class, AP or HP. The map always fits its box; its
+// edges fade out like a wet wash, so it lies on the desk behind it. A click picks.
 
 const PX = 10; // static map pixels per metre
 const INK = '#2a2119';
 const PAPER = '#efe6d2';
+const BRASS = '#c9962c';
+const TYPE = '"Courier Prime", ui-monospace, monospace';
+const SERIF = '"Roboto Serif", Georgia, serif';
 export const SIDE_COLOR = { fed: FACTIONS.fed.flag, imp: FACTIONS.imp.flag };
-const SHORT = { ...Object.fromEntries(Object.entries(CLASSES).map(([k, v]) => [k, v.short])), tank: 'TK', bunker: 'BK' };
+// the shield of emblems.js (viewBox 40 x 46, centred on its middle)
+const SHIELD = new Path2D('M-16 -20H16V-4C16 7 9 14.5 0 19 -9 14.5 -16 7 -16 -4Z');
 
 export class TacticalMap {
   constructor(canvas, { onPick, mini = false } = {}) {
@@ -21,7 +29,6 @@ export class TacticalMap {
     this.g = canvas.getContext('2d');
     this.onPick = onPick;
     this.view = { x: 0, z: 0, scale: 3 }; // world centre and screen pixels per metre
-    this.overlay = {};
     this.time = 0;
     this.listen();
   }
@@ -29,7 +36,10 @@ export class TacticalMap {
   listen() {
     // the map is fixed (always fitted): a click picks, the pointer only hovers
     const c = this.canvas;
-    c.addEventListener('pointermove', (e) => (this.hover = this.toWorld(e.offsetX, e.offsetY)));
+    c.addEventListener('pointermove', (e) => {
+      this.hover = this.toWorld(e.offsetX, e.offsetY);
+      this.pointerMoved = true;
+    });
     c.addEventListener('pointerleave', () => (this.hover = null));
     c.addEventListener('click', (e) => this.onPick?.(...this.toWorld(e.offsetX, e.offsetY), e));
   }
@@ -50,12 +60,6 @@ export class TacticalMap {
     this.view = { x: 0, z: 0, scale: this.minScale() };
   }
 
-  clampView() {
-    const m = HALF + 10;
-    this.view.x = Math.max(-m, Math.min(m, this.view.x));
-    this.view.z = Math.max(-m, Math.min(m, this.view.z));
-  }
-
   toWorld(sx, sy) {
     return [this.view.x + (sx - this.width / 2) / this.view.scale, this.view.z + (sy - this.height / 2) / this.view.scale];
   }
@@ -64,13 +68,16 @@ export class TacticalMap {
     return [this.width / 2 + (x - this.view.x) * this.view.scale, this.height / 2 + (z - this.view.z) * this.view.scale];
   }
 
-  /** Draw the static map of a field (once per field). */
+  /** Draw the static map of a field (once per field; again once the map fonts have loaded). */
   setField(field, arena = null) {
     this.field = field;
     const n = SIZE * PX;
     const cv = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(n, n) : Object.assign(document.createElement('canvas'), { width: n, height: n });
     drawStatic(cv.getContext('2d'), field, arena);
     this.base = cv;
+    if (typeof document !== 'undefined' && document.fonts?.status !== 'loaded') {
+      document.fonts.ready.then(() => this.field === field && drawStatic(cv.getContext('2d'), field, arena));
+    }
   }
 
   /** Resize the backing store to the element (device pixels). */
@@ -85,9 +92,17 @@ export class TacticalMap {
     if (!this.mini) this.fit();
   }
 
+  /** Token radius (CSS px) of a unit on this map. */
+  radius(u) {
+    const big = u.kind !== 'infantry';
+    if (this.mini) return big ? 7 : 5;
+    return Math.max(big ? 15 : 11, this.view.scale * (big ? 2.6 : 1.5));
+  }
+
   /**
-   * Draw a frame. o: { units, camps, selected (unit id), slots ([{x, z, taken}]), pickable (Set of ids),
-   * range ({ x, z, r }) }.
+   * Draw a frame. o: { units, camps, selected (unit id), cursor (unit id), slots ([{x, z}]),
+   * pickable (Set of ids: the ones that may still act), range ({ x, z, r }), label (for the
+   * cursor: { title, line }) }. Units may carry ghost: true (last known position).
    */
   draw(dt, o = {}) {
     this.resize();
@@ -105,15 +120,16 @@ export class TacticalMap {
     g.imageSmoothingQuality = 'high';
     g.drawImage(this.base, ox, oy, SIZE * scale, SIZE * scale);
     const S = (x, z) => this.toScreen(x, z);
-    const R = (m) => m * scale;
 
     if (o.range) {
       const [x, y] = S(o.range.x, o.range.z);
-      g.strokeStyle = 'rgba(42,33,25,0.5)';
-      g.setLineDash([6, 5]);
+      g.fillStyle = 'rgba(63, 111, 176, 0.1)';
+      g.strokeStyle = 'rgba(43, 76, 124, 0.75)';
+      g.setLineDash([7, 5]);
       g.lineWidth = 1.5;
       g.beginPath();
-      g.arc(x, y, R(o.range.r), 0, Math.PI * 2);
+      g.arc(x, y, o.range.r * scale, 0, Math.PI * 2);
+      g.fill();
       g.stroke();
       g.setLineDash([]);
     }
@@ -123,21 +139,25 @@ export class TacticalMap {
       g.setLineDash([4, 4]);
       g.lineWidth = 1.5;
       g.beginPath();
-      g.arc(x, y, Math.max(9, R(1.6)), 0, Math.PI * 2);
+      g.arc(x, y, Math.max(10, 1.6 * scale), 0, Math.PI * 2);
       g.stroke();
       g.setLineDash([]);
     }
     for (const c of o.camps || []) this.drawCamp(c);
-    const units = [...(o.units || [])].sort((a, b) => (a.state === 'ok') - (b.state === 'ok'));
-    for (const u of units) this.drawUnit(u, u.id === o.selected, o.pickable?.has(u.id));
+    // the dead first, then ghosts, then the living; the cursor's unit last
+    const order = (u) => (u.state === 'dead' ? 0 : u.ghost ? 1 : u.id === o.cursor ? 3 : 2);
+    const units = [...(o.units || [])].sort((a, b) => order(a) - order(b));
+    for (const u of units) this.drawUnit(u, { selected: u.id === o.selected, dim: o.pickable && u.side === 'fed' && u.state === 'ok' && !o.pickable.has(u.id) });
+    const cur = o.cursor && units.find((u) => u.id === o.cursor);
+    if (cur && !this.mini) this.drawCursor(cur, o.label);
     if (this.mini) return;
     // compass and scale bar
     g.save();
     g.translate(this.width - 44, this.height - 54);
     g.fillStyle = INK;
-    g.font = '600 15px "Barlow Condensed", sans-serif';
+    g.font = `700 15px ${TYPE}`;
     g.textAlign = 'center';
-    g.fillText('U', 0, -22);
+    g.fillText('N', 0, -22);
     g.beginPath();
     g.moveTo(0, -16);
     g.lineTo(7, 10);
@@ -149,9 +169,9 @@ export class TacticalMap {
     const bar = 20 * scale;
     g.fillStyle = INK;
     g.fillRect(20, this.height - 24, bar, 3);
-    g.font = '500 13px "Barlow Condensed", sans-serif';
+    g.font = `400 13px ${TYPE}`;
     g.textAlign = 'left';
-    g.fillText('20 m', 24 + bar, this.height - 19);
+    g.fillText('20 m', 26 + bar, this.height - 19);
   }
 
   drawCamp(c) {
@@ -166,9 +186,10 @@ export class TacticalMap {
     g.stroke();
     g.fillStyle = c.owner ? SIDE_COLOR[c.owner] : '#e8e0c8';
     g.beginPath();
+    // a pennant with a wave in it
     g.moveTo(x, y - 26 * s);
-    g.lineTo(x + 18 * s, y - 21 * s);
-    g.lineTo(x, y - 15 * s);
+    g.quadraticCurveTo(x + 9 * s, y - 27 * s, x + 19 * s, y - 22 * s);
+    g.quadraticCurveTo(x + 9 * s, y - 19 * s, x, y - 15 * s);
     g.closePath();
     g.fill();
     g.stroke();
@@ -180,12 +201,11 @@ export class TacticalMap {
     g.setLineDash([]);
   }
 
-  drawUnit(u, selected, pickable) {
+  drawUnit(u, { selected = false, dim = false } = {}) {
     const g = this.g;
-    const [x, y] = this.toScreen(u.x, u.z);
-    const big = u.kind !== 'infantry';
-    const r = this.mini ? (big ? 7 : selected ? 6 : 4.5) : Math.max(big ? 13 : 10, this.view.scale * (big ? 2.4 : 1.3));
     if (u.state === 'evac') return;
+    const [x, y] = this.toScreen(u.x, u.z);
+    const r = this.radius(u);
     if (u.state === 'dead') {
       g.strokeStyle = 'rgba(42,33,25,0.55)';
       g.lineWidth = 2;
@@ -198,47 +218,154 @@ export class TacticalMap {
       g.stroke();
       return;
     }
-    if (selected || pickable) {
-      const pulse = selected ? 1 + 0.15 * Math.sin(this.time * 6) : 1;
-      g.strokeStyle = selected ? '#d9a62e' : 'rgba(42,33,25,0.6)';
-      g.lineWidth = selected ? 3 : 1.5;
+    const down = u.state === 'down';
+    const color = down ? '#8a8378' : SIDE_COLOR[u.side];
+    g.save();
+    g.globalAlpha = u.ghost ? 0.5 : dim ? 0.55 : 1;
+    if (this.mini) {
+      g.fillStyle = color;
+      g.strokeStyle = INK;
+      g.lineWidth = selected ? 2.5 : 1.5;
       g.beginPath();
-      g.arc(x, y, (r + 5) * pulse, 0, Math.PI * 2);
+      g.arc(x, y, selected ? r + 1.5 : r, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+      if (!u.ghost) {
+        // facing tick
+        g.beginPath();
+        g.moveTo(x + Math.sin(u.yaw) * r, y + Math.cos(u.yaw) * r);
+        g.lineTo(x + Math.sin(u.yaw) * (r + 4), y + Math.cos(u.yaw) * (r + 4));
+        g.stroke();
+      }
+      g.restore();
+      return;
+    }
+    // where it faces: an ink wedge just outside the shield
+    if (!down && !u.ghost) {
+      const fx = Math.sin(u.yaw), fz = Math.cos(u.yaw);
+      const d0 = r * 1.18, d1 = r * 1.72, w = r * 0.42;
+      g.fillStyle = color;
+      g.strokeStyle = INK;
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.moveTo(x + fx * d1, y + fz * d1);
+      g.lineTo(x + fx * d0 - fz * w, y + fz * d0 + fx * w);
+      g.lineTo(x + fx * d0 + fz * w, y + fz * d0 - fx * w);
+      g.closePath();
+      g.fill();
       g.stroke();
     }
-    // facing
+    // the shield
+    const k = r / 16;
+    g.save();
+    g.translate(x, y);
+    g.scale(k, k);
+    if (u.ghost) g.setLineDash([4, 3]);
+    g.fillStyle = color;
+    g.fill(SHIELD);
+    g.lineWidth = 2.4;
     g.strokeStyle = INK;
-    g.lineWidth = 2;
-    g.beginPath();
-    g.moveTo(x + Math.sin(u.yaw) * r, y + Math.cos(u.yaw) * r);
-    g.lineTo(x + Math.sin(u.yaw) * (r + 7), y + Math.cos(u.yaw) * (r + 7));
-    g.stroke();
-    g.fillStyle = u.state === 'down' ? '#8a8378' : SIDE_COLOR[u.side];
-    g.beginPath();
-    if (big) g.roundRect(x - r, y - r * 0.8, r * 2, r * 1.6, 4);
-    else g.arc(x, y, r, 0, Math.PI * 2);
-    g.fill();
-    g.lineWidth = 2;
-    g.stroke();
-    // health
-    const f = u.hp / u.maxHp;
-    g.strokeStyle = f > 0.5 ? '#6f9a4a' : f > 0.25 ? '#d9a62e' : '#c0392b';
-    g.lineWidth = 3;
-    g.beginPath();
-    g.arc(x, y, r + 2.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f);
-    g.stroke();
-    if (this.mini) return;
-    g.fillStyle = '#fff';
-    g.font = `600 ${Math.round(r * 0.95)}px "Barlow Condensed", sans-serif`;
+    g.stroke(SHIELD);
+    g.setLineDash([]);
+    g.restore();
+    g.fillStyle = '#f4ecd8';
+    g.font = `700 ${Math.round(r * 0.78)}px ${TYPE}`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText(u.state === 'down' ? `${u.downTurns}` : SHORT[u.cls] || '?', x, y + 1);
-    if (u.leader) {
-      g.fillStyle = '#d9a62e';
-      star(g, x + r * 0.8, y - r * 0.8, r * 0.45);
-    }
+    g.fillText(u.ghost ? '?' : down ? `${u.downTurns}` : SHORT[u.cls] || '?', x, y - r * 0.08);
     g.textBaseline = 'alphabetic';
+    // health under the shield
+    if (!u.ghost && !down) {
+      const f = Math.max(0, u.hp / u.maxHp), bw = r * 1.7, by = y + r * 1.32;
+      g.fillStyle = '#d9c9a5';
+      g.fillRect(x - bw / 2, by, bw, 4);
+      g.fillStyle = f > 0.5 ? '#6b9447' : f > 0.25 ? BRASS : '#b54a2a';
+      g.fillRect(x - bw / 2, by, bw * f, 4);
+      g.strokeStyle = INK;
+      g.lineWidth = 1;
+      g.strokeRect(x - bw / 2, by, bw, 4);
+    }
+    if (u.ghost) {
+      g.fillStyle = INK;
+      g.font = `700 ${Math.max(10, Math.round(r * 0.62))}px ${TYPE}`;
+      g.fillText(`T${u.seenTurn}`, x, y + r * 1.75);
+    }
+    if (u.leader && !u.ghost) {
+      g.fillStyle = BRASS;
+      star(g, x + r * 0.95, y - r * 1.05, r * 0.45);
+    }
+    g.restore();
+    if (selected) {
+      const pulse = 1 + 0.12 * Math.sin(this.time * 6);
+      g.strokeStyle = BRASS;
+      g.lineWidth = 3;
+      g.beginPath();
+      g.arc(x, y, (r + 7) * pulse, 0, Math.PI * 2);
+      g.stroke();
+    }
   }
+
+  /** The selector: brass corner brackets turning slowly round the unit, and its paper label. */
+  drawCursor(u, label) {
+    const g = this.g;
+    const [x, y] = this.toScreen(u.x, u.z);
+    const r = this.radius(u) * 1.75 + 2 * Math.sin(this.time * 5);
+    g.save();
+    g.translate(x, y);
+    g.rotate(this.time * 0.8);
+    for (let k = 0; k < 4; k++) {
+      g.rotate(Math.PI / 2);
+      g.beginPath();
+      g.moveTo(r, r * 0.45);
+      g.lineTo(r, r);
+      g.lineTo(r * 0.45, r);
+      g.lineCap = 'square';
+      g.strokeStyle = INK;
+      g.lineWidth = 5.5;
+      g.stroke();
+      g.strokeStyle = BRASS;
+      g.lineWidth = 3;
+      g.stroke();
+    }
+    g.restore();
+    if (!label) return;
+    // the label: a slip of paper to the upper right, flipped inward near the map's edges
+    g.font = `800 17px ${SERIF}`;
+    const tw = g.measureText(label.title).width;
+    g.font = `400 12px ${TYPE}`;
+    const lw = g.measureText(label.line).width;
+    const w = Math.max(tw, lw) + 20, h = 44;
+    let lx = x + r + 6, ly = y - r - h + 6;
+    if (lx + w > this.width - 8) lx = x - r - 6 - w;
+    if (ly < 8) ly = y + r - 6;
+    g.fillStyle = 'rgba(42,33,25,0.75)';
+    g.fillRect(lx + 3, ly + 3, w, h);
+    g.fillStyle = '#f7f0de';
+    g.fillRect(lx, ly, w, h);
+    g.fillStyle = u.side === 'fed' ? SIDE_COLOR.fed : SIDE_COLOR.imp;
+    g.fillRect(lx, ly, 4, h);
+    g.strokeStyle = INK;
+    g.lineWidth = 1.5;
+    g.strokeRect(lx, ly, w, h);
+    g.fillStyle = INK;
+    g.textAlign = 'left';
+    g.font = `800 17px ${SERIF}`;
+    g.fillText(label.title, lx + 11, ly + 19);
+    g.font = `400 12px ${TYPE}`;
+    g.fillStyle = '#5a4632';
+    g.fillText(label.line, lx + 11, ly + 36);
+  }
+}
+
+/** The label under the cursor for a unit as the player knows it. */
+export function unitLabel(u, ap = null) {
+  if (u.ghost) return { title: 'Unknown', line: `last seen turn ${u.seenTurn}` };
+  const cls = CLASS_NAME[u.cls] || u.cls;
+  if (u.side === 'fed') {
+    const state = u.state === 'down' ? `DOWN · ${u.downTurns} turns` : ap != null ? `${cls} · AP ${Math.round(ap)} m` : cls;
+    return { title: `${u.leader ? '★ ' : ''}${u.name}`, line: state };
+  }
+  return { title: u.kind === 'infantry' ? `Enemy ${cls}` : u.name, line: `HP ${u.hp}/${u.maxHp}` };
 }
 
 function star(g, x, y, r) {
@@ -489,7 +616,7 @@ function drawStatic(g, field, arena) {
   g.strokeStyle = 'rgba(42,33,25,0.12)';
   g.lineWidth = 1;
   g.fillStyle = 'rgba(42,33,25,0.45)';
-  g.font = '600 26px "Barlow Condensed", sans-serif';
+  g.font = `700 26px ${TYPE}`;
   for (let k = 0; k <= 10; k++) {
     const p = k * 20 * PX;
     g.beginPath();

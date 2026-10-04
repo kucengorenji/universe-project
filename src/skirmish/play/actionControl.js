@@ -12,6 +12,7 @@ import { WEAPONS, WALK_SPEED, RUN_SPEED, RUN_AP_COST } from '../game/rules.js';
 //           the camera keeps turning that way,
 //           and Q/E (or the arrow keys) turn it too.
 // The mode is found out by asking for the lock once; a refusal switches to cursor mode for good.
+// While `hold` is set (the camera diving in from the map) the controls are taken but idle.
 
 const CROUCH_SPEED = 1.6;
 const TURN_KEYS = 1.9; // rad/s, Q/E and arrows
@@ -33,7 +34,7 @@ export class ActionControl {
     const dom = game.engine.renderer.domElement;
     this.dom = dom;
     this.onKey = (e) => {
-      if (!this.active) return;
+      if (!this.active || this.hold) return;
       const k = e.key.toLowerCase();
       if (e.type === 'keydown') {
         if (k === ' ') {
@@ -59,7 +60,7 @@ export class ActionControl {
     };
     this.onLeave = () => (this.cursor.inside = false);
     this.onMouseDown = (e) => {
-      if (!this.active) return;
+      if (!this.active || this.hold) return;
       if (this.mode === 'lock' && !this.locked) {
         this.requestLock();
         if (e.button !== 2) return;
@@ -229,7 +230,7 @@ export class ActionControl {
   }
 
   update(dt) {
-    if (!this.active) return;
+    if (!this.active || this.hold) return;
     const u = this.unit;
     const game = this.game;
     const view = game.views.get(u.id);

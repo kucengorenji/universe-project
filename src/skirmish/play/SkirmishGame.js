@@ -9,9 +9,10 @@ import { loadWeapons } from '../units/soldiers.js';
 import { loadSoldierTemplates, portrait } from '../units/vcSoldiers.js';
 import { Arena } from '../game/arena.js';
 import { Battle } from '../game/battle.js';
+import { Spotting } from '../game/spotting.js';
 import { ROSTER, DEFAULT_SQUAD } from '../game/roster.js';
 import { MIN_AP_SHARE, RESELECT_AP, WEAPONS } from '../game/rules.js';
-import { TacticalMap } from '../ui/tacticalMap.js';
+import { TacticalMap, unitLabel } from '../ui/tacticalMap.js';
 import { PrepPanel, COVER_LEVELS } from '../ui/prepPanel.js';
 import { Hud } from '../ui/hud.js';
 import { UnitViews } from './unitViews.js';
@@ -25,12 +26,18 @@ import { Sound } from './sound.js';
 //   prep     flat map + setup panel (no 3D yet): seed, squad, deployment, briefing
 //   loading  building the 3D battlefield
 //   command  flat map: pick a unit (1 CP), or end the turn
+//   dive     the map zooms into the picked unit and the camera drops from above to its shoulder
 //   action   third-person control of that unit (ActionControl)
+//   rise     the camera climbs back above the unit, then the map returns
 //   enemy    the AI's turn in 3D (EnemyTurn)
 //   over     the result card
 // document.body.dataset.phase drives which UI shows.
 
 const PICK_RADIUS = 3;
+const DIVE = 1.05; // seconds from the map to the soldier's shoulder
+const RISE = 0.6;
+const ALTITUDE = 60; // the overhead camera that matches the zoomed-in map (m above the unit)
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
 export class SkirmishGame {
   constructor(engine, { mapEl, prepEl, hudEl }) {
@@ -72,6 +79,7 @@ export class SkirmishGame {
         e.preventDefault();
         this.fast = e.type === 'keydown';
       }
+      if (e.type === 'keydown' && this.phase === 'command') this.commandKey(e);
     };
     window.addEventListener('keydown', this.onKey);
     window.addEventListener('keyup', this.onKey);
@@ -191,6 +199,9 @@ export class SkirmishGame {
       return { ...r, leader: id === this.setup.leader, x: slot.x, z: slot.z };
     });
     this.battle = new Battle({ field, squad, difficulty: this.setup.difficulty });
+    this.spot = new Spotting(this.battle, this.arena, 'fed');
+    this.spot.update();
+    this.cursor = null;
     this.views = new UnitViews(this.scene, { templates: A.templates, weapons: A.weapons, arena: this.arena, tank: this.builder.tank, shadows: this.shadows, camera: this.camera });
     for (const u of this.battle.units) if (u.kind !== 'bunker') this.views.add(u);
     this.effects = new Effects(this.scene, this.camera, this.hud.fxLayer);
@@ -219,11 +230,21 @@ export class SkirmishGame {
       return;
     }
     const ap = this.battle.select(u);
-    this.setPhase('action');
     this.seen = null; // re-check sight for the new soldier at once
-    if (u.leader) this.hud.cutIn(u);
     this.combat.resetIntercept();
+    // take the controls now (the pointer lock needs this click), idle until the camera lands
     this.control.start(u, ap, { onEnd: () => this.endAction() });
+    this.control.hold = true;
+    this.control.placeCamera();
+    const land = this.pose();
+    this.mapZoom(u, 'diving');
+    this.setPhase('dive');
+    if (u.leader) this.hud.cutIn(u);
+    this.setPose(this.overhead(u));
+    this.fly(land, DIVE, () => {
+      this.control.hold = false;
+      this.setPhase('action');
+    });
   }
 
   endAction() {
@@ -231,8 +252,103 @@ export class SkirmishGame {
     this.battle.endAction(u);
     this.combat.resetIntercept();
     if (this.battle.over) return this.finish();
-    this.setPhase('command');
-    if (this.battle.cp <= 0) this.hud.toast('CP habis — akhiri giliran');
+    this.spot.update();
+    this.setPhase('rise');
+    this.fly(this.overhead(u), RISE, () => {
+      this.mapZoom(u, 'rising');
+      this.setPhase('command');
+      if (this.battle.cp <= 0) this.hud.toast('CP habis — akhiri giliran');
+    });
+  }
+
+  // ---------------------------------------------------------------- the camera between map and field
+  /** The camera's pose now. */
+  pose() {
+    const c = this.camera;
+    return { pos: c.position.clone(), quat: c.quaternion.clone(), fov: c.fov };
+  }
+
+  setPose(p) {
+    const c = this.camera;
+    c.position.copy(p.pos);
+    c.quaternion.copy(p.quat);
+    if (c.fov !== p.fov) {
+      c.fov = p.fov;
+      c.updateProjectionMatrix();
+    }
+    c.updateMatrixWorld();
+  }
+
+  /** Straight down onto a unit, north up, as the flat map shows it. */
+  overhead(u) {
+    const pos = new THREE.Vector3(u.x, this.arena.ground(u.x, u.z) + ALTITUDE, u.z);
+    const m = new THREE.Matrix4().lookAt(pos, new THREE.Vector3(u.x, 0, u.z), new THREE.Vector3(0, 0, -1));
+    return { pos, quat: new THREE.Quaternion().setFromRotationMatrix(m), fov: 50 };
+  }
+
+  /** Fly the camera to a pose over `dur` seconds, then call done. */
+  fly(to, dur, done) {
+    this.flight = { from: this.pose(), to, t: 0, dur, done };
+  }
+
+  stepFlight(dt) {
+    const f = this.flight;
+    f.t = Math.min(f.dur, f.t + dt);
+    const k = ease(f.t / f.dur);
+    // the height drops ahead of the rest, so the camera falls first and then swings in behind
+    const ky = ease(Math.min(1, (f.t / f.dur) * 1.25));
+    const c = this.camera;
+    c.position.lerpVectors(f.from.pos, f.to.pos, k);
+    c.position.y = f.from.pos.y + (f.to.pos.y - f.from.pos.y) * ky;
+    c.quaternion.slerpQuaternions(f.from.quat, f.to.quat, k);
+    c.fov = f.from.fov + (f.to.fov - f.from.fov) * k;
+    c.updateProjectionMatrix();
+    c.updateMatrixWorld();
+    if (f.t >= f.dur) {
+      this.flight = null;
+      f.done?.();
+    }
+  }
+
+  /** The flat map zooms into (or back out from) a unit's spot as the camera takes over. */
+  mapZoom(u, kind) {
+    const el = this.map.canvas;
+    const [x, y] = this.map.toScreen(u.x, u.z);
+    el.style.transformOrigin = `${x}px ${y}px`;
+    el.classList.remove('diving', 'rising');
+    void el.offsetWidth;
+    el.classList.add(kind);
+  }
+
+  // ---------------------------------------------------------------- command mode cursor
+  /** The units on the flat map as the player knows them: the squad, and the enemy as spotted. */
+  known() {
+    return [...this.battle.units.filter((u) => u.side === 'fed'), ...this.spot.view()];
+  }
+
+  /** The AP the next selection of a unit would get. */
+  nextAp(u) {
+    return u.apMax * Math.max(MIN_AP_SHARE, RESELECT_AP ** u.picks);
+  }
+
+  setCursor(id) {
+    this.cursor = id;
+  }
+
+  /** Tab / arrows walk the cursor through the squad; Enter commands the unit under it. */
+  commandKey(e) {
+    const squad = this.battle.units.filter((u) => u.side === 'fed' && u.state === 'ok');
+    if (!squad.length) return;
+    const step = e.key === 'Tab' ? (e.shiftKey ? -1 : 1) : e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+    if (step) {
+      e.preventDefault();
+      const i = squad.findIndex((u) => u.id === this.cursor);
+      this.cursor = squad[(i + step + squad.length) % squad.length].id;
+      this.map.pointerMoved = false;
+    } else if (e.key === 'Enter' && this.cursor) {
+      e.preventDefault();
+      this.pickUnit(this.cursor);
+    }
   }
 
   endPlayerTurn() {
@@ -250,6 +366,7 @@ export class SkirmishGame {
     if (this.battle.over) return this.finish();
     this.battle.endTurn();
     if (this.battle.over) return this.finish();
+    this.spot.update();
     this.setPhase('command');
     this.hud.banner('fed', this.battle.turn);
   }
@@ -327,15 +444,35 @@ export class SkirmishGame {
     if (!this.battle) return;
     if (p === 'command') {
       const b = this.battle;
+      const units = this.known();
       const pickable = new Set(b.units.filter((u) => b.canSelect(u)).map((u) => u.id));
-      // hovering one of ours shows how far it could go (straight-line AP, the next selection's share)
-      let range = null;
+      // the cursor follows the pointer onto the nearest token (the keyboard moves it otherwise)
       const h = this.map.hover;
-      if (h) {
-        const u = b.units.find((k) => k.side === 'fed' && k.state === 'ok' && Math.hypot(k.x - h[0], k.z - h[1]) < PICK_RADIUS);
-        if (u) range = { x: u.x, z: u.z, r: u.apMax * Math.max(MIN_AP_SHARE, RESELECT_AP ** u.picks) };
+      if (h && this.map.pointerMoved) {
+        let best = null;
+        for (const u of units) {
+          if (u.state === 'evac' || u.state === 'dead') continue;
+          const d = Math.hypot(u.x - h[0], u.z - h[1]);
+          if (d < PICK_RADIUS * 1.4 && (!best || d < best.d)) best = { u, d };
+        }
+        this.cursor = best?.u.id ?? null;
       }
-      this.map.draw(dt, { units: b.units, camps: b.camps, pickable, range, selected: range ? null : undefined });
+      const cur = units.find((u) => u.id === this.cursor);
+      // one of ours under the cursor shows how far it could go (straight-line AP of its next selection)
+      const mine = cur && cur.side === 'fed' && cur.state === 'ok' && !cur.ghost;
+      const range = mine && pickable.has(cur.id) ? { x: cur.x, z: cur.z, r: this.nextAp(cur) } : null;
+      const label = cur ? unitLabel(cur, mine ? this.nextAp(cur) : null) : null;
+      this.map.draw(dt, { units, camps: b.camps, pickable, range, cursor: this.cursor, label });
+      this.hud.highlight(this.cursor);
+    }
+    if (this.flight) this.stepFlight(dt);
+    // what the squad can see, a few times a second while anything moves
+    if (p === 'action' || p === 'enemy') {
+      this.spotTimer = (this.spotTimer || 0) - dt;
+      if (this.spotTimer <= 0) {
+        this.spotTimer = 0.25;
+        this.spot.update();
+      }
     }
     const c = this.control;
     if (p === 'action') {
@@ -345,7 +482,7 @@ export class SkirmishGame {
       this.updateMarkers(dt, u);
       this.hud.action(c, { target: this.aimTarget(u), threats: this.threats.length, running: c.running });
       this.minimap.view = { x: u.x, z: u.z, scale: 1.3 };
-      this.minimap.draw(dt, { units: this.battle.units, camps: this.battle.camps, selected: u.id });
+      this.minimap.draw(dt, { units: this.known(), camps: this.battle.camps, selected: u.id });
     } else this.hud.markers([]);
     // aiming: the background melts out of focus and the frame's edges darken
     const aiming = p === 'action' && (c.aiming || c.firing);
@@ -372,6 +509,8 @@ export class SkirmishGame {
     if (events.length) {
       this.hud.update();
       this.hud.events(events);
+      // an enemy that fires on the squad gives itself away
+      for (const e of events) if (e.type === 'hit' && e.by && this.battle.unit(e.by)?.side === 'imp') this.spot.reveal(e.by);
       for (const e of events) {
         if (e.type === 'capture') this.hud.toast(e.side === 'fed' ? 'Camp direbut!' : 'Musuh merebut camp!');
         if (e.type === 'evac') this.hud.toast('Kawan dievakuasi');
@@ -444,6 +583,6 @@ export class SkirmishGame {
   }
 
   render() {
-    if (this.phase === 'action' || this.phase === 'enemy' || this.phase === 'over') this.post.render(this.scene, this.camera);
+    if (this.phase !== 'prep' && this.phase !== 'command' && this.phase !== 'loading') this.post.render(this.scene, this.camera);
   }
 }

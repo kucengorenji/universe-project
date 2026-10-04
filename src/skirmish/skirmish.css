@@ -155,7 +155,7 @@ body[data-phase='prep'] .mapwrap { right: min(400px, 42vw); }
 @media (max-width: 720px) {
   body[data-phase='prep'] .mapwrap { bottom: 55vh; right: 0; }
   .prep { top: 45vh; width: 100%; border-left: 0; border-top: 1.5px solid var(--ink); }
-  body[data-phase='command'] .mapwrap { right: 0; bottom: 40vh; }
+  body[data-phase='command'] .mapwrap, body[data-phase='dive'] .mapwrap { right: 0; bottom: 40vh; }
 }
 
 /* ------------------------------------------------------------------ tactical desk (prep and command) */
@@ -178,7 +178,8 @@ body[data-phase='command'] #stage { visibility: hidden; }
 .mapwrap { background: transparent; padding: 10px; }
 .map { cursor: pointer; }
 body[data-phase='prep'] .mapwrap { right: min(420px, 42vw); }
-body[data-phase='command'] .mapwrap { right: min(340px, 36vw); top: 62px; }
+body[data-phase='command'] .mapwrap,
+body[data-phase='dive'] .mapwrap { right: min(340px, 36vw); top: 62px; }
 
 /* dossier panels */
 .prep {

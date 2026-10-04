@@ -36,7 +36,9 @@
 /* ------------------------------------------------------------------ visibility by phase */
 .hud > * { display: none; }
 body[data-phase='command'] .strip,
+body[data-phase='dive'] .strip,
 body[data-phase='action'] .strip,
+body[data-phase='rise'] .strip,
 body[data-phase='enemy'] .strip { display: flex; }
 body[data-phase='command'] .cmd { display: flex; }
 body[data-phase='action'] .action { display: block; }
@@ -113,7 +115,8 @@ body[data-phase='over'] .result { display: grid; }
   transition: transform 0.12s, box-shadow 0.12s;
 }
 .unitrow--ready { opacity: 1; cursor: pointer; }
-.unitrow--ready:hover { transform: translateX(-3px); box-shadow: 3px 3px 0 var(--nb-ink); }
+.unitrow--ready:hover, .unitrow--ready.unitrow--cursor { transform: translateX(-3px); box-shadow: 3px 3px 0 var(--nb-ink); }
+.unitrow--cursor { outline: 2.5px solid var(--nb-ochre); outline-offset: 1px; }
 .unitrow--dead, .unitrow--evac { opacity: 0.4; }
 .unitrow__body { display: grid; gap: 2px; min-width: 0; }
 .unitrow__name { font: 700 18px var(--nb-serif); font-stretch: 75%; }
@@ -159,6 +162,14 @@ body[data-phase='over'] .result { display: grid; }
 .paperbtn { color: var(--nb-ink); background: var(--nb-paper); border: 2px solid var(--nb-ink); box-shadow: 0 3px 0 var(--nb-ink); }
 .paperbtn:hover { background: #fffaf0; }
 .stampbtn:focus-visible, .paperbtn:focus-visible, .unitrow:focus-visible { outline: 2px solid var(--nb-fed); outline-offset: 2px; }
+
+/* ------------------------------------------------------------------ map <-> field */
+/* the map zooms into the picked unit and fades as the camera dives (and back out on the rise) */
+body[data-phase='dive'] .mapwrap { display: block; pointer-events: none; }
+.map.diving { animation: map-dive 0.5s cubic-bezier(0.5, 0, 0.9, 0.6) forwards; }
+.map.rising { animation: map-rise 0.4s cubic-bezier(0.1, 0.5, 0.4, 1) both; }
+@keyframes map-dive { to { transform: scale(3); opacity: 0; } }
+@keyframes map-rise { from { transform: scale(3); opacity: 0; } }
 
 /* ------------------------------------------------------------------ Action Mode */
 .action { position: fixed; inset: 0; pointer-events: none; }

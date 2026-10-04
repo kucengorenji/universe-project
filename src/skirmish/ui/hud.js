@@ -67,6 +67,14 @@ export class Hud {
       const li = e.target.closest('[data-unit]');
       if (li) game.pickUnit(li.dataset.unit);
     });
+    // the list and the map share one cursor
+    this.el.units.addEventListener('pointerover', (e) => {
+      const li = e.target.closest('[data-unit]');
+      if (li) {
+        game.setCursor(li.dataset.unit);
+        game.map.pointerMoved = false;
+      }
+    });
   }
 
   get fxLayer() {
@@ -110,6 +118,13 @@ export class Hud {
         </li>`;
       })
       .join('');
+  }
+
+  /** Mark the command list row under the map cursor. */
+  highlight(id) {
+    if (this.cursorRow === id && this.el.units.querySelector('.unitrow--cursor')?.dataset.unit === id) return;
+    this.cursorRow = id;
+    for (const li of this.el.units.children) li.classList.toggle('unitrow--cursor', li.dataset.unit === id);
   }
 
   /** Per-frame Action Mode HUD. */

@@ -1,16 +1,18 @@
 import * as THREE from 'three';
+import { hatchTexture } from './canvasStyle.js';
 
 // Sky dome (a watercolour wash with soft clouds), sun, sky light and fog for the skirmish,
-// per time of day. The dome writes no depth, so the canvas pass treats it as open sky.
+// per time of day. The dome writes no depth, so the canvas pass treats it as open sky. Pencil
+// strokes from the canvas hatch texture run across the wash, anchored to the dome's directions.
 
 export const TIMES = {
-  day: { zenith: '#8fb3cf', horizon: '#ece3cc', cloud: '#fbf6ea', sun: '#fff0d4', sunI: 2.7, elev: 52, az: 35, sky: '#d4e2ee', ground: '#8f7d58', hemiI: 1.15, exposure: 1.0 },
-  dusk: { zenith: '#7088ad', horizon: '#f0b58a', cloud: '#f7d2b0', sun: '#ffae6c', sunI: 2.2, elev: 11, az: 70, sky: '#d8b4a4', ground: '#5e4b3a', hemiI: 0.85, exposure: 1.05 },
-  night: { zenith: '#18213a', horizon: '#3c4a66', cloud: '#56607a', sun: '#a8bce6', sunI: 0.75, elev: 38, az: -40, sky: '#3a4866', ground: '#1e1d1a', hemiI: 0.55, exposure: 1.25 }
+  day: { zenith: '#5f93c9', horizon: '#c9dbe6', fog: '#e6e0cf', cloud: '#fbf6ea', sun: '#fff0d4', sunI: 2.7, elev: 52, az: 35, sky: '#d4e2ee', ground: '#8f7d58', hemiI: 1.15, exposure: 1.0 },
+  dusk: { zenith: '#5d77a6', horizon: '#f0b58a', fog: '#e8c6a6', cloud: '#f7d2b0', sun: '#ffae6c', sunI: 2.2, elev: 11, az: 70, sky: '#d8b4a4', ground: '#5e4b3a', hemiI: 0.85, exposure: 1.05 },
+  night: { zenith: '#18213a', horizon: '#3c4a66', fog: '#3c4a66', cloud: '#56607a', sun: '#a8bce6', sunI: 0.75, elev: 38, az: -40, sky: '#3a4866', ground: '#1e1d1a', hemiI: 0.55, exposure: 1.25 }
 };
 
 const SkyShader = {
-  uniforms: { uZenith: { value: new THREE.Color() }, uHorizon: { value: new THREE.Color() }, uCloud: { value: new THREE.Color() }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uSun: { value: new THREE.Color() } },
+  uniforms: { uZenith: { value: new THREE.Color() }, uHorizon: { value: new THREE.Color() }, uCloud: { value: new THREE.Color() }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uSun: { value: new THREE.Color() }, uHatch: { value: null } },
   vertexShader: /* glsl */ `
     varying vec3 vDir;
     void main() {
@@ -21,6 +23,7 @@ const SkyShader = {
   fragmentShader: /* glsl */ `
     uniform vec3 uZenith, uHorizon, uCloud, uSun;
     uniform vec3 uSunDir;
+    uniform sampler2D uHatch;
     varying vec3 vDir;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float vnoise(vec2 p) {
@@ -32,7 +35,7 @@ const SkyShader = {
     void main() {
       vec3 d = normalize(vDir);
       float h = clamp(d.y, 0.0, 1.0);
-      vec3 col = mix(uHorizon, uZenith, pow(h, 0.55));
+      vec3 col = mix(uHorizon, uZenith, pow(h, 0.38));
       // clouds: flat watercolour blots on a plane above, pooled pigment at their edges
       vec2 uv = d.xz / max(d.y, 0.08) * 0.9;
       float c = fbm(uv * 0.9 + 3.0);
@@ -42,6 +45,13 @@ const SkyShader = {
       col = mix(col, uCloud * 0.86, rim * 0.35 * smoothstep(0.14, 0.4, d.y));
       // a soft halo where the sun is
       col += uSun * pow(max(dot(d, uSunDir), 0.0), 24.0) * 0.35;
+      // pencil strokes over the wash: heavier in the deeper blue, light on the clouds; the
+      // longitude wraps over 16 whole tiles, so there is no seam
+      vec2 hu = vec2(atan(d.z, d.x) * 2.5465, d.y * 9.0);
+      vec4 hs = texture2D(uHatch, hu);
+      float sh = hs.r * (0.16 + 0.22 * smoothstep(0.1, 0.8, h)) * (1.0 - cloud * 0.6) + hs.g * 0.06 * (1.0 - cloud);
+      col *= 1.0 - sh * smoothstep(0.0, 0.08, d.y);
+      col *= 0.95 + 0.1 * hs.b;
       // below the horizon the dome is the horizon colour (the apron and fog cover it)
       col = mix(uHorizon, col, smoothstep(-0.02, 0.02, d.y));
       gl_FragColor = vec4(col, 1.0);
@@ -54,6 +64,7 @@ export class SkyLight {
   constructor(scene, { shadows = true, mapSize = 4096, extent = 115 } = {}) {
     this.scene = scene;
     this.material = new THREE.ShaderMaterial({ ...SkyShader, uniforms: THREE.UniformsUtils.clone(SkyShader.uniforms), side: THREE.BackSide, depthWrite: false, fog: false });
+    this.material.uniforms.uHatch.value = hatchTexture();
     this.dome = new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 16), this.material);
     this.dome.renderOrder = -1;
     this.dome.frustumCulled = false;
@@ -92,7 +103,7 @@ export class SkyLight {
     this.hemi.color.set(T.sky);
     this.hemi.groundColor.set(T.ground);
     this.hemi.intensity = T.hemiI;
-    this.scene.fog.color.set(T.horizon);
+    this.scene.fog.color.set(T.fog);
     this.time = time;
     return T.exposure;
   }

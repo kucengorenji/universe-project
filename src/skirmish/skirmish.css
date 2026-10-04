@@ -94,18 +94,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 [hidden] { display: none !important; }
 
 /* ------------------------------------------------------------------ game layout by phase */
-.mapwrap, .prep, .hud > * { display: none; }
+.mapwrap, .prep { display: none; }
 body[data-phase='prep'] .mapwrap,
 body[data-phase='command'] .mapwrap { display: block; }
 body[data-phase='prep'] .prep { display: block; }
-body[data-phase='command'] .topbar,
-body[data-phase='action'] .topbar,
-body[data-phase='enemy'] .topbar { display: flex; }
-body[data-phase='command'] .cmd { display: flex; }
-body[data-phase='action'] .action { display: block; }
-body[data-phase='enemy'] .banner { display: flex; }
-body[data-phase='over'] .result { display: grid; }
-.hud > .toast, .hud > .fx { display: block; }
 body[data-phase='loading'] .loading { display: grid; }
 .ready:not([data-phase='loading']) .loading { display: none; }
 
@@ -115,7 +107,6 @@ body[data-phase='loading'] .loading { display: grid; }
   background: var(--paper);
 }
 body[data-phase='prep'] .mapwrap { right: min(400px, 42vw); }
-body[data-phase='command'] .mapwrap { top: 52px; right: min(320px, 36vw); }
 .map { width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
 
 .btn { min-height: 36px; }
@@ -161,240 +152,10 @@ body[data-phase='command'] .mapwrap { top: 52px; right: min(320px, 36vw); }
 .briefing p, .briefing li { margin: 0 0 6px; font-size: 15px; line-height: 1.35; font-weight: 400; }
 .briefing ol { margin: 4px 0 0; padding-left: 20px; }
 
-/* ------------------------------------------------------------------ turn bar and command panel */
-.topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 52px;
-  align-items: center;
-  gap: 18px;
-  padding: 0 16px;
-  background: color-mix(in srgb, var(--paper) 94%, transparent);
-  border-bottom: 1.5px solid var(--ink);
-  font-size: 18px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  z-index: 3;
-}
-.topbar__side { padding: 2px 10px; color: var(--paper); background: var(--fed); }
-.topbar__side[data-side='imp'] { background: var(--imp); }
-.topbar__cp { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-.topbar__cp b { margin: 0 6px 0 4px; }
-.topbar__cp i { width: 14px; height: 14px; border: 1.5px solid var(--ink); transform: rotate(45deg); }
-.topbar__cp i.on { background: #d9a62e; }
-body[data-phase='action'] .topbar,
-body[data-phase='enemy'] .topbar { background: transparent; border: 0; color: var(--ink); }
-
-.cmd {
-  position: fixed;
-  top: 52px;
-  right: 0;
-  bottom: 0;
-  width: min(320px, 36vw);
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  background: var(--paper-dark);
-  border-left: 1.5px solid var(--ink);
-  overflow-y: auto;
-}
-.cmd__title { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 0.05em; }
-.cmd__hint { margin: 0; font-size: 14px; color: var(--ink-soft); }
-.cmd__units { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.cmd__end { margin-top: auto; min-height: 44px; font-size: 18px; }
-.unitrow {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2px;
-  padding: 6px 8px;
-  border: 1.5px solid var(--ink);
-  background: var(--paper);
-  opacity: 0.6;
-}
-.unitrow--ready { opacity: 1; cursor: pointer; }
-.unitrow--ready:hover { background: #fff8e6; }
-.unitrow__name { font-size: 17px; font-weight: 600; }
-.unitrow__meta { font-size: 13px; color: var(--ink-soft); }
-.unitrow__hp { height: 5px; background: #d6cbb3; }
-.unitrow__hp i { display: block; height: 100%; background: #6f9a4a; }
-.unitrow__state { font-size: 13px; text-transform: uppercase; color: var(--imp); }
-
-/* ------------------------------------------------------------------ action HUD */
-.action { position: fixed; inset: 0; pointer-events: none; }
-.reticle {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px solid rgba(255, 248, 230, 0.95);
-  border-radius: 50%;
-  box-shadow: 0 0 0 1.5px rgba(42, 33, 25, 0.8), inset 0 0 0 1.5px rgba(42, 33, 25, 0.5);
-}
-.reticle::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 4px;
-  height: 4px;
-  margin: -2px 0 0 -2px;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px var(--ink);
-}
-.reticle--scope { box-shadow: 0 0 0 1.5px rgba(42, 33, 25, 0.8), 0 0 0 100vmax rgba(20, 16, 12, 0.55); }
-.minimap {
-  position: absolute;
-  top: 64px;
-  right: 16px;
-  width: min(220px, 30vw);
-  height: min(220px, 30vw);
-  border: 1.5px solid var(--ink);
-  border-radius: 50%;
-  box-shadow: 3px 3px 0 var(--ink);
-  background: var(--paper);
-}
-.unitcard {
-  position: absolute;
-  left: 16px;
-  bottom: 16px;
-  width: min(300px, calc(100vw - 32px));
-  padding: 10px 12px;
-  background: color-mix(in srgb, var(--paper) 92%, transparent);
-  border: 1.5px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
-}
-.unitcard__name { font-size: 22px; font-weight: 600; }
-.unitcard__class, .unitcard__ammo { font-size: 14px; color: var(--ink-soft); }
-.bar { position: relative; height: 14px; background: #d6cbb3; border: 1.5px solid var(--ink); margin: 6px 0; }
-.bar i { display: block; height: 100%; background: #6f9a4a; transition: width 0.1s linear; }
-.bar span { position: absolute; inset: 0; font-size: 11px; line-height: 11px; text-align: center; }
-.unitcard__ap { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; font-size: 15px; }
-.unitcard__ap .bar { margin: 0; }
-.bar--ap { height: 16px; }
-.bar--ap i { background: linear-gradient(90deg, #d9a62e, #f0c75a); }
-.keys {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  max-width: min(340px, calc(100vw - 360px));
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 14px;
-  text-align: right;
-  background: color-mix(in srgb, var(--paper) 85%, transparent);
-  border: 1px solid var(--ink);
-}
-body[data-input='cursor'] .lockhint { display: none; }
-body[data-phase='action'][data-input='cursor'] #stage { cursor: none; }
-.reticle--idle { border-width: 1.5px; opacity: 0.8; }
-.reticle--idle::after { display: none; }
-.markers { position: absolute; inset: 0; }
-.markers i {
-  position: absolute;
-  left: -8px;
-  top: -14px;
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 13px solid #c0392b;
-  filter: drop-shadow(0 0 1.5px #2a2119) drop-shadow(0 0 1px #2a2119);
-}
-.lockhint {
-  position: absolute;
-  left: 50%;
-  top: 40%;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-  font-size: 18px;
-  padding: 10px 16px;
-  box-shadow: 3px 3px 0 var(--ink);
-}
-.locked .lockhint { display: none; }
-
-.banner {
-  position: fixed;
-  top: 64px;
-  left: 50%;
-  transform: translateX(-50%);
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 22px;
-  color: var(--paper);
-  background: var(--imp);
-  border: 1.5px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.banner strong { font-size: 24px; }
-.banner span { font-size: 13px; opacity: 0.85; }
-
-.result { position: fixed; inset: 0; place-items: center; background: rgba(42, 33, 25, 0.35); z-index: 5; }
-.result__card {
-  width: min(440px, calc(100vw - 32px));
-  padding: 22px 24px;
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--ink);
-  text-align: center;
-}
-.result__title { margin: 0; font-size: 34px; text-transform: uppercase; letter-spacing: 0.05em; }
-.result__why { margin: 4px 0 8px; font-size: 18px; }
-.result__rank { font-size: 96px; font-weight: 600; line-height: 1; color: var(--fed); }
-.result__rank[data-rank='-'] { color: var(--imp); }
-.result__stats { color: var(--ink-soft); }
-.result__actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-
-.toast {
-  position: fixed;
-  left: 50%;
-  top: 70px;
-  transform: translate(-50%, -8px);
-  padding: 6px 16px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 18px;
-  letter-spacing: 0.04em;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s, transform 0.2s;
-  z-index: 6;
-}
-.toast.on { opacity: 1; transform: translate(-50%, 0); }
-
-.fx { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
-.fx-word {
-  position: absolute;
-  left: 0;
-  top: 0;
-  font-weight: 600;
-  white-space: nowrap;
-  color: #fff8e6;
-  text-shadow: -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink);
-  font-size: 26px;
-}
-.fx-word--crit { color: #ffd34d; font-size: 32px; }
-.fx-word--sfx { color: #ffb15c; font-size: 40px; font-style: italic; letter-spacing: 0.04em; }
-.fx-word--info { font-size: 22px; letter-spacing: 0.08em; }
-
-@media (max-width: 900px) {
-  .keys { display: none; }
-  .minimap { width: 150px; height: 150px; top: 60px; }
-  .unitcard { width: min(280px, calc(100vw - 32px)); padding: 8px 10px; }
-  .unitcard__name { font-size: 19px; }
-  .topbar { gap: 10px; font-size: 15px; padding: 0 10px; }
-  .topbar__cp i { width: 10px; height: 10px; }
-}
-
 @media (max-width: 720px) {
   body[data-phase='prep'] .mapwrap { bottom: 55vh; right: 0; }
   .prep { top: 45vh; width: 100%; border-left: 0; border-top: 1.5px solid var(--ink); }
   body[data-phase='command'] .mapwrap { right: 0; bottom: 40vh; }
-  .cmd { top: auto; height: 40vh; width: 100%; }
 }
 
 /* ------------------------------------------------------------------ tactical desk (prep and command) */
@@ -417,20 +178,17 @@ body[data-phase='command'] #stage { visibility: hidden; }
 .mapwrap { background: transparent; padding: 10px; }
 .map { cursor: pointer; }
 body[data-phase='prep'] .mapwrap { right: min(420px, 42vw); }
-body[data-phase='command'] .mapwrap { right: min(340px, 36vw); }
+body[data-phase='command'] .mapwrap { right: min(340px, 36vw); top: 62px; }
 
 /* dossier panels */
-.prep,
-.cmd {
+.prep {
   background: var(--paper);
   border: 0;
   box-shadow: -6px 0 18px rgba(0, 0, 0, 0.35);
   background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(47, 79, 122, 0.08) 27px 28px);
 }
 .prep { width: min(420px, 42vw); }
-.cmd { width: min(340px, 36vw); top: 56px; }
-.prep__title,
-.cmd__title {
+.prep__title {
   margin: -16px -18px 10px;
   padding: 12px 18px 10px;
   background: var(--wood-dark);
@@ -438,31 +196,7 @@ body[data-phase='command'] .mapwrap { right: min(340px, 36vw); }
   font-size: 24px;
   letter-spacing: 0.12em;
 }
-.cmd__title { margin: -14px -16px 6px; }
 .prep__sec h3 { border-bottom: 1.5px solid var(--ink); padding-bottom: 2px; }
-
-/* the turn bar: a dark strip with brass medals */
-.topbar {
-  height: 56px;
-  background: linear-gradient(180deg, #2f2218, #20170f);
-  color: var(--paper);
-  border-bottom: 2px solid var(--brass);
-}
-body[data-phase='action'] .topbar,
-body[data-phase='enemy'] .topbar { color: var(--paper); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
-.topbar__turn { font-weight: 600; letter-spacing: 0.1em; }
-.topbar__cp { gap: 6px; }
-.cp__label { font-size: 13px; letter-spacing: 0.12em; opacity: 0.8; margin-right: 6px; }
-.medal {
-  width: 18px !important;
-  height: 18px !important;
-  border-radius: 50%;
-  transform: none !important;
-  border: 2px solid var(--brass) !important;
-  background: transparent;
-}
-.medal.on { background: radial-gradient(circle at 35% 35%, #ffe79a, var(--brass) 55%, #8a6a22) !important; box-shadow: 0 0 6px rgba(255, 210, 100, 0.5); }
-.topbar__cp b { font-size: 22px; margin: 0 0 0 8px; color: var(--brass); }
 
 /* class emblems: round seals in the faction colour */
 .emblem {
@@ -482,37 +216,8 @@ body[data-phase='enemy'] .topbar { color: var(--paper); text-shadow: 0 1px 3px r
 .emblem--fed { background: var(--fed); }
 .emblem--imp { background: var(--imp); }
 
-.unitrow {
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 10px;
-  position: relative;
-  border: 0;
-  background: #fbf6ea;
-  box-shadow: 0 1px 0 rgba(42, 33, 25, 0.25), 0 2px 6px rgba(42, 33, 25, 0.12);
-  transition: transform 0.12s, box-shadow 0.12s;
-}
-.unitrow__body { display: grid; gap: 2px; }
-.unitrow--ready:hover { transform: translateX(-3px); box-shadow: 3px 3px 0 var(--ink); background: #fff; }
-.unitrow--dead, .unitrow--evac { opacity: 0.45; }
-.stamp {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%) rotate(-8deg);
-  padding: 1px 8px;
-  border: 2px solid var(--stamp);
-  color: var(--stamp);
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  background: rgba(255, 255, 255, 0.6);
-}
-
 /* stamp buttons */
 .btn--primary,
-.cmd__end,
 .p-start {
   background: var(--stamp) !important;
   border: 2px solid #6e1d1a !important;
@@ -521,23 +226,18 @@ body[data-phase='enemy'] .topbar { color: var(--paper); text-shadow: 0 1px 3px r
   letter-spacing: 0.14em;
   font-weight: 600;
 }
-.btn--primary:hover, .cmd__end:hover, .p-start:hover { filter: brightness(1.08); }
-.btn--primary:active, .cmd__end:active, .p-start:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25), 0 1px 0 #6e1d1a; }
+.btn--primary:hover, .p-start:hover { filter: brightness(1.08); }
+.btn--primary:active, .p-start:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25), 0 1px 0 #6e1d1a; }
 
 .roster__row { grid-template-columns: auto 1fr 36px; }
 .roster__pick { display: flex; align-items: center; gap: 6px; }
 .roster__pick .emblem { width: 30px; height: 30px; font-size: 13px; }
 .roster__row.on { background: #fbf6ea; border-color: transparent; box-shadow: 0 1px 0 rgba(42, 33, 25, 0.25), 0 2px 6px rgba(42, 33, 25, 0.12); }
 
-.toast { background: var(--wood-dark); border: 1.5px solid var(--brass); }
 
 /* portraits: the soldier's face in a round frame, the class seal pinned to its corner */
-.seal { position: relative; display: inline-block; flex: none; }
 .portrait { width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--ink); object-fit: cover; display: block; background: var(--paper); }
-.seal .portrait + .emblem,
 .roster__pick .portrait + .emblem { position: absolute; right: -6px; bottom: -4px; width: 22px; height: 22px; font-size: 10px; border-width: 1.5px; }
 .roster__pick { position: relative; }
 .roster__pick .portrait { width: 44px; height: 44px; }
-.unitcard { padding-left: 84px; min-height: 96px; }
-.unitcard__portrait { position: absolute; left: 10px; top: 12px; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); }
-.unitcard__portrait:not([src]) { display: none; }
+

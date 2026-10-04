@@ -10,7 +10,7 @@ import { loadSoldierTemplates, portrait } from '../units/vcSoldiers.js';
 import { Arena } from '../game/arena.js';
 import { Battle } from '../game/battle.js';
 import { ROSTER, DEFAULT_SQUAD } from '../game/roster.js';
-import { MIN_AP_SHARE, RESELECT_AP } from '../game/rules.js';
+import { MIN_AP_SHARE, RESELECT_AP, WEAPONS } from '../game/rules.js';
 import { TacticalMap } from '../ui/tacticalMap.js';
 import { PrepPanel, COVER_LEVELS } from '../ui/prepPanel.js';
 import { Hud } from '../ui/hud.js';
@@ -208,7 +208,7 @@ export class SkirmishGame {
     this.camera.lookAt(fed.x, 0, fed.z);
     await this.engine.renderer.compileAsync(this.scene, this.camera);
     this.setPhase('command');
-    this.hud.toast('Giliran 1 — pilih unit di peta');
+    this.hud.banner('fed', 1);
   }
 
   pickUnit(id) {
@@ -220,6 +220,8 @@ export class SkirmishGame {
     }
     const ap = this.battle.select(u);
     this.setPhase('action');
+    this.seen = null; // re-check sight for the new soldier at once
+    if (u.leader) this.hud.cutIn(u);
     this.combat.resetIntercept();
     this.control.start(u, ap, { onEnd: () => this.endAction() });
   }
@@ -238,6 +240,7 @@ export class SkirmishGame {
     this.battle.endTurn();
     if (this.battle.over) return this.finish();
     this.setPhase('enemy');
+    this.hud.banner('imp', this.battle.turn);
     this.combat.resetIntercept();
     this.enemy.run();
   }
@@ -248,7 +251,7 @@ export class SkirmishGame {
     this.battle.endTurn();
     if (this.battle.over) return this.finish();
     this.setPhase('command');
-    this.hud.toast(`Giliran ${this.battle.turn}`);
+    this.hud.banner('fed', this.battle.turn);
   }
 
   finish() {
@@ -334,15 +337,24 @@ export class SkirmishGame {
       }
       this.map.draw(dt, { units: b.units, camps: b.camps, pickable, range, selected: range ? null : undefined });
     }
+    const c = this.control;
     if (p === 'action') {
-      this.control.update(dt);
-      if (this.control.moving && !this.control.frozen) this.combat.intercept(dt, this.control.unit);
-      this.hud.action(this.control);
-      const u = this.control.unit;
+      c.update(dt);
+      if (c.moving && !c.frozen) this.combat.intercept(dt, c.unit);
+      const u = c.unit;
+      this.updateMarkers(dt, u);
+      this.hud.action(c, { target: this.aimTarget(u), threats: this.threats.length, running: c.running });
       this.minimap.view = { x: u.x, z: u.z, scale: 1.3 };
       this.minimap.draw(dt, { units: this.battle.units, camps: this.battle.camps, selected: u.id });
-      this.updateMarkers(dt, u);
     } else this.hud.markers([]);
+    // aiming: the background melts out of focus and the frame's edges darken
+    const aiming = p === 'action' && (c.aiming || c.firing);
+    this.aimK = (this.aimK || 0) + ((aiming ? 1 : 0) - (this.aimK || 0)) * (1 - Math.exp(-dt * 10));
+    // focus on what the reticle meets (a unit, a wall); on open ground or sky, a middle distance
+    const sight = c?.sight;
+    const focus = sight?.hit ? sight.dist : Math.min(sight?.dist ?? 30, 40);
+    this.post.dof(focus, this.aimK * (sight?.hit?.unit ? 0.8 : 0.45));
+    this.post.aim(this.aimK);
     if (p === 'enemy') {
       this.enemy.update(dt);
       if (this.enemy.moving) this.combat.intercept(dt, this.enemy.moving);
@@ -359,6 +371,7 @@ export class SkirmishGame {
     const events = this.battle.drain();
     if (events.length) {
       this.hud.update();
+      this.hud.events(events);
       for (const e of events) {
         if (e.type === 'capture') this.hud.toast(e.side === 'fed' ? 'Camp direbut!' : 'Musuh merebut camp!');
         if (e.type === 'evac') this.hud.toast('Kawan dievakuasi');
@@ -368,20 +381,64 @@ export class SkirmishGame {
     if (this.battle.over && (p === 'action' || p === 'enemy') && !this.control.firing && !this.enemy.running) this.finish();
   }
 
-  /** Red markers over the enemies the acting soldier can see (sight re-checked a few times a second). */
+  /** The enemy under the reticle while aiming, with the attack's estimate: { unit, part, dist, est } or null. */
+  aimTarget(u) {
+    const c = this.control;
+    const h = c.sight?.hit;
+    if (!(c.aiming || c.firing) || !h?.unit || h.unit.side === u.side || h.unit.state !== 'ok') return null;
+    const e = h.unit;
+    const dist = Math.hypot(e.x - u.x, e.z - u.z);
+    return { unit: e, part: h.part, dist, est: this.battle.estimate(u, e, { part: h.part, dist }) };
+  }
+
+  /**
+   * Enemy tags for the acting soldier: every enemy it can see, and every enemy that could fire
+   * on it if it moved now (standing, in range of its interception weapon, with a line of sight).
+   * Sight is re-checked a few times a second; the tags follow every frame. Enemies out of view
+   * get an arrow at the screen's edge.
+   */
   updateMarkers(dt, u) {
     this.sightTimer = (this.sightTimer || 0) - dt;
-    if (this.sightTimer <= 0) {
+    if (this.sightTimer <= 0 || !this.seen) {
       this.sightTimer = 0.2;
-      this.seen = this.battle.units.filter((e) => e.side !== u.side && e.state === 'ok' && Math.hypot(e.x - u.x, e.z - u.z) < 150 && this.arena.sees(u, e));
+      const A = this.arena;
+      this.seen = [];
+      this.threats = [];
+      for (const e of this.battle.units) {
+        if (e.side === u.side || e.state !== 'ok') continue;
+        const d = Math.hypot(e.x - u.x, e.z - u.z);
+        if (d > 150) continue;
+        const W = e.intercept && WEAPONS[e.intercept];
+        const canFire = W && d <= W.range && (e.kind !== 'infantry' || e.stance === 'stand');
+        const theySee = canFire && A.sees(e, u);
+        if (!theySee && !A.sees(u, e)) continue;
+        this.seen.push(e);
+        if (theySee) this.threats.push(e);
+      }
     }
     const r = this.engine.renderer.domElement.getBoundingClientRect();
     const v = new THREE.Vector3();
+    const target = this.aimTarget(u)?.unit;
+    const threat = new Set(this.threats);
+    const M = 46; // edge arrows stay this far inside the screen
     const list = [];
-    for (const e of this.seen || []) {
+    for (const e of this.seen) {
       const g = this.arena.ground(e.x, e.z);
-      v.set(e.x, g + (e.kind === 'tank' ? 3.4 : e.kind === 'bunker' ? 2.8 : e.stance === 'crouch' ? 1.6 : 2.05), e.z).project(this.camera);
-      if (v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1) list.push({ x: ((v.x + 1) / 2) * r.width, y: ((1 - v.y) / 2) * r.height });
+      v.set(e.x, g + (e.kind === 'tank' ? 3.4 : e.kind === 'bunker' ? 2.8 : e.stance === 'crouch' ? 1.55 : 2.05), e.z).project(this.camera);
+      const behind = v.z > 1;
+      const on = !behind && Math.abs(v.x) < 0.98 && Math.abs(v.y) < 0.98;
+      let x = ((v.x + 1) / 2) * r.width, y = ((1 - v.y) / 2) * r.height, angle = 0;
+      if (!on) {
+        // the direction from the screen's centre, flipped when the enemy is behind the camera
+        let dx = behind ? -v.x : v.x, dy = behind ? v.y : -v.y;
+        if (Math.abs(dx) < 1e-4 && Math.abs(dy) < 1e-4) dy = 1;
+        angle = Math.atan2(dy, dx);
+        const hw = r.width / 2 - M, hh = r.height / 2 - M;
+        const k = Math.min(hw / Math.max(Math.abs(Math.cos(angle)), 1e-4), hh / Math.max(Math.abs(Math.sin(angle)), 1e-4));
+        x = r.width / 2 + Math.cos(angle) * k;
+        y = r.height / 2 + Math.sin(angle) * k;
+      }
+      list.push({ unit: e, x, y, on, angle, threat: threat.has(e), targeted: e === target });
     }
     this.hud.markers(list);
   }

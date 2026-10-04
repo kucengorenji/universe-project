@@ -1,54 +1,51 @@
-import { CLASSES } from '../units/soldierLook.js';
-import { TURN_LIMIT, WEAPONS } from '../game/rules.js';
+import './hud.css';
+import { TURN_LIMIT } from '../game/rules.js';
+import { FACTIONS } from '../units/soldierLook.js';
+import { ActionHud } from './actionHud.js';
+import { shield, unitShield, CLASS_NAME } from './emblems.js';
 
-// Skirmish HUD (DOM): the turn and CP bar, the command panel beside the map, the action HUD
-// (unit card, AP gauge, reticle, controls), the enemy-turn banner, the result card and toasts.
-// Which parts show is set by the phase class on <body> (see skirmish.css).
+// The skirmish HUD (DOM), in the war-notebook style: cream paper, sepia ink, red stamps,
+// typewriter labels, blue and red faction shields. Military labels are English (PLAYER PHASE,
+// COMMAND MODE, AP), descriptions Indonesian. Parts:
+//   strip     turn, phase and command points (top left, every battle phase)
+//   cmd       the command list beside the flat map (Command Mode)
+//   action    Action Mode (ActionHud): unit card, AP gauge, reticle, target, enemy tags
+//   band      the enemy-phase ribbon; banner: the phase change; cutin: the leader taking command
+//   result    the mission result; toast: short notes; fx: floating words over the scene
+// Which parts show is set by the phase on <body data-phase> (hud.css).
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-const SHORT = { ...Object.fromEntries(Object.entries(CLASSES).map(([k, v]) => [k, v.short])), tank: 'TK', bunker: 'BK' };
-const CLASS_LABEL = { ...Object.fromEntries(Object.entries(CLASSES).map(([k, v]) => [k, v.label])), tank: 'Tank', bunker: 'Bunker' };
+const PHASE = { fed: 'Player Phase', imp: 'Enemy Phase' };
 
 export class Hud {
   constructor(root, game) {
     this.game = game;
     root.innerHTML = `
-      <div class="topbar" aria-live="polite">
-        <span class="topbar__turn"></span>
-        <span class="topbar__side"></span>
-        <span class="topbar__cp" aria-label="Command point"></span>
-      </div>
+      <header class="strip" aria-live="polite">
+        <span class="strip__shield"></span>
+        <span class="strip__text"><b class="strip__turn"></b><span class="strip__phase"></span></span>
+        <span class="strip__cp" aria-label="Command point"></span>
+      </header>
       <aside class="cmd" aria-label="Komando">
         <h2 class="cmd__title">Command Mode</h2>
-        <p class="cmd__hint">Klik unit biru di peta untuk memerintahnya (1 CP). Lancer dan Sniper punya amunisi terbatas.</p>
+        <p class="cmd__hint">Pilih unit biru di peta atau daftar (1 CP). Lancer dan Sniper punya amunisi terbatas.</p>
         <ol class="cmd__units"></ol>
-        <button type="button" class="btn btn--primary cmd__end">Akhiri giliran</button>
+        <button type="button" class="stampbtn cmd__end">Akhiri giliran</button>
       </aside>
-      <div class="action">
-        <div class="markers" aria-hidden="true"></div>
-        <div class="reticle" aria-hidden="true"></div>
-        <canvas class="minimap" aria-label="Minimap"></canvas>
-        <div class="unitcard">
-          <img class="unitcard__portrait" alt="" />
-          <div class="unitcard__name"></div>
-          <div class="unitcard__class"></div>
-          <div class="bar bar--hp"><i></i><span></span></div>
-          <div class="unitcard__ap"><b>AP</b><div class="bar bar--ap"><i></i><span></span></div></div>
-          <div class="unitcard__ammo"></div>
-        </div>
-        <p class="keys"></p>
-        <button type="button" class="lockhint">Klik untuk mengunci mouse (Esc melepas)</button>
-      </div>
-      <div class="banner"><strong>Giliran musuh</strong><span>Tahan Space untuk mempercepat</span></div>
+      <div class="action"></div>
+      <div class="band"><b>Enemy Phase</b><span>Tahan Space untuk mempercepat</span></div>
+      <div class="banner" aria-hidden="true"><div class="banner__ribbon"><span class="banner__shield"></span><b class="banner__title"></b><span class="banner__turn"></span></div></div>
+      <div class="cutin" aria-hidden="true"><div class="cutin__strip"><img class="cutin__face" alt="" /><div class="cutin__text"><span class="cutin__stamp">Leader</span><b class="cutin__name"></b><span class="cutin__line"></span></div></div></div>
       <div class="result" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
-        <div class="result__card">
+        <div class="result__sheet">
+          <p class="result__kicker">Operation Report</p>
           <h2 id="resultTitle" class="result__title"></h2>
           <p class="result__why"></p>
-          <div class="result__rank"></div>
-          <p class="result__stats"></p>
+          <div class="result__rank"><span>Rank</span><b></b></div>
+          <dl class="result__stats"></dl>
           <div class="result__actions">
-            <button type="button" class="btn btn--primary result__again">Main lagi (seed sama)</button>
-            <button type="button" class="btn result__new">Medan baru</button>
+            <button type="button" class="stampbtn result__again">Main lagi (seed sama)</button>
+            <button type="button" class="paperbtn result__new">Medan baru</button>
           </div>
         </div>
       </div>
@@ -56,13 +53,14 @@ export class Hud {
       <div class="fx" aria-hidden="true"></div>`;
     const $ = (s) => root.querySelector(s);
     this.el = {
-      turn: $('.topbar__turn'), side: $('.topbar__side'), cp: $('.topbar__cp'),
+      root,
+      shield: $('.strip__shield'), turn: $('.strip__turn'), phase: $('.strip__phase'), cp: $('.strip__cp'),
       units: $('.cmd__units'), end: $('.cmd__end'),
-      reticle: $('.reticle'), name: $('.unitcard__name'), cls: $('.unitcard__class'), hp: $('.bar--hp'), ammo: $('.unitcard__ammo'), ap: $('.bar--ap'),
-      lock: $('.lockhint'), minimap: $('.minimap'), markers: $('.markers'), keys: $('.keys'), result: $('.result'), toast: $('.toast'), fx: $('.fx')
+      banner: $('.banner'), cutin: $('.cutin'), result: $('.result'), toast: $('.toast'), fx: $('.fx')
     };
+    this.actionHud = new ActionHud($('.action'), game);
+    this.el.minimap = this.actionHud.el.minimap;
     this.el.end.addEventListener('click', () => game.endPlayerTurn());
-    this.el.lock.addEventListener('click', () => game.engine.renderer.domElement.requestPointerLock?.());
     $('.result__again').addEventListener('click', () => game.restart(false));
     $('.result__new').addEventListener('click', () => game.restart(true));
     this.el.units.addEventListener('click', (e) => {
@@ -75,26 +73,38 @@ export class Hud {
     return this.el.fx;
   }
 
-  /** Refresh the turn bar and the command list from the battle. */
+  set portraits(p) {
+    this._portraits = p;
+    this.actionHud.portraits = p;
+  }
+
+  get portraits() {
+    return this._portraits;
+  }
+
+  /** Refresh the strip and the command list from the battle. */
   update() {
     const b = this.game.battle;
     if (!b) return;
-    this.el.turn.textContent = `Giliran ${Math.min(b.turn, TURN_LIMIT)} / ${TURN_LIMIT}`;
-    this.el.side.textContent = b.side === 'fed' ? 'Federasi' : 'Imperium';
-    this.el.side.dataset.side = b.side;
-    this.el.cp.innerHTML = `<span class="cp__label">Command Point</span>` + Array.from({ length: b.cpFor(b.side) }, (_, i) => `<i class="medal ${i < b.cp ? 'on' : ''}"></i>`).join('') + `<b>${b.cp}</b>`;
+    this.el.shield.innerHTML = shield(b.side);
+    this.el.turn.textContent = `Turn ${String(Math.min(b.turn, TURN_LIMIT)).padStart(2, '0')}/${TURN_LIMIT}`;
+    this.el.phase.textContent = PHASE[b.side];
+    this.el.phase.dataset.side = b.side;
+    const n = b.cpFor(b.side);
+    this.el.cp.innerHTML = `<span class="label">CP</span>${Array.from({ length: n }, (_, i) => `<i class="medal ${i < b.cp ? 'on' : ''}"></i>`).join('')}<b>${b.cp}</b>`;
     const mine = b.units.filter((u) => u.side === 'fed');
     this.el.units.innerHTML = mine
       .map((u) => {
-        const state = { ok: '', down: `Tumbang · ${u.downTurns}`, dead: 'Gugur', evac: 'Evakuasi' }[u.state];
+        const state = { ok: '', down: `Down · ${u.downTurns}`, dead: 'KIA', evac: 'Evac' }[u.state];
         const ammo = u.ammo === Infinity ? '' : ` · amunisi ${u.ammo}`;
         const can = b.canSelect(u) && this.game.phase === 'command';
+        const face = this._portraits?.[u.id];
         return `<li data-unit="${u.id}" class="unitrow ${can ? 'unitrow--ready' : ''} unitrow--${u.state}">
-          <span class="seal">${this.portraits?.[u.id] ? `<img class="portrait" src="${this.portraits[u.id]}" alt="" />` : ''}<span class="emblem emblem--${u.side}">${SHORT[u.cls] || '?'}</span></span>
+          <span class="seal">${face ? `<img class="portrait" src="${face}" alt="" />` : ''}${unitShield(u)}</span>
           <span class="unitrow__body">
-            <span class="unitrow__name">${u.leader ? '★ ' : ''}${esc(u.name)}</span>
-            <span class="unitrow__meta">${CLASS_LABEL[u.cls]} · AP ${u.apMax} m${ammo}${u.picks ? ` · dipakai ${u.picks}×` : ''}</span>
-            <span class="unitrow__hp"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></span>
+            <span class="unitrow__name">${u.leader ? '<i class="star">★</i>' : ''}${esc(u.name)}</span>
+            <span class="unitrow__meta">${CLASS_NAME[u.cls]} · AP ${u.apMax} m${ammo}${u.picks ? ` · dipakai ${u.picks}×` : ''}</span>
+            <span class="hpline"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></span>
           </span>
           ${state ? `<span class="stamp">${state}</span>` : ''}
         </li>`;
@@ -102,60 +112,62 @@ export class Hud {
       .join('');
   }
 
-  /** Per-frame action HUD: AP, HP, ammo, reticle. */
-  action(ctrl) {
-    const u = ctrl.unit;
-    if (!u) return;
-    this.el.name.textContent = `${u.leader ? '★ ' : ''}${u.name}`;
-    const img = this.el.name.parentElement.querySelector('.unitcard__portrait');
-    const src = this.portraits?.[u.id] || '';
-    if (img.getAttribute('src') !== src) src ? img.setAttribute('src', src) : img.removeAttribute('src');
-    this.el.cls.textContent = `${CLASS_LABEL[u.cls]} · ${u.stance === 'crouch' ? 'jongkok' : 'berdiri'}${ctrl.attacked ? ' · sudah menyerang' : ''}`;
-    this.el.hp.querySelector('i').style.width = `${(100 * u.hp) / u.maxHp}%`;
-    this.el.hp.querySelector('span').textContent = `${u.hp} / ${u.maxHp}`;
-    this.el.ap.querySelector('i').style.width = `${(100 * ctrl.ap) / ctrl.apMax}%`;
-    this.el.ap.querySelector('span').textContent = `${Math.round(ctrl.ap)} / ${Math.round(ctrl.apMax)} m`;
-    const W = WEAPONS[u.weapon];
-    this.el.ammo.textContent = u.ammo === Infinity ? `${W.shots} peluru per tembakan` : `Amunisi ${u.ammo} / ${u.maxAmmo}`;
-    const aiming = ctrl.aiming || ctrl.firing;
-    const cursor = ctrl.mode === 'cursor';
-    const ret = this.el.reticle;
-    // the reticle shows while aiming; in cursor mode a small ring marks the cursor all the time
-    ret.style.display = aiming || cursor ? '' : 'none';
-    const r = aiming ? Math.max(6, ctrl.reticle()) : 7;
-    ret.style.width = ret.style.height = `${r * 2}px`;
-    const p = ctrl.reticlePos();
-    ret.style.left = `${p.x}px`;
-    ret.style.top = `${p.y}px`;
-    ret.classList.toggle('reticle--idle', !aiming);
-    ret.classList.toggle('reticle--scope', !!ctrl.scope && aiming);
+  /** Per-frame Action Mode HUD. */
+  action(ctrl, info) {
+    this.actionHud.update(ctrl, info);
   }
 
-  /** Red markers over enemies the acting soldier can see: [{ x, y }] in CSS px. */
+  /** Enemy tags, arrows and threats for the acting soldier (see ActionHud.tags). */
   markers(list) {
-    const box = this.el.markers;
-    while (box.children.length < list.length) box.appendChild(document.createElement('i'));
-    [...box.children].forEach((el, i) => {
-      const m = list[i];
-      el.style.display = m ? '' : 'none';
-      if (m) el.style.transform = `translate(${m.x}px, ${m.y}px)`;
-    });
+    this.actionHud.tags(list);
   }
 
   setLocked(locked, mode = 'lock') {
-    document.body.classList.toggle('locked', locked);
-    document.body.dataset.input = mode;
-    this.el.keys.textContent =
-      mode === 'cursor'
-        ? 'WASD gerak · Mouse: kamera (Q/E juga) · Shift lari · C jongkok · Klik kanan bidik · Klik kiri tembak · Space selesai'
-        : 'WASD gerak · Mouse: kamera · Shift lari · C jongkok · Klik kanan bidik · Klik kiri tembak · Space selesai';
+    this.actionHud.setInput(locked, mode);
+  }
+
+  /** Battle events since the last frame: hits on the acting soldier flash the screen. */
+  events(events) {
+    const acting = this.game.control?.active ? this.game.control.unit : null;
+    for (const e of events) if (e.type === 'hit' && acting && e.unit === acting.id) this.actionHud.hurt();
+  }
+
+  /** The phase banner: a ribbon across the screen for a moment. */
+  banner(side, turn) {
+    const el = this.el.banner;
+    el.querySelector('.banner__shield').innerHTML = shield(side);
+    el.querySelector('.banner__title').textContent = PHASE[side];
+    el.querySelector('.banner__turn').textContent = `Turn ${String(turn).padStart(2, '0')}`;
+    el.dataset.side = side;
+    el.classList.remove('on');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('on');
+    clearTimeout(this.bannerTimer);
+    this.bannerTimer = setTimeout(() => el.classList.remove('on'), 1900);
+  }
+
+  /** The leader's cut-in as they take command. */
+  cutIn(u) {
+    const el = this.el.cutin;
+    const face = el.querySelector('.cutin__face');
+    const src = this._portraits?.[u.id];
+    if (src) face.src = src;
+    face.hidden = !src;
+    el.querySelector('.cutin__name').textContent = u.name;
+    el.querySelector('.cutin__line').textContent = `${CLASS_NAME[u.cls]} · ${FACTIONS[u.side].label}`;
+    el.dataset.side = u.side;
+    el.classList.remove('on');
+    void el.offsetWidth;
+    el.classList.add('on');
+    clearTimeout(this.cutTimer);
+    this.cutTimer = setTimeout(() => el.classList.remove('on'), 1500);
   }
 
   toast(text) {
     this.el.toast.textContent = text;
     this.el.toast.classList.add('on');
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => this.el.toast.classList.remove('on'), 1800);
+    this.toastTimer = setTimeout(() => this.el.toast.classList.remove('on'), 1900);
   }
 
   showResult(over, battle) {
@@ -167,11 +179,18 @@ export class Hud {
     }[over.reason];
     const fed = battle.units.filter((u) => u.side === 'fed');
     const imp = battle.units.filter((u) => u.side === 'imp' && u.kind === 'infantry');
-    this.el.result.querySelector('.result__title').textContent = win ? 'Misi berhasil' : 'Misi gagal';
-    this.el.result.querySelector('.result__why').textContent = why;
-    this.el.result.querySelector('.result__rank').textContent = win ? over.rank : '–';
-    this.el.result.querySelector('.result__rank').dataset.rank = over.rank;
-    this.el.result.querySelector('.result__stats').textContent =
-      `${over.turns} giliran · musuh gugur ${imp.filter((u) => u.state === 'dead').length}/${imp.length} · regu gugur ${over.deaths}, dievakuasi ${fed.filter((u) => u.state === 'evac').length}`;
+    const r = this.el.result;
+    r.dataset.win = win ? 'yes' : 'no';
+    r.querySelector('.result__title').textContent = win ? 'Mission Complete' : 'Mission Failed';
+    r.querySelector('.result__why').textContent = why;
+    const rank = r.querySelector('.result__rank b');
+    rank.textContent = win ? over.rank : '–';
+    rank.dataset.rank = over.rank;
+    const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+    r.querySelector('.result__stats').innerHTML =
+      row('Turns', over.turns) +
+      row('Enemy KIA', `${imp.filter((u) => u.state === 'dead').length}/${imp.length}`) +
+      row('Squad KIA', over.deaths) +
+      row('Evacuated', fed.filter((u) => u.state === 'evac').length);
   }
 }

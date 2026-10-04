@@ -188,8 +188,11 @@ export class ActionControl {
     return { x: r.width / 2, y: r.height / 2 };
   }
 
-  /** Where the reticle points in the world (the first thing the ray through it meets). */
-  aimPoint() {
+  /**
+   * What the ray through the reticle meets: { point, hit (arena.bullet result or null), dist
+   * (from the camera) }. Cast once per frame by update(); fire() casts afresh.
+   */
+  cast() {
     const cam = this.game.camera;
     const r = this.dom.getBoundingClientRect();
     const p = this.reticlePos();
@@ -198,7 +201,12 @@ export class ActionControl {
     const o = { x: cam.position.x, y: cam.position.y, z: cam.position.z };
     const hit = this.game.arena.bullet(o, dir, 260, this.game.battle.units, this.unit);
     const t = hit ? hit.t : 260;
-    return { x: o.x + dir.x * t, y: o.y + dir.y * t, z: o.z + dir.z * t };
+    return { point: { x: o.x + dir.x * t, y: o.y + dir.y * t, z: o.z + dir.z * t }, hit, dist: t };
+  }
+
+  /** Where the reticle points in the world (the first thing the ray through it meets). */
+  aimPoint() {
+    return this.cast().point;
   }
 
   /** Turn the camera with the keys; in cursor mode also while the cursor is held at the window's edge. */
@@ -257,12 +265,14 @@ export class ActionControl {
       }
     }
     this.moving = moving;
+    this.running = moving && u.stance === 'stand' && this.keys.has('shift');
     this.placeCamera(dt);
+    this.sight = this.cast();
     if (view) {
       view.aim = this.aiming || this.firing;
       if (view.aim && !this.firing) {
         // the body and weapon follow the reticle's world point
-        const p = this.aimPoint();
+        const p = this.sight.point;
         const e = game.arena.eye(u);
         this.look.yaw = Math.atan2(p.x - e.x, p.z - e.z);
         this.look.pitch = Math.atan2(p.y - e.y, Math.hypot(p.x - e.x, p.z - e.z));

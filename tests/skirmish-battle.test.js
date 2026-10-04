@@ -89,3 +89,25 @@ test('the enemy AI plans an action within its AP, quickly', () => {
   }
   assert.ok(len <= plan.unit.apMax + 1.5, `path ${len.toFixed(1)} m within AP ${plan.unit.apMax}`);
 });
+
+test('the attack estimate matches the hits it predicts and changes nothing', () => {
+  const b = battle();
+  const shooter = b.alive('fed').find((u) => u.cls === 'scout');
+  const target = b.alive('imp').find((u) => u.kind === 'infantry');
+  const hp = target.hp;
+  const body = b.estimate(shooter, target, { part: 'body', dist: 10 });
+  const head = b.estimate(shooter, target, { part: 'head', dist: 10 });
+  assert.equal(target.hp, hp);
+  assert.ok(head.crit && !body.crit);
+  assert.equal(head.perHit, body.perHit * 2);
+  assert.equal(body.total, Math.min(hp, body.perHit * body.shots));
+  const r = b.hit(target, { weapon: shooter.weapon, part: 'body', dist: 10, shooter });
+  assert.equal(r.damage, body.perHit);
+  const tank = b.units.find((u) => u.kind === 'tank');
+  if (tank) {
+    assert.ok(b.estimate(shooter, tank, { part: 'armor', dist: 10 }).ping);
+    const lancer = b.alive('fed').find((u) => u.cls === 'lancer');
+    const weak = b.estimate(lancer, tank, { part: 'weak', dist: 10 });
+    assert.ok(weak.crit && weak.perHit > b.estimate(lancer, tank, { part: 'armor', dist: 10 }).perHit);
+  }
+});

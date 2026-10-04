@@ -159,10 +159,11 @@ export class Battle {
   }
 
   /**
-   * One hit. part: 'head' | 'body' | 'weak' | 'armor'; dist: shot distance (m);
-   * scale: extra factor (interception fire is weaker). Returns { damage, crit, ping, down, dead }.
+   * The damage one hit would do, without landing it. part: 'head' | 'body' | 'weak' | 'armor';
+   * dist: shot distance (m); scale: extra factor (interception fire is weaker).
+   * Returns { damage, crit, ping } (ping: rounds that only glance off armour).
    */
-  hit(target, { weapon, part, dist, shooter = null, scale = 1 }) {
+  damageOf(target, { weapon, part, dist, shooter = null, scale = 1 }) {
     if (!target || target.state === 'dead' || target.state === 'evac') return { damage: 0 };
     const W = WEAPONS[weapon];
     let damage;
@@ -181,7 +182,25 @@ export class Battle {
     }
     if (shooter?.side === 'imp') damage *= ENEMY_SCALE;
     damage = Math.round(damage * scale);
-    if (damage <= 0) return { damage: 0, ping: true };
+    return damage > 0 ? { damage, crit } : { damage: 0, ping: true };
+  }
+
+  /**
+   * What a full attack on a target would do if every round struck where the reticle is:
+   * { perHit, shots, total (capped at its HP), crit, ping, lethal }.
+   */
+  estimate(shooter, target, { part, dist }) {
+    const W = WEAPONS[shooter.weapon];
+    const one = this.damageOf(target, { weapon: shooter.weapon, part, dist, shooter });
+    const total = Math.min(target.hp, one.damage * W.shots);
+    return { perHit: one.damage, shots: W.shots, total, crit: !!one.crit, ping: !!one.ping, lethal: total > 0 && total >= target.hp };
+  }
+
+  /** One hit (see damageOf). Returns { damage, crit, ping, down, dead }. */
+  hit(target, { weapon, part, dist, shooter = null, scale = 1 }) {
+    if (!target || target.state === 'dead' || target.state === 'evac') return { damage: 0 };
+    const { damage, crit, ping } = this.damageOf(target, { weapon, part, dist, shooter, scale });
+    if (damage <= 0) return ping ? { damage: 0, ping } : { damage: 0 };
     target.hp = Math.max(0, target.hp - damage);
     const out = { damage, crit };
     if (target.hp === 0) {

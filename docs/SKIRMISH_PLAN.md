@@ -89,6 +89,42 @@ Halaman terpisah `skirmish.html`: pertempuran regu bergaya Valkyria Chronicles 3
   - Rambut lebih berisi dengan ujung tetap runcing; bob jatuh rapat ke wajah; kilau rambut terang tidak lagi memutih.
   - Lari condong 26° dengan jari kaki menggulung; senjata dibawa di dada (`placeWeapon`: ikut posisi dada, sepertiga rotasinya), jadi ikut condong, memantul, dan berayun dengan klip.
 
+### Rombak presentasi VC1 (grill ketujuh, 4 Oktober 2026)
+
+Tujuan: game terasa dan terlihat seperti Valkyria Chronicles. Referensi mekaniknya campuran, tampilannya VC1 PS3. Rombakan ini mencakup grafis, HUD, peta, Prep, dan kamera. Mekanik meta (kampanye, HQ, XP, Orders, Potentials, tank pemain) di luar cakupan.
+
+| Aspek | Keputusan |
+|---|---|
+| CANVAS | VC1 penuh: arsiran pensil di sisi gelap + bayangan jatuh + langit, outline tinta tegas (tidak memudar di dekat kamera), tekstur kertas terlihat, bloom lembut, tepi frame cat air meluber |
+| Aset lingkungan | Semuanya dilukis ulang. `town.glb` dan `military.glb` tidak punya UV, jadi skrip Blender mengekspor versi kedua `town_canvas.glb` / `military_canvas.glb` (geometri sama + UV + AO ter-bake + atlas lukis). `town.glb` game utama tetap byte-identik |
+| Performa | ≤ 8 ms GPU per frame di 2560×1600 (M1 Pro, Chrome headless Metal); preset Rendah tetap ada |
+| HUD | Tata letak VC1, identitas sendiri (tidak menjiplak aset Sega). Wajib: bar AP besar di bawah + kartu unit (potret, HP, amunisi); info target saat bidik (HP musuh, perkiraan damage, tanda kepala/titik lemah, jarak efektif); HP di atas kepala musuh, peringatan masuk pandangan musuh, panah musuh di luar layar; banner PLAYER/ENEMY PHASE, cut-in potret Leader, onomatope tinta |
+| Overview map | Tetap 2D dari data medan, didesain ulang: ikon kelas dalam perisai biru/merah dengan arah hadap, kursor pemilih, musuh hanya tampil bila ter-spot |
+| Spotting | Masuk sekarang (sebelumnya di M3): musuh tampil bila dilihat unit mana pun; setelah hilang dari pandangan, tampil sebagai posisi terakhir yang diketahui (ikon pudar). Logika di `game/` + test |
+| Prep | Dirombak menjadi gaya buku/dosir: peta di kiri, regu dan deploy di kanan dengan kartu karakter, setup lanjut (seed, cuaca, grafis) di laci terpisah |
+| Kamera | Terjun dari peta ke unit (dan naik lagi), kamera bidik dramatis (over-the-shoulder, DoF, vignette tinta), kamera giliran musuh sinematik (sudut rendah, cut ke penembak), kill/down cam (gerak lambat singkat + onomatope) |
+| Identitas UI | Buku catatan perang: kertas krem, tinta sepia, stempel merah, label mesin ketik, garis pensil, perisai faksi biru/merah; serif kondens untuk judul, monospace untuk label |
+| Bahasa | Label militer dalam bahasa Inggris (PLAYER PHASE, COMMAND MODE, TARGET, AP); deskripsi, briefing, dan tombol aksi dalam bahasa Indonesia; onomatope komik Inggris (BLAM!, RATATAT!, BOOM!, CLANG!) |
+| Input | Keyboard + mouse saja, tanpa gamepad |
+| Peta/misi | Tetap prosedural; template misi (bertahan, hancurkan target) ditunda ke milestone terpisah |
+| Kode lama | `hud.js`, `prepPanel.js`, `tacticalMap.js`, `skirmish.css` diganti total (riwayatnya ada di git); `?lookdev` tetap ada dengan gaya baru |
+| Referensi | Screenshot VC1 di `docs/references/vc1/`, hanya lokal untuk pembanding, tidak di-ship; setiap iterasi dirender berdampingan |
+| Checkpoint | Per milestone: commit di `feat/skirmish-vc`, screenshot berdampingan dengan referensi + angka GPU, lalu tunggu persetujuan |
+
+Milestone:
+
+- **M-A vertical slice (selesai)**: CANVAS penuh + HUD Action Mode baru (termasuk info target, penanda bahaya, banner, onomatope).
+  - Arsiran pensil dari tekstur hatch 256² (guratan miring, guratan silang, noda pigmen) yang diproyeksikan dari dunia pada sumbu yang paling dihadap permukaan (pada tentara: dari pose diam, jadi ikut bergerak dengan badan). Ukurannya mengikuti besar piksel di permukaan (`fwidth`) dalam oktaf ×2 yang di-blend, sehingga guratan selalu ±5 px di layar tapi tetap menempel ke permukaan. Guratan tipis di semua permukaan, lebih rapat di sisi gelap, silang di bayangan jatuh. Rumput tinggi dikecualikan (`CANVAS_PLAIN`).
+  - Langit lebih biru dengan guratan pensil; warna fog dipisah dari horizon.
+  - Post: outline lebih tebal yang tidak memudar di dekat kamera; salinan blur ¼ resolusi (2 pass) untuk glow lembut dan DoF saat membidik; vignette tinta saat membidik; tepi frame berubah jadi kertas (warna habis, garis pensil tetap, pigmen menggenang di batas).
+  - HUD baru (`ui/hud.js`, `ui/actionHud.js`, `ui/hud.css`, `ui/emblems.js`): strip TURN/PHASE/CP, kartu unit, gauge AP bergaris per 5 m dengan chip (sikap, lari, serangan, SPOTTED ×n), panel TARGET (HP dengan potongan perkiraan damage dari `Battle.estimate`, zona kepala/titik lemah/armor, jarak efektif), tag HP di atas musuh terlihat dengan ikon mata bila musuh bisa intercept, panah musuh di luar layar, vignette merah saat bergerak di bawah ancaman, kilat merah saat terkena, banner PLAYER/ENEMY PHASE, cut-in Leader, laporan operasi dengan stempel rank. Onomatope komik (BLAM!, RATATAT!, CRACK!, FWOOSH!, BOOM!, CLANG!).
+  - GPU (Chrome headless Metal, M1 Pro, 2560×1600, Action Mode): 5,6 → 7,2–7,5 ms per frame.
+  - Referensi VC1 hanya dilihat lewat browser (tidak diunduh); belum ada salinan lokal di `docs/references/vc1/`.
+- **M-B**: overview map baru + spotting + kamera terjun peta → unit.
+- **M-C**: Prep gaya buku/dosir.
+- **M-D**: `town_canvas.glb` / `military_canvas.glb` dengan atlas lukis.
+- **M-E**: kamera sinematik giliran musuh, kill/down cam, dan sisa polish.
+
 ## Peta kode
 
 ```text
@@ -103,13 +139,14 @@ src/skirmish/game/                 murni, tanpa three.js:
   battle.js                        state pertempuran: giliran, CP, damage, tumbang, capture, hasil
   ai.js                            AI musuh berbasis utilitas
 src/skirmish/play/                 SkirmishGame (fase), ActionControl, EnemyTurn, Combat, UnitViews, Effects, Sound
-src/skirmish/ui/                   TacticalMap (peta 2D + minimap), PrepPanel, Hud
+src/skirmish/ui/                   TacticalMap (peta 2D + minimap), PrepPanel, Hud (hud.js shell, actionHud.js Action Mode,
+                                   hud.css gaya buku catatan perang, emblems.js perisai SVG)
 src/skirmish/battlefield/
   generateField.js                 generator murni (seed -> data medan), dites di tests/skirmish-field.test.js
   groundPaint.js                   tekstur tanah dari data medan (canvas 2D)
   fieldBuilder.js                  data medan -> scene three (instancing, material toon)
 src/skirmish/render/
-  canvasStyle.js                   arsiran di MeshToonMaterial (khusus halaman ini) + CanvasPost
+  canvasStyle.js                   arsiran pensil berjangkar dunia di MeshToonMaterial (khusus halaman ini) + CanvasPost (glow, DoF, tepi kertas)
   skyLight.js                      kubah langit, matahari, fog per waktu
 src/skirmish/units/
   soldierLook.js                   kelas, faksi, kit (data)

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Combat effects: tracers, muzzle flashes, dust puffs where rounds land, explosions, and
-// floating words over the scene (damage, "KRITIS!", onomatopoeia) in a DOM layer.
+// floating words over the scene (damage, "CRITICAL!", onomatopoeia) in a DOM layer.
 
 const TRACER_LIFE = 0.09;
 
@@ -141,13 +141,14 @@ export class Effects {
     this.shake = Math.max(this.shake, Math.min(0.6, 6 / Math.max(4, d)));
   }
 
-  /** A floating word at a world point. kind: 'dmg' | 'crit' | 'sfx' | 'info' */
+  /** A floating word at a world point. kind: 'dmg' | 'crit' | 'info' | 'sfx' | 'sfx-small' | 'boom' (onomatopoeia) */
   word(at, text, kind = 'dmg') {
     const el = document.createElement('div');
     el.className = `fx-word fx-word--${kind}`;
     el.textContent = text;
     this.layer.appendChild(el);
-    this.words.push({ el, at: new THREE.Vector3(at.x, at.y, at.z), age: 0, life: kind === 'sfx' ? 0.7 : 1.3, jitter: (Math.random() - 0.5) * 30 });
+    const sfx = kind.startsWith('sfx') || kind === 'boom';
+    this.words.push({ el, at: new THREE.Vector3(at.x, at.y, at.z), age: 0, life: sfx ? 0.85 : 1.3, pop: sfx ? 0.6 : 0.3, jitter: (Math.random() - 0.5) * 30 });
   }
 
   update(dt) {
@@ -170,7 +171,7 @@ export class Effects {
       const visible = v.z < 1;
       const k = word.age / word.life;
       word.el.style.display = visible ? '' : 'none';
-      word.el.style.transform = `translate(${((v.x + 1) / 2) * w + word.jitter}px, ${((1 - v.y) / 2) * h - 40 * k}px) translate(-50%, -50%) scale(${1 + 0.3 * Math.max(0, 0.15 - k) / 0.15})`;
+      word.el.style.transform = `translate(${((v.x + 1) / 2) * w + word.jitter}px, ${((1 - v.y) / 2) * h - 40 * k}px) translate(-50%, -50%) scale(${1 + word.pop * Math.max(0, 0.15 - k) / 0.15})`;
       word.el.style.opacity = String(1 - Math.max(0, k - 0.6) / 0.4);
     }
     this.words = this.words.filter((word) => {

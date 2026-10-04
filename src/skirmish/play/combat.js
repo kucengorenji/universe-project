@@ -5,6 +5,9 @@ import { WEAPONS, INTERCEPT } from '../game/rules.js';
 // hits on the battle state, tracers and impacts; and interception fire, which opens up on a
 // moving enemy from every soldier, bunker and tank that sees it in range.
 
+/** The onomatopoeia a burst makes at the muzzle, by weapon. */
+const SFX = { rifle: 'BLAM!', rifle_eng: 'BLAM!', smg: 'RATATAT!', sniper: 'CRACK!', lance: 'FWOOSH!', tank_cannon: 'KA-BOOM!', tank_mg: 'RATATAT!', bunker_mg: 'RATATAT!' };
+
 const _d = new THREE.Vector3();
 const _u = new THREE.Vector3();
 const _w = new THREE.Vector3();
@@ -44,9 +47,10 @@ export class Combat {
 
   /**
    * Fire a burst. aim: { point } (world) or { dir } (unit vector). opts: weapon (default the
-   * unit's), spread multiplier, damage scale, shots. Resolves when the last round has landed.
+   * unit's), spread multiplier, damage scale, shots, sfx ('big' | 'small': the size of the word
+   * at the muzzle). Resolves when the last round has landed.
    */
-  burst(u, aim, { weapon = u.weapon, spreadMul = 1, scale = 1, shots = null } = {}) {
+  burst(u, aim, { weapon = u.weapon, spreadMul = 1, scale = 1, shots = null, sfx = 'big' } = {}) {
     const W = WEAPONS[weapon];
     const n = shots ?? W.shots;
     const spread = W.spread[u.stance === 'crouch' ? 1 : 0] * spreadMul;
@@ -59,6 +63,7 @@ export class Combat {
           if (aim.point) base.set(aim.point.x - o.x, aim.point.y - o.y, aim.point.z - o.z);
           base.normalize();
           o = this.muzzle(u, base);
+          if (i === 0 && SFX[weapon]) this.game.effects.word({ x: o.x, y: o.y + 0.3, z: o.z }, SFX[weapon], sfx === 'small' ? 'sfx-small' : 'sfx');
           this.round(u, o, coneDir(base, spread), W, weapon, scale);
           if (i === n - 1) this.game.after(0.25, resolve);
         });
@@ -85,7 +90,7 @@ export class Combat {
     } else if (!W.splash) fx.dust(end, 0.5);
     if (W.splash) {
       fx.explosion(end, W.splash);
-      fx.word(end, weapon === 'lance' ? 'DUAR!' : 'BLAM!', 'sfx');
+      fx.word(end, 'BOOM!', 'boom');
       for (const b of this.battle.blast(end.x, end.z, weapon, u, hit.unit || null)) this.report(b.unit, b, this.arena.aimPoint(b.unit));
     }
   }
@@ -93,11 +98,11 @@ export class Combat {
   report(target, r, at) {
     const fx = this.game.effects;
     const p = { x: at.x, y: at.y + 0.4, z: at.z };
-    if (r.ping) fx.word(p, 'TING!', 'info');
+    if (r.ping) fx.word(p, 'CLANG!', 'sfx-small');
     else if (r.damage > 0) fx.word(p, `${r.damage}`, r.crit ? 'crit' : 'dmg');
-    if (r.crit && r.damage > 0) fx.word({ ...p, y: p.y + 0.5 }, target.kind === 'infantry' ? 'KRITIS!' : 'TITIK LEMAH!', 'crit');
-    if (r.down) fx.word({ ...p, y: p.y + 0.9 }, 'TUMBANG', 'info');
-    if (r.dead) fx.word({ ...p, y: p.y + 0.9 }, target.kind === 'infantry' ? 'GUGUR' : 'HANCUR', 'info');
+    if (r.crit && r.damage > 0) fx.word({ ...p, y: p.y + 0.5 }, target.kind === 'infantry' ? 'CRITICAL!' : 'WEAK POINT!', 'crit');
+    if (r.down) fx.word({ ...p, y: p.y + 0.9 }, 'Down', 'info');
+    if (r.dead) fx.word({ ...p, y: p.y + 0.9 }, target.kind === 'infantry' ? 'KIA' : 'Destroyed', 'info');
   }
 
   /**
@@ -133,7 +138,7 @@ export class Combat {
             if (s.state !== 'ok' || mover.state !== 'ok') return;
             const p = this.arena.aimPoint(mover);
             this.game.views.aimAt(s, p, 0.8);
-            this.burst(s, { point: p }, { weapon: s.intercept, spreadMul: infantry ? INTERCEPT.spread : 1.4, scale: infantry ? INTERCEPT.damage : 1, shots: infantry ? INTERCEPT.shots : W.shots });
+            this.burst(s, { point: p }, { weapon: s.intercept, spreadMul: infantry ? INTERCEPT.spread : 1.4, scale: infantry ? INTERCEPT.damage : 1, shots: infantry ? INTERCEPT.shots : W.shots, sfx: 'small' });
           });
         }
       }

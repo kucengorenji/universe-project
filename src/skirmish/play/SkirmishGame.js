@@ -438,7 +438,10 @@ export class SkirmishGame {
     }
     const p = this.phase;
     if (p === 'prep') {
-      this.map.draw(dt, { units: this.prepTokens(), camps: this.field.camps.map((c) => ({ ...c, owner: c.side })), slots: this.field.deploy.fed, selected: this.prepSelected });
+      const tokens = this.prepTokens();
+      const h = this.map.hover;
+      const cur = h && tokens.find((t) => Math.hypot(t.x - h[0], t.z - h[1]) < PICK_RADIUS);
+      this.map.draw(dt, { units: tokens, camps: this.field.camps.map((c) => ({ ...c, owner: c.side })), slots: this.field.deploy.fed, selected: this.prepSelected, cursor: cur?.id, label: cur && unitLabel(cur) });
       return;
     }
     if (!this.battle) return;

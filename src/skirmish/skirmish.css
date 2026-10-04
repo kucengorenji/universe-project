@@ -97,7 +97,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .mapwrap, .prep { display: none; }
 body[data-phase='prep'] .mapwrap,
 body[data-phase='command'] .mapwrap { display: block; }
-body[data-phase='prep'] .prep { display: block; }
 body[data-phase='loading'] .loading { display: grid; }
 .ready:not([data-phase='loading']) .loading { display: none; }
 
@@ -106,55 +105,9 @@ body[data-phase='loading'] .loading { display: grid; }
   inset: 0;
   background: var(--paper);
 }
-body[data-phase='prep'] .mapwrap { right: min(400px, 42vw); }
 .map { width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
 
-.btn { min-height: 36px; }
-.btn--primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.btn--primary:hover { background: #3d3127; }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-/* ------------------------------------------------------------------ preparation */
-.prep {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(400px, 42vw);
-  overflow-y: auto;
-  padding: 16px 18px 20px;
-  background: var(--paper-dark);
-  border-left: 1.5px solid var(--ink);
-}
-.prep__title { margin: 0 0 8px; font-size: 28px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.prep__sec { margin-bottom: 14px; display: grid; gap: 6px; }
-.prep__sec h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fed); }
-.prep__hint { margin: 0; font-size: 14px; color: var(--ink-soft); }
-.prep .row { grid-template-columns: 80px 1fr auto; }
-.prep .row select { grid-column: 2 / span 2; }
-.prep .p-start { width: 100%; font-size: 18px; min-height: 44px; position: sticky; bottom: 0; }
-
-.roster { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.roster__row {
-  display: grid;
-  grid-template-columns: 28px 1fr 36px;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  border: 1px solid transparent;
-}
-.roster__row.on { background: var(--paper); border-color: var(--ink); }
-.roster__who { display: grid; line-height: 1.15; }
-.roster__who small { color: var(--ink-soft); font-size: 13px; }
-.roster__lead { display: flex; align-items: center; gap: 2px; color: #b8871e; font-size: 18px; }
-.roster input { min-height: 0; }
-.briefing h4 { margin: 0 0 4px; font-size: 20px; }
-.briefing p, .briefing li { margin: 0 0 6px; font-size: 15px; line-height: 1.35; font-weight: 400; }
-.briefing ol { margin: 4px 0 0; padding-left: 20px; }
-
 @media (max-width: 720px) {
-  body[data-phase='prep'] .mapwrap { bottom: 55vh; right: 0; }
-  .prep { top: 45vh; width: 100%; border-left: 0; border-top: 1.5px solid var(--ink); }
   body[data-phase='command'] .mapwrap, body[data-phase='dive'] .mapwrap { right: 0; bottom: 40vh; }
 }
 
@@ -177,68 +130,5 @@ body[data-phase='prep'] #stage,
 body[data-phase='command'] #stage { visibility: hidden; }
 .mapwrap { background: transparent; padding: 10px; }
 .map { cursor: pointer; }
-body[data-phase='prep'] .mapwrap { right: min(420px, 42vw); }
 body[data-phase='command'] .mapwrap,
 body[data-phase='dive'] .mapwrap { right: min(340px, 36vw); top: 62px; }
-
-/* dossier panels */
-.prep {
-  background: var(--paper);
-  border: 0;
-  box-shadow: -6px 0 18px rgba(0, 0, 0, 0.35);
-  background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(47, 79, 122, 0.08) 27px 28px);
-}
-.prep { width: min(420px, 42vw); }
-.prep__title {
-  margin: -16px -18px 10px;
-  padding: 12px 18px 10px;
-  background: var(--wood-dark);
-  color: var(--paper);
-  font-size: 24px;
-  letter-spacing: 0.12em;
-}
-.prep__sec h3 { border-bottom: 1.5px solid var(--ink); padding-bottom: 2px; }
-
-/* class emblems: round seals in the faction colour */
-.emblem {
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  color: #fff;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.04em;
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
-  flex: none;
-}
-.emblem--fed { background: var(--fed); }
-.emblem--imp { background: var(--imp); }
-
-/* stamp buttons */
-.btn--primary,
-.p-start {
-  background: var(--stamp) !important;
-  border: 2px solid #6e1d1a !important;
-  color: #fff4e4 !important;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25), 0 3px 0 #6e1d1a;
-  letter-spacing: 0.14em;
-  font-weight: 600;
-}
-.btn--primary:hover, .p-start:hover { filter: brightness(1.08); }
-.btn--primary:active, .p-start:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25), 0 1px 0 #6e1d1a; }
-
-.roster__row { grid-template-columns: auto 1fr 36px; }
-.roster__pick { display: flex; align-items: center; gap: 6px; }
-.roster__pick .emblem { width: 30px; height: 30px; font-size: 13px; }
-.roster__row.on { background: #fbf6ea; border-color: transparent; box-shadow: 0 1px 0 rgba(42, 33, 25, 0.25), 0 2px 6px rgba(42, 33, 25, 0.12); }
-
-
-/* portraits: the soldier's face in a round frame, the class seal pinned to its corner */
-.portrait { width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--ink); object-fit: cover; display: block; background: var(--paper); }
-.roster__pick .portrait + .emblem { position: absolute; right: -6px; bottom: -4px; width: 22px; height: 22px; font-size: 10px; border-width: 1.5px; }
-.roster__pick { position: relative; }
-.roster__pick .portrait { width: 44px; height: 44px; }
-

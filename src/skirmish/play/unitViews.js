@@ -86,15 +86,20 @@ export class UnitViews {
         if (v.aimHold <= 0) v.look = null;
         continue;
       }
-      // the body turns smoothly to the unit's facing; turning on the spot takes small steps
-      const dyaw = wrap(u.yaw - v.root.rotation.y) * (1 - Math.exp(-dt * 12));
+      // the body turns smoothly to the unit's facing (quicker for a target well off to the side);
+      // turning on the spot takes small steps
+      const off = wrap(u.yaw - v.root.rotation.y);
+      const dyaw = off * (1 - Math.exp(-dt * (v.look && Math.abs(off) > 0.8 ? 18 : 12)));
       v.root.rotation.y += dyaw;
       const turnRate = dt > 0 ? dyaw / dt : 0;
       const stepping = Math.min(1.1, Math.abs(turnRate) * 0.5);
       v.aimHold -= dt;
       const aiming = v.aim || v.aimHold > 0;
       if (v.look) {
-        v.body.aimYaw = wrap(v.look.yaw - v.root.rotation.y);
+        // a target straight behind would flip the sign every frame: keep the side it was on
+        let a = wrap(v.look.yaw - v.root.rotation.y);
+        if (Math.abs(a) > 2.6 && Math.sign(a) !== Math.sign(v.body.aimYaw) && v.body.aimYaw !== 0) a = Math.sign(v.body.aimYaw) * Math.abs(a);
+        v.body.aimYaw = a;
         v.body.aimPitch = v.look.pitch;
       }
       if (!aiming && v.aimHold <= 0) v.look = null;

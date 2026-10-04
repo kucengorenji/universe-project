@@ -127,8 +127,23 @@ Milestone:
 - **M-C (selesai)**: Prep gaya buku/dosir (`ui/prepPanel.js`, `ui/prep.css`).
   - Buku terbuka di meja. Halaman kiri: kop operasi (perisai, judul, stempel SECRET, chip AO/waktu/ancaman/sungai), peta deploy (kanvas TacticalMap diletakkan di atas slot halaman; geometri slot di `prep.css` dan aturan `.mapwrap` harus sama), baris INTEL. Halaman kanan: tab SQUAD (9 kartu karakter: potret, perisai kelas, HP/AP/senjata, catatan, stempel DEPLOYED, ★ Leader; kartu lain terkunci bila regu penuh) dan BRIEFING (paragraf + objectives bernomor); laci SETUP (seed, kesulitan, cover, waktu, sungai, grafis); stempel "Mulai operasi".
   - Peta deploy memakai kursor dan label yang sama dengan Command Mode. Di bawah 860 px: peta di atas, satu halaman di bawahnya.
-- **M-D**: `town_canvas.glb` / `military_canvas.glb` dengan atlas lukis.
-- **M-E**: kamera sinematik giliran musuh, kill/down cam, dan sisa polish.
+- **M-D**: karakter baru (lihat grill kedelapan), AP ×3, bidik gaya VC, pertahanan base.
+- **M-E**: `town_canvas.glb` / `military_canvas.glb` dengan atlas lukis.
+- **M-F**: kamera sinematik giliran musuh, kill/down cam, dan sisa polish.
+
+### Karakter baru dan AP (grill kedelapan, 4 Oktober 2026)
+
+Masalah yang dilaporkan: karakter kurang bagus (wajah dan rambut, proporsi/siluet, animasi dan pose), kepala berputar, dan AP kurang jauh. Kepala berputar sudah terukur: saat membidik target di belakang (intercept, atau kamera diputar cepat sambil membidik), spine + chest + head diputar sebesar `aimYaw` (hingga 180°) dan melompat saat melewati ±π.
+
+| Aspek | Keputusan |
+|---|---|
+| Pipeline karakter | Tubuh dasar CC0 dari MPFB 2 (MakeHuman untuk Blender) dengan rig game engine, dibentuk ulang ke proporsi VC1; animasi mocap dari Quaternius Universal Animation Library (CC0) yang di-retarget; seragam, kit, rambut, dan wajah dibuat di skrip Blender. Paket mentah tidak di-commit, hanya GLB hasil |
+| Proporsi | VC1: ±7 kepala, ramping atletis, wajah anime dengan mata besar dilukis di tekstur, rambut volumetrik bergaya helai besar, seragam kain berlipat |
+| Bidik | Gaya VC: badan berbalik penuh menghadap target sebelum menembak (berputar di tempat dengan langkah); torso maks. ±30°, kepala maks. ±60°, tidak pernah melewati batas |
+| AP | ×3: Scout 225 m, Shocktrooper 135, Lancer 114, Engineer 180, Sniper 90, tank 300. Kecepatan tetap (jalan 3,2, lari 5,2 m/s). Peta tetap 200×200 m |
+| Rush | Pertahanan base musuh lebih rapat: bunker dan 2–3 penjaga menghadap jalur ke base, intercept lebih tajam di dekat bendera |
+| Urutan | M-D karakter baru + AP + bidik; M-E aset lingkungan dilukis ulang; M-F kamera sinematik musuh + kill cam |
+| Checkpoint | Setelah satu karakter hero (Arlen): render turntable dan in-game untuk disetujui, baru produksi 8 lainnya dan musuh |
 
 ## Peta kode
 

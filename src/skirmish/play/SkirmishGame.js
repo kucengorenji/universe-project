@@ -429,7 +429,8 @@ export class SkirmishGame {
   }
 
   update(dt) {
-    if (this.phase === 'enemy' && this.fast) dt *= 3;
+    // the enemy's turn plays back faster (its soldiers can walk 225 m); Space faster still
+    if (this.phase === 'enemy') dt *= this.fast ? 4 : 2;
     this.clock += dt;
     if (this.tasks.length) {
       const due = this.tasks.filter((t) => t.at <= this.clock);

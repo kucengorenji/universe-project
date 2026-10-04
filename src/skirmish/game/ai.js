@@ -6,8 +6,9 @@ import { GN } from './arena.js';
 // shoots. Utility scoring over a lattice of reachable cells: expected damage from there, the
 // cover there, how many player guns can see it, and progress toward the player's base.
 
-// sample every 3rd cell of the reach, every 4th for long-legged units (the work grows with AP squared)
-const latticeFor = (ap) => (ap > 40 ? 4 : 3);
+// sample the reach sparser for long-legged units (the work grows with AP squared)
+const latticeFor = (ap) => (ap > 160 ? 8 : ap > 90 ? 6 : ap > 40 ? 4 : 3);
+const GUARD_LEASH = 22; // guards stay this close to their own camp (m)
 
 /** Expected damage of a full attack from `from` on target t (rough: falloff and a hit chance by distance). */
 function expected(W, d, t, crouched) {
@@ -58,7 +59,9 @@ function planFor(battle, arena, u, ap, foes, home) {
     const [i, j] = arena.cellOf(o.x, o.z);
     return j * GN + i;
   }));
-  const r = reach(arena, u.x, u.z, ap, { clearance: tank ? 2 : 0, occupied });
+  // guards hold their own camp: their reach is leashed to it and they do not push forward
+  const own = u.guard && battle.camps.find((c) => c.id === (u.side === 'imp' ? 'enemy' : 'player'));
+  const r = reach(arena, u.x, u.z, own ? Math.min(ap, GUARD_LEASH * 2) : ap, { clearance: tank ? 2 : 0, occupied });
   const homeD0 = Math.hypot(u.x - home.x, u.z - home.z);
   const lattice = latticeFor(ap);
   let best = null;
@@ -66,6 +69,7 @@ function planFor(battle, arena, u, ap, foes, home) {
     const i = cell % GN, j = (cell - i) / GN;
     if (cell !== r.start && (i % lattice || j % lattice)) continue;
     const [x, z] = arena.cellCentre(i, j);
+    if (own && Math.hypot(x - own.x, z - own.z) > GUARD_LEASH) continue;
     const probe = { ...u, x, z, stance: 'stand' };
     // nearest foe, for cover direction
     let near = null;
@@ -98,8 +102,8 @@ function planFor(battle, arena, u, ap, foes, home) {
     let score = value - threat * 18 + (cover === 'high' ? 14 : cover === 'low' ? 20 : 0);
     // pressure toward the enemy base, and a capture when in reach
     const homeD = Math.hypot(x - home.x, z - home.z);
-    score += (homeD0 - homeD) * 0.6;
-    if (homeD < CAPTURE_RADIUS - 0.5 && !tank) score += 1000;
+    if (!own) score += (homeD0 - homeD) * 0.6;
+    if (homeD < CAPTURE_RADIUS - 0.5 && !tank && !own) score += 1000;
     for (const c of battle.camps) if (c.owner !== u.side && c.id === 'village' && Math.hypot(x - c.x, z - c.z) < CAPTURE_RADIUS - 0.5 && !tank) score += 60;
     score -= used * 0.05; // ties go to shorter walks
     if (!best || score > best.score) best = { unit: u, cell, to: [x, z], stance, target, score };

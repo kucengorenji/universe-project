@@ -9,7 +9,8 @@ import { FACE_RECT, faceTexture } from './facePainter.js';
 // Skirmish soldiers v2 (models/soldier_vc.glb, tools/blender/skirmish/soldier_vc.py): a smooth
 // anime-proportioned figure on a real armature, animated by clips (idle, walk, run, crouch,
 // crouch_walk, kneel, fall_back, fall_front) through an AnimationMixer. On top of the clips the
-// upper body is posed in code: the torso turns into the stance, the head follows the aim, the
+// upper body is posed in code: the torso turns into the stance and a little toward the aim
+// (twist(): never more than 30 degrees, the head 60 more), the
 // weapon is placed and both arms reach it (two-bone IK from soldiers.js).
 //
 // One mesh, one draw call: the second UV map carries each vertex's palette slot and piece
@@ -231,6 +232,11 @@ function play(s, name, fade = 0.22) {
  * the upper body for the weapon. down: 'down' | 'dead' | false.
  */
 export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn = 0, down = false } = {}) {
+  // The mixer writes a bone only when the clips' value for it changed since the last frame
+  // (PropertyMixer.apply), and many tracks here are constant. The pose added on top below (torso
+  // turn, aim, the IK arms) would then pile up frame after frame (heads spinning round): put back
+  // the clips' pose of the last frame first, then let the mixer move on from there.
+  if (s.clipPose) for (const [b, q] of s.clipPose) b.node.quaternion.copy(q);
   s.speed += (speed - s.speed) * (1 - Math.exp(-dt * 10));
   s.recoil *= Math.exp(-dt * 14);
   s.flinch *= Math.exp(-dt * 5);
@@ -246,6 +252,7 @@ export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn
     s.gun.visible = false;
     play(s, down === 'dead' ? 'fall_front' : 'fall_back', 0.12);
     s.mixer.update(dt);
+    saveClipPose(s);
     return;
   }
   s.gun.visible = true;
@@ -257,19 +264,39 @@ export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn
   const a = s.actions[clip];
   a.timeScale = CLIP_SPEED[clip] ? THREE.MathUtils.clamp(v / CLIP_SPEED[clip], 0.5, 1.8) : 1;
   s.mixer.update(dt);
+  saveClipPose(s);
 
   const B = s.bones;
   const am = s.aimBlend;
   const hold = s.hold;
   const torso = THREE.MathUtils.lerp(hold.ready.torso, hold.aim.torso, am);
-  rotate(B.spine, -0.1 * s.flinch, torso * 0.4 + s.aimYaw * am * 0.3);
-  rotate(B.chest, -s.aimPitch * am * 0.4 - 0.25 * s.flinch - 0.05 * s.recoil, torso * 0.6 + s.aimYaw * am * 0.4);
+  const T = twist(s.aimYaw);
+  rotate(B.spine, -0.1 * s.flinch, torso * 0.4 + T.spine * am);
+  rotate(B.chest, -s.aimPitch * am * 0.4 - 0.25 * s.flinch - 0.05 * s.recoil, torso * 0.6 + T.chest * am);
   rotate(B.neck, 0.15 * s.flinch, -torso * 0.4);
-  rotate(B.head, s.aimPitch * am * 0.5 + (hold.aim.cheek ? 0.1 * am : 0), -torso * 0.6 + s.aimYaw * am * 0.3, hold.aim.cheek ? -0.2 * am : 0);
+  rotate(B.head, s.aimPitch * am * 0.5 + (hold.aim.cheek ? 0.1 * am : 0), -torso * 0.6 + T.head * am, hold.aim.cheek ? -0.2 * am : 0);
   s.root.updateMatrixWorld(true);
   placeWeapon(s, am);
   reachArm(s, 'R', gripWorld(s), poleR(s));
   if (s.weapon.support) reachArm(s, 'L', supportWorld(s), poleL(s));
+}
+
+/** Remember every bone's rotation as the clips left it this frame (see animateSoldier). */
+function saveClipPose(s) {
+  s.clipPose ||= Object.values(s.bones).map((b) => [b, new THREE.Quaternion()]);
+  for (const [b, q] of s.clipPose) q.copy(b.node.quaternion);
+}
+
+/**
+ * How an aim off to the side is shared out, as in Valkyria Chronicles: the torso turns at most
+ * 30 degrees, the head at most 60 more; anything beyond is the body's job (UnitViews turns the
+ * whole soldier to face the target before it fires). Returns yaw (rad) for spine, chest, head.
+ */
+export const TWIST = { torso: 0.52, head: 1.05 };
+export function twist(aimYaw) {
+  const t = THREE.MathUtils.clamp(aimYaw, -TWIST.torso, TWIST.torso);
+  const h = THREE.MathUtils.clamp(aimYaw - t, -TWIST.head, TWIST.head);
+  return { spine: t * 0.4, chest: t * 0.6, head: h };
 }
 
 /** A head-and-shoulders portrait of a soldier (data URL), rendered once with the given renderer. */

@@ -3,7 +3,8 @@ import { WEAPONS, INTERCEPT } from '../game/rules.js';
 
 // Firing for both sides: bursts of physical rounds (raycasts in a cone round the aim), their
 // hits on the battle state, tracers and impacts; and interception fire, which opens up on a
-// moving enemy from every soldier, bunker and tank that sees it in range.
+// moving enemy from every soldier, bunker and tank that sees it in range (tighter and harder
+// near the shooter's own camp).
 
 /** The onomatopoeia a burst makes at the muzzle, by weapon. */
 const SFX = { rifle: 'BLAM!', rifle_eng: 'BLAM!', smg: 'RATATAT!', sniper: 'CRACK!', lance: 'FWOOSH!', tank_cannon: 'KA-BOOM!', tank_mg: 'RATATAT!', bunker_mg: 'RATATAT!' };
@@ -138,7 +139,11 @@ export class Combat {
             if (s.state !== 'ok' || mover.state !== 'ok') return;
             const p = this.arena.aimPoint(mover);
             this.game.views.aimAt(s, p, 0.8);
-            this.burst(s, { point: p }, { weapon: s.intercept, spreadMul: infantry ? INTERCEPT.spread : 1.4, scale: infantry ? INTERCEPT.damage : 1, shots: infantry ? INTERCEPT.shots : W.shots, sfx: 'small' });
+            // defenders near their own flag fire tighter and harder
+            const home = this.battle.camps.some((c) => c.owner === s.side && Math.hypot(mover.x - c.x, mover.z - c.z) < INTERCEPT.guardRadius);
+            const spread = (infantry ? INTERCEPT.spread : 1.4) * (home ? INTERCEPT.guardSpread : 1);
+            const scale = (infantry ? INTERCEPT.damage : 1) * (home ? INTERCEPT.guardDamage : 1);
+            this.burst(s, { point: p }, { weapon: s.intercept, spreadMul: spread, scale, shots: infantry ? INTERCEPT.shots : W.shots, sfx: 'small' });
           });
         }
       }

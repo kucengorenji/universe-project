@@ -1,5 +1,5 @@
 import { mulberry32 } from '../../math/random.js';
-import { DIFFICULTY } from './rules.js';
+import { DIFFICULTY, GUARDS } from './rules.js';
 
 // The player's squad (nine named soldiers, six go into battle), the enemy's order of battle
 // for a difficulty, and the briefing: all pure data from a seed.
@@ -25,7 +25,8 @@ const ENEMY_MIX = ['scout', 'shocktrooper', 'scout', 'lancer', 'shocktrooper', '
 
 export function enemyForces(difficulty) {
   const D = DIFFICULTY[difficulty] || DIFFICULTY.normal;
-  return ENEMY_MIX.slice(0, D.infantry).map((cls, i) => ({ id: `imp${i}`, name: `Prajurit Imperium ${i + 1}`, cls, face: 200 + i * 7, leader: i === 0 }));
+  // the last few hold the base (the leader leads from the front)
+  return ENEMY_MIX.slice(0, D.infantry).map((cls, i, all) => ({ id: `imp${i}`, name: `Prajurit Imperium ${i + 1}`, cls, face: 200 + i * 7, leader: i === 0, guard: i >= all.length - GUARDS }));
 }
 
 // ---------------------------------------------------------------- briefing

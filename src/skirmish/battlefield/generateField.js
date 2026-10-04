@@ -417,6 +417,26 @@ export function generateField(seed, params = {}) {
   for (const h of houses) if (h.ruined) cover.push({ type: 'ruin_wall', x: h.x, z: h.z, yaw: h.yaw, side: null, house: true });
   field.cover = cover;
 
+  // --- the enemy base holds: guard posts behind sandbags across the approach, and a bunker on it
+  field.guardPosts = [];
+  for (let k = 0; k < 3; k++) {
+    for (let tries = 0; tries < 30; tries++) {
+      const a = (k - 1) * 0.75 + R(-0.15, 0.15); // fanned across the southern approach
+      const r = R(11, 15);
+      const x = enemy.x + Math.sin(a) * r, z = enemy.z + Math.cos(a) * r;
+      if (blocked(x, z, 1.2) || field.guardPosts.some((g) => Math.hypot(g.x - x, g.z - z) < 5)) continue;
+      put('sandbag_arc', x + Math.sin(a) * 1.6, z + Math.cos(a) * 1.6, a, 'imp');
+      field.guardPosts.push({ x, z, yaw: a });
+      break;
+    }
+  }
+  for (let tries = 0; tries < 30; tries++) {
+    const x = enemy.x + R(-10, 10), z = enemy.z + R(18, 24);
+    if (occupied(x, z, 3.5) || roadDist(x, z) < 4 || bunkers.some((b) => Math.hypot(b.x - x, b.z - z) < 12)) continue;
+    bunkers.push({ x, z, yaw: R(-0.2, 0.2), base: true });
+    break;
+  }
+
   // --- deployment: slots in front of the player's camp; the enemy's spread along its line
   const slots = (c, toward, count, spread) => {
     const out = [];

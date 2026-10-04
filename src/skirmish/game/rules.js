@@ -33,19 +33,23 @@ export const WEAPONS = {
   bunker_mg: { shots: 3, damage: 12, range: 30, spread: [2.5, 2.5], interval: 0.1, vsArmor: 0, intercept: true }
 };
 
-/** Classes: HP, AP (metres of movement per action; 2.5x the first draft, so a scout crosses a third of the map), weapon. */
+/** Classes: HP, AP (metres of movement per action; 7.5x the first draft, so a scout can cross the map), weapon. */
 export const STATS = {
-  scout: { hp: 240, ap: 75, weapon: 'rifle' },
-  shocktrooper: { hp: 380, ap: 45, weapon: 'smg' },
-  lancer: { hp: 300, ap: 38, weapon: 'lance' },
-  engineer: { hp: 220, ap: 60, weapon: 'rifle_eng', resupply: true },
-  sniper: { hp: 180, ap: 30, weapon: 'sniper' },
-  tank: { hp: 2400, ap: 100, weapon: 'tank_cannon', intercept: 'tank_mg', cp: 2, armor: true, weakpoint: 3 },
+  scout: { hp: 240, ap: 225, weapon: 'rifle' },
+  shocktrooper: { hp: 380, ap: 135, weapon: 'smg' },
+  lancer: { hp: 300, ap: 114, weapon: 'lance' },
+  engineer: { hp: 220, ap: 180, weapon: 'rifle_eng', resupply: true },
+  sniper: { hp: 180, ap: 90, weapon: 'sniper' },
+  tank: { hp: 2400, ap: 300, weapon: 'tank_cannon', intercept: 'tank_mg', cp: 2, armor: true, weakpoint: 3 },
   bunker: { hp: 1500, ap: 0, weapon: null, intercept: 'bunker_mg', armor: true }
 };
 
-/** Interception: a short, loose burst every so often at a moving enemy in range and sight. */
-export const INTERCEPT = { every: 0.7, shots: 2, spread: 2.5, damage: 0.6 };
+/**
+ * Interception: a short, loose burst every so often at a moving enemy in range and sight.
+ * Near its own camp (within guardRadius of the flag) a side fires tighter and harder.
+ */
+export const INTERCEPT = { every: 0.7, shots: 2, spread: 2.5, damage: 0.6, guardRadius: 30, guardSpread: 0.55, guardDamage: 1.6 };
+export const GUARDS = 3; // enemy soldiers that hold their base instead of advancing
 
 export const DIFFICULTY = {
   easy: { label: 'Mudah', infantry: 6, cp: 4, accuracy: 0.7 },

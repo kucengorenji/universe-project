@@ -19,6 +19,7 @@ function makeUnit(side, kind, cls, props) {
     name: props.name || cls,
     face: props.face || 1,
     leader: !!props.leader,
+    guard: !!props.guard, // holds its own camp (ai.js)
     hp: Math.round(S.hp * scale),
     maxHp: Math.round(S.hp * scale),
     apMax: S.ap,
@@ -52,9 +53,11 @@ export class Battle {
     // enemy infantry on its deploy slots, then spread along the trench if it runs out
     const slots = [...field.deploy.imp];
     const trench = field.trenches[0]?.pts || [];
+    const posts = [...(field.guardPosts || [])];
     enemyForces(this.difficulty).forEach((e, i) => {
-      const at = slots[i] || (trench.length ? { x: trench[i % trench.length][0], z: trench[i % trench.length][1] - 1.5 } : { x: field.camps[1].x + i * 2, z: field.camps[1].z + 6 });
-      this.units.push(makeUnit('imp', 'infantry', e.cls, { ...e, x: at.x, z: at.z, yaw: 0 }));
+      const post = e.guard && posts.shift();
+      const at = post || slots.shift() || (trench.length ? { x: trench[i % trench.length][0], z: trench[i % trench.length][1] - 1.5 } : { x: field.camps[1].x + i * 2, z: field.camps[1].z + 6 });
+      this.units.push(makeUnit('imp', 'infantry', e.cls, { ...e, x: at.x, z: at.z, yaw: post ? post.yaw : 0 }));
     });
     if (field.tank) this.units.push(makeUnit('imp', 'tank', 'tank', { id: 'tank', name: 'Tank berat', x: field.tank.x, z: field.tank.z, yaw: field.tank.yaw }));
     field.bunkers.forEach((b, i) => this.units.push(makeUnit('imp', 'bunker', 'bunker', { id: `bunker${i}`, name: `Bunker ${i + 1}`, x: b.x, z: b.z, yaw: b.yaw })));

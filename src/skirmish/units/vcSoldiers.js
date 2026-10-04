@@ -21,8 +21,8 @@ import { FACE_RECT, faceTexture } from './facePainter.js';
 const KIT = ['base', 'pouches', 'pack_small', 'mags', 'plate', 'armor', 'tubes', 'pack_engineer', 'tools', 'goggles'];
 const SLOTS = ['skin', 'hair', 'tunic', 'scarf', 'pants', 'boots', 'helmet', 'iris', 'glove'];
 
-/** Speeds (m/s) the walk and run clips were keyed for: playback is scaled to the real speed. */
-const CLIP_SPEED = { walk: 1.35, run: 3.2, crouch_walk: 1.05 };
+/** Speeds (m/s) the walk (a jog) and run (a sprint) clips move at: playback is scaled to the real speed. */
+const CLIP_SPEED = { walk: 1.35, run: 3.2, crouch_walk: 1.05 }; // soldier_v4: walk 3.2, run 5.4, crouch_walk 0.8
 
 /**
  * Per roster soldier: hair style (1-5), hair colour, skin, eyes, gloves (null: bare hands) and the
@@ -58,8 +58,20 @@ export async function loadSoldierTemplates(url, atlasUrl) {
   atlas.flipY = false;
   atlas.colorSpace = THREE.NoColorSpace;
   atlas.anisotropy = 8;
-  return { scene: gltf.scene, clips: gltf.animations, atlas, vc: true };
+  // the model's eyes and mouth (soldier_v4.py writes them into the mesh's extras): the painted
+  // face, laid out for eyes at z EYE_Z and x 0.0335 and the mouth at z 1.5305, is mapped onto them
+  let face = null;
+  gltf.scene.traverse((o) => (face ||= o.userData?.face || null));
+  const faceMap = new THREE.Vector3(1, 1, 0);
+  if (face) {
+    const a = (PAINT.eyeZ - PAINT.mouthZ) / (face.eyeZ - face.mouthZ);
+    faceMap.set(PAINT.eyeX / face.eyeX, a, PAINT.eyeZ - a * face.eyeZ);
+  }
+  return { scene: gltf.scene, clips: gltf.animations, atlas, faceMap, vc: true };
 }
+
+/** Where facePainter.js puts the eyes and the mouth (metres, Blender x / z of the old head). */
+const PAINT = { eyeX: 0.0335, eyeZ: 1.594, mouthZ: 1.5305 };
 
 const F = FACE_RECT;
 const GLSL = (v) => v.toFixed(4);
@@ -82,6 +94,7 @@ function soldierMaterial(uniforms) {
         uniform float uHair;
         uniform float uHelm;
         uniform float uKit;
+        uniform vec3 uFaceMap;
         varying vec2 vAtlasUv;
         varying vec2 vFaceUv;
         varying float vFace;
@@ -97,7 +110,8 @@ function soldierMaterial(uniforms) {
           vAtlasUv = uv;
           // the face texture is projected from the front of the rest pose (glTF: +z is forward)
           vFace = piece == 30.0 ? smoothstep(0.05, 0.4, normal.z) : 0.0;
-          vFaceUv = vec2((position.x - ${GLSL(F.x0)}) / ${GLSL(F.x1 - F.x0)}, (position.y - ${GLSL(F.z0)}) / ${GLSL(F.z1 - F.z0)});
+          vec2 fp = vec2(position.x * uFaceMap.x, position.y * uFaceMap.y + uFaceMap.z); // into the painter's frame
+          vFaceUv = vec2((fp.x - ${GLSL(F.x0)}) / ${GLSL(F.x1 - F.x0)}, (fp.y - ${GLSL(F.z0)}) / ${GLSL(F.z1 - F.z0)});
           vHair = floor(uv1.x) == 2.0 ? 1.0 : 0.0;
         }`)
       .replace('#include <color_vertex>', `#include <color_vertex>
@@ -133,7 +147,7 @@ function soldierMaterial(uniforms) {
           }
         }`);
   };
-  m.customProgramCacheKey = () => 'skirmish-soldier-vc3';
+  m.customProgramCacheKey = () => 'skirmish-soldier-v4';
   return m;
 }
 
@@ -158,6 +172,7 @@ export function makeSoldier(template, weapons, { faction = 'fed', cls = 'scout',
     uHair: { value: helm ? 5 : look.hair },
     uHelm: { value: helm },
     uKit: { value: kitMask },
+    uFaceMap: { value: template.faceMap || new THREE.Vector3(1, 1, 0) },
     uAtlas: { value: template.atlas },
     uFace: { value: faceTexture({ ...look.face, skin: look.skin, hair: look.hairColor, iris: look.iris }) },
     uTrim: { value: new THREE.Color(D.trim) },

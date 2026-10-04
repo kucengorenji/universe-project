@@ -2,79 +2,103 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { getToonGradient } from '../../render/assetLibrary.js';
-import { CLASSES, FACTIONS, personFor } from './soldierLook.js';
+import { CLASSES, FACTIONS } from './soldierLook.js';
 import { HOLDS, gunMaterial, placeWeapon, gripWorld, supportWorld, poleR, poleL, reachArm, rotate } from './soldiers.js';
-import { FACE_RECT, faceTexture } from './facePainter.js';
 
-// Skirmish soldiers v2 (models/soldier_vc.glb, tools/blender/skirmish/soldier_vc.py): a smooth
-// anime-proportioned figure on a real armature, animated by clips (idle, walk, run, crouch,
-// crouch_walk, kneel, fall_back, fall_front) through an AnimationMixer. On top of the clips the
-// upper body is posed in code: the torso turns into the stance and a little toward the aim
-// (twist(): never more than 30 degrees, the head 60 more), the
-// weapon is placed and both arms reach it (two-bone IK from soldiers.js).
+// Skirmish soldiers v5 (models/soldier_v5_m.glb, tools/blender/skirmish/soldier_v5.py): a VRoid
+// anime body in a modelled VC1-style uniform on a humanoid rig, animated by clips (idle, walk, run,
+// crouch, crouch_walk, kneel, hit, fall_back, fall_front) through an AnimationMixer. On top of the
+// clips the upper body is posed in code: the torso turns into the stance and a little toward the
+// aim (twist(): never more than 30 degrees, the head 60 more), the weapon is placed, both arms
+// reach it (two-bone IK from soldiers.js) and the fingers close round it.
 //
-// One mesh, one draw call: the second UV map carries each vertex's palette slot and piece
-// (docs in soldier_vc.py); the material recolours slots and collapses the pieces not worn. The
-// first UV map samples the shared painted atlas (shade, trim, ink); the face is a per-character
-// painted texture (facePainter.js) projected from the front onto the head.
+// One mesh, one draw call. The second UV map carries each vertex's palette slot and piece (an
+// index into the mesh's extras "pieces"); each soldier draws only its own pieces (hair style,
+// helmet, scarf, class kit) through an index buffer of its own. The first UV map samples the head
+// atlas (VRoid's painted face, eyes and hair) for the head slots and the cloth atlas (R shade,
+// G trim piping, B pencil ink) for everything else.
 
-const KIT = ['base', 'pouches', 'pack_small', 'mags', 'plate', 'armor', 'tubes', 'pack_engineer', 'tools', 'goggles'];
-const SLOTS = ['skin', 'hair', 'tunic', 'scarf', 'pants', 'boots', 'helmet', 'iris', 'glove'];
+/** Palette slots (soldier_v5.py SLOT): the head slots sample the head atlas. */
+const SLOT = { skin: 1, hair: 2, tunic: 3, scarf: 4, pants: 5, boots: 6, helmet: 7, glove: 8, leather: 9, brass: 10, metal: 11, canvas: 12, lens: 13, face: 14, iris: 15 };
 
 /** Speeds (m/s) the walk (a jog) and run (a sprint) clips move at: playback is scaled to the real speed. */
-const CLIP_SPEED = { walk: 1.35, run: 3.2, crouch_walk: 1.05 }; // soldier_v4: walk 3.2, run 5.4, crouch_walk 0.8
+const CLIP_SPEED = { walk: 2.6, run: 3.3, crouch_walk: 0.8 };
 
 /**
- * Per roster soldier: hair style (1-5), hair colour, skin, eyes, gloves (null: bare hands) and the
- * painted face (facePainter.js spec: eye shape, brows, mouth, extras). Enemies are generated.
+ * Per roster soldier: hair style (a piece of the mesh), hair and iris colours, a skin tint (white
+ * keeps VRoid's painted skin), a helmet and the neckerchief. Heroes without their own hair yet wear
+ * the short base cut.
  */
 const LOOKS = {
-  arlen: { hair: 1, hairColor: '#5a4636', skin: '#f2cdb0', iris: '#6a4a32', face: { eye: { tilt: 0.05 }, brow: { thick: 1.1, arch: 0.15 } } },
-  mira: { hair: 4, hairColor: '#c98a3a', skin: '#f6d4b8', iris: '#4a8a4a', gloves: null, face: { female: true, freckles: true, eye: { h: 0.0205, iris: 0.64 }, mouth: { smile: 0.6 } } },
-  brann: { hair: 5, hairColor: '#2a221c', skin: '#d9a07a', iris: '#4a3424', face: { eye: { h: 0.016, tilt: -0.05 }, brow: { thick: 1.5, tilt: 0.6, gap: -0.002 }, mouth: { w: 0.019 }, scar: true } },
-  sela: { hair: 3, hairColor: '#7a2f2a', skin: '#f3cfb0', iris: '#6a4a8a', face: { female: true, eye: { tilt: 0.2 }, brow: { arch: 0.5 } } },
-  otto: { hair: 2, hairColor: '#8a7a5a', skin: '#e8b892', iris: '#4a6a7a', face: { eye: { h: 0.0175 }, brow: { thick: 1.3 }, mole: [0.03, 1.532] } },
-  ines: { hair: 4, hairColor: '#1e1c22', skin: '#e9bf99', iris: '#2c4c7c', face: { female: true, eye: { tilt: 0.28, h: 0.018 }, brow: { tilt: 0.3 } } },
-  cato: { hair: 1, hairColor: '#b07a3a', skin: '#f0c4a0', iris: '#3a7a5a', gloves: null, face: { eye: { h: 0.02, iris: 0.66 }, mouth: { smile: 0.8 }, freckles: true } },
-  lio: { hair: 2, hairColor: '#3a2618', skin: '#c88a62', iris: '#5a3a2a', face: { eye: { tilt: 0.12 }, brow: { thick: 1.2, arch: 0.3 } } },
-  vesna: { hair: 3, hairColor: '#cdb98c', skin: '#f7dcc4', iris: '#5a8aaa', face: { female: true, eye: { h: 0.0178, tilt: 0.15, iris: 0.58 }, brow: { thick: 0.7 }, blush: 0.4 } }
+  arlen: { hair: 'hair_arlen', hairColor: '#6b4a32', iris: '#5a7fb0' },
+  mira: { hair: 'hair_base', hairColor: '#c98a3a', iris: '#4a8a4a', scarf: true },
+  brann: { hair: 'hair_base', hairColor: '#2a221c', iris: '#4a3424', skin: '#e8c4a8', helmet: 'helm_fed' },
+  sela: { hair: 'hair_base', hairColor: '#7a2f2a', iris: '#6a4a8a' },
+  otto: { hair: 'hair_base', hairColor: '#8a7a5a', iris: '#4a6a7a', skin: '#f2d6c0' },
+  ines: { hair: 'hair_base', hairColor: '#1e1c22', iris: '#2c4c7c' },
+  cato: { hair: 'hair_base', hairColor: '#b07a3a', iris: '#3a7a5a', scarf: true },
+  lio: { hair: 'hair_base', hairColor: '#3a2618', iris: '#5a3a2a', skin: '#e0b898' },
+  vesna: { hair: 'hair_base', hairColor: '#cdb98c', iris: '#5a8aaa' }
 };
 
-/** Faction trim (the piping on hems, collars, cuffs), gloves and pencil ink. */
+/** Faction cloth: palette slots, trim (piping) and pencil ink. */
 const DRESS = {
-  fed: { trim: '#ece4cc', gloves: '#3e3029', ink: '#2c2a30' },
-  imp: { trim: '#b8342c', gloves: '#232327', ink: '#1c1a1c' }
+  fed: { trim: '#ece4cc', ink: '#2c2a30', glove: '#4a3a30', leather: '#6a4a30', brass: '#c9a24a', metal: '#5f7462', canvas: '#7a7d5c', lens: '#9ab4c0' },
+  imp: { trim: '#b8342c', ink: '#1c1a1c', glove: '#232327', leather: '#3a2c24', brass: '#9a8a6a', metal: '#4a4d52', canvas: '#55574e', lens: '#c24a3a' }
 };
 
-/** An enemy's face from its seed: a few shapes of brow and eye, dark eyes. */
-function enemyFace(seed) {
-  const h = Math.imul(seed ^ 0x2c1b3c6d, 0x297a2d39) >>> 0;
-  return { eye: { h: 0.0155 + (h % 4) * 0.001, tilt: ((h >>> 3) % 5) * 0.06 - 0.12 }, brow: { thick: 1.2 + ((h >>> 6) % 4) * 0.15, tilt: 0.4 + ((h >>> 9) % 3) * 0.2 }, mouth: { smile: -0.4 }, scar: (h >>> 12) % 5 === 0, blush: 0.15 };
+export async function loadSoldierTemplates(url, clothUrl, headUrl) {
+  const loader = new THREE.TextureLoader();
+  const [gltf, cloth, head] = await Promise.all([new GLTFLoader().loadAsync(url), loader.loadAsync(clothUrl), loader.loadAsync(headUrl)]);
+  // glTF UVs, so no flip. The cloth atlas is data (shade, trim, ink); the head atlas is colour
+  cloth.flipY = head.flipY = false;
+  cloth.colorSpace = THREE.NoColorSpace;
+  head.colorSpace = THREE.SRGBColorSpace;
+  cloth.anisotropy = head.anisotropy = 8;
+  let mesh = null, far = null;
+  gltf.scene.traverse((o) => o.isSkinnedMesh && (o.name.includes('lod1') ? (far = o) : (mesh = o)));
+  const pieces = mesh.userData.pieces;
+  return { scene: gltf.scene, clips: gltf.animations, cloth, head, pieces, buckets: { close: buckets(mesh.geometry), far: far && buckets(far.geometry) }, cache: new Map(), vc: true };
 }
 
-export async function loadSoldierTemplates(url, atlasUrl) {
-  const [gltf, atlas] = await Promise.all([new GLTFLoader().loadAsync(url), new THREE.TextureLoader().loadAsync(atlasUrl)]);
-  // data, not colour: R shade, G trim (hair: sheen), B ink; glTF UVs, so no flip
-  atlas.flipY = false;
-  atlas.colorSpace = THREE.NoColorSpace;
-  atlas.anisotropy = 8;
-  // the model's eyes and mouth (soldier_v4.py writes them into the mesh's extras): the painted
-  // face, laid out for eyes at z EYE_Z and x 0.0335 and the mouth at z 1.5305, is mapped onto them
-  let face = null;
-  gltf.scene.traverse((o) => (face ||= o.userData?.face || null));
-  const faceMap = new THREE.Vector3(1, 1, 0);
-  if (face) {
-    const a = (PAINT.eyeZ - PAINT.mouthZ) / (face.eyeZ - face.mouthZ);
-    faceMap.set(PAINT.eyeX / face.eyeX, a, PAINT.eyeZ - a * face.eyeZ);
+/** The triangles of each piece (the index buffer split by the piece of its first vertex). */
+function buckets(geometry) {
+  const index = geometry.index.array;
+  const uv1 = geometry.attributes.uv1;
+  const lists = new Map();
+  for (let t = 0; t < index.length; t += 3) {
+    const piece = Math.floor(1 - uv1.getY(index[t])); // glTF flips V
+    let l = lists.get(piece);
+    if (!l) lists.set(piece, (l = []));
+    l.push(index[t], index[t + 1], index[t + 2]);
   }
-  return { scene: gltf.scene, clips: gltf.animations, atlas, faceMap, vc: true };
+  return lists;
 }
 
-/** Where facePainter.js puts the eyes and the mouth (metres, Blender x / z of the old head). */
-const PAINT = { eyeX: 0.0335, eyeZ: 1.594, mouthZ: 1.5305 };
+/** A geometry sharing the template's attributes, drawing only the given pieces (cached per set). */
+function geometryFor(template, source, which, names) {
+  const ids = names.map((n) => template.pieces.indexOf(n)).filter((i) => i >= 0).sort((a, b) => a - b);
+  const key = `${which}:${ids.join(',')}`;
+  let g = template.cache.get(key);
+  if (!g) {
+    g = new THREE.BufferGeometry();
+    for (const [name, attr] of Object.entries(source.attributes)) g.setAttribute(name, attr);
+    const lists = template.buckets[which];
+    const total = ids.reduce((n, i) => n + (lists.get(i)?.length || 0), 0);
+    const index = new Uint32Array(total);
+    let at = 0;
+    for (const i of ids) {
+      const l = lists.get(i);
+      if (l) index.set(l, at), (at += l.length);
+    }
+    g.setIndex(new THREE.BufferAttribute(index, 1));
+    g.boundingSphere = source.boundingSphere;
+    g.boundingBox = source.boundingBox;
+    template.cache.set(key, g);
+  }
+  return g;
+}
 
-const F = FACE_RECT;
-const GLSL = (v) => v.toFixed(4);
 // anime faces take only a light cast shadow: the hair's shadow must not cut across the eyes
 const LIGHTS = THREE.ShaderChunk.lights_fragment_begin.replace(
   /directLight\.color \*= (\( directLight\.visible && receiveShadow \) \? getShadow\( directionalShadowMap[^;]*);/,
@@ -82,7 +106,7 @@ const LIGHTS = THREE.ShaderChunk.lights_fragment_begin.replace(
 );
 
 function soldierMaterial(uniforms) {
-  const m = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getToonGradient() });
+  const m = new THREE.MeshToonMaterial({ gradientMap: getToonGradient(), side: THREE.DoubleSide });
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, uniforms);
     sh.vertexShader = sh.vertexShader
@@ -90,94 +114,77 @@ function soldierMaterial(uniforms) {
         #ifndef USE_UV1
           attribute vec2 uv1;
         #endif
-        uniform vec3 uPalette[9];
-        uniform float uHair;
-        uniform float uHelm;
-        uniform float uKit;
-        uniform vec3 uFaceMap;
         varying vec2 vAtlasUv;
-        varying vec2 vFaceUv;
-        varying float vFace;
-        varying float vHair;`)
+        varying float vSlot;
+        varying float vFace;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-        {
-          float piece = floor(1.0 - uv1.y); // uv1 carries (slot, piece); glTF flips V
-          bool hide = false;
-          if (piece >= 1.0 && piece <= 5.0) hide = piece != uHair;
-          else if (piece == 6.0 || piece == 7.0) hide = piece != uHelm;
-          else if (piece >= 10.0 && piece < 20.0) hide = mod(floor(uKit / exp2(piece - 10.0)), 2.0) < 0.5;
-          if (hide) transformed = vec3(0.0);
-          vAtlasUv = uv;
-          // the face texture is projected from the front of the rest pose (glTF: +z is forward)
-          vFace = piece == 30.0 ? smoothstep(0.05, 0.4, normal.z) : 0.0;
-          vec2 fp = vec2(position.x * uFaceMap.x, position.y * uFaceMap.y + uFaceMap.z); // into the painter's frame
-          vFaceUv = vec2((fp.x - ${GLSL(F.x0)}) / ${GLSL(F.x1 - F.x0)}, (fp.y - ${GLSL(F.z0)}) / ${GLSL(F.z1 - F.z0)});
-          vHair = floor(uv1.x) == 2.0 ? 1.0 : 0.0;
-        }`)
-      .replace('#include <color_vertex>', `#include <color_vertex>
-        {
-          int slot = int(floor(uv1.x));
-          // slotted parts: the palette colour, shaded by the authored grey (folds, seams, gradients)
-          if (slot > 0) vColor.rgb *= uPalette[slot - 1];
-        }`);
+        vAtlasUv = uv;
+        vSlot = floor(uv1.x);
+        vFace = (vSlot == 1.0 || vSlot == 14.0 || vSlot == 15.0) ? 1.0 : 0.0;`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        uniform sampler2D uAtlas;
-        uniform sampler2D uFace;
+        uniform sampler2D uCloth;
+        uniform sampler2D uHead;
+        uniform vec3 uPalette[16];
         uniform vec3 uTrim;
         uniform vec3 uInk;
-        uniform float uShut;
         varying vec2 vAtlasUv;
-        varying vec2 vFaceUv;
-        varying float vFace;
-        varying float vHair;`)
+        varying float vSlot;
+        varying float vFace;`)
       .replace('#include <lights_fragment_begin>', LIGHTS)
       .replace('#include <color_fragment>', `#include <color_fragment>
         {
-          vec3 a = texture2D(uAtlas, vAtlasUv).rgb;
-          vec3 base = diffuseColor.rgb;
-          diffuseColor.rgb *= a.r;
-          if (vHair > 0.5) diffuseColor.rgb = mix(diffuseColor.rgb, min(base * 1.4 + 0.03, vec3(0.92)), a.g * 0.6);
-          else diffuseColor.rgb = mix(diffuseColor.rgb, uTrim * a.r, a.g);
-          // pencil: the faction's ink on cloth, a darker shade of the hair colour on hair
-          diffuseColor.rgb = mix(diffuseColor.rgb, vHair > 0.5 ? base * 0.45 : mix(uInk, base * 0.3, 0.4), a.b * 0.85);
-          if (vFace > 0.001 && vFaceUv.x > 0.0 && vFaceUv.x < 1.0 && vFaceUv.y > 0.0 && vFaceUv.y < 1.0) {
-            vec4 f = texture2D(uFace, vec2((vFaceUv.x + uShut) * 0.5, vFaceUv.y));
-            diffuseColor.rgb = mix(diffuseColor.rgb, f.rgb, f.a * vFace);
+          int slot = int(vSlot + 0.5);
+          if (slot == 1 || slot == 2 || slot == 14 || slot == 15) {
+            // VRoid's painted head: hair, brows and irises are brightness, coloured per soldier
+            vec4 h = texture2D(uHead, vAtlasUv);
+            if (h.a < 0.5) discard;
+            vec3 c = h.rgb;
+            if (slot == 2) c = h.r * uPalette[1];
+            else if (slot == 15) c = mix(vec3(0.02), uPalette[14], h.r);
+            else if (slot == 1) c *= uPalette[0];
+            diffuseColor.rgb = c;
+          } else {
+            vec3 a = texture2D(uCloth, vAtlasUv).rgb;
+            vec3 base = uPalette[clamp(slot - 1, 0, 15)];
+            diffuseColor.rgb = mix(base * a.r, uTrim * a.r, a.g);
+            diffuseColor.rgb = mix(diffuseColor.rgb, mix(uInk, base * 0.3, 0.4), a.b * 0.85);
           }
         }`);
   };
-  m.customProgramCacheKey = () => 'skirmish-soldier-v4';
+  m.customProgramCacheKey = () => 'skirmish-soldier-v5';
   return m;
 }
 
-/** One soldier from the template: its own skeleton, material, mixer and weapon. */
+/** One soldier from the template: its own skeleton, material, mixer, pieces and weapon. */
 export function makeSoldier(template, weapons, { faction = 'fed', cls = 'scout', seed = 1, id = null, shadows = true } = {}) {
   const C = CLASSES[cls];
   const F = FACTIONS[faction];
+  const D = DRESS[faction];
   const root = cloneSkinned(template.scene);
-  // the close model, and the far one (fewer segments, no small details) shown past LOD_FAR metres
+  // the close model, and the far one (decimated) shown past LOD_FAR metres
   let mesh = null, far = null;
   root.traverse((o) => o.isSkinnedMesh && (o.name.includes('lod1') ? (far = o) : (mesh = o)));
-  const person = personFor(seed);
-  const look = (faction === 'fed' && LOOKS[id]) || { hair: faction === 'imp' ? 5 : 1 + (seed % 5), hairColor: person.hair, skin: person.skin, iris: '#3a3430', face: enemyFace(seed) };
-  const D = DRESS[faction];
-  const gloves = look.gloves === null ? look.skin : look.gloves || D.gloves;
-  const pal = { skin: look.skin, hair: look.hairColor, tunic: F.top, scarf: F.scarf, pants: F.legs, boots: F.boots, helmet: F.helmet_color, iris: look.iris, glove: gloves };
-  // enemies wear helmets; our soldiers go bareheaded so their faces read (as in the reference)
-  const helm = faction === 'imp' ? 7 : 0;
-  const kitMask = C.kit.reduce((m, tag) => m | (1 << KIT.indexOf(tag)), 0);
+  const look = (faction === 'fed' && LOOKS[id]) || { hair: 'hair_base', hairColor: '#2a2624', iris: '#3a3430' };
+  // the Empire's soldiers are faceless behind their masked helmets
+  const helmet = faction === 'imp' ? 'helm_imp' : look.helmet || null;
+  // the short base cut lies under every style (VRoid hair leaves the nape open between its locks)
+  const names = ['always', 'face', 'hair_base', ...(helmet ? [helmet] : [look.hair]), ...(look.scarf ? ['scarf'] : []), ...C.kit.map((k) => `kit_${k}`)];
+  mesh.geometry = geometryFor(template, mesh.geometry, 'close', names);
+  if (far) far.geometry = geometryFor(template, far.geometry, 'far', names);
+  const color = (hex) => new THREE.Color(hex);
+  const palette = {
+    skin: look.skin || '#ffffff', hair: look.hairColor, tunic: F.top, scarf: F.scarf, pants: F.legs, boots: F.boots, helmet: F.helmet_color,
+    glove: D.glove, leather: D.leather, brass: D.brass, metal: D.metal, canvas: D.canvas, lens: D.lens, face: '#ffffff', iris: look.iris
+  };
+  const pal = Array.from({ length: 16 }, () => new THREE.Color(1, 1, 1));
+  for (const [k, v] of Object.entries(palette)) pal[SLOT[k] - 1] = color(v);
   const uniforms = {
-    uPalette: { value: SLOTS.map((k) => new THREE.Color(pal[k])) },
-    uHair: { value: helm ? 5 : look.hair },
-    uHelm: { value: helm },
-    uKit: { value: kitMask },
-    uFaceMap: { value: template.faceMap || new THREE.Vector3(1, 1, 0) },
-    uAtlas: { value: template.atlas },
-    uFace: { value: faceTexture({ ...look.face, skin: look.skin, hair: look.hairColor, iris: look.iris }) },
-    uTrim: { value: new THREE.Color(D.trim) },
-    uInk: { value: new THREE.Color(D.ink) },
-    uShut: { value: 0 }
+    uPalette: { value: pal },
+    uCloth: { value: template.cloth },
+    uHead: { value: template.head },
+    uTrim: { value: color(D.trim) },
+    uInk: { value: color(D.ink) }
   };
   mesh.material = soldierMaterial(uniforms);
   for (const m of [mesh, far]) {
@@ -206,11 +213,29 @@ export function makeSoldier(template, weapons, { faction = 'fed', cls = 'scout',
   const gun = new THREE.Mesh(weapons[C.weapon].geometry, gunMaterial());
   gun.castShadow = shadows;
   root.add(gun);
+  const fingers = FINGER_BONES.map(([name, side, k]) => bones[name] && [bones[name].node, side, k]).filter(Boolean);
   return {
     root, mesh, far, material: mesh.material, uniforms, bones, mixer, actions, current: 'idle', faction, cls, gun,
     weapon: weapons[C.weapon], hold: HOLDS[C.hold], aimYaw: 0, aimPitch: 0, aimBlend: 0, crouchBlend: 0,
-    speed: 0, recoil: 0, flinch: 0, blink: 2 + Math.random() * 3, vc: true, chestRest
+    speed: 0, recoil: 0, flinch: 0, vc: true, chestRest, fingers
   };
+}
+
+/** Finger joints that close round the weapon: [bone, side, joint 1-3]. */
+const FINGER_BONES = ['index', 'middle', 'ring', 'pinky'].flatMap((f) => ['L', 'R'].flatMap((s) => [1, 2, 3].map((k) => [`${f}_0${k}_${s}`, s, k, f])));
+const CURL = [0, 1.0, 1.25, 0.8];
+const _axis = new THREE.Vector3(0, 0, 1);
+const _fq = new THREE.Quaternion();
+
+/** Close the fingers round the grip (the trigger finger of the right hand a little open). */
+function grip(s, k) {
+  for (const [node, side, joint] of s.fingers) {
+    const trigger = side === 'R' && node.name.startsWith('index');
+    const a = CURL[joint] * (trigger ? 0.55 : 1) * k;
+    // bones rest along +-x (the T-pose), palms down: the curl turns about the forward axis
+    _fq.setFromAxisAngle(_axis, side === 'R' ? a : -a);
+    node.quaternion.copy(_fq);
+  }
 }
 
 export function disposeSoldier(s) {
@@ -258,10 +283,6 @@ export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn
   const k = 1 - Math.exp(-dt * 10);
   s.aimBlend += ((aim && !down ? 1 : 0) - s.aimBlend) * k;
   s.crouchBlend += ((crouch ? 1 : 0) - s.crouchBlend) * k;
-  // eyes: shut when down, a blink every few seconds
-  s.blink -= dt;
-  if (s.blink < -0.12) s.blink = 2 + Math.random() * 4;
-  s.uniforms.uShut.value = down || s.blink < 0 ? 1 : 0;
 
   if (down) {
     s.gun.visible = false;
@@ -290,6 +311,7 @@ export function animateSoldier(s, dt, speed, { aim = false, crouch = false, turn
   rotate(B.chest, -s.aimPitch * am * 0.4 - 0.25 * s.flinch - 0.05 * s.recoil, torso * 0.6 + T.chest * am);
   rotate(B.neck, 0.15 * s.flinch, -torso * 0.4);
   rotate(B.head, s.aimPitch * am * 0.5 + (hold.aim.cheek ? 0.1 * am : 0), -torso * 0.6 + T.head * am, hold.aim.cheek ? -0.2 * am : 0);
+  grip(s, 1);
   s.root.updateMatrixWorld(true);
   placeWeapon(s, am);
   reachArm(s, 'R', gripWorld(s), poleR(s));
@@ -328,8 +350,8 @@ export function portrait(renderer, template, weapons, opts, size = 160) {
   const head = new THREE.Vector3();
   s.bones.head.node.getWorldPosition(head);
   const cam = new THREE.PerspectiveCamera(24, 1, 0.05, 10);
-  cam.position.set(head.x + 0.18, head.y + 0.06, head.z + 0.75);
-  cam.lookAt(head.x, head.y + 0.02, head.z);
+  cam.position.set(head.x + 0.18, head.y + 0.08, head.z + 0.75);
+  cam.lookAt(head.x, head.y + 0.06, head.z);
   const rt = new THREE.WebGLRenderTarget(size, size, { samples: 4 });
   const prev = renderer.getRenderTarget();
   const prevTone = renderer.toneMapping;

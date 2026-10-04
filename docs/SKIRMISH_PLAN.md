@@ -127,9 +127,13 @@ Milestone:
 - **M-C (selesai)**: Prep gaya buku/dosir (`ui/prepPanel.js`, `ui/prep.css`).
   - Buku terbuka di meja. Halaman kiri: kop operasi (perisai, judul, stempel SECRET, chip AO/waktu/ancaman/sungai), peta deploy (kanvas TacticalMap diletakkan di atas slot halaman; geometri slot di `prep.css` dan aturan `.mapwrap` harus sama), baris INTEL. Halaman kanan: tab SQUAD (9 kartu karakter: potret, perisai kelas, HP/AP/senjata, catatan, stempel DEPLOYED, ★ Leader; kartu lain terkunci bila regu penuh) dan BRIEFING (paragraf + objectives bernomor); laci SETUP (seed, kesulitan, cover, waktu, sungai, grafis); stempel "Mulai operasi".
   - Peta deploy memakai kursor dan label yang sama dengan Command Mode. Di bawah 860 px: peta di atas, satu halaman di bawahnya.
-- **M-D**: karakter baru (lihat grill kedelapan), AP ×3, bidik gaya VC, pertahanan base.
-- **M-E**: `town_canvas.glb` / `military_canvas.glb` dengan atlas lukis.
-- **M-F**: kamera sinematik giliran musuh, kill/down cam, dan sisa polish.
+- **M-D (berjalan)**: karakter baru dari VRoid CC0 + seragam Blender (lihat grill kesembilan). AP ×3, bidik gaya VC, dan pertahanan base sudah selesai (`125f049`).
+  - `tools/blender/skirmish/soldier_v5.py` membangun satu GLB per jenis kelamin: rig VRoid dipangkas ke tulang humanoid, diberi nama runtime, diputar menghadap +Z (rotasi rest tetap identitas); rambut donor dicangkok ke kepala badan dasar (mata donor ditaruh di mata badan); seragam dari kulit yang dihaluskan dan diberi kelonggaran (tunik, celana masuk bot, bot, sarung tangan), rok tunik dari cincin cembung di panggul, kerah tegak, manset, gauntlet, bibir bot, sabuk, plaket, kancing, saku dada, epolet, harness Y, syal; kit kelas (kantong sabuk, veldfles, bayonet, kantong dada, magasin, ransel kecil + selimut, ransel engineer + sekop + kunci, rak lance, pelindung bahu, pelat dada, kacamata) dan dua helm (Federasi bertepi; Imperium dalam dengan masker kaca merah). Atlas kepala dari tekstur VRoid (rambut, alis, iris jadi kecerahan yang diwarnai per prajurit); atlas kain di-bake (AO, posisi, normal) lalu dilukis (jahitan, lipatan, piping, garis pensil). Bobot kain dari kulit terdekat, tetapi tidak pernah ke anggota badan sisi seberang; cincin di satu anggota badan menempel kaku ke tulangnya. Animasi Quaternius di-retarget dengan arah sendi (hips dan klavikula memakai rest sendiri).
+  - Runtime (`units/vcSoldiers.js`): satu draw call per prajurit; setiap prajurit punya index buffer sendiri berisi piece yang ia pakai (rambut, helm, syal, kit kelas; rambut dasar selalu di bawah rambut donor menutup tengkuk); dua tekstur (kepala berwarna, kain data + palet faksi); jari menggenggam senjata. Musuh: badan sama, helm bermasker.
+  - Checkpoint Arlen: hanya Arlen yang punya rambut sendiri; hero lain sementara memakai rambut dasar dan badan laki-laki sampai badan perempuan dan rambut donor lain dibuat setelah disetujui. Model lama (`soldier_vc.glb`, `soldier_atlas.png`) dihapus dari `public/` (test manifest); `soldier_vc.py` dan `facePainter.js` menunggu persetujuan.
+  - GPU: A/B bergantian HEAD vs working tree di bawah beban GPU lain di mesin: scene 7,2–9,0 ms vs 8,0–8,8 ms (tidak ada beda terukur); angka absolut tidak sebanding dengan pengukuran M-A.
+- **M-E**: kit environment Blender baru, medan berbukit, ladang gandum (grill kesembilan).
+- **M-F**: efek layar, kamera sinematik giliran musuh, kill/down cam, UI ala referensi, dan sisa polish.
 
 ### Karakter baru dan AP (grill kedelapan, 4 Oktober 2026)
 
@@ -144,6 +148,28 @@ Masalah yang dilaporkan: karakter kurang bagus (wajah dan rambut, proporsi/silue
 | Rush | Pertahanan base musuh lebih rapat: bunker dan 2–3 penjaga menghadap jalur ke base, intercept lebih tajam di dekat bendera |
 | Urutan | M-D karakter baru + AP + bidik; M-E aset lingkungan dilukis ulang; M-F kamera sinematik musuh + kill cam |
 | Checkpoint | Setelah satu karakter hero (Arlen): render turntable dan in-game untuk disetujui, baru produksi 8 lainnya dan musuh |
+
+Selesai dari grill ini: kepala berputar, bidik gaya VC, AP ×3, penjaga base (`125f049`). Pipeline MPFB (`soldier_v4.py`, `e11e748`) dibatalkan oleh grill kesembilan: wajah MakeHuman terlalu realistis, rambutnya seperti helm, seragamnya ketat.
+
+### Full update grafis (grill kesembilan, 4 Oktober 2026)
+
+Masalah yang dilaporkan: karakter masih jauh dari VC1, environment 3D banyak yang jelek (reruntuhan dan cover, pohon dan semak, tanah/medan/sungai, rumah dan kincir), ladang terlihat runcing-runcing tidak jelas.
+
+| Aspek | Keputusan |
+|---|---|
+| Sumber karakter | Badan, wajah anime, dan rambut dari 11 model VRoid CC0 ([OpenGameArt](https://opengameart.org/content/vroid-studio-cc0-models), VRM 0.x, ±155 MB, hanya di scratchpad). Pipeline menerima VRM apa pun, jadi hero tertentu nanti bisa diganti VRM buatan user. Animasi tetap mocap Quaternius UAL yang di-retarget |
+| Seragam | Baju VRoid dibuang; seragam VC1 dimodel di Blender di atas badannya (tunik berkerah tinggi, sarung tangan, kantong, tali, sabuk, sepatu bot, siluet per kelas), lipatan dan garis pensil dilukis di tekstur |
+| Wajah | Mata VRoid dikecilkan dan dirapikan ke arah VC1 (lebih dewasa, lembut) |
+| Musuh | Seragam abu gelap, helm dengan pelindung wajah, satu badan bersama |
+| Detail hidup | Jari menggenggam senjata (popor, pelatuk, tangan kiri di laras); potret hero dirender di Blender dengan gaya lukis untuk Prep, HUD, dan cut-in. Tanpa kedip/ekspresi dan tanpa rambut bergoyang |
+| Environment | Kit Blender baru khusus skirmish, geometri detail (bata, papan, karung pasir satu per satu), tekstur lukis ter-bake (AO, tepi aus, goresan pensil), pohon dari gumpalan daun, rumah dan kincir baru. `town.glb` untuk mode Town tidak disentuh; rencana `town_canvas.glb` lama batal |
+| Medan | Bukit landai VC1 2–6 m di seluruh peta, jalan mengikuti lembah, tepi sungai miring (garis pandang sudah memperhitungkan tanah) |
+| Ladang | Massa gandum lembut berujung bulir yang bergoyang angin (bukan duri), pinggir petak rapi, baris sayur, tumpukan jerami, pagar kayu |
+| Efek layar | Awan lukis bergerak, tepi layar memudar menjadi sketsa pensil dunia, outline tinta dengan tebal mengikuti jarak/lekuk, berkas sinar matahari + bloom lembut |
+| UI (prioritas di bawah grafis 3D) | Peta taktis ala referensi (nama landmark tulisan tangan, stempel pohon tinta, grid bernomor, area musuh bertepi kuas oranye); panel target ala VC1 (To kill / Shots / vs Pers / vs Armor / Area); panel unit kanan bawah dengan ilustrasi senjata dan amunisi |
+| Performa | ≤ 12 ms GPU per frame di 2560×1600 (M1 Pro); preset Rendah/Sedang tetap ada |
+| Urutan | M-D karakter (pipeline VRoid, Arlen, lalu 8 hero dan musuh) → M-E environment (kit, medan, ladang) → M-F efek layar, kamera sinematik musuh, kill cam, UI |
+| Checkpoint | Setelah Arlen (turntable + in-game) dan setelah satu sudut desa dengan semua prop baru; sisanya per milestone |
 
 ## Peta kode
 
@@ -172,9 +198,10 @@ src/skirmish/render/
 src/skirmish/units/
   soldierLook.js                   kelas, faksi, kit (data)
   soldiers.js                      senjata, pegangan, IK dua tulang (dipakai vcSoldiers)
-  vcSoldiers.js                    tentara VC: material (palet, atlas, wajah), klip, LOD, potret
-  facePainter.js                   wajah lukis per karakter (Canvas 2D), mata buka/tutup
-tools/blender/skirmish/            soldier_vc.py (tentara + atlas), military_kit.py, soldier_faceted.py, preview_soldiers.py
+  vcSoldiers.js                    tentara v5: material (palet, atlas kain + atlas kepala), piece per prajurit, klip, genggaman, LOD, potret
+  facePainter.js                   wajah lukis v2 (tidak dipakai sejak v5; dihapus setelah Arlen disetujui)
+tools/blender/skirmish/            soldier_v5.py (tentara VRoid + seragam + atlas + klip), soldier_vc.py (v2, menunggu dihapus),
+                                   military_kit.py, soldier_faceted.py, preview_soldiers.py
 ```
 
 ## Catatan teknis
@@ -183,3 +210,4 @@ tools/blender/skirmish/            soldier_vc.py (tentara + atlas), military_kit
 - Arsiran dipasang dengan menambal `THREE.ShaderLib.toon` sebelum material pertama dikompilasi; game utama tidak memuat modul ini.
 - Biaya GPU (Chrome headless, Metal, M1 Pro, 2560×1600, render 3× per frame): ±10–12 ms per frame dengan post, ±5 ms tanpa post. Noise kertas dan goyangan garis diambil dari tekstur 256² yang dibuat sekali; fbm per piksel sebelumnya menghabiskan ±26 ms.
 - Rebuild aset: `Blender -b --factory-startup --python tools/blender/skirmish/soldier_faceted.py -- public/models/soldier.glb` (sama untuk `military_kit.py` → `military.glb`).
+- Tentara v5 (±30 detik): `Blender -b --factory-startup --python tools/blender/skirmish/soldier_v5.py -- public/models/soldier_v5_m.glb --vroid <folder model VRoid CC0> --body m --ual <AnimationLibrary_Godot_Standard.glb> --head public/textures/soldier_v5_m_head.png --atlas public/textures/soldier_v5_m_cloth.png`. Paket VRoid dan Quaternius tidak ada di repo; unduh ulang dari OpenGameArt.

@@ -14,8 +14,9 @@ export const ASSET_FILES = {
   characterPack: 'models/character.glb', // shared rig, outfits, clips
   furniturePack: 'models/furniture.glb', // interior furniture and loose items
   spacePack: 'models/space.glb', // ships and the planet rover
-  soldierPack: 'models/soldier_vc.glb', // skirmish soldiers: skinned anime-style figure, hair styles, helmets, class kit, animation clips
-  soldierAtlas: 'textures/soldier_atlas.png', // skirmish soldiers' painted atlas (shade, trim, ink; hair strands)
+  soldierPack: 'models/soldier_v5_m.glb', // skirmish soldiers: VRoid anime body in a VC1 uniform, hair styles, helmets, class kit, animation clips
+  soldierAtlas: 'textures/soldier_v5_m_cloth.png', // skirmish soldiers' cloth atlas (shade, trim piping, pencil ink)
+  soldierHead: 'textures/soldier_v5_m_head.png', // skirmish soldiers' head atlas (VRoid face, eyes, hair)
   militaryPack: 'models/military.glb', // skirmish kit: weapons, fortifications, camp props, tank, windmill
   interiorAtlas: 'textures/interior_atlas.jpg', // floor and wall tiles
   townSurfaces: 'textures/town_surfaces.png' // neutral modulation atlas for buildings and ground

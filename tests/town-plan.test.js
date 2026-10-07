@@ -5,6 +5,7 @@ import { MapGenerator } from '../src/map/mapGenerator.js';
 import { generateTownLayout } from '../src/modes/town/layout/townLayout.js';
 import { splitPolygon, TEMPLATES } from '../src/modes/town/layout/blockPlan.js';
 import { area } from '../src/modes/town/layout/wards.js';
+import { TOWN_LAYOUT_VERSION } from '../src/world/townGeneration.js';
 
 const hexasphere = generateHexasphere(3, 10);
 const generator = new MapGenerator(hexasphere);
@@ -72,7 +73,7 @@ test('planned towns have smooth streets, rows of houses clear of them and a smoo
   for (const { seed, map, cityIndex } of towns()) {
     const L = generateTownLayout({ map, hexasphere, cityIndex });
     const where = `seed ${seed} city ${cityIndex}`;
-    assert.equal(L.layoutVersion, 4);
+    assert.equal(L.layoutVersion, TOWN_LAYOUT_VERSION);
     assert.equal(L.morphology.kind, 'bisected-neighbourhood');
     assert.ok(TEMPLATES.includes(L.morphology.template));
     assert.ok(L.buildings.length > 10, where);

@@ -1,0 +1,170 @@
+[
+  {
+    "seed": 427,
+    "planet": 2,
+    "city": 0,
+    "modern": false,
+    "view": "walk",
+    "night": 0,
+    "buildings": 470,
+    "trees": 8336,
+    "frames": 300,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "pixelRatio": 2,
+    "devicePixelRatio": 2,
+    "drawingBuffer": {
+      "width": 2560,
+      "height": 1600
+    },
+    "camera": {
+      "position": [
+        -7.07,
+        10.67,
+        -18.84
+      ],
+      "quaternion": [
+        0,
+        0.99,
+        0.12,
+        0
+      ],
+      "fov": 55
+    },
+    "fps": 60.07,
+    "frameMs": {
+      "p50": 16.4,
+      "p95": 22.6,
+      "p99": 25.4
+    },
+    "cpuMs": {
+      "p50": 3.3,
+      "p95": 3.7
+    },
+    "drawCalls": 585,
+    "triangles": 2361055,
+    "memory": {
+      "geometries": 270,
+      "textures": 48
+    },
+    "grass": 72000,
+    "forest": 13026,
+    "fleet": null,
+    "budget": null,
+    "error": null
+  },
+  {
+    "seed": 427,
+    "planet": 2,
+    "city": 0,
+    "modern": false,
+    "view": "walk",
+    "night": 0,
+    "buildings": 470,
+    "trees": 8336,
+    "frames": 300,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "pixelRatio": 2,
+    "devicePixelRatio": 2,
+    "drawingBuffer": {
+      "width": 2560,
+      "height": 1600
+    },
+    "camera": {
+      "position": [
+        -7.07,
+        10.67,
+        -18.84
+      ],
+      "quaternion": [
+        0,
+        0.99,
+        0.12,
+        0
+      ],
+      "fov": 55
+    },
+    "fps": 60.08,
+    "frameMs": {
+      "p50": 16.3,
+      "p95": 23,
+      "p99": 23.8
+    },
+    "cpuMs": {
+      "p50": 3.2,
+      "p95": 3.7
+    },
+    "drawCalls": 585,
+    "triangles": 2361055,
+    "memory": {
+      "geometries": 270,
+      "textures": 48
+    },
+    "grass": 72000,
+    "forest": 13026,
+    "fleet": null,
+    "budget": null,
+    "error": null
+  },
+  {
+    "seed": 427,
+    "planet": 2,
+    "city": 0,
+    "modern": false,
+    "view": "walk",
+    "night": 0,
+    "buildings": 470,
+    "trees": 8336,
+    "frames": 300,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "pixelRatio": 2,
+    "devicePixelRatio": 2,
+    "drawingBuffer": {
+      "width": 2560,
+      "height": 1600
+    },
+    "camera": {
+      "position": [
+        -7.07,
+        10.67,
+        -18.84
+      ],
+      "quaternion": [
+        0,
+        0.99,
+        0.12,
+        0
+      ],
+      "fov": 55
+    },
+    "fps": 59.99,
+    "frameMs": {
+      "p50": 16.3,
+      "p95": 22.7,
+      "p99": 24.1
+    },
+    "cpuMs": {
+      "p50": 3.2,
+      "p95": 3.6
+    },
+    "drawCalls": 585,
+    "triangles": 2361055,
+    "memory": {
+      "geometries": 270,
+      "textures": 48
+    },
+    "grass": 72000,
+    "forest": 13026,
+    "fleet": null,
+    "budget": null,
+    "error": null
+  }
+]

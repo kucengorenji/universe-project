@@ -8,7 +8,7 @@ import { mulberry32 } from '../../../math/random.js';
 
 const PALETTES = {
   // [day top, day horizon, sunset, night top, night horizon]
-  terran: [0x4f8fd6, 0xcfe4f4, 0xf4a15a, 0x050a1c, 0x16213f],
+  terran: [0x5f93c9, 0xc9dbe6, 0xf4a15a, 0x18213a, 0x3c4a66],
   ocean: [0x4a92dc, 0xd2ecf7, 0xf6a868, 0x050b1e, 0x152545],
   desert: [0xc98e55, 0xf5e2bf, 0xe4683a, 0x120a10, 0x2a1a22],
   ice: [0x86b3df, 0xeef6fb, 0xf3b4c8, 0x071226, 0x1b2a48],
@@ -196,7 +196,7 @@ export class TownSky {
     }
     // Nights stay readable: a cool blue fill instead of black
     L.hemiSky.copy(this.nightFill).lerp(P.dayTop, day).lerp(DAY_FILL, 0.3 * day);
-    L.hemiIntensity = 0.55 + day * 0.5;
+    L.hemiIntensity = 0.55 + day * 0.6;
     L.ambient = 0.12 + day * 0.1;
     L.fog.copy(hor);
     return L;

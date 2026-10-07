@@ -10,6 +10,7 @@ import { planTownGreenery } from './townGreenery.js';
 import { planNeighbourhoods } from './neighbourhoodPlan.js';
 import { planStreetLights } from './streetLightPlan.js';
 import { planRoofs } from './roofPlan.js';
+import { clearDoorApproaches } from './doorClearance.js';
 import { planHedgerows } from './fieldEdges.js';
 import { isVillage, planVillage } from './villagePlan.js';
 import { planBlocks } from './blockPlan.js';
@@ -106,11 +107,11 @@ class Grid {
  * rounded so coasts, forests and the city edge read as natural outlines.
  */
 class Fields {
-  constructor(tiles) {
+  constructor(tiles, tileM = TILE_M) {
     this.tiles = tiles;
-    this.grid = new Grid(TILE_M * 2);
+    this.grid = new Grid(tileM * 2);
     tiles.forEach((t) => this.grid.add(t.x, t.z, 0, t));
-    this.reach = TILE_M * 1.5;
+    this.reach = tileM * 1.5;
   }
   sample(x, z, out = {}) {
     out.land = out.city = out.otherCity = out.forest = out.mountain = out.farm = out.desert = out.tundra = out.beach = out.deep = out.plains = out.river = 0;
@@ -158,7 +159,7 @@ export function townBaseSeed(map, cityIndex) {
  *   map: planet map data, hexasphere: tiles with that map applied,
  *   cityIndex, planetType, seed
  *   layoutVersion: older versions are kept for towns whose saved interiors refer
- *     to their buildings; 4 plans towns and cities by bisecting blocks (blockPlan.js)
+ *     to their buildings; 4 bisects blocks, 5 keeps metre-scale assets in half-area towns
  *   variant: 0 is the original town, another number rerolls the settlement
  *   options: { density: 0.75 | 1 | 1.3, template: 'auto' | 'area' | 'street' | 'square' | 'ring' }
  */
@@ -181,6 +182,11 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   const rng = mulberry32(seed);
   const noise = createNoise3D(seed);
   const modern = city.style === 'modern';
+  // Compact settlements halve area, while assets, roads and people keep their
+  // metre scale. Legacy layouts retain their exact projection and disc bounds.
+  const linearScale = layoutVersion >= 5 ? Math.SQRT1_2 : 1;
+  const tileM = TILE_M * linearScale;
+  const maxR = DIORAMA_MAX * linearScale;
 
   // Local tangent frame at the city centre
   const cityTiles = city.tiles || [city.tileId];
@@ -203,10 +209,10 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   const V = norm(cross(N, U));
   const center0 = tileMap.get(city.tileId);
   const unitTr = center0.center.distanceTo(center0.corners[0]);
-  const k = TILE_M / unitTr;
+  const k = tileM / unitTr;
   const project = (c) => [(c.x * U[0] + c.y * U[1] + c.z * U[2]) * k, (c.x * V[0] + c.y * V[1] + c.z * V[2]) * k];
 
-  // Tiles out to the horizon (the land beyond the playable disc is drawn too)
+  // Keep the source tile selection stable; compact towns project it nearer.
   const maxAngle = (HORIZON_M / TILE_M) * unitTr;
   const cosMax = Math.cos(maxAngle);
   const local = [];
@@ -239,7 +245,7 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
       visit.push(nb);
     }
   }
-  const fields = new Fields(local);
+  const fields = new Fields(local, tileM);
   const S = {};
   const at = (x, z) => fields.sample(x, z, S);
   const inCity = (x, z, th = 0.5) => fields.sample(x, z, S).city > th;
@@ -249,8 +255,8 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   const edgeAt = [];
   for (let i = 0; i < 24; i++) {
     const a = (i / 24) * TAU;
-    let r = 10;
-    while (r < DIORAMA_MAX && inCity(Math.cos(a) * r, Math.sin(a) * r, 0.5)) r += 4;
+    let r = 10 * linearScale;
+    while (r < maxR && inCity(Math.cos(a) * r, Math.sin(a) * r, 0.5)) r += 4 * linearScale;
     edgeAt.push(r);
     cityR += r / 24;
   }
@@ -290,7 +296,7 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
     planetType,
     cityR,
     // The playable disc grows with the city: a hamlet sits on a small table, a capital on a big one
-    dioramaR: Math.min(DIORAMA_MAX, Math.max(400, Math.round(cityR * 1.7 + 220))),
+    dioramaR: Math.min(Math.round(maxR), Math.max(Math.round(400 * linearScale), Math.round(cityR * 1.7 + 220 * linearScale))),
     tiles: local,
     fields,
     relief: describeRelief(local, cityR, baseSeed),
@@ -422,6 +428,7 @@ export function generateTownLayout({ map, hexasphere, cityIndex, planetType = 't
   planTownGreenery(layout, K);
   planStreetLights(layout, K);
   planRoofs(layout);
+  clearDoorApproaches(layout, footprints);
   buildGraphs(layout);
   return layout;
 }

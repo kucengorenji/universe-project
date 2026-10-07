@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/favicon.svg"><title>Cozy Home · Asset Review</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e9e7dc;color:#304036;font:14px system-ui}header{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 20px;background:#faf8ee;border-bottom:1px solid #c4cbbc}h1{font-size:18px;margin:0 12px 0 0}select,button{border:1px solid #b9c4ad;border-radius:8px;background:white;color:inherit;padding:8px 12px;font:inherit;cursor:pointer}#status{padding:8px 20px;font-size:12px;background:#dee5d6}#view{height:calc(100vh - 100px);min-height:400px}canvas{display:block}
+</style></head><body>
+<header><h1>Cozy Home / asset review</h1><select id="asset" aria-label="Aset"><option value="all">21 aset · galeri</option></select><select id="lod" aria-label="LOD"><option value="0">LOD 0 · dekat</option><option value="1">LOD 1 · sedang</option><option value="2">LOD 2 · jauh</option></select><button id="night">Siang / malam</button><button id="wire">Wireframe</button><button id="collider">Collider</button><button id="profile">Profil 120 frame</button></header>
+<div id="status">Memuat export GLB aktual dengan loader toon game…</div><div id="view"></div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { loadTexturedPack } from '/src/render/texturedAssetLibrary.js';
+window.homeAssetErrors=[];
+window.addEventListener('error',e=>homeAssetErrors.push(e.message));
+const viewport=document.querySelector('#view'),status=document.querySelector('#status'),select=document.querySelector('#asset'),lod=document.querySelector('#lod');
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
+renderer.outputColorSpace=THREE.SRGBColorSpace;viewport.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#e9e7dc');
+const camera=new THREE.PerspectiveCamera(40,1,.02,150);camera.position.set(12,15,18);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.65,0);controls.enableDamping=true;
+const hemi=new THREE.HemisphereLight('#fff7e8','#758168',2.3);scene.add(hemi);
+const sun=new THREE.DirectionalLight('#fff2db',2.5);sun.position.set(-8,15,10);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:.1,far:40});sun.shadow.bias=-.0003;sun.shadow.normalBias=.02;scene.add(sun);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:'#cbd0b6',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.015;floor.receiveShadow=true;scene.add(floor);
+const group=new THREE.Group();scene.add(group);
+let pack,catalog,night=false,wire=false,colliders=false;
+function resize(){const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+function show(){
+ for(const item of [...group.children]){item.traverse(o=>{if(o.userData.collider){o.geometry.dispose();o.material.dispose()}});group.remove(item)}
+ const names=select.value==='all'?Object.keys(pack):[select.value];
+ for(const [i,name]of names.entries()){
+  const item=new THREE.Group();
+  for(const p of pack[name][+lod.value]){const mesh=new THREE.Mesh(p.geometry,p.material);mesh.castShadow=true;mesh.receiveShadow=true;p.material.wireframe=wire;item.add(mesh)}
+  if(select.value==='all')item.position.set((i%5-2)*2.7,0,(Math.floor(i/5)-(Math.ceil(names.length/5)-1)/2)*3);
+  if(colliders){const c=catalog.assets[name].collider;const box=new THREE.Mesh(new THREE.BoxGeometry(...c.size),new THREE.MeshBasicMaterial({color:'#da593f',wireframe:true}));box.position.fromArray(c.center);box.userData.collider=true;item.add(box)}
+  group.add(item);
+ }
+ const size=new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3());
+ if(select.value==='all'){camera.position.set(12,15,18);controls.target.set(0,.6,0)}
+ else{const d=Math.max(size.x,size.y,size.z,.35);camera.position.set(d*1.3,d*1.05,d*1.5);controls.target.set(0,size.y*.45,0)}
+ controls.update();renderer.shadowMap.needsUpdate=true;
+ status.textContent=`${names.length} aset · LOD ${lod.value} · ${names.reduce((n,k)=>n+catalog.assets[k].lods[lod.value].triangles,0).toLocaleString()} segitiga · atlas embedded · ${night?'malam':'siang'}`;
+ window.homeAssetQA={loaded:true,assetCount:Object.keys(pack).length,lod:+lod.value,shown:names,night,wire,colliders,
+  missingUV:Object.values(pack).flatMap(ls=>Object.values(ls).flatMap(ps=>ps.filter(p=>!p.geometry.attributes.uv))).length,
+  mergedParts:Object.fromEntries(Object.entries(pack).map(([n,ls])=>[n,Object.fromEntries(Object.entries(ls).map(([l,ps])=>[l,ps.length]))]))};
+}
+try{
+ [pack,catalog]=await Promise.all([loadTexturedPack('/models/home_cozy.glb',{mergeShades:true}),fetch('/tools/blender/home/catalog.json').then(r=>r.json())]);
+ for(const name of Object.keys(pack)){const o=document.createElement('option');o.value=o.textContent=name;select.append(o)}
+ show();
+}catch(e){homeAssetErrors.push(e.stack);status.textContent='Gagal: '+e.message}
+select.onchange=lod.onchange=show;
+document.querySelector('#night').onclick=()=>{night=!night;hemi.intensity=night?.75:2.3;sun.intensity=night?.85:2.5;sun.color.set(night?'#a4bfd7':'#fff2db');scene.background.set(night?'#263a35':'#e9e7dc');show()};
+document.querySelector('#wire').onclick=()=>{wire=!wire;show()};
+document.querySelector('#collider').onclick=()=>{colliders=!colliders;show()};
+window.profileHomeAssets=async()=>{
+ const samples=[];let before=performance.now();
+ for(let i=0;i<120;i++)await new Promise(resolve=>requestAnimationFrame(()=>{const now=performance.now();samples.push(now-before);before=now;resolve()}));
+ samples.sort((a,b)=>a-b);
+ const data={fixture:'all 21 home props',viewport:[viewport.clientWidth,viewport.clientHeight],pixelRatio:renderer.getPixelRatio(),lod:+lod.value,
+  medianMs:samples[60],p95Ms:samples[114],calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
+  textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries,errors:homeAssetErrors};
+ window.homeAssetProfile=data;status.textContent=JSON.stringify(data);return data;
+};
+document.querySelector('#profile').onclick=window.profileHomeAssets;
+window.setHomeAssetFixture=({asset='all',level=0,nightMode=false,wireMode=false,colliderMode=false}={})=>{
+ select.value=asset;lod.value=String(level);night=nightMode;wire=wireMode;colliders=colliderMode;
+ hemi.intensity=night?.75:2.3;sun.intensity=night?.85:2.5;sun.color.set(night?'#a4bfd7':'#fff2db');scene.background.set(night?'#263a35':'#e9e7dc');show();return homeAssetQA;
+};
+function frame(){requestAnimationFrame(frame);controls.update();renderer.render(scene,camera)}frame();
+</script></body></html>

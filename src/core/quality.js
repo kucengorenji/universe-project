@@ -1,6 +1,5 @@
 // Graphics quality: a preset (auto / high / medium / low) plus, in auto, a
-// governor that trades resolution for frame rate. Pixel ratio is the one knob
-// that scales every mode's cost without touching its content.
+// governor that lets a mode reduce distant detail before trading resolution.
 
 const PRESETS = {
   high: { maxRatio: 2, shadows: true, detail: 1 },
@@ -52,6 +51,7 @@ export class Quality {
     this.ratio = Math.min(device, this.settings.maxRatio);
     this.floor = Math.min(this.ratio, this.mobile ? 0.75 : 1);
     this.tooHeavy?.clear();
+    this.engine.mode?.resetAdaptiveQuality?.();
     if (save) {
       try {
         localStorage.setItem(PREF_KEY, this.preset);
@@ -116,6 +116,10 @@ export class Quality {
     // With GPU timings, resolution only steps down when the GPU is the bottleneck: a low frame rate
     // with GPU time to spare comes from elsewhere (CPU, or a host that throttles the frame loop)
     const heavy = gpuMs !== null ? gpuMs > BUDGET_MS * 0.9 : fps < target;
+    if (this.engine.mode?.adaptQuality?.({ heavy, fps, gpuMs, resolutionFull: this.ratio >= cap })) {
+      this.cooldown = 1;
+      return;
+    }
     if (heavy && this.ratio > this.floor) {
       this.tooHeavy.set(this.ratio, now);
       this.ratio = Math.max(this.floor, this.ratio - 0.25);

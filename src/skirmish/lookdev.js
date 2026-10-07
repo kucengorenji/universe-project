@@ -9,6 +9,7 @@ import { SkyLight } from './render/skyLight.js';
 import { loadWeapons } from './units/soldiers.js';
 import { loadSoldierTemplates, makeSoldier, animateSoldier, disposeSoldier } from './units/vcSoldiers.js';
 import { CLASSES } from './units/soldierLook.js';
+import { loadEnv } from './battlefield/envKit.js';
 import { ROSTER } from './game/roster.js';
 
 // Look-development scene for the skirmish art direction: a generated battlefield, both
@@ -37,12 +38,13 @@ export class LookDev {
 
   async enter({ seed, time = 'day' }) {
     installCanvasShading();
-    const [town, military, templates] = await Promise.all([
+    const [town, military, templates, env] = await Promise.all([
       loadAssetPack(ASSETS.townPack),
       loadAssetPack(ASSETS.militaryPack, { glow: { M_radiator: 1 } }),
-      loadSoldierTemplates({ m: [ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead], f: [ASSETS.soldierPackF, ASSETS.soldierAtlasF, ASSETS.soldierHeadF] })
+      loadSoldierTemplates({ m: [ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead], f: [ASSETS.soldierPackF, ASSETS.soldierAtlasF, ASSETS.soldierHeadF] }),
+      loadEnv(ASSETS.envPack, ASSETS.envSurfaces)
     ]);
-    this.packs = { town, military };
+    this.packs = { town, military, env };
     this.templates = templates;
     this.weapons = await loadWeapons(ASSETS.militaryPack, military);
     this.setTime(time);

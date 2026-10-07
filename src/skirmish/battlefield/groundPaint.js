@@ -121,6 +121,46 @@ export function paintGround(field, px = 2048) {
   return canvas;
 }
 
+/**
+ * Which painted surface the ground wears, for close-up detail (fieldBuilder samples the matching
+ * tiles of envKit.js): R road and bare earth, G wheat, B ploughed land; grass where all are zero.
+ */
+export function paintGroundClasses(field, px = 1024) {
+  const canvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(px, px) : Object.assign(document.createElement('canvas'), { width: px, height: px });
+  const g = canvas.getContext('2d');
+  const k = px / SIZE;
+  const X = (x) => (x + HALF) * k;
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, px, px);
+  for (const f of field.fields) {
+    if (f.kind === 'meadow') continue;
+    g.save();
+    g.translate(X(f.x), X(f.z));
+    g.rotate(-f.yaw);
+    g.fillStyle = f.kind === 'wheat' ? '#00ff00' : '#0000ff';
+    g.fillRect((-f.w / 2) * k, (-f.d / 2) * k, f.w * k, f.d * k);
+    g.restore();
+  }
+  const stroke = (pts, width) => {
+    g.strokeStyle = '#ff0000';
+    g.lineWidth = width * k;
+    g.lineCap = g.lineJoin = 'round';
+    g.beginPath();
+    pts.forEach(([x, z], i) => (i ? g.lineTo(X(x), X(z)) : g.moveTo(X(x), X(z))));
+    g.stroke();
+  };
+  if (field.river) stroke(field.river.pts, field.river.width + 3);
+  for (const c of field.camps) {
+    g.fillStyle = '#ff0000';
+    g.beginPath();
+    g.arc(X(c.x), X(c.z), (c.r + (c.side ? 6 : 3)) * k, 0, Math.PI * 2);
+    g.fill();
+  }
+  for (const r of field.roads) stroke(r.pts, r.width);
+  for (const t of field.trenches) stroke(t.pts, t.width + 4);
+  return canvas;
+}
+
 /** Is (x, z) inside a polygon [[x, z], ...]? */
 export function inPoly(x, z, poly) {
   let inside = false;

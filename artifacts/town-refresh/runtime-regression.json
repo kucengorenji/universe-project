@@ -1,0 +1,18 @@
+{
+  "inside": {
+    "modern": true,
+    "building": "m_office",
+    "activeFloor": 1,
+    "error": null
+  },
+  "legacy": {
+    "layoutVersion": 4,
+    "buildings": 387,
+    "cityR": 175.66666666666663,
+    "dioramaR": 519,
+    "coordinateIdsPreserved": true,
+    "newModels": 1,
+    "error": null
+  },
+  "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)"
+}

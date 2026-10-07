@@ -17,8 +17,9 @@ const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
 const _v = new THREE.Vector3();
 const _s = new THREE.Vector3(1, 1, 1);
-const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 const WHITE = new THREE.Color(1, 1, 1);
+const LOD_SIZE = [0.065, 0.008];
+const LOD_HYSTERESIS = 1.15;
 
 export class Fleet {
   constructor(builder, scene, { shadows, rng = Math.random }) {
@@ -28,6 +29,8 @@ export class Fleet {
     this.rng = rng;
     this.vehicles = [];
     this.meshes = [];
+    this.buckets = [];
+    this.lodStats = { vehicles: [0, 0, 0], instances: [0, 0, 0], shadowVehicles: 0, submitted: 0 };
   }
 
   /**
@@ -40,7 +43,7 @@ export class Fleet {
     const spec = VEHICLE_TYPES[kit.physics] || VEHICLE_TYPES.sedan;
     const car = new Car(spec, v);
     car.y = this.builder.groundAt(v.x, v.z);
-    const vehicle = { ...v, kit, spec, car, hidden: false, stopped: 0, id: this.vehicles.length, dist: 0, steerVis: 0, slots: [] };
+    const vehicle = { ...v, kit, spec, car, hidden: false, stopped: 0, id: this.vehicles.length, dist: 0, steerVis: 0, slots: [], lod: -1, lodRadius: 1, castsShadow: this.shadows };
     if (v.mode === 'traffic') this.initRoute(vehicle, v.line, v.s ?? 0, v.dir ?? 1);
     this.vehicles.push(vehicle);
     return vehicle;
@@ -55,7 +58,7 @@ export class Fleet {
     Object.assign(v.car, trafficPose(v.route));
   }
 
-  /** One instanced mesh per model, a slot in it for every use of that model. */
+  /** Compact batches per model and LOD; logical slots stay with their vehicles. */
   build() {
     const need = new Map();
     const want = (asset, entry) => {
@@ -72,26 +75,54 @@ export class Fleet {
     }
     for (const [asset, list] of need) {
       const lods = this.builder.townPack[asset];
-      const geo = wrap(lods[0] || lods[1]);
-      const paint = new Float32Array(list.length * 3);
-      list.forEach((e, i) => e.paint.toArray(paint, i * 3));
-      geo.setAttribute('aPaint', new THREE.InstancedBufferAttribute(paint, 3));
-      const inst = new THREE.InstancedMesh(geo, this.builder.material, list.length);
-      inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      inst.castShadow = this.shadows;
-      inst.receiveShadow = this.shadows;
-      inst.frustumCulled = false;
-      inst.name = `fleet:${asset}`;
-      list.forEach((e, i) => e.v.slots.push({ inst, i, local: e.local, wheel: e.wheel, horse: e.horse }));
-      this.meshes.push({ inst, dirty: true });
-      this.scene.add(inst);
+      const sources = [lods[0] || lods[1] || lods[2], lods[1] || lods[2] || lods[0], lods[2] || lods[1] || lods[0]];
+      if (!sources[0]) continue;
+      const bucket = { entries: [], bands: [], levels: [], dirty: true };
+      const resolved = new Map();
+      for (let level = 0; level < sources.length; level++) {
+        const source = sources[level];
+        if (!resolved.has(source)) {
+          const bands = [];
+          // Both bands exist so switching from the low preset can restore shadows.
+          for (const cast of [false, true]) {
+            const geo = wrap(source);
+            const paint = new THREE.InstancedBufferAttribute(new Float32Array(list.length * 3), 3).setUsage(THREE.DynamicDrawUsage);
+            geo.setAttribute('aPaint', paint);
+            const inst = new THREE.InstancedMesh(geo, this.builder.material, list.length);
+            inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            inst.castShadow = cast;
+            inst.receiveShadow = this.shadows;
+            inst.count = 0;
+            inst.visible = false;
+            inst.name = `fleet:${asset}:lod${level}:${cast ? 'shadow' : 'plain'}`;
+            const band = { inst, paint, count: 0 };
+            bands[cast ? 1 : 0] = band;
+            bucket.bands.push(band);
+            this.meshes.push({ inst });
+            this.scene.add(inst);
+          }
+          resolved.set(source, bands);
+        }
+        bucket.levels.push(resolved.get(source));
+      }
+      sources[0].boundingSphere || sources[0].computeBoundingSphere();
+      list.forEach((e) => {
+        const local = e.local || new THREE.Matrix4();
+        if (e.wheel) local.compose(_v.set(e.wheel.x, e.wheel.y, e.wheel.z), _q.identity(), _s.set(e.wheel.w, e.wheel.r, e.wheel.r));
+        if (e.horse) local.makeTranslation(e.horse.x, 0, e.horse.z);
+        const bound = sources[0].boundingSphere.clone().applyMatrix4(local);
+        e.v.lodRadius = Math.max(e.v.lodRadius, bound.center.length() + bound.radius + 0.2);
+        const slot = { v: e.v, bucket, local: e.local, wheel: e.wheel, horse: e.horse, paint: e.paint.toArray(), matrix: new THREE.Matrix4(), inst: null, i: -1 };
+        e.v.slots.push(slot);
+        bucket.entries.push(slot);
+      });
+      this.buckets.push(bucket);
     }
     this.writeAll();
   }
 
   write(v) {
     if (v.hidden) {
-      for (const s of v.slots) s.inst.setMatrixAt(s.i, ZERO);
       this.markDirty(v);
       return;
     }
@@ -115,13 +146,13 @@ export class Fleet {
         _m.multiplyMatrices(_base, _local);
       } else if (s.local) _m.multiplyMatrices(_base, s.local);
       else _m.copy(_base);
-      s.inst.setMatrixAt(s.i, _m);
+      s.matrix.copy(_m);
     }
     this.markDirty(v);
   }
 
   markDirty(v) {
-    for (const s of v.slots) s.inst.userData.dirty = true;
+    for (const s of v.slots) s.bucket.dirty = true;
   }
 
   writeAll() {
@@ -130,12 +161,79 @@ export class Fleet {
   }
 
   flush() {
-    for (const m of this.meshes) {
-      if (m.inst.userData.dirty) {
-        m.inst.instanceMatrix.needsUpdate = true;
-        m.inst.userData.dirty = false;
+    for (const bucket of this.buckets) {
+      if (!bucket.dirty) continue;
+      for (const band of bucket.bands) band.count = 0;
+      for (const s of bucket.entries) {
+        if (s.v.hidden) {
+          s.inst = null;
+          s.i = -1;
+          continue;
+        }
+        const band = bucket.levels[Math.max(0, s.v.lod)][s.v.castsShadow && this.shadows ? 1 : 0];
+        const i = band.count++;
+        band.inst.setMatrixAt(i, s.matrix);
+        band.paint.array.set(s.paint, i * 3);
+        s.inst = band.inst;
+        s.i = i;
       }
+      for (const band of bucket.bands) {
+        const { inst, count, paint } = band;
+        inst.count = count;
+        inst.visible = count > 0;
+        if (!count) continue;
+        inst.instanceMatrix.clearUpdateRanges();
+        inst.instanceMatrix.addUpdateRange(0, count * 16);
+        inst.instanceMatrix.needsUpdate = true;
+        paint.clearUpdateRanges();
+        paint.addUpdateRange(0, count * 3);
+        paint.needsUpdate = true;
+        // Traffic moves between streets; a bound left at its spawn point would cull it.
+        inst.computeBoundingSphere();
+      }
+      bucket.dirty = false;
     }
+  }
+
+  /** Geometry LOD and shadows are separate budgets; simulation always runs. */
+  updateLod(camera, orbit = null, budget = 1, shadowBudget = 1) {
+    const scale = THREE.MathUtils.clamp(budget, 0.45, 1);
+    const shadows = this.builder.quality?.settings.shadows ?? this.shadows;
+    if (shadows !== this.shadows) {
+      this.shadows = shadows;
+      for (const { inst } of this.meshes) inst.receiveShadow = shadows;
+    }
+    const detail = this.builder.quality?.settings.detail ?? 1;
+    const k = detail * Math.tan(THREE.MathUtils.degToRad(27.5)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const at = orbit || camera.position;
+    const zoom2 = orbit ? camera.position.distanceToSquared(orbit) : 0;
+    const classify = (size) => size > LOD_SIZE[0] ? 0 : size > LOD_SIZE[1] ? 1 : 2;
+    const counts = [0, 0, 0], instances = [0, 0, 0];
+    let shadowVehicles = 0;
+    for (const v of this.vehicles) {
+      if (v.hidden) continue;
+      const dx = v.car.x - at.x, dz = v.car.z - at.z;
+      const distance = orbit ? Math.sqrt(zoom2 + dx * dx + dz * dz) : Math.hypot(dx, v.car.y + v.car.bob - at.y, dz);
+      const farScale = 1 - (1 - scale) * THREE.MathUtils.smoothstep(distance, 35, 110);
+      const size = v.lodRadius * k * farScale / Math.max(distance, 1);
+      let level = v.mode === 'player' ? 0 : classify(size);
+      if (v.mode !== 'player' && v.lod >= 0 && level !== v.lod && classify(level < v.lod ? size / LOD_HYSTERESIS : size * LOD_HYSTERESIS) === v.lod) level = v.lod;
+      // The actual camera determines shadow relevance, even in the diorama.
+      const cameraDistance = Math.hypot(v.car.x - camera.position.x, v.car.y - camera.position.y, v.car.z - camera.position.z);
+      const shadowDistance = 90 * THREE.MathUtils.clamp(shadowBudget, 0.4, 1);
+      const castsShadow = !!this.shadows && (v.mode === 'player' || cameraDistance < shadowDistance * (v.castsShadow ? 1.15 : 1 / 1.15));
+      if (level !== v.lod || castsShadow !== v.castsShadow) {
+        v.lod = level;
+        v.castsShadow = castsShadow;
+        this.markDirty(v);
+      }
+      counts[level]++;
+      instances[level] += v.slots.length;
+      if (castsShadow) shadowVehicles++;
+    }
+    this.lodStats = { vehicles: counts, instances, shadowVehicles, submitted: instances.reduce((a, b) => a + b, 0) };
+    this.flush();
+    return this.lodStats;
   }
 
   /** Where along its street a traffic vehicle is: position and heading. */
@@ -146,7 +244,7 @@ export class Fleet {
   /**
    * obstacles: [{ x, z }] the traffic brakes for (the player, the player's car)
    */
-  update(dt, obstacles) {
+  update(dt, obstacles, { deferFlush = false } = {}) {
     for (const v of this.vehicles) {
       if (v.hidden) continue;
       const c = v.car;
@@ -199,7 +297,7 @@ export class Fleet {
       c.roll+=(THREE.MathUtils.clamp(-v.speed*yawRate*.008,-.055,.055)-c.roll)*settle;
       this.write(v);
     }
-    this.flush();
+    if (!deferFlush) this.flush();
   }
 
   /** Enterable vehicle nearest to (x, z) within `reach` metres of its side. */
@@ -252,6 +350,10 @@ export class Fleet {
     v.car = car;
     v.mode = 'player';
     v.hidden = false;
+    v.lod = 0;
+    v.castsShadow = this.shadows;
+    this.write(v);
+    this.flush();
   }
 
   /** Put a vehicle back as parked where the player left it. */
@@ -272,5 +374,6 @@ export class Fleet {
       m.inst.geometry.dispose();
     }
     this.meshes = [];
+    this.buckets = [];
   }
 }

@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { mulberry32 } from '../../../math/random.js';
 import { pavementWidth } from '../scale.js';
 import { createToonMaterial } from '../../../render/assetLibrary.js';
+import { partitionSprites, SpatialSprites, SPRITE_DENSITY_FADE } from './spatialSprites.js';
 
 // Ground cover: tens of thousands of little sprites (grass tufts, flowers,
 // ferns, reeds, pebbles, mushrooms...) from one painted atlas, drawn as
-// crossed quads in a single instanced draw call. They sway in the wind and
+// crossed quads in spatial instanced batches. They sway in the wind and
 // shrink away with distance, so there is no visible edge where they stop.
 //
 // Atlas tiles (4 x 4):
@@ -243,37 +244,51 @@ export class GroundCover {
     this.builder = builder;
     const L = builder.L;
     this.atlas = paintAtlas(L.seed);
-    this.uniforms = { uTime: builder.uniforms.uTime, uAtlas: { value: this.atlas }, uFadeNear: { value: 60 }, uFadeFar: { value: 160 } };
+    this.uniforms = { uTime: builder.uniforms.uTime, uAtlas: { value: this.atlas }, uFadeNear: { value: 60 }, uFadeFar: { value: 160 }, uDensity: { value: 1 } };
     const items = this.scatter(L, count);
-    const geo = crossedQuads();
-    const tiles = new Float32Array(items.length);
-    const phases = new Float32Array(items.length);
-    const mesh = new THREE.InstancedMesh(geo, this.material(), items.length);
+    const base = crossedQuads();
+    const material = this.material();
+    this.spatial = new SpatialSprites('groundCover');
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const up = new THREE.Vector3(0, 1, 0);
     const v = new THREE.Vector3();
     const s = new THREE.Vector3();
     const col = new THREE.Color();
-    items.forEach((it, i) => {
-      q.setFromAxisAngle(up, it.yaw);
-      m.compose(v.set(it.x, it.y, it.z), q, s.set(it.w, it.h, it.w));
-      mesh.setMatrixAt(i, m);
-      mesh.setColorAt(i, col.setRGB(it.tint[0], it.tint[1], it.tint[2]));
-      tiles[i] = it.tile;
-      phases[i] = it.phase;
-    });
-    geo.setAttribute('aTile', new THREE.InstancedBufferAttribute(tiles, 1));
-    geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phases, 1));
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
-    mesh.receiveShadow = builder.quality.settings.shadows;
-    mesh.castShadow = false;
-    mesh.frustumCulled = false; // one mesh over the whole disc
-    mesh.name = 'groundCover';
-    this.mesh = mesh;
-    this.geo = geo;
+    for (const cell of partitionSprites(items, 128)) {
+      const geo = base.clone();
+      const tiles = new Float32Array(cell.length);
+      const phases = new Float32Array(cell.length);
+      const ranks = new Float32Array(cell.length);
+      const mesh = new THREE.InstancedMesh(geo, material, cell.length);
+      let windMargin = 0;
+      cell.forEach((it, i) => {
+        q.setFromAxisAngle(up, it.yaw);
+        m.compose(v.set(it.x, it.y, it.z), q, s.set(it.w, it.h, it.w));
+        mesh.setMatrixAt(i, m);
+        mesh.setColorAt(i, col.setRGB(it.tint[0], it.tint[1], it.tint[2]));
+        tiles[i] = it.tile;
+        phases[i] = it.phase;
+        ranks[i] = (i + 1) / cell.length;
+        windMargin = Math.max(windMargin, it.w * 0.14);
+      });
+      geo.setAttribute('aTile', new THREE.InstancedBufferAttribute(tiles, 1));
+      geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phases, 1));
+      geo.setAttribute('aRank', new THREE.InstancedBufferAttribute(ranks, 1));
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
+      mesh.boundingSphere.radius += windMargin;
+      mesh.receiveShadow = builder.quality.settings.shadows;
+      mesh.castShadow = false;
+      mesh.name = 'groundCover:cell';
+      this.spatial.add(mesh, cell.length, mesh.boundingSphere);
+    }
+    base.dispose();
+    this.group = this.spatial.group;
+    this.mesh = this.group; // scene.add compatibility for the former single draw
+    this.meshes = this.spatial.meshes;
     this.count = items.length;
+    this.activeCount = items.length;
   }
 
   material() {
@@ -288,9 +303,11 @@ export class GroundCover {
           `#include <common>
           attribute float aTile;
           attribute float aPhase;
+          attribute float aRank;
           uniform float uTime;
           uniform float uFadeNear;
           uniform float uFadeFar;
+          uniform float uDensity;
           varying vec2 vAtlasUv;`
         )
         .replace(
@@ -303,10 +320,11 @@ export class GroundCover {
           #endif
           // Shrink into the ground with distance: no hard edge where the cover stops
           float fade = 1.0 - smoothstep(uFadeNear, uFadeFar, distance(origin, cameraPosition));
+          fade *= 1.0 - smoothstep(uDensity, uDensity + ${SPRITE_DENSITY_FADE.toFixed(2)}, aRank);
           transformed *= fade;
           // Wind: the tops sway, the bases stay put
           float sway = sin(uTime * 1.6 + aPhase) * 0.1 + sin(uTime * 2.9 + aPhase * 1.7) * 0.04;
-          transformed.x += sway * uv.y * uv.y;
+          transformed.x += sway * uv.y * uv.y * fade;
           vec2 tileXY = vec2(mod(aTile, 4.0), floor(aTile / 4.0));
           vAtlasUv = vec2((tileXY.x + uv.x) / 4.0, 1.0 - (tileXY.y + 1.0 - uv.y) / 4.0);`
         );
@@ -319,7 +337,7 @@ export class GroundCover {
           if (diffuseColor.a < 0.35) discard;`
         );
     };
-    m.customProgramCacheKey = () => 'ground-cover';
+    m.customProgramCacheKey = () => 'ground-cover-spatial-v2';
     this.mat = m;
     return m;
   }
@@ -489,15 +507,18 @@ export class GroundCover {
   }
 
   /** Per frame: how far the cover reaches (further when the camera is up high). */
-  update(camera, orbitTarget) {
+  update(camera, orbitTarget = null, budget = 1) {
     const d = orbitTarget ? camera.position.distanceTo(orbitTarget) : 0;
     const far = THREE.MathUtils.clamp(d * 1.1 + 90, 150, 900);
     this.uniforms.uFadeFar.value = far;
     this.uniforms.uFadeNear.value = far * 0.55;
+    this.uniforms.uDensity.value = this.spatial.update(camera, far, budget, this.builder.uniforms.uTime.value);
+    this.activeCount = this.spatial.activeCount;
   }
 
   dispose() {
-    this.geo.dispose();
+    this.group.removeFromParent();
+    this.meshes.forEach(mesh => { mesh.dispose(); mesh.geometry.dispose(); });
     this.mat.dispose();
     this.atlas.dispose();
   }

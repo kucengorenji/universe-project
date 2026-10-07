@@ -9,6 +9,8 @@ import { roadMarkings } from './roadMarkings.js';
 import { GroundCover } from './groundCover.js';
 import { FarTrees } from './farTrees.js';
 import { applySurfaceCoordinates } from '../../../render/townSurfaces.js';
+import { patchTownPaintedProps, patchTownPaintedGround } from './paintedStyle.js';
+import { refineTownModel } from './modelRefinements.js';
 import { WATER_Y, HORIZON_R } from '../scale.js';
 import { ENVIRONMENT } from './environmentKit.js';
 
@@ -119,15 +121,19 @@ export function packFootprints(townPack) {
   for (const [key, lods] of Object.entries(townPack || {})) {
     const g = lods[0] || lods[1];
     if (!g) continue;
+    // Newly authored replacements for runtime proxies must keep their old
+    // nominal placement rules, too. Only original pack parcels are measured.
+    if (g.userData.townAssetRevision && !g.userData.layoutFootprint) continue;
     if (!g.boundingBox) g.computeBoundingBox();
     const b = g.boundingBox;
+    const authored = g.userData.layoutFootprint;
     const name = key.replace(/_v\d+$/, '');
     const f = (out[name] ||= { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity, maxY: 0 });
-    f.maxY = Math.max(f.maxY, b.max.y);
-    f.minX = Math.min(f.minX, b.min.x);
-    f.maxX = Math.max(f.maxX, b.max.x);
-    f.minZ = Math.min(f.minZ, b.min.z);
-    f.maxZ = Math.max(f.maxZ, b.max.z);
+    f.maxY = Math.max(f.maxY, authored?.maxY ?? b.max.y);
+    f.minX = Math.min(f.minX, authored?.minX ?? b.min.x);
+    f.maxX = Math.max(f.maxX, authored?.maxX ?? b.max.x);
+    f.minZ = Math.min(f.minZ, authored?.minZ ?? b.min.z);
+    f.maxZ = Math.max(f.maxZ, authored?.maxZ ?? b.max.z);
   }
   return out;
 }
@@ -227,13 +233,15 @@ function protoGeometry(kind) {
 // ---------------------------------------------------------------- builder
 
 export class TownBuilder {
-  constructor(layout, { planetPack, townPack, sceneryPack, environmentPack, surfaceAtlas, quality, planetType }) {
+  constructor(layout, { planetPack, townPack, sceneryPack, environmentPack, surfaceAtlas, paintedSurfaces, quality, planetType }) {
     this.L = layout;
     this.planetPack = planetPack || {};
     this.townPack = townPack || {};
     this.sceneryPack = sceneryPack || {};
     this.environmentPack = environmentPack || {};
     this.surfaceAtlas = surfaceAtlas;
+    this.paintedSurfaces = paintedSurfaces;
+    this.detailBudget = { lod: 1, shadow: 1, vegetation: 1 };
     this.foliageMaterials = new Map();
     this.quality = quality;
     this.type = PLANET_TYPES[planetType] || PLANET_TYPES.terran;
@@ -476,6 +484,7 @@ export class TownBuilder {
     geos.forEach((g) => g.dispose());
     const mesh = new THREE.Mesh(merged, this.material);
     mesh.castShadow = this.quality.settings.shadows;
+    mesh.userData.townShadow = true;
     mesh.receiveShadow = this.quality.settings.shadows;
     this.group.add(mesh);
   }
@@ -526,7 +535,7 @@ export class TownBuilder {
     const u = this.uniforms;
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uNight = u.uNight;
-      if (this.surfaceAtlas) {
+      if (this.surfaceAtlas && !this.paintedSurfaces) {
         shader.uniforms.uSurfaceAtlas = { value: this.surfaceAtlas };
         shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 surface;\nvarying vec3 vSurface;')
           .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSurface=surface;');
@@ -593,7 +602,9 @@ export class TownBuilder {
           totalEmissiveRadiance += glowCol * glow * uNight * 1.35;`
         );
     };
-    m.customProgramCacheKey = () => `town-props-roofs-glass-${!!this.surfaceAtlas}`;
+    const previousCompile = m.onBeforeCompile;
+    m.onBeforeCompile = shader => { previousCompile(shader); patchTownPaintedProps(shader, this.paintedSurfaces); };
+    m.customProgramCacheKey = () => `town-props-roofs-glass-${!!this.surfaceAtlas}-${!!this.paintedSurfaces}`;
     return m;
   }
 
@@ -609,10 +620,10 @@ export class TownBuilder {
       uFarRect: { value: new THREE.Vector3(far.x0, far.z0, far.size) },
       uDetail: { value: this.detailTex }
     };
-    if(this.surfaceAtlas)Object.assign(uni,{uGroundAtlas:{value:this.surfaceAtlas},uSurfaceNear:{value:near.surface},uSurfaceFar:{value:far.surface}});
+    if(this.surfaceAtlas&&!this.paintedSurfaces)Object.assign(uni,{uGroundAtlas:{value:this.surfaceAtlas},uSurfaceNear:{value:near.surface},uSurfaceFar:{value:far.surface}});
     m.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, uni);
-      if(this.surfaceAtlas){
+      if(this.surfaceAtlas&&!this.paintedSurfaces){
         shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
           uniform sampler2D uGroundAtlas;
           uniform sampler2D uSurfaceNear;
@@ -648,7 +659,7 @@ export class TownBuilder {
           float g = texture2D(uDetail, vGround.xz * 0.11).r * 0.6 + texture2D(uDetail, vGround.xz * 0.023).r * 0.4;
           diffuseColor.rgb *= mix(0.86 + g * 0.26, 0.95 + g * 0.1, paint.a);
           diffuseColor.rgb = mix(diffuseColor.rgb, paint.rgb * (0.94 + g * 0.1), paint.a);
-          ${this.surfaceAtlas?`float paving=0.0;
+          ${this.surfaceAtlas&&!this.paintedSurfaces?`float paving=0.0;
           // Most of the disc is unpainted grass: skip the six paving lookups there
           if(paint.a>.004){
             vec3 surface=(pn.a>.02?texture2D(uSurfaceNear,un):texture2D(uSurfaceFar,uf)).rgb;
@@ -660,7 +671,9 @@ export class TownBuilder {
           diffuseColor.rgb*=mix(.8+turf*.24,.42+paving*.66,paint.a);`:''}`
         );
     };
-    m.customProgramCacheKey = () => `town-ground-surfaces-${!!this.surfaceAtlas}`;
+      const previousCompile = m.onBeforeCompile;
+      m.onBeforeCompile = shader => { previousCompile(shader); patchTownPaintedGround(shader, this.paintedSurfaces, { near, far, modern: this.L.modern }); };
+    m.customProgramCacheKey = () => `town-ground-surfaces-${!!this.surfaceAtlas}-${!!this.paintedSurfaces}`;
     return m;
   }
 
@@ -1070,7 +1083,7 @@ export class TownBuilder {
   setEnvironment({ time, night, sunDir, sunColor, sunIntensity, sky }) {
     this.uniforms.uTime.value = time;
     this.uniforms.uNight.value = night;
-    this.farTrees?.update(sunIntensity, night);
+    this.farTrees?.setEnvironment(sunIntensity, night);
     if (this.waterUniforms) {
       this.waterUniforms.uSunDir.value.copy(sunDir);
       this.waterUniforms.uSunColor.value.copy(sunColor);
@@ -1109,13 +1122,16 @@ export class TownBuilder {
 
   /** An environment-kit model for this item, picked by position so a clump mixes shapes. */
   resolveEnvironment(item) {
+    const variants = this.variants(item.asset);
+    const key = variants ? `${item.asset}_v${(item.variant ?? 0) % variants}` : item.asset;
+    if (this.townPack[key]?.[0]?.userData.townAssetRevision) return null;
     const env = ENVIRONMENT[item.asset];
     if (!env || env.keep?.(item.variant ?? 0)) return null;
     const pick = env.models[Math.abs(Math.floor(item.x * 7.13 + item.z * 3.71)) % env.models.length];
     const parts = this.environmentPack[pick];
     if (!parts?.[0]) return null;
-    const key = `env:${item.asset}:${pick}`;
-    if (!this.fitCache.has(key)) {
+    const envKey = `env:${item.asset}:${pick}`;
+    if (!this.fitCache.has(envKey)) {
       for (let l = 0; l < 3; l++) parts[l] ||= parts[l - 1] || parts[0];
       const box = new THREE.Box3();
       for (const part of parts[0]) {
@@ -1124,14 +1140,16 @@ export class TownBuilder {
       }
       const size = box.getSize(new THREE.Vector3());
       const k = env.height ? env.height / size.y : env.width ? env.width / Math.max(size.x, size.z) : 1;
-      this.fitCache.set(key, { parts, fix: new THREE.Matrix4().makeScale(k, k, k), native: true, spec: { natural: !!CATALOG[item.asset]?.natural }, key });
+      this.fitCache.set(envKey, { parts, fix: new THREE.Matrix4().makeScale(k, k, k), native: true, spec: { natural: !!CATALOG[item.asset]?.natural }, key: envKey });
     }
-    return this.fitCache.get(key);
+    return this.fitCache.get(envKey);
   }
 
   resolve(name, variant = 0) {
+    const nv = this.variants(name);
+    const key = nv ? `${name}_v${variant % nv}` : name;
     const texturedName = this.sceneryPack[`${name}_v1`] && variant % 2 ? `${name}_v1` : name;
-    if (this.sceneryPack[texturedName]) {
+    if (!this.townPack[key]?.[0]?.userData.townAssetRevision && this.sceneryPack[texturedName]) {
       const key = `textured:${texturedName}`;
       if (!this.fitCache.has(key)) this.fitCache.set(key, {
         parts: this.sceneryPack[texturedName], fix: new THREE.Matrix4(), native: true,
@@ -1139,14 +1157,16 @@ export class TownBuilder {
       });
       return this.fitCache.get(key);
     }
-    const nv = this.variants(name);
-    const key = nv ? `${name}_v${variant % nv}` : name;
     if (this.fitCache.has(key)) return this.fitCache.get(key);
     const spec = CATALOG[name] || { fb: name, fit: 'w', size: 4 };
     let lods = null;
     let native = false;
     if (this.townPack[key]) {
-      lods = [0, 1, 2].map((l) => this.townPack[key][l]);
+      lods = [0, 1, 2].map(l => {
+        const original = this.townPack[key][l];
+        const refined = refineTownModel(key, original, l);
+        return refined !== original ? this.track(refined) : original;
+      });
       native = true; // modelled in metres, front +Z, base at y=0
       if (spec.nativeSpan) {
         // Spans are modelled nativeSpan metres long along X: stretch per instance
@@ -1250,7 +1270,7 @@ export class TownBuilder {
 
     const shadows = this.quality.settings.shadows;
     for (const chunk of this.chunks) {
-      for (const [, { res, items, shadow }] of chunk.buckets) chunk.sets.push(this.instanceSet(chunk, res, items, shadow && shadows, shadows));
+      for (const [, { res, items, shadow }] of chunk.buckets) chunk.sets.push(this.instanceSet(chunk, res, items, shadow, shadows));
     }
     this.lodView = null;
   }
@@ -1309,7 +1329,9 @@ export class TownBuilder {
         inst.computeBoundingSphere(); // over every item, whatever level each one is drawn at
         inst.instanceMatrix = lod.matrix;
         inst.instanceColor = foliage && lod.autumn ? lod.autumn : lod.color;
-        inst.castShadow = cast;
+        inst.castShadow = cast && shadows;
+        inst.userData.townShadow = cast;
+        inst.userData.townLod = lvl;
         inst.receiveShadow = shadows && lvl < 2;
         inst.count = levels > 1 ? 0 : n;
         inst.visible = levels === 1;
@@ -1336,7 +1358,8 @@ export class TownBuilder {
       const dz = where[o + 2] - z;
       // From the table: distance to the point it circles, so orbiting never swaps levels
       const d = orbit ? Math.sqrt(zoom2 + dx * dx + dz * dz) : Math.hypot(dx, where[o + 1] - y, dz);
-      const s = (where[o + 3] * k) / Math.max(d, 1);
+      const budget = 1 - (1 - this.detailBudget.lod) * THREE.MathUtils.smoothstep(d, 35, 110);
+      const s = (where[o + 3] * k * budget) / Math.max(d, 1);
       let lvl = classify(s);
       const cur = level[i];
       // Hysteresis: only move once clearly past the line
@@ -1396,16 +1419,33 @@ export class TownBuilder {
    * near and far sides swap levels on every turn of the table and the town flickers.
    * Items are only re-sorted once the view has moved a little.
    */
-  update(camera, orbit = null) {
+  update(camera, orbit = null, budget = this.detailBudget) {
     const p = camera.position;
-    this.groundCover?.update(camera, orbit);
+    this.detailBudget = budget;
+    this.groundCover?.update(camera, orbit, budget.vegetation);
+    this.farTrees?.update(camera, orbit, budget.vegetation);
     const zoom = orbit ? p.distanceTo(orbit) : 0;
     const at = orbit || p;
     // Lower quality tiers switch to lighter models sooner; a narrow lens keeps detail further out
     const k = this.quality.settings.detail * (Math.tan(THREE.MathUtils.degToRad(27.5)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
     const v = this.lodView;
-    if (v && !!v.orbit === !!orbit && Math.abs(v.x - at.x) < 1.5 && Math.abs(v.y - at.y) < 1.5 && Math.abs(v.z - at.z) < 1.5 && Math.abs(v.zoom - zoom) < Math.max(1.5, zoom * 0.02) && Math.abs(v.k - k) < 0.01) return;
-    this.lodView = { x: at.x, y: at.y, z: at.z, orbit: !!orbit, zoom, zoom2: zoom * zoom, k };
+    const shadows = this.quality.settings.shadows;
+    for (const mesh of this.groundCover?.meshes || []) mesh.receiveShadow = shadows;
+    if (this.liveShadows !== shadows) {
+      this.group.traverse(mesh => {
+        if (mesh.isMesh && !mesh.isInstancedMesh && mesh.userData.townShadow !== undefined) {
+          mesh.castShadow = shadows && mesh.userData.townShadow;
+          mesh.receiveShadow = shadows;
+        }
+      });
+      this.liveShadows = shadows;
+    }
+    if (v && v.shadows === shadows && v.budget === budget.lod && v.shadow === budget.shadow && !!v.orbit === !!orbit && Math.abs(v.x - at.x) < 1.5 && Math.abs(v.y - at.y) < 1.5 && Math.abs(v.z - at.z) < 1.5 && Math.abs(v.zoom - zoom) < Math.max(1.5, zoom * 0.02) && Math.abs(v.k - k) < 0.01) return;
+    this.lodView = { x: at.x, y: at.y, z: at.z, orbit: !!orbit, zoom, zoom2: zoom * zoom, k, budget: budget.lod, shadow: budget.shadow, shadows };
+    for (const chunk of this.chunks) for (const set of chunk.sets) for (const lod of set.lods) for (const mesh of lod.meshes) {
+      mesh.castShadow = shadows && mesh.userData.townShadow && (budget.shadow >= 0.9 || mesh.userData.townLod < 2);
+      mesh.receiveShadow = shadows && mesh.userData.townLod < 2;
+    }
     for (const c of this.chunks) for (const set of c.sets) if (set.levels > 1) this.sortSet(set, this.lodView);
   }
 

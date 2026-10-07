@@ -1,0 +1,73 @@
+{
+  "seed": 427,
+  "planet": 2,
+  "city": 1,
+  "modern": true,
+  "view": "diorama",
+  "night": 1,
+  "buildings": 81,
+  "trees": 1124,
+  "frames": 300,
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "pixelRatio": 2,
+  "devicePixelRatio": 2,
+  "drawingBuffer": {
+    "width": 2560,
+    "height": 1600
+  },
+  "camera": {
+    "position": [
+      344.58,
+      291.9,
+      167.98
+    ],
+    "quaternion": [
+      -0.27,
+      0.5,
+      0.17,
+      0.8
+    ],
+    "fov": 40
+  },
+  "fps": 60.02,
+  "frameMs": {
+    "p50": 16.5,
+    "p95": 23,
+    "p99": 25
+  },
+  "cpuMs": {
+    "p50": 2.7,
+    "p95": 3.5
+  },
+  "drawCalls": 415,
+  "triangles": 509430.67,
+  "memory": {
+    "geometries": 239,
+    "textures": 56
+  },
+  "grass": 34568,
+  "forest": 1988,
+  "fleet": {
+    "vehicles": [
+      0,
+      22,
+      0
+    ],
+    "instances": [
+      0,
+      126,
+      0
+    ],
+    "shadowVehicles": 0,
+    "submitted": 126
+  },
+  "budget": {
+    "lod": 1,
+    "shadow": 1,
+    "vegetation": 1
+  },
+  "error": null
+}

@@ -1,0 +1,193 @@
+{
+  "seed": 427,
+  "reference": {
+    "viewport": [
+      1280,
+      800
+    ],
+    "devicePixelRatio": 2,
+    "renderer": "ANGLE Metal Renderer: Apple M1 Pro",
+    "isolatedBrowserContexts": true
+  },
+  "culling": {
+    "before": {
+      "grass": 4406,
+      "forest": 4511
+    },
+    "sky": {
+      "grass": 1382,
+      "forest": 0
+    },
+    "returned": {
+      "grass": 4406,
+      "forest": 4511
+    },
+    "attributesUnchanged": true
+  },
+  "functional": {
+    "walkedMetres": 5.740957763667237,
+    "interior": {
+      "building": "town:55937:building:f_house_tall:1695:2844:-24030",
+      "floors": 3,
+      "enteredFloor": 0,
+      "changedFloor": 1,
+      "exitedTo": "walk"
+    },
+    "droveMetres": 12.451466869238262,
+    "drivenLod": 0,
+    "error": null,
+    "home": {
+      "validationErrors": [],
+      "homeWalk": "walk",
+      "appliedMode": "TownMode",
+      "appliedBuilding": true,
+      "homeGroups": 2,
+      "reopenedMode": "HomeMode",
+      "error": null
+    },
+    "desert": {
+      "planet": 3,
+      "city": 0,
+      "buildings": 663,
+      "type": "desert",
+      "palettePreserved": true,
+      "error": null
+    }
+  },
+  "governor": {
+    "feedbackInjected": true,
+    "steps": [
+      {
+        "level": 1,
+        "lod": 0.72,
+        "shadow": 1,
+        "vegetation": 1,
+        "dpr": 2
+      },
+      {
+        "level": 2,
+        "lod": 0.6,
+        "shadow": 0.65,
+        "vegetation": 1,
+        "dpr": 2
+      },
+      {
+        "level": 3,
+        "lod": 0.55,
+        "shadow": 0.5,
+        "vegetation": 0.65,
+        "dpr": 2
+      },
+      {
+        "level": 4,
+        "lod": 0.45,
+        "shadow": 0.4,
+        "vegetation": 0.35,
+        "dpr": 2
+      },
+      {
+        "level": 4,
+        "lod": 0.45,
+        "shadow": 0.4,
+        "vegetation": 0.35,
+        "dpr": 1.75
+      }
+    ],
+    "recovered": {
+      "level": 0,
+      "dpr": 2
+    },
+    "lowHighAutoShadowsRestored": true
+  },
+  "lifecycle": {
+    "baseline": [
+      {
+        "city": 0,
+        "geometries": 238,
+        "textures": 49
+      },
+      {
+        "city": 1,
+        "geometries": 164,
+        "textures": 54
+      },
+      {
+        "city": 0,
+        "geometries": 213,
+        "textures": 47
+      },
+      {
+        "city": 1,
+        "geometries": 166,
+        "textures": 54
+      },
+      {
+        "city": 0,
+        "geometries": 215,
+        "textures": 47
+      },
+      {
+        "city": 1,
+        "geometries": 168,
+        "textures": 54
+      }
+    ],
+    "after": [
+      {
+        "city": 0,
+        "geometries": 260,
+        "textures": 48
+      },
+      {
+        "city": 1,
+        "geometries": 205,
+        "textures": 55
+      },
+      {
+        "city": 0,
+        "geometries": 262,
+        "textures": 48
+      },
+      {
+        "city": 1,
+        "geometries": 207,
+        "textures": 55
+      },
+      {
+        "city": 0,
+        "geometries": 264,
+        "textures": 48
+      },
+      {
+        "city": 1,
+        "geometries": 209,
+        "textures": 55
+      },
+      {
+        "city": 0,
+        "geometries": 266,
+        "textures": 48
+      },
+      {
+        "city": 1,
+        "geometries": 211,
+        "textures": 55
+      },
+      {
+        "city": 0,
+        "geometries": 268,
+        "textures": 48
+      },
+      {
+        "city": 1,
+        "geometries": 213,
+        "textures": 55
+      }
+    ],
+    "sceneGeometryDisposeEvents": 386,
+    "sceneGeometryCaptured": 536,
+    "remainingGeometry": 150,
+    "remainingOwnership": "not fully classified; shared pack/NPC geometry may persist",
+    "note": "The +2 geometry-counter trend also exists in baseline; no claim of a proved long-session memory plateau."
+  }
+}

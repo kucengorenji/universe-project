@@ -45,7 +45,9 @@ export function planVegetation(L, { rng, noise, at, place, streetClear, fields, 
   if (flora === 'none') return planRocks(L, { rng, at, streetClear, detail, flora, place, fields });
   const S = {};
   const R = L.dioramaR;
-  const k = 1; // Trunks/colliders are canonical; LOD and grass density handle quality.
+  // This is a generation budget, not a graphics tier: trunks and colliders
+  // remain identical across render quality. Older saved layouts stay exact.
+  const k = L.layoutVersion >= 5 ? 0.27 : 1;
   const pools = POOLS[flora] || POOLS.green;
   const inField = (x, z) => fields.some(f => containsField(f, x, z, 2.5));
   const ok = (x, z, s) => s.land >= 0.76 && s.city <= 0.3 && s.otherCity <= 0.3 && streetClear(x, z, 20) >= 3 && !inField(x, z) && riverDistance(L, x, z) > 2.5;
@@ -96,7 +98,7 @@ export function planVegetation(L, { rng, noise, at, place, streetClear, fields, 
       // The middle one stands tallest; the rest vary, so a clump has a silhouette
       const size = (asset === 't_palm' ? 5 : 4.6) * (0.72 + rng() * 0.5) * (t === 0 ? 1.18 : 1);
       const tint = [0.88 + rng() * 0.16, 0.9 + rng() * 0.14, 0.86 + rng() * 0.14];
-      if (place(L.trees, asset, x, z, rng() * TAU, size * 0.7, size * 0.7, { collide: false, pad: 0.05, variant, tint })) {
+      if (place(L.trees, asset, x, z, rng() * TAU, size * 0.7, size * 0.7, { collide: false, pad: 0.05, variant, tint, ...(L.layoutVersion >= 5 ? { habitat: 'woodland' } : {}) })) {
         L.colliders.push({ type: 'circle', x, z, r: Math.min(1.1, size * 0.14) });
       }
     }

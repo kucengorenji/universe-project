@@ -1,0 +1,150 @@
+{
+  "walk": {
+    "seed": 427,
+    "planet": 2,
+    "city": 0,
+    "modern": false,
+    "view": "walk",
+    "night": 0,
+    "buildings": 470,
+    "trees": 8336,
+    "frames": 300,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "pixelRatio": 2,
+    "devicePixelRatio": 2,
+    "drawingBuffer": {
+      "width": 2560,
+      "height": 1600
+    },
+    "camera": {
+      "position": [
+        -7.07,
+        10.85,
+        -6.66
+      ],
+      "quaternion": [
+        0,
+        0.99,
+        0.12,
+        0
+      ],
+      "fov": 55
+    },
+    "fps": 59.94,
+    "frameMs": {
+      "p50": 16.3,
+      "p95": 22.2,
+      "p99": 23.9
+    },
+    "cpuMs": {
+      "p50": 3.4,
+      "p95": 4.1
+    },
+    "drawCalls": 597.53,
+    "triangles": 2111666.73,
+    "memory": {
+      "geometries": 391,
+      "textures": 49
+    },
+    "grass": 4098,
+    "forest": 4511,
+    "fleet": {
+      "vehicles": [
+        0,
+        9,
+        1
+      ],
+      "instances": [
+        0,
+        57,
+        5
+      ],
+      "shadowVehicles": 0,
+      "submitted": 62
+    },
+    "budget": {
+      "lod": 1,
+      "shadow": 1,
+      "vegetation": 1
+    },
+    "error": null,
+    "travelled": 12.396156078090646
+  },
+  "drive": {
+    "seed": 427,
+    "planet": 2,
+    "city": 0,
+    "modern": false,
+    "view": "drive",
+    "night": 0,
+    "buildings": 470,
+    "trees": 8336,
+    "frames": 300,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "pixelRatio": 2,
+    "devicePixelRatio": 2,
+    "drawingBuffer": {
+      "width": 2560,
+      "height": 1600
+    },
+    "camera": {
+      "position": [
+        -6.5,
+        13.06,
+        86.57
+      ],
+      "quaternion": [
+        -0.01,
+        0.99,
+        0.14,
+        0.05
+      ],
+      "fov": 55.100555082972434
+    },
+    "fps": 59.99,
+    "frameMs": {
+      "p50": 16.3,
+      "p95": 22.8,
+      "p99": 24
+    },
+    "cpuMs": {
+      "p50": 3.7,
+      "p95": 4.4
+    },
+    "drawCalls": 526.75,
+    "triangles": 1925578.37,
+    "memory": {
+      "geometries": 405,
+      "textures": 49
+    },
+    "grass": 6558,
+    "forest": 4500,
+    "fleet": {
+      "vehicles": [
+        2,
+        7,
+        1
+      ],
+      "instances": [
+        9,
+        48,
+        5
+      ],
+      "shadowVehicles": 3,
+      "submitted": 62
+    },
+    "budget": {
+      "lod": 1,
+      "shadow": 1,
+      "vegetation": 1
+    },
+    "error": null,
+    "travelled": 12.457672212979787
+  }
+}

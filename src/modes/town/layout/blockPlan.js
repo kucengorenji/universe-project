@@ -208,7 +208,9 @@ export function splitPolygon(poly, ox, oz, dx, dz, label) {
 export function planBlocks(L, K, plan = {}) {
   const { rng, at, addStreet, claim, free, fp, buildable, streetClear } = K;
   const E = L.modern ? ERA.modern : ERA.fantasy;
-  const D = DENSITY[plan.density] || DENSITY.normal;
+  const D = L.layoutVersion >= 5 && plan.density === 'sparse'
+    ? { ...DENSITY.sparse, gap: 2.8, empty: 0.22 }
+    : DENSITY[plan.density] || DENSITY.normal;
   const DS = DENSITY[plan.streetDensity] || D; // block size, i.e. where the streets go
   const sizeIdx = L.capital ? 2 : L.size >= 3 ? 1 : 0;
   const S = {};
@@ -702,7 +704,7 @@ export function planBlocks(L, K, plan = {}) {
     if (b.ward === 'park') continue;
     const ward = WARDS[b.ward] || WARDS.craftsmen;
     const yard = Math.min(0.95, Math.max(0.05, (ward.yard ?? 0.3) + D.yard + (b.ward === 'landmark' ? 0.5 : 0)));
-    const tries = Math.round((b.area / 45) * yard * D.courtyard);
+    const tries = Math.round((b.area / 45) * yard * D.courtyard * (L.layoutVersion >= 5 ? 0.5 : 1));
     const ax = axisOf(b.poly);
     for (let i = 0; i < tries; i++) {
       const u = (rng() - 0.5) * ax.major;

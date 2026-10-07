@@ -191,19 +191,21 @@ export function generateField(seed, params = {}) {
   const n = SIZE / RES + 1;
   const heights = new Float32Array(n * n);
   const hill = { x: -east * R(45, 70), z: village.z + R(-25, 25) };
+  // rolling country as in Valkyria Chronicles: long swells 2-6 m high, a hill or two more
+  const knolls = [hill, { x: east * R(40, 70), z: R(-70, 70) }, { x: R(-60, 60), z: R(-80, 80) }].map((k, i) => ({ ...k, h: i ? R(2, 3.5) : R(4, 5.5), r: i ? R(14, 20) : R(20, 26) }));
   const villageY = 0.6;
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
       const x = -HALF + i * RES, z = -HALF + j * RES;
-      let h = noise.fbm(x / 90, z / 90, 0.5, 4) * 3.2 + noise.noise(x / 25, z / 25, 3.1) * 0.5;
-      h += 3.5 * Math.exp(-((x - hill.x) ** 2 + (z - hill.z) ** 2) / (2 * 22 * 22));
+      let h = noise.fbm(x / 75, z / 75, 0.5, 4) * 4.4 + noise.noise(x / 28, z / 28, 3.1) * 0.7 + 0.8;
+      for (const k of knolls) h += k.h * Math.exp(-((x - k.x) ** 2 + (z - k.z) ** 2) / (2 * k.r * k.r));
       // the village and the camps sit on level ground
       const dv = Math.hypot(x - village.x, z - village.z);
       h = lerp(villageY, h, smooth(village.r * 0.7, village.r + 12, dv));
       for (const c of field.camps) h = lerp(villageY * 0.5 + h * 0.5, h, smooth(c.r + 4, c.r + 18, Math.hypot(x - c.x, z - c.z)));
-      // roads ease the slopes
+      // roads keep to the low ground: they run in shallow valleys of their own
       const dr = roadDist(x, z);
-      if (dr < 6) h = lerp(h * 0.85, h, smooth(0, 6, dr));
+      if (dr < 16) h = lerp(h * 0.45 - 0.3, h, smooth(1.5, 16, dr));
       // the river runs in a valley with a level water line
       const dw = riverDist(x, z);
       if (dw < 22) h = lerp(lerp(WATER_Y - 1.4, 0.1, smooth(-field.river.width / 2, 2, dw)), h, smooth(4, 22, dw));

@@ -45,7 +45,8 @@ test('the density option thins or packs the town', () => {
   const dense = town({ variant: 7, options: { density: 1.3 } });
   assert.ok(sparse.buildings.length < normal.buildings.length * 0.9, `${sparse.buildings.length} vs ${normal.buildings.length}`);
   assert.ok(dense.buildings.length >= normal.buildings.length * 0.97, `${dense.buildings.length} vs ${normal.buildings.length}`);
-  assert.deepEqual(dense.streets, normal.streets, 'density never moves streets');
+  // Quays adapt to the occupied harbor parcels; the planned town network stays fixed.
+  assert.deepEqual(dense.streets.filter(s => !s.quay), normal.streets.filter(s => !s.quay), 'density never moves the planned streets');
 });
 
 test('an approved plan persists; going back to the original restores its generator', async () => {

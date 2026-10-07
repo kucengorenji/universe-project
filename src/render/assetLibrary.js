@@ -117,6 +117,10 @@ async function loadPack(url, options) {
       if (!m) continue;
       const geo = bakeNode(child, options);
       if (!geo) continue;
+      // Refreshed town models keep the original parcel measurements in the
+      // pack. Visual mesh changes must not move coordinate-based saved rooms.
+      if (holder.userData.layoutFootprint) geo.userData.layoutFootprint = { ...holder.userData.layoutFootprint };
+      if (holder.userData.townAssetRevision) geo.userData.townAssetRevision = holder.userData.townAssetRevision;
       (lib[holder.name] ||= {})[Number(m[1])] = geo;
     }
   }

@@ -299,8 +299,8 @@ const CanvasShader = {
     }
     float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
     // scene luminance squashed to 0..1 and lifted toward perceptual: cheap stand-in for the tone-mapped value
-    float lumaHdr(vec2 uv) {
-      float l = luma(texture2D(tScene, uv).rgb);
+    float lumaHdr(vec4 c) {
+      float l = luma(c.rgb);
       return sqrt(l / (1.0 + l));
     }
 
@@ -321,13 +321,17 @@ const CanvasShader = {
       // a second-order term picks out creases where both neighbours bend the same way
       float crease = abs(zl + zr - 2.0 * zc) + abs(zd + zu - 2.0 * zc);
       float edgeZ = smoothstep(0.015, 0.045, dz / max(zc, 0.5)) + smoothstep(0.045, 0.11, crease / max(zc, 0.5)) * 0.7;
-      float gx = lumaHdr(uv + vec2(o.x, 0.0)) - lumaHdr(uv - vec2(o.x, 0.0));
-      float gy = lumaHdr(uv + vec2(0.0, o.y)) - lumaHdr(uv - vec2(0.0, o.y));
+      vec4 sr = texture2D(tScene, uv + vec2(o.x, 0.0)), sl = texture2D(tScene, uv - vec2(o.x, 0.0));
+      vec4 su = texture2D(tScene, uv + vec2(0.0, o.y)), sd = texture2D(tScene, uv - vec2(0.0, o.y));
+      float gx = lumaHdr(sr) - lumaHdr(sl);
+      float gy = lumaHdr(su) - lumaHdr(sd);
       float edgeC = smoothstep(0.1, 0.24, length(vec2(gx, gy)));
       float sky = step(0.9999, texture2D(tDepth, vUv).x);
+      // painted masses (wheat, rough grass: their alpha is 0.5) take no ink, nor what borders them
+      float mass = smoothstep(0.6, 0.9, min(min(sr.a, sl.a), min(su.a, sd.a)));
       // lines keep their weight up close and only lighten far away, like pencil pressure easing off
       float far = smoothstep(40.0, 160.0, zc);
-      float ink = clamp(max(edgeZ, edgeC * 0.65) * (1.0 - far * 0.65), 0.0, 1.0) * (1.0 - sky);
+      float ink = clamp(max(edgeZ, edgeC * 0.65) * (1.0 - far * 0.65), 0.0, 1.0) * (1.0 - sky) * mass;
       ink *= 0.72 + 0.28 * texture2D(tNoise, px / (90.0 * uPx)).r;
 
       // depth of field while aiming: what is far from the focus melts into the blurred copy

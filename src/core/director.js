@@ -1,4 +1,4 @@
-import { parseRoute, formatRoute } from './router.js';
+import { parseRoute, formatRoute, isSafeHomeId } from './router.js';
 
 // Each mode is its own chunk: only the code (and assets) of the mode on screen
 // are ever loaded, and the next one is fetched while the current one plays its
@@ -6,13 +6,15 @@ import { parseRoute, formatRoute } from './router.js';
 const MODES = {
   space: () => import('../modes/space/SpaceMode.js'),
   planet: () => import('../modes/planet/PlanetMode.js'),
-  town: () => import('../modes/town/TownMode.js')
+  town: () => import('../modes/town/TownMode.js'),
+  home: () => import('../modes/home/HomeMode.js')
 };
 
 const LABELS = {
   space: 'Menyiapkan tata surya',
   planet: 'Mendarat',
-  town: 'Memasuki kota'
+  town: 'Memasuki kota',
+  home: 'Menyiapkan rumah dan pekarangan'
 };
 
 /**
@@ -48,6 +50,7 @@ export class Director {
   }
 
   async start() {
+    await this.world.ready;
     const r = this.sanitize(parseRoute(location.hash)) || { mode: 'space', planet: this.world.homeIndex };
     const locationState = this.world.state.get('playerLocation');
     await this.go(r, { replace: true });
@@ -56,13 +59,14 @@ export class Director {
 
   /** Clamp a route to something that exists in the current system. */
   sanitize(r) {
-    if (!r) return null;
+    if (!r || !Object.hasOwn(MODES, r.mode)) return null;
     const p = r.planet !== null && r.planet !== undefined ? this.world.planet(r.planet) : null;
     if (r.mode === 'space') return { mode: 'space', planet: p ? r.planet : null };
     if (!p || !p.landable) return { mode: 'space', planet: p ? r.planet : null };
-    if (r.mode === 'town') {
+    if (r.mode === 'town' || r.mode === 'home') {
       const map = this.world.mapFor(r.planet);
       if (!map?.cities?.[r.city]) return { mode: 'planet', planet: r.planet, city: null };
+      if (r.mode === 'home' && (!isSafeHomeId(r.home) || !this.world.state.get(`home:${r.planet}:${r.city}:${r.home}`))) return { mode: 'town', planet: r.planet, city: r.city };
     }
     return r;
   }
@@ -77,6 +81,7 @@ export class Director {
   }
 
   async go(target, { replace = false, fromHash = false } = {}) {
+    await this.world.ready;
     const route = this.sanitize(target);
     if (!route) return;
     if (this.busy) {

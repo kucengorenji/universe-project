@@ -1,0 +1,531 @@
+{
+  "fixture": "hexasphere(3,10), terran; same seed/variant0/density1. rows=nominal, actualFootprintRows=legacy_layout_bounds.json.families",
+  "rows": [
+    {
+      "seed": 17,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "before": {
+        "cityR": 157.66666666666666,
+        "dioramaR": 488,
+        "buildings": 379,
+        "props": 121,
+        "trunks": 3644,
+        "vegetation": 6682,
+        "colliders": 4334,
+        "blocks": 44,
+        "treeColliders": 3644
+      },
+      "after": {
+        "cityR": 111.48716916707893,
+        "dioramaR": 345,
+        "buildings": 153,
+        "props": 122,
+        "trunks": 1134,
+        "vegetation": 3202,
+        "colliders": 1589,
+        "blocks": 20,
+        "treeColliders": 1134
+      },
+      "cityArea": 0.49999999999999944,
+      "discArea": 0.4998026404192421,
+      "treeRatio": 0.31119648737650935
+    },
+    {
+      "seed": 17,
+      "cityIndex": 1,
+      "style": "modern",
+      "before": {
+        "cityR": 100.83333333333333,
+        "dioramaR": 400,
+        "buildings": 43,
+        "props": 67,
+        "trunks": 3575,
+        "vegetation": 6809,
+        "colliders": 3805,
+        "blocks": 8,
+        "treeColliders": 3575
+      },
+      "after": {
+        "cityR": 71.29993376964353,
+        "dioramaR": 283,
+        "buildings": 15,
+        "props": 34,
+        "trunks": 1069,
+        "vegetation": 3450,
+        "colliders": 1262,
+        "blocks": 4,
+        "treeColliders": 1069
+      },
+      "cityArea": 0.4999999999999999,
+      "discArea": 0.50055625,
+      "treeRatio": 0.299020979020979
+    },
+    {
+      "seed": 427,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "before": {
+        "cityR": 141.99999999999997,
+        "dioramaR": 461,
+        "buildings": 279,
+        "props": 96,
+        "trunks": 1979,
+        "vegetation": 4582,
+        "colliders": 2516,
+        "blocks": 31,
+        "treeColliders": 1979
+      },
+      "after": {
+        "cityR": 100.4091629284897,
+        "dioramaR": 326,
+        "buildings": 105,
+        "props": 61,
+        "trunks": 545,
+        "vegetation": 2454,
+        "colliders": 867,
+        "blocks": 15,
+        "treeColliders": 545
+      },
+      "cityArea": 0.4999999999999998,
+      "discArea": 0.5000729339688783,
+      "treeRatio": 0.2753916119252148
+    },
+    {
+      "seed": 427,
+      "cityIndex": 1,
+      "style": "modern",
+      "before": {
+        "cityR": 160.33333333333334,
+        "dioramaR": 493,
+        "buildings": 92,
+        "props": 146,
+        "trunks": 4536,
+        "vegetation": 7804,
+        "colliders": 4883,
+        "blocks": 17,
+        "treeColliders": 4536
+      },
+      "after": {
+        "cityR": 113.37278725024305,
+        "dioramaR": 348,
+        "buildings": 40,
+        "props": 78,
+        "trunks": 1340,
+        "vegetation": 3475,
+        "colliders": 1573,
+        "blocks": 10,
+        "treeColliders": 1340
+      },
+      "cityArea": 0.4999999999999993,
+      "discArea": 0.4982698961937717,
+      "treeRatio": 0.29541446208112876
+    },
+    {
+      "seed": 8191,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "before": {
+        "cityR": 226.3333333333333,
+        "dioramaR": 605,
+        "buildings": 712,
+        "props": 185,
+        "trunks": 3257,
+        "vegetation": 5187,
+        "colliders": 4292,
+        "blocks": 73,
+        "treeColliders": 3257
+      },
+      "after": {
+        "cityR": 160.04183480855505,
+        "dioramaR": 428,
+        "buildings": 288,
+        "props": 106,
+        "trunks": 949,
+        "vegetation": 2162,
+        "colliders": 1459,
+        "blocks": 36,
+        "treeColliders": 949
+      },
+      "cityArea": 0.49999999999999895,
+      "discArea": 0.5004685472303804,
+      "treeRatio": 0.29137242861529017
+    },
+    {
+      "seed": 8191,
+      "cityIndex": 1,
+      "style": "modern",
+      "before": {
+        "cityR": 108.8333333333333,
+        "dioramaR": 405,
+        "buildings": 29,
+        "props": 55,
+        "trunks": 3660,
+        "vegetation": 5647,
+        "colliders": 3771,
+        "blocks": 7,
+        "treeColliders": 3660
+      },
+      "after": {
+        "cityR": 76.95678801913591,
+        "dioramaR": 286,
+        "buildings": 13,
+        "props": 29,
+        "trunks": 1163,
+        "vegetation": 2559,
+        "colliders": 1261,
+        "blocks": 5,
+        "treeColliders": 1163
+      },
+      "cityArea": 0.5000000000000002,
+      "discArea": 0.49868007925621094,
+      "treeRatio": 0.31775956284153006
+    }
+  ],
+  "actualFootprintRows": [
+    {
+      "seed": 17,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "before": {
+        "cityR": 157.66666666666666,
+        "dioramaR": 488,
+        "buildings": 292,
+        "props": 198,
+        "trunks": 3588,
+        "vegetation": 6700,
+        "colliders": 4275,
+        "blocks": 44,
+        "treeColliders": 3588
+      },
+      "after": {
+        "cityR": 111.48716916707893,
+        "dioramaR": 345,
+        "buildings": 131,
+        "props": 77,
+        "trunks": 1104,
+        "vegetation": 3387,
+        "colliders": 1507,
+        "blocks": 20,
+        "treeColliders": 1104
+      },
+      "cityArea": 0.49999999999999944,
+      "discArea": 0.4998026404192421,
+      "treeRatio": 0.3076923076923077
+    },
+    {
+      "seed": 17,
+      "cityIndex": 1,
+      "style": "modern",
+      "before": {
+        "cityR": 100.83333333333333,
+        "dioramaR": 400,
+        "buildings": 39,
+        "props": 74,
+        "trunks": 3566,
+        "vegetation": 6807,
+        "colliders": 3800,
+        "blocks": 8,
+        "treeColliders": 3566
+      },
+      "after": {
+        "cityR": 71.29993376964353,
+        "dioramaR": 283,
+        "buildings": 14,
+        "props": 39,
+        "trunks": 1067,
+        "vegetation": 3508,
+        "colliders": 1266,
+        "blocks": 4,
+        "treeColliders": 1067
+      },
+      "cityArea": 0.4999999999999999,
+      "discArea": 0.50055625,
+      "treeRatio": 0.29921480650588894
+    },
+    {
+      "seed": 427,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "before": {
+        "cityR": 141.99999999999997,
+        "dioramaR": 461,
+        "buildings": 212,
+        "props": 109,
+        "trunks": 1992,
+        "vegetation": 4490,
+        "colliders": 2476,
+        "blocks": 31,
+        "treeColliders": 1992
+      },
+      "after": {
+        "cityR": 100.4091629284897,
+        "dioramaR": 326,
+        "buildings": 81,
+        "props": 69,
+        "trunks": 543,
+        "vegetation": 2434,
+        "colliders": 849,
+        "blocks": 15,
+        "treeColliders": 543
+      },
+      "cityArea": 0.4999999999999998,
+      "discArea": 0.5000729339688783,
+      "treeRatio": 0.27259036144578314
+    },
+    {
+      "seed": 427,
+      "cityIndex": 1,
+      "style": "modern",
+      "before": {
+        "cityR": 160.33333333333334,
+        "dioramaR": 493,
+        "buildings": 90,
+        "props": 210,
+        "trunks": 4529,
+        "vegetation": 7694,
+        "colliders": 4942,
+        "blocks": 17,
+        "treeColliders": 4529
+      },
+      "after": {
+        "cityR": 113.37278725024305,
+        "dioramaR": 348,
+        "buildings": 43,
+        "props": 95,
+        "trunks": 1330,
+        "vegetation": 3467,
+        "colliders": 1583,
+        "blocks": 10,
+        "treeColliders": 1330
+      },
+      "cityArea": 0.4999999999999993,
+      "discArea": 0.4982698961937717,
+      "treeRatio": 0.2936630602782071
+    },
+    {
+      "seed": 8191,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "before": {
+        "cityR": 226.3333333333333,
+        "dioramaR": 605,
+        "buildings": 548,
+        "props": 219,
+        "trunks": 3310,
+        "vegetation": 5303,
+        "colliders": 4212,
+        "blocks": 73,
+        "treeColliders": 3310
+      },
+      "after": {
+        "cityR": 160.04183480855505,
+        "dioramaR": 428,
+        "buildings": 232,
+        "props": 106,
+        "trunks": 928,
+        "vegetation": 2114,
+        "colliders": 1382,
+        "blocks": 36,
+        "treeColliders": 928
+      },
+      "cityArea": 0.49999999999999895,
+      "discArea": 0.5004685472303804,
+      "treeRatio": 0.28036253776435044
+    },
+    {
+      "seed": 8191,
+      "cityIndex": 1,
+      "style": "modern",
+      "before": {
+        "cityR": 108.8333333333333,
+        "dioramaR": 405,
+        "buildings": 26,
+        "props": 61,
+        "trunks": 3640,
+        "vegetation": 5639,
+        "colliders": 3757,
+        "blocks": 7,
+        "treeColliders": 3640
+      },
+      "after": {
+        "cityR": 76.95678801913591,
+        "dioramaR": 286,
+        "buildings": 14,
+        "props": 35,
+        "trunks": 1160,
+        "vegetation": 2554,
+        "colliders": 1265,
+        "blocks": 5,
+        "treeColliders": 1160
+      },
+      "cityArea": 0.5000000000000002,
+      "discArea": 0.49868007925621094,
+      "treeRatio": 0.31868131868131866
+    }
+  ],
+  "densityRows": [
+    {
+      "1": {
+        "buildings": 157,
+        "trunks": 1092,
+        "blocks": 20,
+        "plannedStreets": 18,
+        "quays": 1
+      },
+      "seed": 17,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "variant": 7,
+      "0.75": {
+        "buildings": 119,
+        "trunks": 1113,
+        "blocks": 20,
+        "plannedStreets": 18,
+        "quays": 1
+      },
+      "1.3": {
+        "buildings": 159,
+        "trunks": 1087,
+        "blocks": 20,
+        "plannedStreets": 18,
+        "quays": 1
+      }
+    },
+    {
+      "1": {
+        "buildings": 8,
+        "trunks": 1070,
+        "blocks": 4,
+        "plannedStreets": 5,
+        "quays": 4
+      },
+      "seed": 17,
+      "cityIndex": 1,
+      "style": "modern",
+      "variant": 7,
+      "0.75": {
+        "buildings": 7,
+        "trunks": 1081,
+        "blocks": 4,
+        "plannedStreets": 5,
+        "quays": 4
+      },
+      "1.3": {
+        "buildings": 12,
+        "trunks": 1069,
+        "blocks": 4,
+        "plannedStreets": 5,
+        "quays": 4
+      }
+    },
+    {
+      "1": {
+        "buildings": 102,
+        "trunks": 646,
+        "blocks": 15,
+        "plannedStreets": 12,
+        "quays": 4
+      },
+      "seed": 427,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "variant": 7,
+      "0.75": {
+        "buildings": 78,
+        "trunks": 671,
+        "blocks": 15,
+        "plannedStreets": 12,
+        "quays": 4
+      },
+      "1.3": {
+        "buildings": 103,
+        "trunks": 642,
+        "blocks": 15,
+        "plannedStreets": 12,
+        "quays": 4
+      }
+    },
+    {
+      "1": {
+        "buildings": 48,
+        "trunks": 1291,
+        "blocks": 9,
+        "plannedStreets": 11,
+        "quays": 2
+      },
+      "seed": 427,
+      "cityIndex": 1,
+      "style": "modern",
+      "variant": 7,
+      "0.75": {
+        "buildings": 36,
+        "trunks": 1321,
+        "blocks": 9,
+        "plannedStreets": 11,
+        "quays": 2
+      },
+      "1.3": {
+        "buildings": 49,
+        "trunks": 1276,
+        "blocks": 9,
+        "plannedStreets": 11,
+        "quays": 2
+      }
+    },
+    {
+      "1": {
+        "buildings": 288,
+        "trunks": 852,
+        "blocks": 33,
+        "plannedStreets": 27,
+        "quays": 4
+      },
+      "seed": 8191,
+      "cityIndex": 0,
+      "style": "fantasy",
+      "variant": 7,
+      "0.75": {
+        "buildings": 224,
+        "trunks": 898,
+        "blocks": 33,
+        "plannedStreets": 27,
+        "quays": 4
+      },
+      "1.3": {
+        "buildings": 300,
+        "trunks": 845,
+        "blocks": 33,
+        "plannedStreets": 27,
+        "quays": 4
+      }
+    },
+    {
+      "1": {
+        "buildings": 15,
+        "trunks": 1186,
+        "blocks": 4,
+        "plannedStreets": 5,
+        "quays": 3
+      },
+      "seed": 8191,
+      "cityIndex": 1,
+      "style": "modern",
+      "variant": 7,
+      "0.75": {
+        "buildings": 13,
+        "trunks": 1155,
+        "blocks": 4,
+        "plannedStreets": 5,
+        "quays": 1
+      },
+      "1.3": {
+        "buildings": 17,
+        "trunks": 1186,
+        "blocks": 4,
+        "plannedStreets": 5,
+        "quays": 3
+      }
+    }
+  ]
+}

@@ -47,6 +47,7 @@ export class Engine {
     this.time = performance.now() / 1000; // game clock: stops while paused
     this.last = 0;
     this.lastDraw = -Infinity;
+    this.nextDraw = 0;
     this.frameHooks = [];
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -78,7 +79,11 @@ export class Engine {
 
   frame(ts) {
     // 120 Hz displays would draw every scene twice as often for little gain: at most 60 frames a second
-    if (ts - this.lastDraw < 1000 / MAX_FPS - 2) return;
+    if (ts + 0.5 < this.nextDraw) return;
+    // Carry the scheduled deadline forward: resetting it to each drawn frame
+    // halves the rate on 75/90 Hz displays even when the GPU has ample headroom.
+    this.nextDraw += 1000 / MAX_FPS;
+    if (this.nextDraw < ts) this.nextDraw = ts + 1000 / MAX_FPS;
     this.lastDraw = ts;
     const now = ts * 0.001;
     const dt = Math.min(0.1, now - (this.last || now));

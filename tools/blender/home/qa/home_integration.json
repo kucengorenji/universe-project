@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-04",
+  "status": "VERIFIED_WITH_LIMITATIONS",
+  "unitTests": {
+    "passed": 115,
+    "failed": 0,
+    "command": "npm test"
+  },
+  "build": {
+    "status": "PASS",
+    "command": "npm run build"
+  },
+  "editorRegression": {
+    "status": "PASS",
+    "checks": 10,
+    "boundary": "Real DOM/controller/raycast with synthetic pointer handlers; native capture stubbed in this module",
+    "restored": true
+  },
+  "nativeInput": {
+    "nativeDrag": true,
+    "isTrusted": true,
+    "snap": {
+      "x": -2.5,
+      "z": -1.5,
+      "y": 0
+    },
+    "undoRedo": true,
+    "restored": true
+  },
+  "persistence": {
+    "reload": "PASS",
+    "applyTownAndReenter": "PASS",
+    "reenteredItems": 45,
+    "blueprintIdentical": true
+  },
+  "navigation": {
+    "status": "PASS",
+    "fixtures": 9,
+    "spawns": 36,
+    "stairTrips": 54,
+    "doorSweeps": 153,
+    "yardCollisions": 54
+  },
+  "lifecycle": {
+    "status": "PASS",
+    "switches": 5,
+    "each": {
+      "geometries": 44,
+      "textures": 19,
+      "programs": 13
+    }
+  },
+  "profiles": [
+    {
+      "status": "MEASURED",
+      "restoration": true,
+      "seed": "home-perf-final",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "intervals": 219,
+      "averageFPS": 29.689,
+      "medianFrameMs": 38,
+      "p95FrameMs": 40.9,
+      "p95SubmitCPUms": 3.9,
+      "drawCalls": 122,
+      "triangles": 198242,
+      "recentGPU": {
+        "averageMs": 5.656,
+        "samples": 60,
+        "boundary": "Recent engine accumulator, not full-run"
+      },
+      "floors": 4,
+      "insideItems": 61,
+      "yardItems": 6
+    },
+    {
+      "status": "MEASURED",
+      "restoration": true,
+      "fixture": {
+        "seed": "home-perf-final",
+        "style": "classic",
+        "floors": 4,
+        "attic": true,
+        "fullRoof": true,
+        "plot": "30 × 30 m"
+      },
+      "frames": 220,
+      "intervals": 219,
+      "warmupMs": 3500,
+      "cadence": {
+        "durationMs": 7280.5,
+        "averageFPS": 30.08,
+        "medianMs": 30.5,
+        "p95Ms": 41.1,
+        "maxMs": 42.6
+      },
+      "submitCPUms": {
+        "median": 2.3,
+        "p95": 5,
+        "max": 6.4
+      },
+      "renderWork": {
+        "maxCalls": 122,
+        "maxTriangles": 198242,
+        "counting": "Manual renderer.info.reset per real mode.render; all render passes included."
+      },
+      "recentGPU": {
+        "averageMs": 11.034,
+        "sumMs": 772.3962969999998,
+        "samples": 70,
+        "timerSupported": true,
+        "boundary": "Recent engine GPU accumulator since its last governor reset; includes delayed query readback. Not a full-run or frame-matched GPU benchmark."
+      },
+      "device": {
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+        "drawingBuffer": {
+          "width": 2880,
+          "height": 1800
+        },
+        "pixelRatio": 2,
+        "devicePixelRatio": 2
+      },
+      "quality": {
+        "preset": "auto",
+        "tier": "high",
+        "resolutionRatio": 2,
+        "shadows": true,
+        "boundary": "Normal adaptive quality governor active; actual final ratio reported. setPreset(auto, false) does not persist preferences."
+      },
+      "boundary": "Browser render cadence and CPU submission for a static full-roof home. No 60 FPS certification, physical input, or navigation measurement.",
+      "idlePlanRAF": {
+        "samples": 120,
+        "averageFPS": 30.34553104679332,
+        "boundary": "Original plan; 3D rendering skipped while idle."
+      }
+    }
+  ],
+  "limitations": [
+    "60 FPS stability not certified; idle plan RAF also about30.35 FPS in final browser session",
+    "Town collider is conservative AABB",
+    "Khronos GLB validator NOT_RUN"
+  ]
+}

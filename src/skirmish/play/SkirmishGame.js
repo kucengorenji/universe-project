@@ -7,6 +7,7 @@ import { CanvasPost, installCanvasShading } from '../render/canvasStyle.js';
 import { SkyLight } from '../render/skyLight.js';
 import { loadWeapons } from '../units/soldiers.js';
 import { loadSoldierTemplates, loadPortraits } from '../units/vcSoldiers.js';
+import { loadEnv } from '../battlefield/envKit.js';
 import { Arena } from '../game/arena.js';
 import { Battle } from '../game/battle.js';
 import { Spotting } from '../game/spotting.js';
@@ -88,8 +89,9 @@ export class SkirmishGame {
     this.assets = Promise.all([
       loadAssetPack(ASSETS.townPack),
       loadAssetPack(ASSETS.militaryPack, { glow: { M_radiator: 1 } }),
-      loadSoldierTemplates({ m: [ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead], f: [ASSETS.soldierPackF, ASSETS.soldierAtlasF, ASSETS.soldierHeadF] })
-    ]).then(async ([town, military, templates]) => ({ town, military, templates, weapons: await loadWeapons(ASSETS.militaryPack, military) }));
+      loadSoldierTemplates({ m: [ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead], f: [ASSETS.soldierPackF, ASSETS.soldierAtlasF, ASSETS.soldierHeadF] }),
+      loadEnv(ASSETS.envPack, ASSETS.envSurfaces)
+    ]).then(async ([town, military, templates, env]) => ({ town, military, templates, env, weapons: await loadWeapons(ASSETS.militaryPack, military) }));
     // the nine's painted portraits (one sheet rendered in Blender)
     loadPortraits(ASSETS.soldierPortraits).then((portraits) => {
       this.portraits = portraits;
@@ -190,7 +192,7 @@ export class SkirmishGame {
     const A = await this.assets;
     const field = this.field;
     this.applyQuality();
-    this.builder = new FieldBuilder(field, { town: A.town, military: A.military }, { shadows: this.shadows, grass: this.q.grass });
+    this.builder = new FieldBuilder(field, { town: A.town, military: A.military, env: A.env }, { shadows: this.shadows, grass: this.q.grass });
     this.scene.add(this.builder.group);
     this.arena = new Arena(field);
     const squad = this.setup.squad.filter((id) => this.deploy.has(id)).map((id) => {

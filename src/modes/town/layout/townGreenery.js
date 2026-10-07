@@ -134,7 +134,7 @@ export function planTownGreenery(L,K) {
     }
     const xs=park.poly.map(p=>p.x),zs=park.poly.map(p=>p.z);
     const x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs);
-    const area=(x1-x0)*(z1-z0),target=vegetated?Math.min(32,Math.max(5,Math.round(area/95))):0;
+    const area=(x1-x0)*(z1-z0),target=vegetated?(L.layoutVersion>=5?Math.min(12,Math.max(2,Math.round(area/190))):Math.min(32,Math.max(5,Math.round(area/95)))):0;
     // Reserve furniture before planting, so trunks cannot consume its space.
     for(const [asset,w,d]of [['m_bench',2.2,.8],['g_planter',1.6,1.6],['g_pergola',4.4,4]]){
       if(!vegetated&&asset!=='m_bench')continue;
@@ -217,7 +217,7 @@ export function planTownGreenery(L,K) {
   for(const b of vegetated?L.buildings.filter(b=>/house|cottage|shop|tavern/.test(b.asset)):[]){
     const ca=Math.cos(b.yaw),sa=Math.sin(b.yaw);
     for(let i=0;i<3;i++){
-      if(rng()>.65)continue;
+      if(rng()>(L.layoutVersion>=5&&i===0 ? .325 : .65))continue;
       const u=(rng()-.5)*b.w,v=-b.d/2-4-rng()*3;
       const x=b.x+u*ca-v*sa,z=b.z+u*sa+v*ca;
       if(!dry(x,z)||K.streetClear(x,z,15)<2.2||pathClearance(L.paths,x,z)<2)continue;

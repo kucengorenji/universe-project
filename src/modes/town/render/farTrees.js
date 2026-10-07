@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../../../math/random.js';
 import { HORIZON_R, WATER_Y } from '../scale.js';
+import { partitionSprites, SpatialSprites, SPRITE_DENSITY_FADE } from './spatialSprites.js';
 
 // Forests past the playable disc, out toward the horizon: painted tree
 // silhouettes on billboards that turn to face the camera around their trunk
-// (one draw call for thousands). Up close the disc has real 3D trees; out
+// in spatial batches. Up close the disc has real 3D trees; out
 // here a flat card with two tones of shading reads the same through the haze.
 
 const TILES = ['pine', 'pine_snow', 'oak', 'oak_autumn', 'birch', 'acacia', 'palm', 'bushes'];
@@ -136,28 +137,15 @@ export class FarTrees {
     const items = flora === 'none' ? [] : this.scatter(L, count, flora);
     const quad = new THREE.PlaneGeometry(1, 1);
     quad.translate(0, 0.5, 0);
-    const geo = new THREE.InstancedBufferGeometry();
-    geo.index = quad.index;
-    geo.attributes.position = quad.attributes.position;
-    geo.attributes.uv = quad.attributes.uv;
-    const off = new Float32Array(items.length * 4);
-    const tile = new Float32Array(items.length);
-    const tint = new Float32Array(items.length * 3);
-    items.forEach((it, i) => {
-      off.set([it.x, it.y, it.z, it.h], i * 4);
-      tile[i] = it.tile;
-      tint.set(it.tint, i * 3);
-    });
-    geo.setAttribute('aOffset', new THREE.InstancedBufferAttribute(off, 4));
-    geo.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 1));
-    geo.setAttribute('aTint', new THREE.InstancedBufferAttribute(tint, 3));
-    geo.instanceCount = items.length;
     this.uniforms = {
       uAtlas: { value: this.atlas },
       uLight: { value: new THREE.Color(1, 1, 1) },
       fogColor: { value: new THREE.Color() },
       fogNear: { value: 1 },
-      fogFar: { value: 1000 }
+      fogFar: { value: 1000 },
+      uFadeNear: { value: 3500 },
+      uFadeFar: { value: 3900 },
+      uDensity: { value: 1 }
     };
     this.material = new THREE.ShaderMaterial({
       uniforms: this.uniforms,
@@ -166,15 +154,22 @@ export class FarTrees {
         attribute vec4 aOffset;
         attribute float aTile;
         attribute vec3 aTint;
+        attribute float aRank;
+        uniform float uFadeNear;
+        uniform float uFadeFar;
+        uniform float uDensity;
         varying vec2 vUv;
         varying vec3 vTint;
         #include <fog_pars_vertex>
         void main() {
           // Turn around the trunk to face the camera
-          vec3 toCam = cameraPosition - aOffset.xyz;
+          vec3 origin = (modelMatrix * vec4(aOffset.xyz, 1.0)).xyz;
+          vec3 toCam = cameraPosition - origin;
           vec3 right = normalize(vec3(toCam.z, 0.0, -toCam.x));
-          float h = aOffset.w;
-          vec3 world = aOffset.xyz + right * position.x * h * 0.9 + vec3(0.0, position.y * h, 0.0);
+          float fade = 1.0 - smoothstep(uFadeNear, uFadeFar, distance(origin, cameraPosition));
+          fade *= 1.0 - smoothstep(uDensity, uDensity + ${SPRITE_DENSITY_FADE.toFixed(2)}, aRank);
+          float h = aOffset.w * fade;
+          vec3 world = origin + right * position.x * h * 0.9 + vec3(0.0, position.y * h, 0.0);
           vec2 t = vec2(mod(aTile, 4.0), floor(aTile / 4.0));
           vUv = vec2((t.x + uv.x) / 4.0, 1.0 - (t.y + 1.0 - uv.y) / 2.0);
           vTint = aTint;
@@ -199,11 +194,46 @@ export class FarTrees {
           #include <fog_fragment>
         }`
     });
-    this.mesh = new THREE.Mesh(geo, this.material);
-    this.mesh.frustumCulled = false;
-    this.mesh.name = 'farTrees';
-    this.geo = geo;
+    this.spatial = new SpatialSprites('farTrees');
+    const min = new THREE.Vector3();
+    const max = new THREE.Vector3();
+    for (const cell of partitionSprites(items, 512)) {
+      const geo = new THREE.InstancedBufferGeometry();
+      geo.index = quad.index;
+      geo.attributes.position = quad.attributes.position;
+      geo.attributes.uv = quad.attributes.uv;
+      const off = new Float32Array(cell.length * 4);
+      const tile = new Float32Array(cell.length);
+      const tint = new Float32Array(cell.length * 3);
+      const ranks = new Float32Array(cell.length);
+      const bounds = new THREE.Box3();
+      cell.forEach((it, i) => {
+        off.set([it.x, it.y, it.z, it.h], i * 4);
+        tile[i] = it.tile;
+        tint.set(it.tint, i * 3);
+        ranks[i] = (i + 1) / cell.length;
+        // Cards rotate around their trunk: account for every facing, not the unit quad.
+        const half = it.h * 0.45;
+        bounds.expandByPoint(min.set(it.x - half, it.y, it.z - half));
+        bounds.expandByPoint(max.set(it.x + half, it.y + it.h, it.z + half));
+      });
+      geo.setAttribute('aOffset', new THREE.InstancedBufferAttribute(off, 4));
+      geo.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 1));
+      geo.setAttribute('aTint', new THREE.InstancedBufferAttribute(tint, 3));
+      geo.setAttribute('aRank', new THREE.InstancedBufferAttribute(ranks, 1));
+      geo.instanceCount = cell.length;
+      geo.boundingBox = bounds;
+      geo.boundingSphere = bounds.getBoundingSphere(new THREE.Sphere());
+      const mesh = new THREE.Mesh(geo, this.material);
+      mesh.name = 'farTrees:cell';
+      this.spatial.add(mesh, cell.length, geo.boundingSphere);
+    }
+    this.quad = quad;
+    this.group = this.spatial.group;
+    this.mesh = this.group; // scene.add compatibility
+    this.meshes = this.spatial.meshes;
     this.count = items.length;
+    this.activeCount = items.length;
   }
 
   scatter(L, count, flora) {
@@ -243,13 +273,24 @@ export class FarTrees {
   }
 
   /** Light follows the time of day (fog uniforms are filled in by the renderer). */
-  update(sunIntensity, night) {
+  setEnvironment(sunIntensity, night) {
     const l = THREE.MathUtils.clamp(0.35 + sunIntensity * 0.28, 0.3, 1.1) * (1 - night * 0.55);
     this.uniforms.uLight.value.setScalar(l);
   }
 
+  /** Cull whole stands only after their cards have faded into the same town fog. */
+  update(camera, orbitTarget = null, budget = 1) {
+    const far = orbitTarget ? camera.position.distanceTo(orbitTarget) + this.builder.L.dioramaR * 1.05 : 3900;
+    this.uniforms.uFadeFar.value = far;
+    this.uniforms.uFadeNear.value = far * 0.92;
+    this.uniforms.uDensity.value = this.spatial.update(camera, far, budget, this.builder.uniforms.uTime.value);
+    this.activeCount = this.spatial.activeCount;
+  }
+
   dispose() {
-    this.geo.dispose();
+    this.group.removeFromParent();
+    this.meshes.forEach(mesh => mesh.geometry.dispose());
+    this.quad.dispose();
     this.material.dispose();
     this.atlas.dispose();
   }

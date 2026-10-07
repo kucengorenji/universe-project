@@ -12,7 +12,7 @@ import { WATER_Y } from './scale.js';
 import { Crowd, Pedestrians } from './people/crowd.js';
 import { createWalkNetwork, townWalkable } from './navigation/walkNetwork.js';
 import { StreetLighting } from './render/streetLighting.js';
-import { townGenerationVersion, townPlanChoice, townPlanVersion, saveTownPlanChoice, townHasSavedRooms } from '../../world/townGeneration.js';
+import { townGenerationVersion, townPlanChoice, townPlanVersion, saveTownPlanChoice, townHasSavedRooms, townHasSavedHomes } from '../../world/townGeneration.js';
 import { TownPlanner } from './planner/townPlanner.js';
 import { Colliders } from './navigation/colliders.js';
 import { TownHud } from './ui/hud.js';
@@ -23,13 +23,19 @@ import { RiggedPeople, makePerson, animatePerson, disposePerson } from './people
 import { ChunkyPeople, loadNpcPack, makeNpc, dressPlayer, animateNpc, disposeNpc } from './people/chunkyPeople.js';
 import { Interior, ENTERABLE, FURNITURE_PACK } from './interior/interior.js';
 import { buildingId, seedFor } from '../../world/identity.js';
-import { describeBuilding, buildingApproach } from '../../world/buildingBlueprint.js';
+import { describeBuilding, buildingApproach, localToTown, townToLocal } from '../../world/buildingBlueprint.js';
+import { ensureHomeRecord, listTownHomes, townHomeContext } from '../../world/homeState.js';
+import { footprintBounds, pointInPolygon, openingTransform } from '../home/homeBlueprint.js';
+import { createHomeGroup, disposeHomeGroup, loadHomePack } from '../home/homeBuilder.js';
 import { loadTexturedPack } from '../../render/texturedAssetLibrary.js';
 import { loadTownSurfaces } from '../../render/townSurfaces.js';
+import { loadTownPaintedSurfaces } from './render/paintedStyle.js';
+import { TownDetailBudget } from './render/detailBudget.js';
 import { Minimap, Speedo } from '../../ui/gauges.js';
 import { FLEETS, pickRecipe } from './vehicles/vehicleKit.js';
 
 const STREET_FOV = 55;
+const HOME_SHELLS = new Set(['f_house_small', 'f_house', 'f_house_tall', 'f_townhouse', 'm_house']);
 
 // Inside a city: the diorama is the main view; from there you can walk the
 // streets (third person) or drive. Everything is built from the planet's map
@@ -55,7 +61,8 @@ const packs = () =>
     loadTexturedPack(ASSETS.sceneryPack).catch(() => null),
     loadTownSurfaces(ASSETS.townSurfaces).catch(() => null),
     loadTexturedPack(ASSETS.environmentPack, { mergeShades: true }).catch(() => null),
-    loadNpcPack(ASSETS.npcPack).catch(() => null)
+    loadNpcPack(ASSETS.npcPack).catch(() => null),
+    loadTownPaintedSurfaces(ASSETS.envSurfaces).catch(() => null)
   ]);
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -78,6 +85,7 @@ export default class TownMode {
     this.view = 'diorama';
     this.keys = new Set();
     this.tween = null;
+    this.detailBudget = new TownDetailBudget();
   }
 
   async enter() {
@@ -88,7 +96,7 @@ export default class TownMode {
     const city = map.cities[this.route.city];
     this.planet = planet;
     this.city = city;
-    const [base, lod0, townPack, character, furniture, atlas, sceneryPack, surfaceAtlas, environmentPack, npcPack] = await packs();
+    const [base, lod0, townPack, character, furniture, atlas, sceneryPack, surfaceAtlas, environmentPack, npcPack, paintedSurfaces] = await packs();
     this.character = character;
     this.npcPack = npcPack;
     this.furniture = furniture;
@@ -109,10 +117,13 @@ export default class TownMode {
     // Everything the 2D planner needs to regenerate this town with another variant or density
     this.genArgs={ map, hexasphere, cityIndex: this.route.city, planetType: planet.type, detail: quality.settings.detail, footprints: this.footprints };
     this.layout = generateTownLayout({ ...this.genArgs, layoutVersion, variant: plan.variant, options: { density: plan.density } });
+    this.prepareAuthoredHomes();
+    if (this.layout.buildings.some(b => b.homeRecord)) this.homePack = await loadHomePack().catch(() => null);
     this.doors = this.findDoors();
     this.ctx.missions?.emit('visit_town');
     this.ctx.audio?.setScene('town', { modern: this.layout.modern });
-    this.builder = new TownBuilder(this.layout, { planetPack, townPack, sceneryPack, environmentPack, surfaceAtlas, quality, planetType: planet.type });
+    const renderLayout = { ...this.layout, buildings: this.layout.buildings.filter(b => !b.homeRecord) };
+    this.builder = new TownBuilder(renderLayout, { planetPack, townPack, sceneryPack, environmentPack, surfaceAtlas, paintedSurfaces, quality, planetType: planet.type });
     this.colliders = new Colliders(this.layout.colliders);
     this.cameraBlockers = this.buildCameraBlockers();
     this.vehicleColliders = this.buildVehicleColliders();
@@ -131,6 +142,7 @@ export default class TownMode {
     this.scene.add(this.sky.group);
     this.scene.fog = new THREE.Fog(0xcfe4f4, 900, 2600);
     this.scene.add(this.builder.group);
+    this.addAuthoredHomes(quality);
     this.streetLighting=new StreetLighting(this.layout,(x,z)=>this.builder.surfaceAt(x,z));
     this.scene.add(this.streetLighting.group);
 
@@ -145,12 +157,13 @@ export default class TownMode {
     const shadows = quality.settings.shadows;
     engine.renderer.shadowMap.enabled = shadows;
     engine.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    if (shadows) {
+    {
       const high = quality.tier === 'high';
-      sun.castShadow = true;
+      sun.castShadow = shadows;
       // 2048 is enough: from the table a texel is under a screen pixel, in the street a few cm.
       // A 4096 map cost the high tier about 12 ms a frame on an M1 Pro for no visible gain.
       const size = high ? 2048 : 1024;
+      this.shadowBaseSize = size;
       sun.shadow.mapSize.set(size, size);
       // The whole table from above; a tight box round the player in the street, so shadow
       // edges stay crisp (a few cm per shadow texel instead of 15)
@@ -228,6 +241,7 @@ export default class TownMode {
         interact: () => this.interact()
       }
     });
+    this.setupHomeEntry();
     this.minimap = new Minimap(this.ui, { layout: this.layout, groundAt: (x, z) => this.builder.groundAt(x, z), waterY: WATER_Y, doors: this.doors });
     this.speedo = new Speedo(this.ui);
     this.ui.hidden = false;
@@ -248,6 +262,115 @@ export default class TownMode {
   }
 
   // ------------------------------------------------------------------ views
+
+  prepareAuthoredHomes() {
+    this.homes = listTownHomes(this.ctx.world.state, this.route.planet, this.route.city).filter(home => home.layoutSeed === this.layout.seed);
+    for (const home of this.homes) {
+      if (!home.applied) continue;
+      const b = this.layout.buildings.find(building => building.id === home.buildingId);
+      if (!b) continue;
+      const f = this.footprints[b.asset];
+      const ca = Math.cos(b.yaw), sa = Math.sin(b.yaw), sx = b.sx ?? 1, sz = b.sz ?? 1;
+      const cx = f ? (f.minX + f.maxX) / 2 * sx : 0, cz = f ? (f.minZ + f.maxZ) / 2 * sz : 0;
+      const x = b.x + ca * cx - sa * cz, z = b.z + sa * cx + ca * cz;
+      const hw = f ? (f.maxX - f.minX) / 2 * sx : b.w / 2, hd = f ? (f.maxZ - f.minZ) / 2 * sz : b.d / 2;
+      this.layout.colliders = this.layout.colliders.filter(c => !(c.type === 'box' && Math.hypot(c.x - x, c.z - z) < .25 && Math.abs(c.hw - hw) < .25 && Math.abs(c.hd - hd) < .25));
+      b.homeRecord = home;
+      b.homeBounds = footprintBounds(home.applied);
+      b.homeHeight = Math.max(...home.applied.floors.map(floor => floor.elevation + floor.height)) + (home.applied.roof?.rise || 0);
+      b.w = b.homeBounds.width;
+      b.d = b.homeBounds.depth;
+      const center = localToTown(home.origin, b.homeBounds.center);
+      b.homeCollider = { type: 'box', x: center.x, z: center.z, hw: b.w / 2 + .12, hd: b.d / 2 + .12, yaw: home.origin.yaw };
+      this.layout.colliders.push(b.homeCollider);
+    }
+    const removedTrees = this.layout.trees.filter(tree => this.homes.some(home => home.applied && pointInPolygon(townToLocal(home.origin, tree), home.applied.plot)));
+    this.layout.trees = this.layout.trees.filter(tree => !removedTrees.includes(tree));
+    this.layout.colliders = this.layout.colliders.filter(c => c.type !== 'circle' || !removedTrees.some(tree => Math.hypot(c.x - tree.x, c.z - tree.z) < .01));
+  }
+
+  addAuthoredHomes(quality) {
+    this.homeGroups = [];
+    for (const b of this.layout.buildings) {
+      const home = b.homeRecord;
+      if (!home) continue;
+      const lod = new THREE.LOD();
+      for (const level of [1, 2]) {
+        const group = createHomeGroup(home.applied, { lod: level, pack: this.homePack });
+        group.traverse(node => {
+          if (node.isMesh) { node.userData.townShadow = level < 2; node.castShadow = quality.settings.shadows && level < 2; node.receiveShadow = quality.settings.shadows; }
+        });
+        lod.addLevel(group, level === 1 ? 0 : 140 * quality.settings.detail);
+        this.homeGroups.push(group);
+      }
+      lod.position.set(home.origin.x, this.builder.groundAt(home.origin.x, home.origin.z), home.origin.z);
+      lod.rotation.y = -home.origin.yaw;
+      this.scene.add(lod);
+    }
+  }
+
+  setupHomeEntry() {
+    this.homeButton = document.createElement('button');
+    this.homeButton.type = 'button';
+    this.homeButton.className = 'pill pill--ghost town-home';
+    this.homeButton.textContent = 'Bangun Rumah';
+    this.homeButton.title = 'Pilih rumah di kota, susun denah dan pekarangannya';
+    this.homeButton.setAttribute('aria-pressed', 'false');
+    this.onHomeEntry = () => this.toggleHomeSelection();
+    this.homeButton.addEventListener('click', this.onHomeEntry);
+    this.ui.querySelector('.topbar__right').prepend(this.homeButton);
+  }
+
+  showHomeMessage(message) {
+    clearTimeout(this.homeMessageTimer);
+    const previous = this.hud.hint.textContent;
+    this.hud.hint.textContent = message;
+    this.homeMessageTimer = setTimeout(() => {
+      if (this.hud && !this.homePicking && this.hud.hint.textContent === message) this.hud.hint.textContent = previous;
+    }, 6500);
+  }
+
+  toggleHomeSelection(enabled = !this.homePicking) {
+    if (enabled && (this.interior || this.planner || this.tween || this.transfer)) return;
+    if (enabled && this.view !== 'diorama') this.setView('diorama');
+    this.homePicking = enabled;
+    this.homeButton?.setAttribute('aria-pressed', String(enabled));
+    if (this.homeButton) this.homeButton.textContent = enabled ? 'Batal pilih rumah' : 'Bangun Rumah';
+    this.ctx.engine.renderer.domElement.style.cursor = enabled ? 'crosshair' : '';
+    if (enabled) {
+      this.homePreviousHint = this.hud.hint.textContent;
+      this.hud.hint.textContent = 'Klik rumah untuk membuka denah 2D dan pekarangannya. Seret untuk melihat kota; Esc membatalkan pilihan.';
+    } else if (this.homePreviousHint) this.hud.hint.textContent = this.homePreviousHint;
+  }
+
+  pickHomeAt(clientX, clientY) {
+    if (!this.homePicking || this.view !== 'diorama' || this.tween || this.planner) return;
+    const canvas = this.ctx.engine.renderer.domElement, rect = canvas.getBoundingClientRect();
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2((clientX - rect.left) / rect.width * 2 - 1, -(clientY - rect.top) / rect.height * 2 + 1), this.camera);
+    let best = null, distance = Infinity;
+    for (const b of this.layout.buildings) {
+      if (!HOME_SHELLS.has(b.asset)) continue;
+      const f = b.homeBounds || this.footprints[b.asset];
+      const sx = b.homeBounds ? 1 : b.sx ?? 1, sz = b.homeBounds ? 1 : b.sz ?? 1;
+      const bounds = new THREE.Box3(new THREE.Vector3((f?.minX ?? -b.w / 2) * sx, 0, (f?.minZ ?? -b.d / 2) * sz), new THREE.Vector3((f?.maxX ?? b.w / 2) * sx, b.homeHeight || f?.maxY || 12, (f?.maxZ ?? b.d / 2) * sz));
+      const matrix = new THREE.Matrix4().makeRotationY(-b.yaw).setPosition(b.x, this.builder.groundAt(b.x, b.z), b.z);
+      const ray = raycaster.ray.clone().applyMatrix4(matrix.clone().invert());
+      const hit = ray.intersectBox(bounds, new THREE.Vector3());
+      if (!hit) continue;
+      const d = hit.applyMatrix4(matrix).distanceTo(raycaster.ray.origin);
+      if (d < distance) { best = b; distance = d; }
+    }
+    if (!best) { this.showHomeMessage('Klik salah satu rumah berukuran kecil atau sedang untuk mulai membangun.'); return; }
+    const context = townHomeContext(this.layout, best, this.footprints, this.homes);
+    if (context.unavailable && !best.homeRecord) {
+      this.showHomeMessage('Rumah ini terlalu dekat dengan fasilitas bersama. Pilih rumah dengan lahan kosong di sekitarnya.');
+      return;
+    }
+    const home = ensureHomeRecord(this.ctx.world.state, { planet: this.route.planet, city: this.route.city, townSeed: this.townSeed, layoutSeed: this.layout.seed, layoutVersion: this.layout.layoutVersion, building: best, ...context });
+    this.toggleHomeSelection(false);
+    this.ctx.director.go({ mode: 'home', planet: this.route.planet, city: this.route.city, home: home.id });
+  }
 
   dioramaPose(out) {
     const L = this.layout;
@@ -286,6 +409,7 @@ export default class TownMode {
   }
 
   setView(v, { fromTransfer = false } = {}) {
+    if (v !== 'diorama' && this.homePicking) this.toggleHomeSelection(false);
     if (this.interior) {
       // Leave the building first, then switch
       if (v !== 'walk') this.exitBuilding().then(() => this.setView(v));
@@ -376,6 +500,10 @@ export default class TownMode {
   openPlanner() {
     if (this.planner || this.view !== 'diorama' || this.tween || this.transfer || this.interior) return;
     const { world, director } = this.ctx;
+    if (townHasSavedHomes(world.state, this.route.planet, this.townSeed)) {
+      this.showHomeMessage('Tata kota dikunci karena ada rancangan rumah tersimpan. Gunakan Bangun Rumah untuk mengubah rumah dan pekarangannya.');
+      return;
+    }
     const planet = this.route.planet;
     this.planner = new TownPlanner({
       name: this.city.name,
@@ -401,6 +529,10 @@ export default class TownMode {
   buildCameraBlockers() {
     const boxes = [];
     for (const b of this.layout.buildings) {
+      if (b.homeCollider) {
+        boxes.push({ ...b.homeCollider, top: this.builder.groundAt(b.x, b.z) + b.homeHeight });
+        continue;
+      }
       const f = this.footprints[b.asset];
       if (!f || !Number.isFinite(f.minX)) continue;
       const sx = b.sx ?? 1, sz = b.sz ?? 1, ca = Math.cos(b.yaw), sa = Math.sin(b.yaw);
@@ -463,6 +595,23 @@ export default class TownMode {
     this.layout.buildings.forEach((b, i) => {
       if (!ENTERABLE[b.asset] || !this.furniture) return;
       b.id ||= buildingId(this.layout.seed, b);
+      if (b.homeRecord) {
+        const bp = b.homeRecord.applied, bounds = b.homeBounds;
+        const ground = bp.floors.find(floor => floor.index === 0) || bp.floors[0];
+        const door = bp.openings.find(opening => opening.kind === 'door' && opening.exterior !== false && opening.floorId === ground.id);
+        const socket = door ? openingTransform(bp, door) : { x: bounds.center.x, z: bounds.maxZ };
+        const normal = socket.normal ? { x: -socket.normal.x, z: -socket.normal.z } : { x: 0, z: 1 };
+        let reach = .95;
+        if (normal.x > .01) reach = Math.max(reach, (bounds.maxX - socket.x) / normal.x + .95);
+        if (normal.x < -.01) reach = Math.max(reach, (bounds.minX - socket.x) / normal.x + .95);
+        if (normal.z > .01) reach = Math.max(reach, (bounds.maxZ - socket.z) / normal.z + .95);
+        if (normal.z < -.01) reach = Math.max(reach, (bounds.minZ - socket.z) / normal.z + .95);
+        const approach = localToTown(b.homeRecord.origin, { x: socket.x + normal.x * reach, z: socket.z + normal.z * reach });
+        const direction = localToTown({ x: 0, z: 0, yaw: b.yaw }, normal);
+        b.blueprint = { id: b.id, floors: bp.floors.length, portalId: `${b.id}:entrance`, footprint: { w: bounds.width, d: bounds.depth } };
+        doors.push({ b, i, ...approach, outYaw: Math.atan2(direction.x, direction.z) });
+        return;
+      }
       b.blueprint = describeBuilding(b);
       const fx = -Math.sin(b.yaw);
       const fz = Math.cos(b.yaw);
@@ -487,6 +636,9 @@ export default class TownMode {
 
   async enterBuilding(door, { floor = 0 } = {}) {
     if (this.fading || this.transfer || this.interior) return;
+    if (door.b.homeRecord) {
+      return this.ctx.director.go({ mode: 'home', planet: this.route.planet, city: this.route.city, home: door.b.homeRecord.id });
+    }
     this.fading = true;
     this.tween = null;
     this.orbit.enabled = false;
@@ -1074,6 +1226,8 @@ export default class TownMode {
       if (k === '1') this.setView('diorama');
       else if (k === '2') this.setView('walk');
       else if (k === '3') this.setView('drive');
+      else if (k === 'b' && this.view === 'diorama') this.toggleHomeSelection();
+      else if (k === 'escape' && this.homePicking) this.toggleHomeSelection(false);
       else if (k === 'escape' && this.interior) this.exitBuilding();
       else if (k === 'escape' && this.view !== 'diorama') this.setView('diorama');
       else if (k === 'e' || k === 'f') this.interact();
@@ -1084,7 +1238,7 @@ export default class TownMode {
     this.onKeyUp = (e) => this.keys.delete(e.key.toLowerCase());
     this.onBlur = () => this.keys.clear();
     this.onPointerDown = (e) => {
-      if (this.view === 'diorama') return;
+      if (this.view === 'diorama') { this.homeClickStart = { x: e.clientX, y: e.clientY, id: e.pointerId }; return; }
       this.drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
     };
     this.onPointerMove = (e) => {
@@ -1096,7 +1250,11 @@ export default class TownMode {
       this.drag.y = e.clientY;
       this.followInput = this.ctx.engine.time;
     };
-    this.onPointerUp = () => (this.drag = null);
+    this.onPointerUp = (e) => {
+      if (this.homeClickStart?.id === e.pointerId && Math.hypot(e.clientX - this.homeClickStart.x, e.clientY - this.homeClickStart.y) < 6) this.pickHomeAt(e.clientX, e.clientY);
+      this.homeClickStart = null;
+      this.drag = null;
+    };
     this.onWheel = (e) => {
       if (this.view === 'diorama') {
         // OrbitControls clamps zoom. Leaving the city is an explicit action.
@@ -1281,6 +1439,7 @@ export default class TownMode {
   }
 
   update(dt, t) {
+    const cpuStart = performance.now();
     if (this.interior) {
       // Inside: only the room runs and renders; the town waits outside
       this.updateInterior(dt, t);
@@ -1325,7 +1484,9 @@ export default class TownMode {
     this.updateGauges();
     const obstacles = [this.player];
     if (this.drive) obstacles.push(this.drive.car);
-    this.fleet.update(dt, obstacles);
+    this.fleet.update(dt, obstacles, { deferFlush: true });
+    const detail = this.ctx.engine.quality.preset === 'auto' ? this.detailBudget.current : { lod: 1, shadow: 1, vegetation: 1 };
+    this.fleet.updateLod(this.camera, this.view === 'diorama' ? this.orbit.target : null, detail.lod, detail.shadow);
     const cam = this.camera.position;
     const near = (x, z) => Math.hypot(x - cam.x, z - cam.z) < 260 + cam.y;
     // People jump out of the way of a car coming at them
@@ -1335,10 +1496,11 @@ export default class TownMode {
     if (this.avatar) this.player.visible = false;
     this.crowd.pose();
     this.updateAvatar(dt);
-    this.builder.update(this.camera, this.view === 'diorama' ? this.orbit.target : null);
-    this.updateEnvironment(dt, t);
     this.updateDepthRange();
+    this.builder.update(this.camera, this.view === 'diorama' ? this.orbit.target : null, detail);
+    this.updateEnvironment(dt, t);
     this.hud.update(this);
+    this.cpuUpdateMs = (this.cpuUpdateMs ?? 0) * 0.9 + (performance.now() - cpuStart) * 0.1;
   }
 
   /**
@@ -1355,6 +1517,14 @@ export default class TownMode {
       cam.near = near;
       cam.updateProjectionMatrix();
     }
+  }
+
+  resetAdaptiveQuality() { this.detailBudget.reset(); }
+
+  adaptQuality(sample) {
+    if (this.interior || this.planner) return false;
+    const cpuHeavy = sample.fps < 55 && (this.cpuUpdateMs ?? 0) + (this.cpuRenderMs ?? 0) > 9;
+    return this.detailBudget.sample({ ...sample, heavy: sample.heavy || cpuHeavy });
   }
 
   /** Time of day, light, fog and the sun's shadow box. */
@@ -1387,6 +1557,30 @@ export default class TownMode {
     // Shadow box on the point of interest, snapped to whole shadow texels so it does not shimmer
     const focus = this.view === 'walk' ? this.player : this.view === 'drive' && this.drive ? this.drive.car : this.orbit.target;
     const sun = this.sun;
+    const budget = this.ctx.engine.quality.preset === 'auto' ? this.detailBudget.current.shadow : 1;
+    const shadows = this.ctx.engine.quality.settings.shadows;
+    const high = this.ctx.engine.quality.tier === 'high';
+    this.shadowBaseSize = high ? 2048 : 1024;
+    this.shadowExtents.diorama = high ? 150 : 110;
+    this.shadowExtents.street = high ? 45 : 38;
+    this.ctx.engine.renderer.shadowMap.enabled = shadows;
+    sun.castShadow = shadows;
+    if (this.liveShadows !== shadows) {
+      for (const group of [this.crowd.group, ...(this.rigged?.pool || []).map(p => p.root), this.avatar?.root, ...this.homeGroups || []]) group?.traverse(node => {
+        if (!node.isMesh) return;
+        if (node.userData.townShadow === undefined) node.userData.townShadow = true;
+        node.castShadow = shadows && node.userData.townShadow;
+        if (group !== this.crowd.group) node.receiveShadow = shadows;
+      });
+      this.liveShadows = shadows;
+    }
+    const size = budget < 0.8 ? Math.min(this.shadowBaseSize, 1024) : this.shadowBaseSize;
+    if (sun.shadow.mapSize.x !== size) {
+      sun.shadow.map?.dispose();
+      sun.shadow.map = null;
+      sun.shadow.mapSize.set(size, size);
+      sun.shadow.normalBias = ((this.shadowExt * 2) / size) * 4;
+    }
     const target = _v.set(focus.x, 0, focus.z);
     if (this.shadowExt) {
       const ext = this.view === 'diorama' || this.tween ? this.shadowExtents.diorama : this.shadowExtents.street;
@@ -1410,14 +1604,17 @@ export default class TownMode {
       // The box follows the player in the street, so it is redrawn every frame; from the table every
       // third frame is plenty. A skipped frame keeps the previous map with its own light matrix, so
       // shadows never slide, they only lag the people and cars by a frame or two.
-      this.shadowTick = (this.shadowTick + 1) % 3;
-      sun.shadow.needsUpdate = street === 1 || this.shadowTick === 0 || !sun.shadow.map;
+      const interval = street === 1 ? (budget < 0.5 ? 3 : budget < 0.8 ? 2 : 1) : 3;
+      this.shadowTick = (this.shadowTick + 1) % interval;
+      sun.shadow.needsUpdate = shadows && (this.shadowTick === 0 || !sun.shadow.map);
     }
   }
 
   render() {
     if (this.planner) return; // the planner covers the view; keep the last frame
+    const cpuStart = performance.now();
     this.ctx.engine.draw(this.interior ? this.interior.scene : this.scene, this.camera);
+    this.cpuRenderMs = (this.cpuRenderMs ?? 0) * 0.9 + (performance.now() - cpuStart) * 0.1;
   }
 
   resize(w, h) {
@@ -1427,6 +1624,7 @@ export default class TownMode {
   }
 
   depart(route) {
+    if (route.mode === 'home') return Promise.resolve({ cover: 'fade', arrival: { fromTownWalk: this.view === 'walk' } });
     if(route.mode === 'town')return Promise.resolve({cover:'fade'});
     if (this.interior) {
       // Interior updates deliberately suspend the town camera tween.
@@ -1467,10 +1665,14 @@ export default class TownMode {
     this.ctx.world.state.set('playerLocation', null);
     this.ctx.audio?.stopRoom();
     this.unbindInput();
+    clearTimeout(this.homeMessageTimer);
+    this.homeButton?.removeEventListener('click', this.onHomeEntry);
+    this.ctx.engine.renderer.domElement.style.cursor = '';
     this.orbit.dispose();
     this.hud.dispose();
     this.ui.hidden = true;
     this.builder.dispose();
+    this.homeGroups?.forEach(disposeHomeGroup);
     this.streetLighting.dispose();
     this.crowd.dispose();
     if (this.avatar?.npc) disposeNpc(this.avatar);

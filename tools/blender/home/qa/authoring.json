@@ -1,0 +1,1477 @@
+{
+  "version": 1,
+  "seed": 41026,
+  "blender": "5.1.2",
+  "assets": {
+    "sofa": {
+      "lods": {
+        "0": {
+          "triangles": 3768,
+          "sourceVertices": 1916,
+          "boundsBlender": {
+            "min": [
+              -1.03,
+              -0.425,
+              0.0
+            ],
+            "max": [
+              1.03,
+              0.42,
+              0.94
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 1920,
+          "sourceVertices": 992,
+          "boundsBlender": {
+            "min": [
+              -1.03,
+              -0.425,
+              0.0
+            ],
+            "max": [
+              1.03,
+              0.42,
+              0.94
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 744,
+          "sourceVertices": 400,
+          "boundsBlender": {
+            "min": [
+              -1.03,
+              -0.425,
+              0.0
+            ],
+            "max": [
+              1.03,
+              0.42,
+              0.94
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "chair": {
+      "lods": {
+        "0": {
+          "triangles": 2352,
+          "sourceVertices": 1200,
+          "boundsBlender": {
+            "min": [
+              -0.23,
+              -0.23,
+              0.0
+            ],
+            "max": [
+              0.23,
+              0.23,
+              0.9
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 1368,
+          "sourceVertices": 708,
+          "boundsBlender": {
+            "min": [
+              -0.23,
+              -0.23,
+              0.0
+            ],
+            "max": [
+              0.23,
+              0.23,
+              0.9
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 524,
+          "sourceVertices": 280,
+          "boundsBlender": {
+            "min": [
+              -0.23,
+              -0.23,
+              0.0
+            ],
+            "max": [
+              0.23,
+              0.23,
+              0.9
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "table": {
+      "lods": {
+        "0": {
+          "triangles": 1536,
+          "sourceVertices": 784,
+          "boundsBlender": {
+            "min": [
+              -0.7,
+              -0.425,
+              0.0
+            ],
+            "max": [
+              0.7,
+              0.425,
+              0.7905
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 720,
+          "sourceVertices": 372,
+          "boundsBlender": {
+            "min": [
+              -0.7,
+              -0.425,
+              0.0
+            ],
+            "max": [
+              0.7,
+              0.425,
+              0.7875
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 392,
+          "sourceVertices": 208,
+          "boundsBlender": {
+            "min": [
+              -0.7,
+              -0.425,
+              0.0
+            ],
+            "max": [
+              0.7,
+              0.425,
+              0.7875
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {
+        "surface": {
+          "height": 0.79
+        }
+      },
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "bed": {
+      "lods": {
+        "0": {
+          "triangles": 2760,
+          "sourceVertices": 1404,
+          "boundsBlender": {
+            "min": [
+              -0.8,
+              -1.035,
+              0.0
+            ],
+            "max": [
+              0.8,
+              1.085,
+              0.945
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 1488,
+          "sourceVertices": 768,
+          "boundsBlender": {
+            "min": [
+              -0.8,
+              -1.034453,
+              0.0
+            ],
+            "max": [
+              0.8,
+              1.085,
+              0.945
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 668,
+          "sourceVertices": 356,
+          "boundsBlender": {
+            "min": [
+              -0.8,
+              -1.035,
+              0.0
+            ],
+            "max": [
+              0.8,
+              1.085,
+              0.945
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "wardrobe": {
+      "lods": {
+        "0": {
+          "triangles": 1932,
+          "sourceVertices": 988,
+          "boundsBlender": {
+            "min": [
+              -0.55,
+              -0.3475,
+              0.0
+            ],
+            "max": [
+              0.55,
+              0.3,
+              1.91
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.030000030994415283
+        },
+        "1": {
+          "triangles": 1100,
+          "sourceVertices": 572,
+          "boundsBlender": {
+            "min": [
+              -0.55,
+              -0.346644,
+              0.0
+            ],
+            "max": [
+              0.55,
+              0.3,
+              1.91
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.030000030994415283
+        },
+        "2": {
+          "triangles": 220,
+          "sourceVertices": 120,
+          "boundsBlender": {
+            "min": [
+              -0.55,
+              -0.3125,
+              0.0
+            ],
+            "max": [
+              0.55,
+              0.3,
+              1.91
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.030000030994415283
+        }
+      },
+      "placement": "floor",
+      "sockets": {
+        "surface": {
+          "height": 1.9149999690055848
+        }
+      },
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "shelf": {
+      "lods": {
+        "0": {
+          "triangles": 5264,
+          "sourceVertices": 2688,
+          "boundsBlender": {
+            "min": [
+              -0.455,
+              -0.165,
+              0.0
+            ],
+            "max": [
+              0.455,
+              0.165,
+              1.73
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 3024,
+          "sourceVertices": 1568,
+          "boundsBlender": {
+            "min": [
+              -0.455,
+              -0.165,
+              0.0
+            ],
+            "max": [
+              0.455,
+              0.165,
+              1.73
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 352,
+          "sourceVertices": 192,
+          "boundsBlender": {
+            "min": [
+              -0.455,
+              -0.165,
+              0.0
+            ],
+            "max": [
+              0.455,
+              0.165,
+              1.73
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {
+        "surface": {
+          "height": 1.704
+        }
+      },
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "kitchen": {
+      "lods": {
+        "0": {
+          "triangles": 1868,
+          "sourceVertices": 962,
+          "boundsBlender": {
+            "min": [
+              -0.925,
+              -0.3525,
+              0.0
+            ],
+            "max": [
+              0.925,
+              0.32,
+              0.949
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.050000011920928955
+        },
+        "1": {
+          "triangles": 1070,
+          "sourceVertices": 563,
+          "boundsBlender": {
+            "min": [
+              -0.925,
+              -0.351644,
+              0.0
+            ],
+            "max": [
+              0.925,
+              0.32,
+              0.949
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.050000011920928955
+        },
+        "2": {
+          "triangles": 264,
+          "sourceVertices": 144,
+          "boundsBlender": {
+            "min": [
+              -0.925,
+              -0.3225,
+              0.0
+            ],
+            "max": [
+              0.925,
+              0.32,
+              0.9225
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.050000011920928955
+        }
+      },
+      "placement": "floor",
+      "sockets": {
+        "surface": {
+          "height": 0.925999988079071
+        }
+      },
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "sink": {
+      "lods": {
+        "0": {
+          "triangles": 872,
+          "sourceVertices": 454,
+          "boundsBlender": {
+            "min": [
+              -0.325,
+              -0.2915,
+              0.0
+            ],
+            "max": [
+              0.325,
+              0.26,
+              1.054536
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.030000001192092896
+        },
+        "1": {
+          "triangles": 510,
+          "sourceVertices": 271,
+          "boundsBlender": {
+            "min": [
+              -0.325,
+              -0.290643,
+              0.0
+            ],
+            "max": [
+              0.325,
+              0.26,
+              1.052589
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.030000001192092896
+        },
+        "2": {
+          "triangles": 132,
+          "sourceVertices": 72,
+          "boundsBlender": {
+            "min": [
+              -0.325,
+              -0.2675,
+              0.0
+            ],
+            "max": [
+              0.325,
+              0.26,
+              0.8925
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.030000001192092896
+        }
+      },
+      "placement": "floor",
+      "sockets": {
+        "surface": {
+          "height": 0.8899999988079071
+        }
+      },
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "toilet": {
+      "lods": {
+        "0": {
+          "triangles": 2096,
+          "sourceVertices": 1060,
+          "boundsBlender": {
+            "min": [
+              -0.215,
+              -0.355,
+              0.0
+            ],
+            "max": [
+              0.215,
+              0.325,
+              0.8175
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.019999999552965164
+        },
+        "1": {
+          "triangles": 1028,
+          "sourceVertices": 526,
+          "boundsBlender": {
+            "min": [
+              -0.21101,
+              -0.347128,
+              0.0
+            ],
+            "max": [
+              0.21101,
+              0.325,
+              0.8175
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.019999999552965164
+        },
+        "2": {
+          "triangles": 314,
+          "sourceVertices": 165,
+          "boundsBlender": {
+            "min": [
+              -0.215,
+              -0.355,
+              0.0
+            ],
+            "max": [
+              0.215,
+              0.325,
+              0.8175
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.019999999552965164
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "bath": {
+      "lods": {
+        "0": {
+          "triangles": 1396,
+          "sourceVertices": 720,
+          "boundsBlender": {
+            "min": [
+              -0.38,
+              -0.85,
+              0.0
+            ],
+            "max": [
+              0.38,
+              0.85,
+              0.818841
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 864,
+          "sourceVertices": 452,
+          "boundsBlender": {
+            "min": [
+              -0.38,
+              -0.85,
+              0.0
+            ],
+            "max": [
+              0.38,
+              0.85,
+              0.816316
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 132,
+          "sourceVertices": 72,
+          "boundsBlender": {
+            "min": [
+              -0.38,
+              -0.85,
+              0.0
+            ],
+            "max": [
+              0.38,
+              0.85,
+              0.5605
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.034999996423721313
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "lamp": {
+      "lods": {
+        "0": {
+          "triangles": 1628,
+          "sourceVertices": 822,
+          "boundsBlender": {
+            "min": [
+              -0.231,
+              -0.231,
+              0.0
+            ],
+            "max": [
+              0.231,
+              0.231,
+              1.639
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999999776482582
+        },
+        "1": {
+          "triangles": 1056,
+          "sourceVertices": 536,
+          "boundsBlender": {
+            "min": [
+              -0.231,
+              -0.231,
+              0.0
+            ],
+            "max": [
+              0.231,
+              0.231,
+              1.637794
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999999776482582
+        },
+        "2": {
+          "triangles": 196,
+          "sourceVertices": 104,
+          "boundsBlender": {
+            "min": [
+              -0.215886,
+              -0.22271,
+              0.0
+            ],
+            "max": [
+              0.225,
+              0.22271,
+              1.63
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999999776482582
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "rug": {
+      "lods": {
+        "0": {
+          "triangles": 6204,
+          "sourceVertices": 3168,
+          "boundsBlender": {
+            "min": [
+              -1.0075,
+              -0.7,
+              0.0
+            ],
+            "max": [
+              1.0075,
+              0.7,
+              0.05
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 756,
+          "sourceVertices": 392,
+          "boundsBlender": {
+            "min": [
+              -0.95,
+              -0.7,
+              0.0
+            ],
+            "max": [
+              0.95,
+              0.7,
+              0.05
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 88,
+          "sourceVertices": 48,
+          "boundsBlender": {
+            "min": [
+              -0.95,
+              -0.7,
+              0.0
+            ],
+            "max": [
+              0.95,
+              0.7,
+              0.0445
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "plant": {
+      "lods": {
+        "0": {
+          "triangles": 2472,
+          "sourceVertices": 1330,
+          "boundsBlender": {
+            "min": [
+              -0.264524,
+              -0.258918,
+              0.0
+            ],
+            "max": [
+              0.267711,
+              0.250346,
+              0.986311
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999999776482582
+        },
+        "1": {
+          "triangles": 894,
+          "sourceVertices": 507,
+          "boundsBlender": {
+            "min": [
+              -0.261587,
+              -0.253271,
+              0.0
+            ],
+            "max": [
+              0.264076,
+              0.246422,
+              0.979782
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999999776482582
+        },
+        "2": {
+          "triangles": 370,
+          "sourceVertices": 197,
+          "boundsBlender": {
+            "min": [
+              -0.209779,
+              -0.253683,
+              0.0
+            ],
+            "max": [
+              0.265035,
+              0.199547,
+              0.979577
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999999776482582
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "picture": {
+      "lods": {
+        "0": {
+          "triangles": 872,
+          "sourceVertices": 446,
+          "boundsBlender": {
+            "min": [
+              -0.35,
+              -0.059,
+              0.0
+            ],
+            "max": [
+              0.35,
+              0.0325,
+              0.54
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999990463256836
+        },
+        "1": {
+          "triangles": 496,
+          "sourceVertices": 258,
+          "boundsBlender": {
+            "min": [
+              -0.35,
+              -0.059,
+              0.0
+            ],
+            "max": [
+              0.35,
+              0.0325,
+              0.54
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999990463256836
+        },
+        "2": {
+          "triangles": 240,
+          "sourceVertices": 130,
+          "boundsBlender": {
+            "min": [
+              -0.35,
+              -0.059,
+              0.0
+            ],
+            "max": [
+              0.35,
+              0.0325,
+              0.54
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.009999990463256836
+        }
+      },
+      "placement": "wall",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "bench": {
+      "lods": {
+        "0": {
+          "triangles": 2288,
+          "sourceVertices": 1168,
+          "boundsBlender": {
+            "min": [
+              -0.7,
+              -0.23,
+              0.0
+            ],
+            "max": [
+              0.7,
+              0.2325,
+              0.87
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 1368,
+          "sourceVertices": 708,
+          "boundsBlender": {
+            "min": [
+              -0.7,
+              -0.23,
+              0.0
+            ],
+            "max": [
+              0.7,
+              0.2325,
+              0.87
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 656,
+          "sourceVertices": 352,
+          "boundsBlender": {
+            "min": [
+              -0.7,
+              -0.23,
+              0.0
+            ],
+            "max": [
+              0.7,
+              0.2325,
+              0.87
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {
+        "surface": {
+          "height": 0.483
+        }
+      },
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "planter": {
+      "lods": {
+        "0": {
+          "triangles": 2848,
+          "sourceVertices": 1456,
+          "boundsBlender": {
+            "min": [
+              -0.315,
+              -0.315,
+              0.0
+            ],
+            "max": [
+              0.315,
+              0.315,
+              0.77
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 1256,
+          "sourceVertices": 656,
+          "boundsBlender": {
+            "min": [
+              -0.315,
+              -0.315,
+              0.0
+            ],
+            "max": [
+              0.315,
+              0.315,
+              0.77
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 456,
+          "sourceVertices": 246,
+          "boundsBlender": {
+            "min": [
+              -0.315,
+              -0.315,
+              0.0
+            ],
+            "max": [
+              0.315,
+              0.315,
+              0.725
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "window": {
+      "lods": {
+        "0": {
+          "triangles": 1504,
+          "sourceVertices": 768,
+          "boundsBlender": {
+            "min": [
+              -0.63,
+              -0.215,
+              0.0
+            ],
+            "max": [
+              0.63,
+              0.075,
+              1.22
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 864,
+          "sourceVertices": 448,
+          "boundsBlender": {
+            "min": [
+              -0.63,
+              -0.215,
+              0.0
+            ],
+            "max": [
+              0.63,
+              0.075,
+              1.22
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 352,
+          "sourceVertices": 192,
+          "boundsBlender": {
+            "min": [
+              -0.63,
+              -0.215,
+              0.0
+            ],
+            "max": [
+              0.63,
+              0.075,
+              1.22
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "wall",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "door": {
+      "lods": {
+        "0": {
+          "triangles": 1436,
+          "sourceVertices": 734,
+          "boundsBlender": {
+            "min": [
+              -0.5075,
+              -0.0855,
+              0.0
+            ],
+            "max": [
+              0.5075,
+              0.085,
+              2.16
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 820,
+          "sourceVertices": 426,
+          "boundsBlender": {
+            "min": [
+              -0.5075,
+              -0.085,
+              0.0
+            ],
+            "max": [
+              0.5075,
+              0.085,
+              2.16
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 176,
+          "sourceVertices": 96,
+          "boundsBlender": {
+            "min": [
+              -0.5075,
+              -0.085,
+              0.0
+            ],
+            "max": [
+              0.5075,
+              0.085,
+              2.16
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "wall",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "chimney": {
+      "lods": {
+        "0": {
+          "triangles": 1316,
+          "sourceVertices": 672,
+          "boundsBlender": {
+            "min": [
+              -0.295,
+              -0.295,
+              0.0
+            ],
+            "max": [
+              0.295,
+              0.295,
+              1.2015
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 324,
+          "sourceVertices": 168,
+          "boundsBlender": {
+            "min": [
+              -0.295,
+              -0.295,
+              0.0
+            ],
+            "max": [
+              0.295,
+              0.295,
+              1.2015
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 132,
+          "sourceVertices": 72,
+          "boundsBlender": {
+            "min": [
+              -0.295,
+              -0.295,
+              0.0
+            ],
+            "max": [
+              0.295,
+              0.295,
+              1.2015
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "fence": {
+      "lods": {
+        "0": {
+          "triangles": 2308,
+          "sourceVertices": 1180,
+          "boundsBlender": {
+            "min": [
+              -0.755,
+              -0.055,
+              0.0
+            ],
+            "max": [
+              0.755,
+              0.055,
+              0.95
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 1316,
+          "sourceVertices": 684,
+          "boundsBlender": {
+            "min": [
+              -0.752308,
+              -0.052308,
+              0.0
+            ],
+            "max": [
+              0.752308,
+              0.052308,
+              0.95
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 612,
+          "sourceVertices": 332,
+          "boundsBlender": {
+            "min": [
+              -0.752308,
+              -0.052308,
+              0.0
+            ],
+            "max": [
+              0.752308,
+              0.052308,
+              0.95
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    },
+    "vase": {
+      "lods": {
+        "0": {
+          "triangles": 968,
+          "sourceVertices": 488,
+          "boundsBlender": {
+            "min": [
+              -0.12,
+              -0.12,
+              0.0
+            ],
+            "max": [
+              0.12,
+              0.12,
+              0.345
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "1": {
+          "triangles": 668,
+          "sourceVertices": 338,
+          "boundsBlender": {
+            "min": [
+              -0.12,
+              -0.12,
+              0.0
+            ],
+            "max": [
+              0.12,
+              0.12,
+              0.345
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        },
+        "2": {
+          "triangles": 172,
+          "sourceVertices": 88,
+          "boundsBlender": {
+            "min": [
+              -0.115139,
+              -0.118779,
+              0.0
+            ],
+            "max": [
+              0.12,
+              0.118779,
+              0.345
+            ]
+          },
+          "zeroAreaTriangles": 0,
+          "uv": true,
+          "floorAdjustment": 0.0
+        }
+      },
+      "placement": "floor",
+      "sockets": {},
+      "collider": {
+        "type": "box",
+        "source": "export LOD0 local bounds",
+        "purpose": "placement overlap and coarse navigation proxy"
+      }
+    }
+  },
+  "orientation": {
+    "units": "metres",
+    "runtimeUp": "+Y",
+    "runtimeFront": "+Z",
+    "pivot": "floor at footprint centre"
+  },
+  "texture": {
+    "file": "textures/home_painted_atlas.png",
+    "dimensions": [
+      1024,
+      1024
+    ],
+    "colorSpace": "sRGB",
+    "channels": "RGB neutral painted albedo multiplier",
+    "slots": 16,
+    "paddingPixels": 8,
+    "gpuRgbaMipBytes": 5592405
+  }
+}

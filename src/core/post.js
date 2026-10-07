@@ -122,7 +122,7 @@ class Glow extends UnrealBloomPass {
 export const LOOKS = {
   space: { bloom: { strength: 0.7, radius: 0.5, threshold: 0.96 }, grade: { saturation: 1.08, contrast: 1.05, gain: [1, 1, 1.02], vignette: 0.42 } },
   planet: { bloom: { strength: 0.3, radius: 0.45, threshold: 0.97 }, grade: { saturation: 1.04, contrast: 1.03, gain: [1, 1, 1], vignette: 0.28 } },
-  town: { bloom: { strength: 0.2, radius: 0.45, threshold: 0.97 }, grade: { saturation: 1.06, contrast: 1.04, gain: [1.01, 1, 0.99], vignette: 0.26 } },
+  town: { bloom: { strength: 0.16, radius: 0.45, threshold: 0.97 }, grade: { saturation: 1.08, contrast: 1.025, gain: [1.015, 1.005, 0.985], vignette: 0.2 } },
   // Neutral tone mapping keeps the room's saturated toy colours close to their palette values
   interior: { bloom: { strength: 0.3, radius: 0.5, threshold: 0.9 }, grade: { saturation: 1.06, contrast: 1.04, gain: [1.02, 1, 0.97], vignette: 0.32 }, toneMapping: THREE.NeutralToneMapping, exposure: 1 }
 };

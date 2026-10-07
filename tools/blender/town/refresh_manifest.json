@@ -1,0 +1,229 @@
+{
+  "revision": 1,
+  "buildingFamilies": 16,
+  "buildingVariants": 28,
+  "originalRoots": 99,
+  "replacementRoots": 43,
+  "preservedRoots": 64,
+  "finalRoots": 107,
+  "untouchedPayloadsVerified": 64,
+  "finiteNondegenerateMeshesVerified": 129,
+  "bytes": 2613964,
+  "triangles": {
+    "f_house_small_v0": [
+      1160,
+      284,
+      92
+    ],
+    "f_house_small_v1": [
+      1436,
+      356,
+      92
+    ],
+    "f_house_small_v2": [
+      1420,
+      364,
+      92
+    ],
+    "f_house_v0": [
+      2612,
+      584,
+      104
+    ],
+    "f_house_v1": [
+      2780,
+      632,
+      104
+    ],
+    "f_house_v2": [
+      2872,
+      664,
+      104
+    ],
+    "f_house_tall_v0": [
+      3116,
+      680,
+      104
+    ],
+    "f_house_tall_v1": [
+      3260,
+      728,
+      104
+    ],
+    "f_townhouse_v0": [
+      3376,
+      760,
+      104
+    ],
+    "f_townhouse_v1": [
+      3520,
+      808,
+      104
+    ],
+    "f_shop_v0": [
+      2864,
+      692,
+      104
+    ],
+    "f_shop_v1": [
+      2864,
+      692,
+      104
+    ],
+    "f_tavern": [
+      4012,
+      964,
+      104
+    ],
+    "f_castle": [
+      4236,
+      1488,
+      488
+    ],
+    "f_temple": [
+      3936,
+      1088,
+      272
+    ],
+    "f_tower": [
+      1570,
+      462,
+      82
+    ],
+    "m_house_v0": [
+      1836,
+      492,
+      108
+    ],
+    "m_house_v1": [
+      1836,
+      492,
+      108
+    ],
+    "m_house_v2": [
+      1832,
+      488,
+      104
+    ],
+    "m_shop_v0": [
+      1912,
+      540,
+      132
+    ],
+    "m_shop_v1": [
+      2800,
+      744,
+      144
+    ],
+    "m_apartment_v0": [
+      12760,
+      3108,
+      156
+    ],
+    "m_apartment_v1": [
+      17488,
+      4236,
+      168
+    ],
+    "m_office_v0": [
+      1468,
+      696,
+      72
+    ],
+    "m_office_v1": [
+      1504,
+      732,
+      72
+    ],
+    "m_tower_a": [
+      1232,
+      708,
+      264
+    ],
+    "m_tower_b": [
+      3694,
+      910,
+      216
+    ],
+    "m_spire": [
+      1004,
+      600,
+      216
+    ],
+    "f_well": [
+      2852,
+      532,
+      228
+    ],
+    "f_market_stall_v0": [
+      914,
+      156,
+      84
+    ],
+    "f_market_stall_v1": [
+      914,
+      156,
+      84
+    ],
+    "f_market_stall_v2": [
+      914,
+      156,
+      84
+    ],
+    "f_lamp": [
+      296,
+      142,
+      54
+    ],
+    "m_lamp": [
+      436,
+      84,
+      64
+    ],
+    "m_bench": [
+      660,
+      96,
+      72
+    ],
+    "g_cafe_a": [
+      1076,
+      308,
+      164
+    ],
+    "g_cafe_b": [
+      1076,
+      308,
+      164
+    ],
+    "g_fountain": [
+      1790,
+      650,
+      358
+    ],
+    "g_kiosk": [
+      560,
+      144,
+      72
+    ],
+    "g_bus_stop": [
+      560,
+      140,
+      96
+    ],
+    "g_hydrant": [
+      532,
+      140,
+      64
+    ],
+    "g_bin": [
+      1120,
+      248,
+      160
+    ],
+    "f_fence": [
+      720,
+      140,
+      100
+    ]
+  }
+}

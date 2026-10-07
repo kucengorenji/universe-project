@@ -132,7 +132,11 @@ Milestone:
   - Runtime (`units/vcSoldiers.js`): satu draw call per prajurit; setiap prajurit punya index buffer sendiri berisi piece yang ia pakai (rambut, helm, syal, kit kelas; rambut dasar selalu di bawah rambut donor menutup tengkuk); dua tekstur (kepala berwarna, kain data + palet faksi); jari menggenggam senjata. Musuh: badan sama, helm bermasker.
   - Arlen disetujui (`9f9a924`), lalu: badan perempuan (`--body f`: tonjolan dada dihaluskan sebagai height field karena kulit VRoid punya pulau dan normal custom sendiri; tanpa saku dada), rambut donor untuk 8 hero (Otto Fumiriya, Cato AvatarSample F tanpa tanduk, Lio D_Darkness, Mira G, Sela D, Ines HairSample_Female tanpa telinga kucing, Vesna Shino; aksesori kecil dibuang per material atau pulau), Brann memakai helm. Tampilan hero di `units/heroLooks.json` (dibaca game dan skrip). Template per jenis kelamin dengan `clip_speed` dan skala pegangan senjata sendiri. Potret lukis dari Blender (EEVEE toon dengan shader yang sama, Kuwahara, tinta Freestyle tanpa garis di lapisan mata) di satu lembar 3 × 3, dipotong game untuk Prep, HUD, dan cut-in. `soldier_vc.py`, `facePainter.js`, dan potret runtime dihapus.
   - GPU: A/B bergantian HEAD vs working tree di bawah beban GPU lain di mesin: scene 7,2–9,0 ms vs 8,0–8,8 ms (tidak ada beda terukur); angka absolut tidak sebanding dengan pengukuran M-A.
-- **M-E**: kit environment Blender baru, medan berbukit, ladang gandum (grill kesembilan).
+- **M-E (berjalan)**: kit environment Blender baru, medan berbukit, ladang gandum (grill kesembilan).
+  - Ubin permukaan lukis (`surfaces.py`, 22 × 512², menyambung, noise periodik lewat FFT) dan kit `env_kit.py` (39 aset, lihat `docs/ASSETS.md`): detail ada di geometri (rangka, bingkai jendela, daun jendela, genteng per baris, quoin, karung satu per satu, bata lepas di reruntuhan, gumpalan daun), warna dari ubin yang disampel triplanar di ruang lokal model (`battlefield/envKit.js`, texture array), tint × AO ter-bake di warna vertex. Aset yang belum ada di kit (bendera kamp, tank) tetap dari `military.glb`; `town.glb` tidak disentuh.
+  - Medan: gelombang fbm ±4 m + tiga bukit (2–5,5 m), jalan duduk di lembah dangkal sendiri; desa, kamp, rumah, dan sungai tetap seperti sebelumnya.
+  - Tanah: peta lukis lama untuk warna dan tata letak, ditambah pola ubin (rumput, tanah/jalan, gandum, bajak) dari peta kelas, dibagi warna rata-rata ubinnya, sehingga dekat kamera muncul sapuan kuas tanpa mengubah warna.
+  - Ladang: gandum dan rumput liar dari kartu lukis (tiga bidang bersilang, massa padat di bawah, batang dan bulir di atas, bergoyang angin), tepi petak gandum dijaga 45 cm. Kartu menulis alpha 0,5 sehingga pass tinta tidak menggaris di atas dan di sekitarnya. Dekorasi tanpa collider: pagar kayu di sisi sebagian ladang, tumpukan jerami di padang rumput, stook di tepi gandum, baris kubis di sebagian ladang bajak.
 - **M-F**: efek layar, kamera sinematik giliran musuh, kill/down cam, UI ala referensi, dan sisa polish.
 
 ### Karakter baru dan AP (grill kedelapan, 4 Oktober 2026)
@@ -190,8 +194,9 @@ src/skirmish/ui/                   TacticalMap (peta 2D + minimap), PrepPanel (+
                                    hud.css gaya buku catatan perang, emblems.js perisai SVG)
 src/skirmish/battlefield/
   generateField.js                 generator murni (seed -> data medan), dites di tests/skirmish-field.test.js
-  groundPaint.js                   tekstur tanah dari data medan (canvas 2D)
-  fieldBuilder.js                  data medan -> scene three (instancing, material toon)
+  groundPaint.js                   tekstur tanah dari data medan (canvas 2D) + peta kelas permukaan untuk detail
+  envKit.js                        kit environment + ubin permukaan (texture array, material triplanar)
+  fieldBuilder.js                  data medan -> scene three (instancing, material toon, kartu gandum, dekorasi ladang)
 src/skirmish/render/
   canvasStyle.js                   arsiran pensil berjangkar dunia di MeshToonMaterial (khusus halaman ini) + CanvasPost (glow, DoF, tepi kertas)
   skyLight.js                      kubah langit, matahari, fog per waktu
@@ -200,7 +205,8 @@ src/skirmish/units/
   soldiers.js                      senjata, pegangan, IK dua tulang (dipakai vcSoldiers)
   vcSoldiers.js                    tentara v5: dua template (m/f), material (palet, atlas kain + atlas kepala), piece per prajurit, klip, genggaman, LOD, lembar potret
   heroLooks.json                   tampilan 9 hero (badan, rambut, warna, helm, syal); dibaca juga oleh soldier_v5.py
-tools/blender/skirmish/            soldier_v5.py (tentara VRoid + seragam + atlas + klip + potret), military_kit.py, soldier_faceted.py, preview_soldiers.py
+tools/blender/skirmish/            soldier_v5.py (tentara VRoid + seragam + atlas + klip + potret), env_kit.py (kit environment), surfaces.py (ubin lukis),
+                                   military_kit.py, soldier_faceted.py, preview_soldiers.py
 ```
 
 ## Catatan teknis
@@ -210,3 +216,4 @@ tools/blender/skirmish/            soldier_v5.py (tentara VRoid + seragam + atla
 - Biaya GPU (Chrome headless, Metal, M1 Pro, 2560×1600, render 3× per frame): ±10–12 ms per frame dengan post, ±5 ms tanpa post. Noise kertas dan goyangan garis diambil dari tekstur 256² yang dibuat sekali; fbm per piksel sebelumnya menghabiskan ±26 ms.
 - Rebuild aset: `Blender -b --factory-startup --python tools/blender/skirmish/soldier_faceted.py -- public/models/soldier.glb` (sama untuk `military_kit.py` → `military.glb`).
 - Tentara v5 (±1 menit per badan): `Blender -b --factory-startup --python tools/blender/skirmish/soldier_v5.py -- public/models/soldier_v5_m.glb --vroid <folder model VRoid CC0> --body m --ual <AnimationLibrary_Godot_Standard.glb> --head public/textures/soldier_v5_m_head.png --atlas public/textures/soldier_v5_m_cloth.png --portraits public/textures/soldier_portraits.png`, lalu sama dengan `--body f` dan nama `_f` (lembar potret diisi bergantian). Paket VRoid dan Quaternius tidak ada di repo; unduh ulang dari OpenGameArt.
+- Environment: `<Blender>/Contents/Resources/5.1/python/bin/python3.13 tools/blender/skirmish/surfaces.py public/textures/skirmish_surfaces.png` (numpy), lalu `Blender -b --factory-startup --python tools/blender/skirmish/env_kit.py -- public/models/skirmish_env.glb` (±1 menit, AO di-bake Cycles; `--only a,b --preview <dir>` untuk iterasi).

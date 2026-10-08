@@ -39,24 +39,19 @@
     </header>
 
     <main id="main">
-      <!-- HERO: type is the surface; the game screenshot sits in a space-colored block below it -->
+      <!-- HERO: the orbit screenshot fills the background behind the introduction -->
       <section class="hero" aria-labelledby="hero-title">
-        <div class="shell">
+        <div class="stage hero-background" aria-hidden="true">
+          <img src="/landing/shots/space-system.jpg" width="1440" height="900" alt="" fetchpriority="high" />
+        </div>
+        <div class="shell hero-content">
           <h1 id="hero-title" data-i18n-html="l.hero.1">From orbit<br />to the living room.</h1>
           <div class="hero-row">
             <p class="hero-lead" data-i18n="l.hero.2">Aethergate is a procedural 3D world that runs in your browser. You fly between planets, drop into automatically built towns, walk into residents' houses, then design your own.</p>
             <div class="cta-pair">
-              <span data-i18n="l.hero.3">Want to try it now?</span>
-              <a class="pill" href="/play/" data-i18n="l.hero.4">Enter the world</a>
+              <a class="pill hero-cta" href="/play/"><span data-i18n="l.hero.4">Enter the world</span><span aria-hidden="true">↗</span></a>
             </div>
           </div>
-        </div>
-        <div class="stage">
-          <div class="shell">
-            <img src="/landing/shots/space-system.jpg" width="1440" height="900" alt="A spaceship in orbit around the home planet in a star system, with a list of six planets on the left and a planet info card on the right." fetchpriority="high" data-i18n-attr="alt:l.hero.5"/>
-          </div>
-        </div>
-        <div class="shell">
           <p class="micro" data-i18n="l.hero.6">Screenshot from the game: the Gorqu system in the world with seed 42. Best played with a keyboard and mouse. Your progress is saved in the browser you use.</p>
         </div>
       </section>

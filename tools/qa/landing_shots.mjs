@@ -29,9 +29,10 @@ async function shot(name, { frame = 24, chrome = true } = {}) {
 const run = (fn, arg) => page.evaluate(fn, arg);
 
 try {
-  await page.goto(new URL('play/', base).href, { waitUntil: 'domcontentloaded' });
+  const lang = process.env.LANDING_LANG || 'en'; // the game language the shots are taken in
+  await page.goto(new URL(`play/?lang=${lang}`, base).href, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__globe && !window.__globe.director.busy, null, { timeout: 60000 });
-  const welcome = page.getByRole('button', { name: 'Mulai menjelajah' });
+  const welcome = page.getByRole('button', { name: /Start exploring|Mulai menjelajah/ });
   if (await welcome.isVisible()) await welcome.click();
   await run(() => { const a = window.__globe; a.world.sunAt = () => ({ x: -.45, y: .8, z: .4 }); a.engine.quality.setPreset('high', false); });
   // One fixture world for every shot: a fantasy town with a river and bridge, found deterministically like the pixel QA.

@@ -1,4 +1,5 @@
 import './landing.css';
+import { applyDom, getLocale, setLocale, onLocaleChange } from './i18n/index.js';
 
 // Existing bookmarks keep their world route when the homepage becomes the landing page.
 if (/^#\/?(?:space|planet|town|home)(?:\/|$)/.test(location.hash)) {
@@ -6,6 +7,21 @@ if (/^#\/?(?:space|planet|town|home)(?:\/|$)/.test(location.hash)) {
 }
 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Language: English markup is the source; applyDom swaps in Indonesian from the dictionary.
+const refreshers = [];
+// Screenshots are taken in the game's own language: the Indonesian set lives in /landing/shots/id/.
+const shotSrc = src => (getLocale() === 'id' ? src.replace('/landing/shots/', '/landing/shots/id/') : src);
+const plainShots = [...document.querySelectorAll('.stage img, .viewer img')].filter(img => !img.closest('.viewer')?.querySelector('[role="tab"]'));
+plainShots.forEach(img => { img.dataset.shot = img.getAttribute('src'); });
+const syncShots = () => plainShots.forEach(img => { img.src = shotSrc(img.dataset.shot); });
+const langButtons = [...document.querySelectorAll('[data-locale]')];
+const syncLang = () => langButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.locale === getLocale())));
+applyDom();
+syncShots();
+syncLang();
+langButtons.forEach(b => b.addEventListener('click', () => setLocale(b.dataset.locale)));
+onLocaleChange(() => { applyDom(); syncShots(); refreshers.forEach(fn => fn()); syncLang(); });
 
 // Screenshot tabs. Without JS the first shot of each level and all text stay readable.
 for (const viewer of document.querySelectorAll('[data-viewer]')) {
@@ -16,10 +32,12 @@ for (const viewer of document.querySelectorAll('[data-viewer]')) {
   const pad = n => String(n).padStart(2, '0');
   let current = 0, token = 0;
   tabs.forEach((tab, i) => { tab.id ||= `${viewer.closest('.level').id}-tab-${i}`; tab.tabIndex = i ? -1 : 0; });
-  const preload = tab => { new Image().src = tab.dataset.src; };
+  // After a language change the caption and alt text follow the tab that is showing, not the first one.
+  refreshers.push(() => { const tab = tabs[current]; title.textContent = tab.dataset.title; desc.textContent = tab.dataset.desc; img.alt = tab.dataset.alt; img.src = shotSrc(tab.dataset.src); });
+  const preload = tab => { new Image().src = shotSrc(tab.dataset.src); };
 
   function select(i, { focus = false } = {}) {
-    if (i === current && img.getAttribute('src') === tabs[i].dataset.src) return;
+    if (i === current && img.getAttribute('src') === shotSrc(tabs[i].dataset.src)) return;
     const tab = tabs[i], mine = ++token;
     tabs.forEach((t, j) => { t.setAttribute('aria-selected', String(j === i)); t.tabIndex = j === i ? 0 : -1; });
     if (focus) tab.focus();
@@ -29,11 +47,11 @@ for (const viewer of document.querySelectorAll('[data-viewer]')) {
     if (count) count.textContent = `${pad(i + 1)} / ${pad(tabs.length)}`;
     // Swap once the new frame has decoded, so the viewer never flashes empty.
     const next = new Image();
-    next.src = tab.dataset.src;
+    next.src = shotSrc(tab.dataset.src);
     if (!reduceMotion) img.classList.add('is-swapping');
     (next.decode ? next.decode() : Promise.resolve()).catch(() => {}).then(() => {
       if (mine !== token) return;
-      img.src = tab.dataset.src; img.alt = tab.dataset.alt;
+      img.src = shotSrc(tab.dataset.src); img.alt = tab.dataset.alt;
       requestAnimationFrame(() => img.classList.remove('is-swapping'));
     });
   }
@@ -50,6 +68,8 @@ for (const viewer of document.querySelectorAll('[data-viewer]')) {
     });
   });
 }
+
+refreshers.forEach(fn => fn()); // the first frame of each viewer follows the saved language
 
 // The level rail marks the level being read. On narrow screens it scrolls sideways, so keep the active pill in view.
 const links = new Map([...document.querySelectorAll('[data-level-link]')].map(a => [a.dataset.levelLink, a]));

@@ -71,7 +71,7 @@ try {
   // Keyboard: Tab reaches the skip link first and a visible focus ring appears.
   await page.keyboard.press('Tab');
   const focus = await page.evaluate(() => { const el = document.activeElement, cs = getComputedStyle(el); return { text: el.textContent.trim(), outline: cs.outlineStyle, width: cs.outlineWidth }; });
-  assert.ok(/Lewati/.test(focus.text) && focus.outline !== 'none' && parseFloat(focus.width) >= 2, JSON.stringify(focus));
+  assert.ok(/Skip to content|Lewati/.test(focus.text) && focus.outline !== 'none' && parseFloat(focus.width) >= 2, JSON.stringify(focus));
   checks.push({ name: 'keyboard focus is visible, skip link comes first', pass: true, ...focus });
 
   // Every screenshot referenced by a tab or image exists and is served.
@@ -123,7 +123,7 @@ try {
   // LANDING_SKIP_GAME=1 skips booting the game, for when the game itself is mid-change.
   if (!process.env.LANDING_SKIP_GAME) {
     await page.waitForSelector('#canvas-container canvas');
-    const welcome = page.getByRole('button', { name: 'Mulai menjelajah' });
+    const welcome = page.getByRole('button', { name: /Start exploring|Mulai menjelajah/ });
     await welcome.waitFor({ state: 'visible', timeout: 60000 }).catch(() => {});
     if (await welcome.isVisible()) await welcome.click();
     await page.waitForFunction(() => !document.getElementById('cover').classList.contains('is-on'), null, { timeout: 60000 });

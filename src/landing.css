@@ -47,6 +47,14 @@ nav { display: flex; align-items: center; gap: 24px; }
 .nav-link { font-size: 18px; }
 .nav-link:hover { text-decoration: underline; text-underline-offset: 4px; }
 
+/* Language toggle: two hairline segments, the active one is filled like the pill */
+.lang-switch { display: inline-flex; border: var(--hairline); border-radius: 100px; overflow: hidden; }
+.lang-switch button { min-height: 38px; min-width: 44px; padding: 0 12px; border: 0; background: transparent; cursor: pointer; font-size: 16px; letter-spacing: .04em; }
+.lang-switch button + button { border-left: var(--hairline); }
+.lang-switch button:hover { background: rgba(31, 31, 31, .12); }
+.lang-switch button[aria-pressed='true'] { background: var(--color-iron); color: var(--color-concrete); }
+.lang-switch button:focus-visible { outline-offset: -3px; }
+
 /* The1 has one button: the dark pill. No lift, no shadow. */
 .pill { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 10px 22px; border-radius: 100px; background: var(--color-iron); color: var(--color-concrete); font-size: 18px; line-height: 1; letter-spacing: -.01em; transition: background .15s; }
 .pill:hover { background: var(--color-carbon); }
@@ -205,6 +213,7 @@ dd kbd, .manual-note kbd, .steps kbd, .micro kbd { margin-inline: 1px; }
   :root { --header-h: 52px; }
   body { font-size: 18px; }
   .nav-link { display: none; }
+  nav { gap: 12px; }
   .pill { min-height: 44px; }
   h1 { font-size: clamp(48px, 15.2vw, 110px); }
   h2 { font-size: clamp(48px, 16vw, 110px); }

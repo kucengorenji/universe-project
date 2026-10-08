@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+
 // Planet archetypes shared by every mode: the map generator reads `gen`, the
 // globe renderer and the space-mode texture baker read `look`. Terran keeps
 // the renderer's built-in palette (look: null) so the home world is unchanged.
@@ -17,16 +19,16 @@ export const TERRAN_PALETTE = {
 
 export const PLANET_TYPES = {
   terran: {
-    label: 'Terran',
-    desc: 'Benua hijau dan laut biru, dihuni dua peradaban.',
+    get label() { return t('planetType.terran.label'); },
+    get desc() { return t('planetType.terran.desc'); },
     landable: true,
     inhabited: true,
     gen: {},
     look: null
   },
   ocean: {
-    label: 'Samudra',
-    desc: 'Kepulauan tropis di tengah laut luas. Kota pelabuhan di tiap pulau.',
+    get label() { return t('planetType.ocean.label'); },
+    get desc() { return t('planetType.ocean.desc'); },
     landable: true,
     inhabited: true,
     gen: { seaLevel: 0.16, mountainThreshold: 0.42, forestMoisture: 0.0 },
@@ -37,8 +39,8 @@ export const PLANET_TYPES = {
     }
   },
   desert: {
-    label: 'Gurun',
-    desc: 'Lautan pasir, mesa merah dan oasis langka. Koloni tangguh bertahan di sini.',
+    get label() { return t('planetType.desert.label'); },
+    get desc() { return t('planetType.desert.desc'); },
     landable: true,
     inhabited: true,
     gen: { seaLevel: -0.42, ridgeFloor: 0.12, moistureShift: -0.25, desertMoisture: 0.12, desertLat: 0.78, forestMoisture: 0.3, tundraLat: 0.93 },
@@ -55,8 +57,8 @@ export const PLANET_TYPES = {
     }
   },
   ice: {
-    label: 'Es',
-    desc: 'Dunia beku dengan laut gelap dan hutan bersalju. Belum dihuni.',
+    get label() { return t('planetType.ice.label'); },
+    get desc() { return t('planetType.ice.desc'); },
     landable: true,
     inhabited: false,
     gen: { seaLevel: -0.08, tundraLat: 0.32, forestMoisture: 0.05, mountainThreshold: 0.34, rivers: false },
@@ -74,8 +76,8 @@ export const PLANET_TYPES = {
     }
   },
   lava: {
-    label: 'Vulkanik',
-    desc: 'Kerak basal retak di atas lautan lava. Terlalu panas untuk koloni.',
+    get label() { return t('planetType.lava.label'); },
+    get desc() { return t('planetType.lava.desc'); },
     landable: true,
     inhabited: false,
     gen: { seaLevel: -0.02, forestMoisture: 9, desertMoisture: 0.05, desertLat: 1, tundraLat: 2, mountainThreshold: 0.3, rivers: false },
@@ -97,8 +99,8 @@ export const PLANET_TYPES = {
     }
   },
   barren: {
-    label: 'Tandus',
-    desc: 'Batu abu-abu tanpa udara, penuh kawah. Cocok untuk tambang.',
+    get label() { return t('planetType.barren.label'); },
+    get desc() { return t('planetType.barren.desc'); },
     landable: true,
     inhabited: false,
     gen: { seaLevel: -9, ridgeFloor: 0.02, forestMoisture: 9, desertMoisture: 0.0, desertLat: 1, tundraLat: 0.9, mountainThreshold: 0.33, rivers: false },
@@ -115,8 +117,8 @@ export const PLANET_TYPES = {
     }
   },
   gas: {
-    label: 'Raksasa gas',
-    desc: 'Badai abadi berlapis awan. Tidak ada permukaan untuk mendarat.',
+    get label() { return t('planetType.gas.label'); },
+    get desc() { return t('planetType.gas.desc'); },
     landable: false,
     inhabited: false,
     gen: null,

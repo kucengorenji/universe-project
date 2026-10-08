@@ -7,6 +7,7 @@ import { SystemBodies } from './bodies.js';
 import { Ship, SHIPS, proceduralShipGeometry } from './ship.js';
 import { SpaceTraffic } from './traffic.js';
 import { SpaceHud } from './hud.js';
+import { t } from '../../i18n/index.js';
 
 // Star-system mode. The ship flies freely (WASD) or by autopilot (click a
 // planet); from orbit it can land, which hands the exact camera view over to
@@ -676,11 +677,11 @@ export default class SpaceMode {
   }
 
   statusText() {
-    if (this.sequence?.kind === 'land') return 'Masuk atmosfer';
-    if (this.sequence) return 'Lepas landas';
-    if (this.orbiting !== null) return `Orbit ${this.system.planets[this.orbiting].name}`;
-    if (this.ship.autopilot) return `Autopilot ke ${this.system.planets[this.selected]?.name ?? 'tujuan'}`;
-    return this.ship.speed > 0.5 ? 'Terbang bebas' : 'Diam';
+    if (this.sequence?.kind === 'land') return t('space.state.entry');
+    if (this.sequence) return t('space.state.takeoff');
+    if (this.orbiting !== null) return t('space.state.orbit', { planet: this.system.planets[this.orbiting].name });
+    if (this.ship.autopilot) return t('space.state.autopilot', { planet: this.system.planets[this.selected]?.name ?? t('space.state.destination') });
+    return t(this.ship.speed > 0.5 ? 'space.state.free' : 'space.state.idle');
   }
 
   render() {

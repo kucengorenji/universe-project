@@ -3,10 +3,11 @@ import { TURN_LIMIT } from '../game/rules.js';
 import { FACTIONS } from '../units/soldierLook.js';
 import { ActionHud } from './actionHud.js';
 import { shield, unitShield, CLASS_NAME } from './emblems.js';
+import { t } from '../../i18n/index.js';
 
 // The skirmish HUD (DOM), in the war-notebook style: cream paper, sepia ink, red stamps,
-// typewriter labels, blue and red faction shields. Military labels are English (PLAYER PHASE,
-// COMMAND MODE, AP), descriptions Indonesian. Parts:
+// typewriter labels, blue and red faction shields. Military labels (PLAYER PHASE, COMMAND MODE,
+// AP) stay English in every language on purpose; descriptions are translated. Parts:
 //   strip     turn, phase and command points (top left, every battle phase)
 //   cmd       the command list beside the flat map (Command Mode)
 //   action    Action Mode (ActionHud): unit card, AP gauge, reticle, target, enemy tags
@@ -26,14 +27,14 @@ export class Hud {
         <span class="strip__text"><b class="strip__turn"></b><span class="strip__phase"></span></span>
         <span class="strip__cp" aria-label="Command point"></span>
       </header>
-      <aside class="cmd" aria-label="Komando">
+      <aside class="cmd" aria-label="${t('skirmish.command.aria')}">
         <h2 class="cmd__title">Command Mode</h2>
-        <p class="cmd__hint">Pilih unit biru di peta atau daftar (1 CP). Lancer dan Sniper punya amunisi terbatas.</p>
+        <p class="cmd__hint">${t('skirmish.command.hint')}</p>
         <ol class="cmd__units"></ol>
-        <button type="button" class="stampbtn cmd__end">Akhiri giliran</button>
+        <button type="button" class="stampbtn cmd__end">${t('skirmish.endTurn')}</button>
       </aside>
       <div class="action"></div>
-      <div class="band"><b>Enemy Phase</b><span>Tahan Space untuk mempercepat</span></div>
+      <div class="band"><b>Enemy Phase</b><span>${t('skirmish.holdSpace')}</span></div>
       <div class="banner" aria-hidden="true"><div class="banner__ribbon"><span class="banner__shield"></span><b class="banner__title"></b><span class="banner__turn"></span></div></div>
       <div class="cutin" aria-hidden="true"><div class="cutin__strip"><img class="cutin__face" alt="" /><div class="cutin__text"><span class="cutin__stamp">Leader</span><b class="cutin__name"></b><span class="cutin__line"></span></div></div></div>
       <div class="result" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
@@ -44,8 +45,8 @@ export class Hud {
           <div class="result__rank"><span>Rank</span><b></b></div>
           <dl class="result__stats"></dl>
           <div class="result__actions">
-            <button type="button" class="stampbtn result__again">Main lagi (seed sama)</button>
-            <button type="button" class="paperbtn result__new">Medan baru</button>
+            <button type="button" class="stampbtn result__again">${t('skirmish.replay')}</button>
+            <button type="button" class="paperbtn result__new">${t('skirmish.newField')}</button>
           </div>
         </div>
       </div>
@@ -104,14 +105,14 @@ export class Hud {
     this.el.units.innerHTML = mine
       .map((u) => {
         const state = { ok: '', down: `Down · ${u.downTurns}`, dead: 'KIA', evac: 'Evac' }[u.state];
-        const ammo = u.ammo === Infinity ? '' : ` · amunisi ${u.ammo}`;
+        const ammo = u.ammo === Infinity ? '' : ` · ${t('skirmish.ammo', { count: u.ammo })}`;
         const can = b.canSelect(u) && this.game.phase === 'command';
         const face = this._portraits?.[u.id];
         return `<li data-unit="${u.id}" class="unitrow ${can ? 'unitrow--ready' : ''} unitrow--${u.state}">
           <span class="seal">${face ? `<img class="portrait" src="${face}" alt="" />` : ''}${unitShield(u)}</span>
           <span class="unitrow__body">
             <span class="unitrow__name">${u.leader ? '<i class="star">★</i>' : ''}${esc(u.name)}</span>
-            <span class="unitrow__meta">${CLASS_NAME[u.cls]} · AP ${u.apMax} m${ammo}${u.picks ? ` · dipakai ${u.picks}×` : ''}</span>
+            <span class="unitrow__meta">${CLASS_NAME[u.cls]} · AP ${u.apMax} m${ammo}${u.picks ? ` · ${t('skirmish.picks', { count: u.picks })}` : ''}</span>
             <span class="hpline"><i style="width:${(100 * u.hp) / u.maxHp}%"></i></span>
           </span>
           ${state ? `<span class="stamp">${state}</span>` : ''}
@@ -188,9 +189,9 @@ export class Hud {
   showResult(over, battle) {
     const win = over.winner === 'fed';
     const why = {
-      base: win ? 'Base camp musuh direbut.' : 'Base camp kita direbut musuh.',
-      wiped: win ? 'Semua pasukan musuh dilumpuhkan.' : 'Seluruh regu tidak bisa bertempur lagi.',
-      time: `Batas ${TURN_LIMIT} giliran terlampaui.`
+      base: t(win ? 'skirmish.why.baseWin' : 'skirmish.why.baseLoss'),
+      wiped: t(win ? 'skirmish.why.wipedWin' : 'skirmish.why.wipedLoss'),
+      time: t('skirmish.why.time', { count: TURN_LIMIT })
     }[over.reason];
     const fed = battle.units.filter((u) => u.side === 'fed');
     const imp = battle.units.filter((u) => u.side === 'imp' && u.kind === 'infantry');

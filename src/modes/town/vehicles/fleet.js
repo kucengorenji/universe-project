@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { orthographicLodScale } from '../render/pixelConfig.js';
 import { Car, VEHICLE_TYPES } from './vehicle.js';
 import { trafficPose, advanceTraffic } from '../navigation/trafficRoute.js';
 import { assemble, vehicleGeometry as wrap } from './vehicleKit.js';
@@ -204,7 +205,8 @@ export class Fleet {
       for (const { inst } of this.meshes) inst.receiveShadow = shadows;
     }
     const detail = this.builder.quality?.settings.detail ?? 1;
-    const k = detail * Math.tan(THREE.MathUtils.degToRad(27.5)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const ortho = orthographicLodScale(camera);
+    const k = detail * (ortho || Math.tan(THREE.MathUtils.degToRad(27.5)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
     const at = orbit || camera.position;
     const zoom2 = orbit ? camera.position.distanceToSquared(orbit) : 0;
     const classify = (size) => size > LOD_SIZE[0] ? 0 : size > LOD_SIZE[1] ? 1 : 2;
@@ -215,7 +217,7 @@ export class Fleet {
       const dx = v.car.x - at.x, dz = v.car.z - at.z;
       const distance = orbit ? Math.sqrt(zoom2 + dx * dx + dz * dz) : Math.hypot(dx, v.car.y + v.car.bob - at.y, dz);
       const farScale = 1 - (1 - scale) * THREE.MathUtils.smoothstep(distance, 35, 110);
-      const size = v.lodRadius * k * farScale / Math.max(distance, 1);
+      const size = v.lodRadius * k * farScale / (ortho ? 1 : Math.max(distance, 1));
       let level = v.mode === 'player' ? 0 : classify(size);
       if (v.mode !== 'player' && v.lod >= 0 && level !== v.lod && classify(level < v.lod ? size / LOD_HYSTERESIS : size * LOD_HYSTERESIS) === v.lod) level = v.lod;
       // The actual camera determines shadow relevance, even in the diorama.

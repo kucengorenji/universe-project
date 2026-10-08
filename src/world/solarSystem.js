@@ -1,5 +1,6 @@
 import { mulberry32 } from '../math/random.js';
 import { PLANET_TYPES } from './planetTypes.js';
+import { t } from '../i18n/index.js';
 
 // One star system per world seed. The terran home world (the globe the player
 // already knows, same seed) always sits in the habitable zone; the rest are
@@ -9,9 +10,9 @@ import { PLANET_TYPES } from './planetTypes.js';
 const SYLLABLES = ['ar', 'be', 'cal', 'dor', 'el', 'fa', 'gor', 'hel', 'is', 'ka', 'lor', 'mi', 'nov', 'or', 'pra', 'qu', 'ri', 'sol', 'ter', 'um', 'va', 'xe', 'yor', 'zan', 'the', 'ron', 'sa', 'ne', 'ia', 'lu'];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 const STAR_CLASSES = [
-  { cls: 'G', label: 'Kuning (kelas G)', color: 0xffe2a8, glow: 0xffb45a, light: 0xfff1dc },
-  { cls: 'K', label: 'Oranye (kelas K)', color: 0xffc48a, glow: 0xff8a3a, light: 0xffe0c0 },
-  { cls: 'F', label: 'Putih (kelas F)', color: 0xf4f1ff, glow: 0xa8c4ff, light: 0xf2f4ff }
+  { cls: 'G', get label() { return t('star.G'); }, color: 0xffe2a8, glow: 0xffb45a, light: 0xfff1dc },
+  { cls: 'K', get label() { return t('star.K'); }, color: 0xffc48a, glow: 0xff8a3a, light: 0xffe0c0 },
+  { cls: 'F', get label() { return t('star.F'); }, color: 0xf4f1ff, glow: 0xa8c4ff, light: 0xf2f4ff }
 ];
 
 function makeName(rng, min = 2, max = 3) {

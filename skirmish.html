@@ -1,61 +1,61 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Skirmish</title>
   <meta name="theme-color" content="#efe6d2" />
-  <meta name="description" content="Pertempuran regu bergaya Valkyria Chronicles di medan perang prosedural." />
+  <meta name="description" content="A Valkyria Chronicles-style squad battle on a procedural battlefield." data-i18n-attr="content:skirmish.html.description"/>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Barlow+Condensed:wght@400;500;600&family=Courier+Prime:wght@400;700&family=Roboto+Serif:opsz,wdth,wght@8..144,50..150,400..800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div id="stage" aria-label="Medan perang 3D"></div>
+  <div id="stage" aria-label="3D battlefield" data-i18n-attr="aria-label:skirmish.html.stage"></div>
 
-  <div class="mapwrap"><canvas id="map" class="map" aria-label="Peta taktis"></canvas></div>
-  <aside id="prep" class="prep" aria-label="Persiapan"></aside>
+  <div class="mapwrap"><canvas id="map" class="map" aria-label="Tactical map" data-i18n-attr="aria-label:skirmish.html.map"></canvas></div>
+  <aside id="prep" class="prep" aria-label="Preparation" data-i18n-attr="aria-label:skirmish.html.prep"></aside>
   <div id="hud" class="hud"></div>
 
   <aside class="panel" aria-label="Look-dev" hidden>
     <h1 class="panel__title">Skirmish <span>look-dev</span></h1>
     <label class="row">Seed
       <input id="seed" type="number" min="1" step="1" inputmode="numeric" />
-      <button id="reroll" type="button">Acak</button>
+      <button id="reroll" type="button">Reroll</button>
     </label>
-    <label class="row">Waktu
+    <label class="row">Time
       <select id="time">
-        <option value="day">Siang</option>
-        <option value="dusk">Senja</option>
-        <option value="night">Malam</option>
+        <option value="day">Day</option>
+        <option value="dusk">Dusk</option>
+        <option value="night">Night</option>
       </select>
     </label>
     <label class="row">Pose
       <select id="pose">
-        <option value="ready">Siaga</option>
-        <option value="aim">Bidik</option>
-        <option value="crouch">Jongkok</option>
-        <option value="crouch-aim">Jongkok bidik</option>
-        <option value="walk">Jalan</option>
-        <option value="run">Lari</option>
-        <option value="crouch-walk">Jalan jongkok</option>
-        <option value="down">Tumbang</option>
-        <option value="dead">Gugur</option>
+        <option value="ready">Ready</option>
+        <option value="aim">Aim</option>
+        <option value="crouch">Crouch</option>
+        <option value="crouch-aim">Crouch aim</option>
+        <option value="walk">Walk</option>
+        <option value="run">Run</option>
+        <option value="crouch-walk">Crouch walk</option>
+        <option value="down">Down</option>
+        <option value="dead">Fallen</option>
       </select>
     </label>
-    <label class="row row--check"><input id="canvasOn" type="checkbox" checked /> Gaya canvas</label>
-    <div class="views" role="group" aria-label="Kamera">
-      <button type="button" data-view="lineup">Barisan</button>
-      <button type="button" data-view="portrait">Potret</button>
+    <label class="row row--check"><input id="canvasOn" type="checkbox" checked /> Canvas style</label>
+    <div class="views" role="group" aria-label="Camera">
+      <button type="button" data-view="lineup">Lineup</button>
+      <button type="button" data-view="portrait">Portrait</button>
       <button type="button" data-view="tps">TPS</button>
-      <button type="button" data-view="village">Desa</button>
-      <button type="button" data-view="enemy">Garis musuh</button>
-      <button type="button" data-view="overview">Atas</button>
+      <button type="button" data-view="village">Village</button>
+      <button type="button" data-view="enemy">Enemy line</button>
+      <button type="button" data-view="overview">Overview</button>
     </div>
     <p id="stats" class="stats"></p>
   </aside>
-  <p class="loading" aria-live="polite">Menyiapkan medan perang…</p>
+  <p class="loading" aria-live="polite" data-i18n="skirmish.html.loading">Preparing the battlefield…</p>
 
   <script type="module" src="./src/skirmish/main.js"></script>
 </body>

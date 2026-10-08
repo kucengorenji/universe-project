@@ -1,5 +1,6 @@
 import { STATS, WEAPONS, BASE_CP, DOWN_TURNS, CAPTURE_RADIUS, TOUCH_RADIUS, RESELECT_AP, MIN_AP_SHARE, HEADSHOT, CROUCH_DAMAGE, ENEMY_SCALE, TURN_LIMIT, DIFFICULTY, falloff, rankFor } from './rules.js';
 import { enemyForces } from './roster.js';
+import { t } from '../../i18n/index.js';
 
 // Battle state for one skirmish: units, sides, turns, command points, damage, downed soldiers,
 // camp captures and the result. Pure (no three.js); the 3D game and the AI drive it.
@@ -59,8 +60,8 @@ export class Battle {
       const at = post || slots.shift() || (trench.length ? { x: trench[i % trench.length][0], z: trench[i % trench.length][1] - 1.5 } : { x: field.camps[1].x + i * 2, z: field.camps[1].z + 6 });
       this.units.push(makeUnit('imp', 'infantry', e.cls, { ...e, x: at.x, z: at.z, yaw: post ? post.yaw : 0 }));
     });
-    if (field.tank) this.units.push(makeUnit('imp', 'tank', 'tank', { id: 'tank', name: 'Tank berat', x: field.tank.x, z: field.tank.z, yaw: field.tank.yaw }));
-    field.bunkers.forEach((b, i) => this.units.push(makeUnit('imp', 'bunker', 'bunker', { id: `bunker${i}`, name: `Bunker ${i + 1}`, x: b.x, z: b.z, yaw: b.yaw })));
+    if (field.tank) this.units.push(makeUnit('imp', 'tank', 'tank', { id: 'tank', name: t('skirmish.heavyTank'), x: field.tank.x, z: field.tank.z, yaw: field.tank.yaw }));
+    field.bunkers.forEach((b, i) => this.units.push(makeUnit('imp', 'bunker', 'bunker', { id: `bunker${i}`, name: t('skirmish.bunker', { n: i + 1 }), x: b.x, z: b.z, yaw: b.yaw })));
     this.camps = field.camps.map((c) => ({ id: c.id, x: c.x, z: c.z, owner: c.side }));
     this.turn = 1;
     this.side = 'fed';

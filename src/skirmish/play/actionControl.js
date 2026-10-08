@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WEAPONS, WALK_SPEED, RUN_SPEED, RUN_AP_COST } from '../game/rules.js';
+import { t } from '../../i18n/index.js';
 
 // Action Mode for the player's unit, third person. WASD moves relative to the camera
 // (spending AP), Shift runs, C crouches, right mouse aims over the shoulder (time stops), left
@@ -157,7 +158,7 @@ export class ActionControl {
 
   setAim(on) {
     if (on && (this.attacked || !this.game.battle.canFire(this.unit))) {
-      this.game.hud.toast(this.attacked ? 'Sudah menyerang di aksi ini' : 'Amunisi habis');
+      this.game.hud.toast(t(this.attacked ? 'skirmish.toast.attacked' : 'skirmish.toast.noAmmo'));
       return;
     }
     this.aiming = on;

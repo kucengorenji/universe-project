@@ -1,5 +1,6 @@
 import './skirmish.css';
 import { Engine } from '../core/engine.js';
+import { applyDom } from '../i18n/index.js';
 
 // Skirmish page (skirmish.html): a Valkyria Chronicles-style squad battle on a generated
 // battlefield, separate from the universe game. skirmish.html?lookdev opens the art
@@ -9,6 +10,7 @@ const params = new URLSearchParams(location.search);
 const randomSeed = () => Math.floor(Math.random() * 1e6);
 
 window.addEventListener('DOMContentLoaded', async () => {
+  applyDom();
   const engine = new Engine(document.getElementById('stage'));
   const $ = (id) => document.getElementById(id);
   if (params.has('lookdev')) return lookdev(engine, $);

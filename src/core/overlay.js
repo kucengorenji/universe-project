@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+
 // Full-screen cover used between modes. It hides the frame (or frames) where
 // one mode is torn down and the next is built, which is the only moment the
 // main thread may block. Everything that moves here is a CSS transform or
@@ -44,7 +46,7 @@ export class Overlay {
   }
 
   /** Show the spinner only if the swap takes long enough to notice. */
-  showLoading(label = 'Memuat', delay = 220) {
+  showLoading(label = t('loading'), delay = 220) {
     clearTimeout(this.loadingTimer);
     this.setProgress(null, label);
     this.loadingTimer = setTimeout(() => this.loading.classList.add('is-visible'), delay);

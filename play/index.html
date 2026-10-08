@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planet Globe</title>
+  <meta name="theme-color" content="#070c19" />
+  <meta name="description" content="Explore a procedural solar system: fly between planets, land on hexagonal worlds, then walk, drive and step into houses in their towns." data-i18n-attr="content:play.meta.description"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="canvas-container" aria-label="3D world" data-i18n-attr="aria-label:play.world.aria"></div>
+
+  <!-- ============================================================ PLANET MODE -->
+  <div id="planetUi" class="mode-ui" hidden>
+  <!-- Seed number as wall type, hung behind the globe -->
+  <div class="wall-type" aria-hidden="true">
+    <span class="wall-type__label">Seed</span>
+    <span id="wallSeed" class="wall-type__seed">000000</span>
+  </div>
+
+  <header class="topbar">
+    <div class="crumbs">
+      <button id="orbitBtn" class="pill pill--ghost crumbs__back" type="button" aria-label="Take off to orbit" data-i18n-attr="aria-label:play.orbit.aria" data-i18n-html="play.orbit">
+        <span class="arrow-up" aria-hidden="true"></span>To orbit
+      </button>
+      <span class="wordmark"><span id="planetName">Planet</span><span id="planetType" class="wordmark__meta">Terran</span></span>
+    </div>
+    <div class="topbar__right">
+      <span id="storageStatusBadge" class="topbar__status home-only" data-i18n="play.storage.saved">Saved in this browser</span>
+      <span class="cta-pair home-only">
+        <span class="cta-pair__question" data-i18n="play.another">Another world?</span>
+        <button id="quickRegenerateBtn" class="pill" type="button" data-i18n="play.shuffle">Shuffle world</button>
+      </span>
+      <button id="povEnterBtn" class="pill pill--ghost inhabited-only" type="button" data-i18n="play.ride">Ride a vehicle</button>
+      <button id="flyBtn" class="pill pill--ghost" type="button" data-i18n="play.fly">Fly</button>
+      <button id="screenshotBtn" class="pill pill--ghost" type="button" data-i18n="play.screenshot">Save image</button>
+      <button id="menuToggleBtn" class="menu-circle" type="button" aria-label="Open settings" aria-expanded="false" aria-controls="sidebarDrawer" data-i18n-attr="aria-label:play.settings.open">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <p id="assetStatus" class="asset-status" role="status" data-i18n="play.assets.loading">Loading 3D models</p>
+
+  <p class="hint" data-i18n="play.hint">Drag to rotate. Scroll to zoom. Click a city or tile for details, click a vehicle to ride along.</p>
+
+  <!-- Flying the ship over the planet -->
+  <div id="planetFlightHud" class="flight-hud flight-hud--planet" role="status" hidden>
+    <span class="flight-hud__speed"><span data-speed>0</span><small data-i18n="play.speed.unit">km/h</small></span>
+    <span class="flight-hud__state" data-state data-i18n="play.flight.state">Flying</span>
+    <span class="flight-hud__keys" data-i18n="play.flight.keys">W/S thrust, A/D turn, R/F up and down, Shift boost, drag to look around.</span>
+    <button class="menu-circle menu-circle--close flight-hud__close" type="button" data-act="stop" aria-label="Finish flying" data-i18n-attr="aria-label:play.flight.stop">
+      <span></span><span></span>
+    </button>
+  </div>
+
+  <!-- Ride-along (POV) controls, shown while following a vehicle -->
+  <section id="povHud" class="pov" aria-label="Vehicle POV mode" hidden data-i18n-attr="aria-label:play.pov.aria">
+    <div class="pov__info">
+      <span id="povMode" class="pov__eyebrow" data-i18n="play.pov.mode.default">Ground POV</span>
+      <span id="povName" class="pov__name" data-i18n="play.pov.name.default">Caravan</span>
+      <span id="povRoute" class="pov__route" data-i18n="play.pov.route.default">Route</span>
+    </div>
+    <div class="pov__modes" role="group" aria-label="Choose route type" data-i18n-attr="aria-label:play.pov.modes.aria">
+      <button class="pill pill--ghost pov__mode" type="button" data-mode="air" aria-pressed="false" data-i18n-html="play.pov.air">Air <span data-count="air">0</span></button>
+      <button class="pill pill--ghost pov__mode" type="button" data-mode="land" aria-pressed="false" data-i18n-html="play.pov.land">Land <span data-count="land">0</span></button>
+      <button class="pill pill--ghost pov__mode" type="button" data-mode="sea" aria-pressed="false" data-i18n-html="play.pov.sea">Sea <span data-count="sea">0</span></button>
+    </div>
+    <div class="pov__nav">
+      <button id="povPrevBtn" class="pill pill--ghost" type="button" aria-label="Previous vehicle" data-i18n-attr="aria-label:play.pov.prev.aria" data-i18n="play.pov.prev">Previous</button>
+      <span id="povIndex" class="pov__index">1 / 1</span>
+      <button id="povNextBtn" class="pill pill--ghost" type="button" aria-label="Next vehicle" data-i18n-attr="aria-label:play.pov.next.aria" data-i18n="play.pov.next">Next</button>
+      <button id="povExitBtn" class="menu-circle menu-circle--close" type="button" aria-label="Exit POV mode" data-i18n-attr="aria-label:play.pov.exit.aria">
+        <span></span><span></span>
+      </button>
+    </div>
+  </section>
+
+  <aside id="sidebarDrawer" class="panel" aria-label="Globe settings" aria-hidden="true" data-i18n-attr="aria-label:play.panel.aria">
+    <div class="panel__head">
+      <h2 class="panel__title" data-i18n="play.panel.title">Settings</h2>
+      <button id="closeSidebarBtn" class="menu-circle menu-circle--close" type="button" aria-label="Close settings" data-i18n-attr="aria-label:play.panel.close">
+        <span></span><span></span>
+      </button>
+    </div>
+
+    <div class="panel__body">
+      <section class="panel__section home-only" aria-labelledby="secWorld">
+        <div class="panel__heading-row">
+          <h3 id="secWorld" class="panel__heading" data-i18n="play.sec.world">World</h3>
+          <label class="switch-inline">
+            <span data-i18n="play.grid">Hexagon outlines</span>
+            <input type="checkbox" id="gridToggle" class="switch" checked />
+          </label>
+        </div>
+
+        <div class="field">
+          <label for="seedInput" class="field__label">Seed</label>
+          <div class="field__row">
+            <input type="number" id="seedInput" class="field__input" placeholder="Seed number, e.g. 123456" data-i18n-attr="placeholder:play.seed.placeholder"/>
+            <button id="randomSeedBtn" class="pill pill--ghost" type="button" data-i18n="play.seed.random">Random seed</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field__row field__row--split">
+            <label for="seaLevelSlider" class="field__label" data-i18n="play.sea">Sea level</label>
+            <output id="seaLevelValue" class="field__value" for="seaLevelSlider">50%</output>
+          </div>
+          <input type="range" id="seaLevelSlider" min="-0.3" max="0.2" step="0.02" value="-0.05" />
+        </div>
+
+        <div class="field">
+          <div class="field__row field__row--split">
+            <label for="mountainSlider" class="field__label" data-i18n="play.mountain">Mountain density</label>
+            <output id="mountainValue" class="field__value" for="mountainSlider">60%</output>
+          </div>
+          <input type="range" id="mountainSlider" min="0.25" max="0.55" step="0.02" value="0.38" />
+        </div>
+
+        <div class="field">
+          <div class="field__row field__row--split">
+            <label for="subdivisionSlider" class="field__label" data-i18n="play.tiles">Tile count</label>
+            <output id="subdivisionValue" class="field__value" for="subdivisionSlider">10.242</output>
+          </div>
+          <input type="range" id="subdivisionSlider" min="2" max="5" step="1" value="5" />
+        </div>
+
+        <div class="cta-pair cta-pair--block">
+          <span class="cta-pair__question" data-i18n="play.ready">Happy with these settings?</span>
+          <button id="regenerateBtn" class="pill" type="button" data-i18n="play.rebuild">Rebuild world</button>
+        </div>
+      </section>
+
+      <section class="panel__section panel__section--flush inhabited-only" aria-labelledby="secFaction">
+        <h3 id="secFaction" class="panel__heading panel__heading--inset" data-i18n="play.sec.factions">Factions</h3>
+        <div class="blocks">
+          <button type="button" class="block block--green" data-focus-faction="player" aria-label="Focus on the New Babylon territory" data-i18n-attr="aria-label:play.faction.player.aria">
+            <span class="block__name">New Babylon</span>
+            <span class="block__meta" data-i18n-html="play.faction.player.meta">Player <span class="sep">/</span> <span id="playerTilesBadge">0 tiles</span></span>
+            <span class="block__meta" data-i18n="play.faction.player.kind">Fantasy cities, hot-air balloons</span>
+          </button>
+          <button type="button" class="block block--red" data-focus-faction="system" aria-label="Focus on the Aegis Citadel territory" data-i18n-attr="aria-label:play.faction.system.aria">
+            <span class="block__name">Aegis Citadel</span>
+            <span class="block__meta" data-i18n-html="play.faction.system.meta">System <span class="sep">/</span> <span id="systemTilesBadge">0 tiles</span></span>
+            <span class="block__meta" data-i18n="play.faction.system.kind">Modern cities, planes</span>
+          </button>
+        </div>
+        <p id="settlementSummary" class="panel__note panel__note--inset" data-i18n="play.settlement.none">No settlements yet.</p>
+      </section>
+
+      <section class="panel__section inhabited-only" aria-labelledby="secCities">
+        <h3 id="secCities" class="panel__heading" data-i18n="play.sec.cities">Cities</h3>
+        <p class="panel__note" data-i18n="play.cities.note">Pick a city to fly there.</p>
+        <ul id="cityList" class="city-list"></ul>
+      </section>
+
+      <section class="panel__section inhabited-only" aria-labelledby="secRoutes">
+        <h3 id="secRoutes" class="panel__heading" data-i18n="play.sec.routes">Routes</h3>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title" data-i18n="play.route.air">Air</span>
+            <span id="airRouteMeta" class="switch-row__meta" data-i18n="play.route.air.meta">Hot-air balloons and planes</span>
+          </span>
+          <input type="checkbox" id="airRouteToggle" class="switch" checked />
+        </label>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title" data-i18n="play.route.land">Land</span>
+            <span id="landRouteMeta" class="switch-row__meta" data-i18n="play.route.land.meta">Roads and caravans</span>
+          </span>
+          <input type="checkbox" id="groundRouteToggle" class="switch" checked />
+        </label>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title" data-i18n="play.route.sea">Sea</span>
+            <span id="seaRouteMeta" class="switch-row__meta" data-i18n="play.route.sea.meta">Ship routes between ports</span>
+          </span>
+          <input type="checkbox" id="seaRouteToggle" class="switch" checked />
+        </label>
+      </section>
+
+      <section class="panel__section" aria-labelledby="secCamera">
+        <h3 id="secCamera" class="panel__heading" data-i18n="play.sec.view">View</h3>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title" data-i18n="play.flat">Land level with the sea</span>
+            <span class="switch-row__meta" data-i18n="play.flat.meta">Turn off for cliffs rising above the sea</span>
+          </span>
+          <input type="checkbox" id="flatTerrainToggle" class="switch" />
+        </label>
+        <label class="switch-row">
+          <span class="switch-row__text">
+            <span class="switch-row__title" data-i18n="play.autorotate">Auto-rotate</span>
+          </span>
+          <input type="checkbox" id="autoRotateToggle" class="switch" />
+        </label>
+        <div class="button-stack">
+          <button id="screenshotPanelBtn" class="pill" type="button" data-i18n="play.screenshot.panel">Save an image of this view</button>
+          <button id="resetCameraBtn" class="pill pill--ghost" type="button" data-i18n="play.camera.reset">Reset camera position</button>
+          <button id="clearStorageBtn" class="text-button" type="button" data-i18n="play.storage.clear">Delete saved map</button>
+        </div>
+      </section>
+
+    </div>
+  </aside>
+
+  <!-- Focus card: details for the selected city, faction or tile -->
+  <aside id="infoCard" class="info-card" aria-live="polite" hidden>
+    <div id="infoCardBody"></div>
+  </aside>
+
+  <div id="tileTooltip" class="tooltip" role="tooltip"></div>
+  </div>
+
+  <!-- ============================================================ SPACE MODE -->
+  <div id="spaceUi" class="mode-ui" hidden></div>
+
+  <!-- ============================================================ TOWN MODE -->
+  <div id="townUi" class="mode-ui" hidden></div>
+
+  <!-- Mission log, onboarding tips and the pause menu (all modes) -->
+  <div id="missionUi"></div>
+  <div id="tipUi"></div>
+  <div id="pauseUi"></div>
+
+  <!-- Cover between modes: last frame / clouds / dark, with a loading line -->
+  <div id="cover" class="cover is-on" data-kind="fade">
+    <canvas class="cover__snap" aria-hidden="true"></canvas>
+    <div class="cover__fx" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="cover__loading is-visible" role="status">
+      <span class="cover__spinner" aria-hidden="true"></span>
+      <span class="cover__label" data-i18n="play.cover.loading">Loading</span>
+      <span class="cover__bar" aria-hidden="true"><i></i></span>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

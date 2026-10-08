@@ -1,5 +1,6 @@
 import { WEAPONS, falloff } from '../game/rules.js';
 import { unitShield, CLASS_NAME, EYE } from './emblems.js';
+import { t } from '../../i18n/index.js';
 
 // Action Mode HUD, laid out after Valkyria Chronicles with its own war-notebook look:
 //   bottom left    unit card: portrait, class shield, name, stance, HP, ammo
@@ -145,7 +146,7 @@ export class ActionHud {
       const e = t.unit;
       this.set('tUnit', e.id, () => {
         el.tShield.innerHTML = unitShield(e);
-        el.tName.textContent = e.kind === 'infantry' ? `${CLASS_NAME[e.cls]} · ${e.name.replace(/^Prajurit Imperium /, 'No. ')}` : e.name;
+        el.tName.textContent = e.kind === 'infantry' ? `${CLASS_NAME[e.cls]} · ${e.name.replace(/^\D+ (?=\d+$)/, 'No. ')}` : e.name;
       });
       const est = t.est;
       this.set('tHp', `${e.id}:${e.hp}:${est.total}`, () => {
@@ -210,7 +211,7 @@ export class ActionHud {
   setInput(locked, mode) {
     document.body.classList.toggle('locked', locked);
     document.body.dataset.input = mode;
-    this.el.keys.innerHTML = [['WASD', 'gerak'], [mode === 'cursor' ? 'Mouse · Q/E' : 'Mouse', 'kamera'], ['Shift', 'lari'], ['C', 'jongkok'], ['Klik kanan', 'bidik'], ['Klik kiri', 'tembak'], ['Space', 'selesai']]
+    this.el.keys.innerHTML = [['WASD', t('skirmish.key.move')], [mode === 'cursor' ? 'Mouse · Q/E' : 'Mouse', t('skirmish.key.camera')], ['Shift', t('skirmish.key.run')], ['C', t('skirmish.key.crouch')], [t('skirmish.key.rightClick'), t('skirmish.key.aim')], [t('skirmish.key.leftClick'), t('skirmish.key.fire')], ['Space', t('skirmish.key.done')]]
       .map(([k, v]) => `<span><kbd>${k}</kbd>${v}</span>`)
       .join('');
   }

@@ -7,6 +7,7 @@ import { typeOf } from '../../world/planetTypes.js';
 import { PlanetFlight } from '../../render/planetFlight.js';
 
 import { BIOMES } from '../../map/mapGenerator.js';
+import { t } from '../../i18n/index.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
 // created once and kept: leaving the planet suspends them (every per-planet
@@ -246,10 +247,10 @@ export default class PlanetMode {
     if (kmh !== this.hudSpeed) this.flightSpeed.textContent = this.hudSpeed = kmh;
     const ci = f.cityBelow();
     const city = ci === null ? null : this.map.cities[ci];
-    let state = 'Melayang';
-    if (city) state = `Di atas ${city.name}. Tekan L untuk mendarat`;
-    else if (f.alt > f.ceiling * 0.9) state = 'Batas langit';
-    else if (f.speed > 0.5) state = f.clearance < 0.3 ? 'Terbang rendah' : 'Terbang bebas';
+    let state = t('planet.flight.hover');
+    if (city) state = t('planet.flight.over', { city: city.name });
+    else if (f.alt > f.ceiling * 0.9) state = t('planet.flight.ceiling');
+    else if (f.speed > 0.5) state = t(f.clearance < 0.3 ? 'planet.flight.low' : 'planet.flight.free');
     if (state !== this.hudState) this.flightState.textContent = this.hudState = state;
   }
 
@@ -320,7 +321,7 @@ export default class PlanetMode {
     this.ctx.tips?.show('rover');
     this.hudSpeed = this.hudState = null;
     this.flightHud.hidden = false;
-    this.flyBtn.textContent = 'Selesai terbang';
+    this.flyBtn.textContent = t('planet.flight.finish');
     document.body.classList.add('is-flying');
   }
 
@@ -356,7 +357,7 @@ export default class PlanetMode {
     clouds.uNear.value = pr.radius * 0.1;
     clouds.uFar.value = pr.radius * 0.26;
     this.flightHud.hidden = true;
-    this.flyBtn.textContent = 'Terbang';
+    this.flyBtn.textContent = t('planet.flight.start');
     document.body.classList.remove('is-flying');
   }
 

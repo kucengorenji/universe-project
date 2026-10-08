@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createToonMaterial } from '../../render/assetLibrary.js';
+import { t } from '../../i18n/index.js';
 
 // The player's frigate: model + flight model. Manual flight is arcade style
 // (thrust along the nose, yaw, vertical thrusters, drag so it settles); the
@@ -84,8 +85,8 @@ function glowSprite(color, size) {
 export const SHIPS = {
   frigate: {
     asset: 'ship_frigate',
-    name: 'Fregat',
-    desc: 'Seimbang: cukup cepat, cukup lincah, nyaman untuk jelajah jauh.',
+    get name() { return t('ship.frigate.name'); },
+    get desc() { return t('ship.frigate.desc'); },
     maxSpeed: 22,
     boostSpeed: 70,
     accel: 26,
@@ -94,8 +95,8 @@ export const SHIPS = {
   },
   interceptor: {
     asset: 'ship_interceptor',
-    name: 'Interceptor',
-    desc: 'Ringan dan gesit. Boost paling kencang, belok paling tajam.',
+    get name() { return t('ship.interceptor.name'); },
+    get desc() { return t('ship.interceptor.desc'); },
     maxSpeed: 30,
     boostSpeed: 95,
     accel: 36,
@@ -104,8 +105,8 @@ export const SHIPS = {
   },
   freighter: {
     asset: 'ship_freighter',
-    name: 'Freighter',
-    desc: 'Berat dan stabil. Lambat berbelok, tapi tenang dan tangguh.',
+    get name() { return t('ship.freighter.name'); },
+    get desc() { return t('ship.freighter.desc'); },
     maxSpeed: 17,
     boostSpeed: 48,
     accel: 15,

@@ -88,12 +88,12 @@ test('automatic placement snaps to the floor and rejects wall, collision and doo
   assert.equal(bp.items.length, 2);
   const [a, b] = bp.items, floor = bp.floors[0];
   const overlap = placeHomeItem(bp, a.id, b.position);
-  assert.equal(overlap.ok, false); assert.match(overlap.reason, /bertabrakan/); assert.equal(overlap.blueprint, bp);
+  assert.equal(overlap.ok, false); assert.match(overlap.reason, /collides/); assert.equal(overlap.blueprint, bp);
   const wall = placeHomeItem(bp, a.id, { x: 100, z: 100 });
   assert.equal(wall.ok, false); assert.equal(wall.blueprint, bp);
   const entry = bp.openings.find(o => o.exterior && o.kind === 'door'), doorway = openingTransform(bp, entry);
   const blocked = placeHomeItem(bp, a.id, { x: doorway.x, z: doorway.z + doorway.normal.z * .4 });
-  assert.equal(blocked.ok, false); assert.match(blocked.reason, /pintu|dinding/);
+  assert.equal(blocked.ok, false); assert.match(blocked.reason, /door|wall/);
   const original = placeHomeItem(bp, a.id, { ...a.position, y: 15, rotation: .013 });
   assert.equal(original.ok, true); assert.equal(original.blueprint.items[0].position.y, floor.elevation);
   assert.equal(original.blueprint.items[0].rotation, 0); assert.equal(original.blueprint.items[0].authored, true);
@@ -109,7 +109,7 @@ test('wall decoration and tabletop items follow their matching surfaces', () => 
   assert.equal(vase.position.y, table.position.y + HOME_CATALOG.table.size[1]);
   assert.equal(picture.anchor.kind, 'wall');
   const rejected = placeHomeItem(bp, vase.id, { x: 0, z: 0 });
-  assert.equal(rejected.ok, false); assert.match(rejected.reason, /permukaan/);
+  assert.equal(rejected.ok, false); assert.match(rejected.reason, /surface/);
   assert.equal(validateHomeBlueprint(bp).ok, true);
 });
 

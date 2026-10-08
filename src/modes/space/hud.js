@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PLANET_TYPES } from '../../world/planetTypes.js';
+import { t, formatNumber } from '../../i18n/index.js';
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
@@ -16,7 +17,7 @@ export const TYPE_SWATCH = {
   gas: 0xd6b27c
 };
 
-const QUALITY_LABEL = { auto: 'Auto', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' };
+const qualityLabel = (preset) => t(`pause.quality.${preset}`);
 
 /** DOM overlay of the space mode. Emits intents through `on`; never touches the scene. */
 export class SpaceHud {
@@ -30,35 +31,35 @@ export class SpaceHud {
     root.innerHTML = `
       <header class="topbar">
         <div class="crumbs">
-          <span class="wordmark">Sistem ${escapeHtml(system.name)}<span class="wordmark__meta">Bintang ${escapeHtml(star.label)}</span></span>
+          <span class="wordmark">${t('space.system', { name: escapeHtml(system.name) })}<span class="wordmark__meta">${t('space.star', { type: escapeHtml(star.label) })}</span></span>
         </div>
         <div class="topbar__right">
-          <button class="pill pill--ghost" type="button" data-act="hangar">Hangar</button>
-          <button class="pill pill--ghost" type="button" data-act="map" aria-pressed="false">Peta sistem</button>
-          <button class="pill pill--ghost" type="button" data-act="quality">Grafis: <span data-quality></span></button>
+          <button class="pill pill--ghost" type="button" data-act="hangar">${t('space.hangar')}</button>
+          <button class="pill pill--ghost" type="button" data-act="map" aria-pressed="false">${t('space.map')}</button>
+          <button class="pill pill--ghost" type="button" data-act="quality">${t('space.graphics')} <span data-quality></span></button>
         </div>
       </header>
-      <nav class="system-list" aria-label="Planet di sistem ini">
-        <h2 class="system-list__title">${system.planets.length} planet</h2>
+      <nav class="system-list" aria-label="${t('space.planets.aria')}">
+        <h2 class="system-list__title">${t('space.planets', { count: system.planets.length })}</h2>
         <ul>${system.planets
           .map(
             (p) => `<li><button type="button" class="planet-row" data-planet="${p.index}">
               <span class="planet-row__dot" style="background:${hex(TYPE_SWATCH[p.type])}"></span>
               <span class="planet-row__name">${escapeHtml(p.name)}</span>
-              <span class="planet-row__meta">${PLANET_TYPES[p.type].label}${p.home ? ', rumah' : ''}${p.inhabited ? '' : p.landable ? ', liar' : ''}</span>
+              <span class="planet-row__meta">${PLANET_TYPES[p.type].label}${p.home ? t('space.row.home') : ''}${p.inhabited ? '' : p.landable ? t('space.row.wild') : ''}</span>
             </button></li>`
           )
           .join('')}</ul>
       </nav>
       <aside class="target-card" hidden aria-live="polite"></aside>
       <div class="flight-hud" role="status">
-        <span class="flight-hud__speed"><span data-speed>0</span><small>u/dtk</small></span>
-        <span class="flight-hud__state" data-state>Terbang bebas</span>
-        <span class="flight-hud__keys">W/S dorong, A/D belok, Q/E geser, R/F naik turun, Shift boost. Klik planet untuk autopilot.</span>
+        <span class="flight-hud__speed"><span data-speed>0</span><small>${t('space.speed.unit')}</small></span>
+        <span class="flight-hud__state" data-state>${t('space.state.free')}</span>
+        <span class="flight-hud__keys">${t('space.keys')}</span>
       </div>
       <div class="space-labels" aria-hidden="true">${system.planets
         .map((p) => `<button type="button" tabindex="-1" class="space-label" data-planet="${p.index}"><span class="space-label__name">${escapeHtml(p.name)}</span></button>`)
-        .join('')}<span class="space-label space-label--ship" data-ship>Kapal</span></div>`;
+        .join('')}<span class="space-label space-label--ship" data-ship>${t('space.ship')}</span></div>`;
     this.el = {
       card: root.querySelector('.target-card'),
       speed: root.querySelector('[data-speed]'),
@@ -69,9 +70,9 @@ export class SpaceHud {
       shipLabel: root.querySelector('[data-ship]'),
       rows: [...root.querySelectorAll('.planet-row')]
     };
-    this.el.qualityLabel.textContent = QUALITY_LABEL[quality.preset];
+    this.el.qualityLabel.textContent = qualityLabel(quality.preset);
     // The pause menu can change the preset too
-    this.onQuality = () => (this.el.qualityLabel.textContent = QUALITY_LABEL[quality.preset]);
+    this.onQuality = () => (this.el.qualityLabel.textContent = qualityLabel(quality.preset));
     quality.listeners.add(this.onQuality);
     this.onClick = (e) => {
       const b = e.target.closest('button');
@@ -82,7 +83,7 @@ export class SpaceHud {
       else if (act === 'quality') {
         const order = ['auto', 'high', 'medium', 'low'];
         quality.setPreset(order[(order.indexOf(quality.preset) + 1) % order.length]);
-        this.el.qualityLabel.textContent = QUALITY_LABEL[quality.preset];
+        this.el.qualityLabel.textContent = qualityLabel(quality.preset);
       } else if (act === 'hangar') this.on.hangar();
       else if (act === 'ship') this.on.pickShip(b.dataset.ship);
       else if (act === 'fly') this.on.fly(Number(b.dataset.index));
@@ -108,30 +109,30 @@ export class SpaceHud {
     }
     const type = PLANET_TYPES[p.type];
     const au = (p.orbit / 150).toFixed(2);
-    const km = Math.round(p.radius * 1520).toLocaleString('id-ID');
+    const km = formatNumber(Math.round(p.radius * 1520));
     const rows = [
-      ['Orbit', `${au} SA dari bintang`],
-      ['Radius', `${km} km`],
-      ['Bulan', p.moons.length ? `${p.moons.length}` : 'Tidak ada'],
-      ['Penghuni', p.inhabited ? (cities ? `${cities} kota, dua faksi` : 'Dua faksi') : 'Tidak ada']
+      [t('space.fact.orbit'), t('space.fact.orbit.value', { au })],
+      [t('space.fact.radius'), `${km} km`],
+      [t('space.fact.moons'), p.moons.length ? `${p.moons.length}` : t('planet.none')],
+      [t('space.fact.inhabitants'), p.inhabited ? (cities ? t('space.fact.inhabitants.cities', { count: cities }) : t('space.fact.inhabitants.factions')) : t('planet.none')]
     ];
-    if (p.ring) rows.push(['Cincin', 'Ada']);
+    if (p.ring) rows.push([t('space.fact.ring'), t('space.fact.ring.yes')]);
     const land = p.landable
-      ? `<button type="button" class="pill" data-act="land" data-index="${p.index}"><span class="arrow-down" aria-hidden="true"></span>Mendarat</button>`
+      ? `<button type="button" class="pill" data-act="land" data-index="${p.index}"><span class="arrow-down" aria-hidden="true"></span>${t('space.land')}</button>`
       : '';
     const fly = orbiting
       ? ''
-      : `<button type="button" class="pill ${p.landable ? 'pill--ghost' : ''}" data-act="fly" data-index="${p.index}">Terbang ke orbit</button>`;
+      : `<button type="button" class="pill ${p.landable ? 'pill--ghost' : ''}" data-act="fly" data-index="${p.index}">${t('space.fly')}</button>`;
     card.innerHTML = `
       <header class="target-card__head" style="--swatch:${hex(TYPE_SWATCH[p.type])}">
-        <span class="card-block__eyebrow">${type.label}${p.home ? ', planet rumah' : ''}${orbiting ? ', di orbit' : ''}</span>
+        <span class="card-block__eyebrow">${type.label}${p.home ? t('space.eyebrow.home') : ''}${orbiting ? t('space.eyebrow.orbit') : ''}</span>
         <h2 class="card-block__title">${escapeHtml(p.name)}</h2>
-        <button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="close" aria-label="Tutup"><span></span><span></span></button>
+        <button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="close" aria-label="${t('space.close')}"><span></span><span></span></button>
       </header>
       <div class="info-card__content">
         <p class="target-card__desc">${type.desc}</p>
         <dl class="facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
-        ${p.landable ? '' : '<p class="target-card__note">Tidak ada permukaan padat. Bisa diorbit, tidak bisa didarati.</p>'}
+        ${p.landable ? '' : `<p class="target-card__note">${t('space.nosurface')}</p>`}
         <div class="info-card__actions">${land}${fly}</div>
       </div>`;
     card.hidden = false;
@@ -145,22 +146,22 @@ export class SpaceHud {
     const bar = (v, max) => `<span class="stat-bar"><i style="transform:scaleX(${Math.min(1, v / max).toFixed(2)})"></i></span>`;
     card.innerHTML = `
       <header class="target-card__head" style="--swatch:#d9d9d9">
-        <span class="card-block__eyebrow">Hangar</span>
-        <h2 class="card-block__title">Pilih kapal</h2>
-        <button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="close" aria-label="Tutup"><span></span><span></span></button>
+        <span class="card-block__eyebrow">${t('space.hangar')}</span>
+        <h2 class="card-block__title">${t('space.hangar.title')}</h2>
+        <button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="close" aria-label="${t('space.close')}"><span></span><span></span></button>
       </header>
       <div class="info-card__content">
         ${Object.entries(ships)
           .map(
             ([key, s]) => `<section class="hangar-ship${key === current ? ' is-current' : ''}">
-              <h3 class="hangar-ship__name">${escapeHtml(s.name)}${key === current ? ' <small>dipakai</small>' : ''}</h3>
+              <h3 class="hangar-ship__name">${escapeHtml(s.name)}${key === current ? ` <small>${t('space.hangar.current')}</small>` : ''}</h3>
               <p class="target-card__note">${escapeHtml(s.desc)}</p>
               <dl class="facts facts--bars">
-                <dt>Kecepatan</dt><dd>${bar(s.maxSpeed, 30)}</dd>
-                <dt>Boost</dt><dd>${bar(s.boostSpeed, 95)}</dd>
-                <dt>Kelincahan</dt><dd>${bar(s.turn, 2.2)}</dd>
+                <dt>${t('space.hangar.speed')}</dt><dd>${bar(s.maxSpeed, 30)}</dd>
+                <dt>${t('space.hangar.boost')}</dt><dd>${bar(s.boostSpeed, 95)}</dd>
+                <dt>${t('space.hangar.agility')}</dt><dd>${bar(s.turn, 2.2)}</dd>
               </dl>
-              ${key === current ? '' : `<button type="button" class="pill" data-act="ship" data-ship="${key}">Terbangkan</button>`}
+              ${key === current ? '' : `<button type="button" class="pill" data-act="ship" data-ship="${key}">${t('space.hangar.fly')}</button>`}
             </section>`
           )
           .join('')}

@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+
 // Onboarding: a title card on the very first visit, then one short tip the
 // first time the player reaches each place or way of moving. Seen tips are
 // remembered; the pause menu can bring them back.
@@ -5,13 +7,13 @@
 const KEY = 'planet_globe_tips';
 
 const TIPS = {
-  space: { title: 'Terbang di tata surya', keys: ['W', 'A', 'D', 'Shift'], text: 'W dorong, A/D belok, Shift boost. Pilih planet di daftar kiri untuk autopilot, lalu tekan L atau Mendarat.' },
-  planet: { title: 'Di atas planet', keys: ['Seret'], text: 'Seret untuk memutar planet. Klik sebuah kota untuk melihatnya lalu mendarat, atau tekan Terbang untuk menjelajah langitnya dengan kapalmu.' },
-  town: { title: 'Diorama kota', keys: ['WASD', '2', '3'], text: 'Seret untuk memutar, WASD atau panah untuk menggeser, scroll untuk zoom. Tekan 2 untuk jalan kaki atau 3 untuk langsung nyetir.' },
-  walk: { title: 'Jalan kaki', keys: ['E'], text: 'Dekati mobil, kereta, atau pintu rumah lalu tekan E. Shift lari, Spasi lompat, Esc kembali ke diorama.' },
-  drive: { title: 'Nyetir', keys: ['Spasi', 'E'], text: 'W gas, S rem, Spasi rem tangan untuk drift, Shift ngebut. Tekan E untuk turun. Mobil di jalan juga bisa diambil alih.' },
-  interior: { title: 'Di dalam rumah', keys: ['E', 'J'], text: 'Dekati perabot lalu tekan E: duduk, tidur, nyalakan lampu atau TV, buka kulkas, ambil dan taruh barang. Buka daftar misi dengan J.' },
-  rover: { title: 'Terbang', keys: ['W', 'R', 'F'], text: 'W/S dorong, A/D belok, R/F naik turun, Shift boost. Seret untuk melihat sekeliling. Di atas kota tekan L untuk mendarat, Esc selesai.' }
+  space: ['W', 'A', 'D', 'Shift'],
+  planet: ['key.drag'],
+  town: ['WASD', '2', '3'],
+  walk: ['E'],
+  drive: ['key.space', 'E'],
+  interior: ['E', 'J'],
+  rover: ['W', 'R', 'F']
 };
 
 export class Tips {
@@ -22,20 +24,20 @@ export class Tips {
       <aside class="tip" hidden role="status" aria-live="polite">
         <div class="tip__keys" data-keys></div>
         <div class="tip__body"><strong data-title></strong><p data-text></p></div>
-        <button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="dismiss" aria-label="Tutup tip"><span></span><span></span></button>
+        <button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="dismiss" aria-label="${t('tips.close')}"><span></span><span></span></button>
       </aside>
       <div class="intro" hidden>
         <section class="intro__card" role="dialog" aria-modal="true" aria-labelledby="introTitle">
-          <span class="card-block__eyebrow">Selamat datang</span>
+          <span class="card-block__eyebrow">${t('intro.eyebrow')}</span>
           <h1 id="introTitle" class="intro__title">Planet Globe</h1>
-          <p class="intro__lead">Satu tata surya, dibuat dari satu angka. Terbang antar planet, mendarat di dunia heksagonal, lalu turun ke kotanya.</p>
+          <p class="intro__lead">${t('intro.lead')}</p>
           <ol class="intro__steps">
-            <li><strong>Luar angkasa</strong><span>Terbangkan kapal, ganti kapal di hangar, parkir di orbit.</span></li>
-            <li><strong>Planet</strong><span>Putar globe, pilih kota, atau terbangkan kapal di langitnya.</span></li>
-            <li><strong>Kota</strong><span>Diorama, jalan kaki, nyetir mobil siapa saja, masuk ke rumah.</span></li>
+            <li><strong>${t('intro.space')}</strong><span>${t('intro.space.text')}</span></li>
+            <li><strong>${t('intro.planet')}</strong><span>${t('intro.planet.text')}</span></li>
+            <li><strong>${t('intro.town')}</strong><span>${t('intro.town.text')}</span></li>
           </ol>
-          <p class="intro__hint">Daftar misi ada di kiri bawah (J), menu dan pengaturan di kanan bawah (P).</p>
-          <button type="button" class="pill" data-act="start">Mulai menjelajah</button>
+          <p class="intro__hint">${t('intro.hint')}</p>
+          <button type="button" class="pill" data-act="start">${t('intro.start')}</button>
         </section>
       </div>`;
     this.el = {
@@ -101,8 +103,8 @@ export class Tips {
 
   /** Show a tip once. The newest place wins: a tip replaced within a moment comes back later. */
   show(id) {
-    const tip = TIPS[id];
-    if (!tip || this.seen.has(id) || this.current === id) return;
+    const keys = TIPS[id];
+    if (!keys || this.seen.has(id) || this.current === id) return;
     if (!this.el.intro.hidden) {
       this.pending = id;
       return;
@@ -112,9 +114,9 @@ export class Tips {
     this.shownAt = performance.now();
     this.save();
     this.current = id;
-    this.el.keys.innerHTML = tip.keys.map((k) => `<kbd>${k}</kbd>`).join('');
-    this.el.title.textContent = tip.title;
-    this.el.text.textContent = tip.text;
+    this.el.keys.innerHTML = keys.map((k) => `<kbd>${k.startsWith('key.') ? t(`controls.${k}`) : k}</kbd>`).join('');
+    this.el.title.textContent = t(`tips.${id}.title`);
+    this.el.text.textContent = t(`tips.${id}.text`);
     this.el.tip.hidden = false;
     this.el.tip.classList.remove('is-out');
     clearTimeout(this.timer);
@@ -123,13 +125,13 @@ export class Tips {
 
   hide() {
     clearTimeout(this.timer);
-    const t = this.el.tip;
-    if (t.hidden) return;
-    t.classList.add('is-out');
+    const el = this.el.tip;
+    if (el.hidden) return;
+    el.classList.add('is-out');
     const was = this.current;
     setTimeout(() => {
       if (this.current !== was) return; // a newer tip took over
-      t.hidden = true;
+      el.hidden = true;
       this.current = null;
     }, 300);
   }

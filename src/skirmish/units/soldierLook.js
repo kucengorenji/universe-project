@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index.js';
 // What each soldier wears and carries: pure data, shared by the 3D soldiers (soldiers.js), the
 // flat map and the preview sheet (tools/blender/skirmish/preview_soldiers.py mirrors KITS and
 // FACTIONS). Colours are sRGB hex.
@@ -13,8 +14,8 @@ export const CLASSES = {
 
 /** Faction -> helmet mesh and palette slots (chunkyPeople.js order: skin, hair, top, tie, legs, shoes, cap). */
 export const FACTIONS = {
-  fed: { label: 'Federasi', helmet: 'hat_fed_helmet', top: '#4f6f8f', scarf: '#c8a23a', legs: '#3d4f63', boots: '#4a3222', helmet_color: '#55705a', flag: '#3f6fb0', ink: '#2f4f7a' },
-  imp: { label: 'Imperium', helmet: 'hat_imp_helmet', top: '#45474d', scarf: '#a8322d', legs: '#303236', boots: '#2e2620', helmet_color: '#4a4d52', flag: '#a8322d', ink: '#7a2420' }
+  fed: { get label() { return t('skirmish.faction.fed'); }, helmet: 'hat_fed_helmet', top: '#4f6f8f', scarf: '#c8a23a', legs: '#3d4f63', boots: '#4a3222', helmet_color: '#55705a', flag: '#3f6fb0', ink: '#2f4f7a' },
+  imp: { get label() { return t('skirmish.faction.imp'); }, helmet: 'hat_imp_helmet', top: '#45474d', scarf: '#a8322d', legs: '#303236', boots: '#2e2620', helmet_color: '#4a4d52', flag: '#a8322d', ink: '#7a2420' }
 };
 
 const SKINS = ['#e0ac84', '#d99b73', '#c9875f', '#a86a45', '#f0c4a0'];

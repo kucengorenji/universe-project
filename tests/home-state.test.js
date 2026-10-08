@@ -55,7 +55,7 @@ test('home claims protect generator versions and reject town rerolls that would 
   assert.equal(townHasSavedHomes(state, 1, 55), true);
   assert.equal(townGenerationVersion(state, 1, 55), 2);
   assert.equal(townGenerationVersion(state, 1, 56), TOWN_LAYOUT_VERSION);
-  assert.throws(() => saveTownPlanChoice(state, 1, 55, { variant: 12, density: 1 }), /dikunci/);
+  assert.throws(() => saveTownPlanChoice(state, 1, 55, { variant: 12, density: 1 }), /locked/);
   await saveTownPlanChoice(state, 1, 55, { variant: 0, density: 1 });
   assert.deepEqual(state.get(homeKey(1, 2, home.id)), home);
   const other = fixture().state;
@@ -67,13 +67,13 @@ test('applying an expanded plot rejects protected roads and current neighboring 
   const { state } = fixture();
   const record = makeRecord(state, { obstacles: [{ kind: 'road', points: rectangle(7, -20, 10, 20) }] });
   const route = { mode: 'home', planet: 1, city: 2, home: record.id };
-  assert.throws(() => applyHomeDraft(state, route, { plot: rectangle(-6, -10, 8, 6) }), /jalan/);
+  assert.throws(() => applyHomeDraft(state, route, { plot: rectangle(-6, -10, 8, 6) }), /road/);
   const neighbor = makeRecord(state, { building: { ...originalBuilding, id: 'neighbor', x: 17, z: 32 }, plot: rectangle(-3, -3, 3, 3) });
   assert.equal(neighbor.id, 'neighbor');
-  assert.throws(() => applyHomeDraft(state, route, { plot: rectangle(-6, -10, 12, 6) }), /jalan|rumah lain/);
+  assert.throws(() => applyHomeDraft(state, route, { plot: rectangle(-6, -10, 12, 6) }), /road|another house/);
   // Remove the old obstacle snapshot: the live registry must still catch the other home's plot.
   state.set(homeKey(1, 2, record.id), { ...record, obstacles: [] });
-  assert.throws(() => applyHomeDraft(state, route, { plot: rectangle(-6, -10, 12, 6) }), /rumah lain/);
+  assert.throws(() => applyHomeDraft(state, route, { plot: rectangle(-6, -10, 12, 6) }), /another house/);
   assert.equal(loadHomeRecord(state, route).applied, null);
 });
 

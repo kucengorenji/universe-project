@@ -1,4 +1,5 @@
 import { seedFor } from './identity.js';
+import { t } from '../i18n/index.js';
 
 // 3: practical street widths, hedgerows on field edges, flowers in drifts.
 // 4: towns and cities planned by bisecting blocks (layout/blockPlan.js, docs/TOWN_PLAN_V3.md).
@@ -60,7 +61,7 @@ export function townPlanVersion(state, planet, townSeed, { variant, density }) {
 export function saveTownPlanChoice(state, planet, townSeed, { variant, density }) {
   const saved = state.get(keyOf(planet, townSeed)) || {};
   if (townHasSavedHomes(state, planet, townSeed) && ((saved.variant ?? 0) !== variant || (saved.density ?? 1) !== density)) {
-    throw new Error('Tata kota dikunci karena ada rumah yang sedang dirancang atau telah diterapkan. Rumah dan pekarangannya tetap dapat diedit.');
+    throw new Error(t('town.layoutLocked'));
   }
   const originalVersion = saved.originalVersion ?? saved.version ?? TOWN_LAYOUT_VERSION;
   const version = townPlanVersion(state, planet, townSeed, { variant, density });

@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+
 // IndexedDB is the durable store. A small synchronous write-ahead journal
 // protects the latest interactions when a tab closes before a transaction ends.
 const browserStore = name => { try { return globalThis[name]; } catch { return null; } };
@@ -13,7 +15,7 @@ export class WorldStateStore {
     this.serial = Promise.resolve();
     try {
       this.pending = JSON.parse(storage?.getItem(this.key) || '{}');
-      if (!this.pending || Array.isArray(this.pending) || typeof this.pending !== 'object') throw new Error('Journal tidak valid');
+      if (!this.pending || Array.isArray(this.pending) || typeof this.pending !== 'object') throw new Error(t('store.invalid'));
       for (const [id, value] of Object.entries(this.pending)) this.records.set(id, value);
     } catch (error) { this.error = error; this.pending = {}; }
     this.ready = this.open();
@@ -27,7 +29,7 @@ export class WorldStateStore {
         request.onupgradeneeded = () => request.result.createObjectStore('entities');
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
-        request.onblocked = () => reject(new Error('Penyimpanan sedang dipakai versi lain.'));
+        request.onblocked = () => reject(new Error(t('store.blocked')));
       });
       const loaded = await new Promise((resolve, reject) => {
         const tx = this.db.transaction('entities');
@@ -47,7 +49,7 @@ export class WorldStateStore {
     this.records.set(id, data);
     this.pending[id] = data;
     try {
-      if (!this.storage && !this.indexedDB) throw new Error('Penyimpanan browser tidak tersedia');
+      if (!this.storage && !this.indexedDB) throw new Error(t('store.unavailable'));
       this.storage?.setItem(this.key, JSON.stringify(this.pending));
     }
     catch (error) { this.error = error; }
@@ -68,7 +70,7 @@ export class WorldStateStore {
       read.onsuccess = () => store.put({ ...(read.result || {}), ...pending }, this.worldId);
       tx.oncomplete = resolve;
       tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error || new Error('Penyimpanan dibatalkan.'));
+      tx.onabort = () => reject(tx.error || new Error(t('store.aborted')));
     });
     for (const [id, value] of Object.entries(pending)) if (this.pending[id] === value) delete this.pending[id];
     try { this.storage?.setItem(this.key, JSON.stringify(this.pending)); this.error = null; }

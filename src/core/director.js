@@ -1,4 +1,5 @@
 import { parseRoute, formatRoute, isSafeHomeId } from './router.js';
+import { t } from '../i18n/index.js';
 
 // Each mode is its own chunk: only the code (and assets) of the mode on screen
 // are ever loaded, and the next one is fetched while the current one plays its
@@ -10,12 +11,6 @@ const MODES = {
   home: () => import('../modes/home/HomeMode.js')
 };
 
-const LABELS = {
-  space: 'Menyiapkan tata surya',
-  planet: 'Mendarat',
-  town: 'Memasuki kota',
-  home: 'Menyiapkan rumah dan pekarangan'
-};
 
 /**
  * Mode lifecycle (all optional except update/render):
@@ -101,7 +96,7 @@ export class Director {
       this.route = route;
     } catch (err) {
       console.error('Mode switch failed:', err);
-      this.overlay.setProgress(null, 'Gagal memuat. Muat ulang halaman untuk mencoba lagi.');
+      this.overlay.setProgress(null, t('loading.failed'));
     } finally {
       this.busy = false;
       if (this.pending) {
@@ -134,7 +129,7 @@ export class Director {
     }
 
     // 2. Swap (may block the main thread: only compositor animations run now)
-    overlay.showLoading(LABELS[route.mode]);
+    overlay.showLoading(t(`loading.${route.mode}`));
     const [mod] = await Promise.all([modPromise, prepPromise]);
     if (this.mode) {
       this.mode.exit();

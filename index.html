@@ -1,245 +1,407 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Planet Globe</title>
-  <meta name="theme-color" content="#070c19" />
-  <meta name="description" content="Jelajahi tata surya prosedural: terbang antar planet, mendarat di dunia heksagonal, lalu jalan kaki, nyetir, dan masuk rumah di kotanya." />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./src/style.css" />
-</head>
-<body>
-  <div id="canvas-container" aria-label="Dunia 3D"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#d9d9d9" />
+    <title>Aethergate: dunia 3D prosedural di browser</title>
+    <meta name="description" content="Game dunia 3D prosedural di browser. Terbang antar planet, turun ke kota yang dibangun otomatis, masuk ke rumah, lalu rancang rumahmu sendiri. Semuanya berasal dari satu seed." />
+    <link rel="canonical" href="https://aethergate.cloud/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content="Aethergate: dari orbit sampai ruang tamu" />
+    <meta property="og:description" content="Lima level dunia 3D prosedural yang bisa dimainkan langsung di browser." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aethergate.cloud/" />
+    <meta property="og:image" content="https://aethergate.cloud/landing/shots/space-system.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet" />
+    <script type="module" src="/src/landing.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Lewati ke konten</a>
 
-  <!-- ============================================================ PLANET MODE -->
-  <div id="planetUi" class="mode-ui" hidden>
-  <!-- Seed number as wall type, hung behind the globe -->
-  <div class="wall-type" aria-hidden="true">
-    <span class="wall-type__label">Seed</span>
-    <span id="wallSeed" class="wall-type__seed">000000</span>
-  </div>
+    <header class="site-header">
+      <div class="shell site-header__inner">
+        <a class="wordmark" href="/" aria-label="Aethergate, halaman awal">AETHERGATE</a>
+        <nav aria-label="Navigasi utama">
+          <a class="nav-link" href="#level">Lima level</a>
+          <a class="nav-link" href="#prosedural">Prosedural</a>
+          <a class="nav-link" href="#mulai">Mulai</a>
+          <a class="pill" href="/play/">Main sekarang</a>
+        </nav>
+      </div>
+    </header>
 
-  <header class="topbar">
-    <div class="crumbs">
-      <button id="orbitBtn" class="pill pill--ghost crumbs__back" type="button" aria-label="Lepas landas ke orbit">
-        <span class="arrow-up" aria-hidden="true"></span>Ke orbit
-      </button>
-      <span class="wordmark"><span id="planetName">Planet</span><span id="planetType" class="wordmark__meta">Terran</span></span>
-    </div>
-    <div class="topbar__right">
-      <span id="storageStatusBadge" class="topbar__status home-only">Tersimpan di browser</span>
-      <span class="cta-pair home-only">
-        <span class="cta-pair__question">Dunia lain?</span>
-        <button id="quickRegenerateBtn" class="pill" type="button">Acak dunia</button>
-      </span>
-      <button id="povEnterBtn" class="pill pill--ghost inhabited-only" type="button">Naik kendaraan</button>
-      <button id="flyBtn" class="pill pill--ghost" type="button">Terbang</button>
-      <button id="screenshotBtn" class="pill pill--ghost" type="button">Simpan gambar</button>
-      <button id="menuToggleBtn" class="menu-circle" type="button" aria-label="Buka pengaturan" aria-expanded="false" aria-controls="sidebarDrawer">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </header>
-
-  <p id="assetStatus" class="asset-status" role="status">Memuat model 3D</p>
-
-  <p class="hint">Seret untuk memutar. Scroll untuk zoom. Klik kota atau tile untuk detail, klik kendaraan untuk ikut naik.</p>
-
-  <!-- Flying the ship over the planet -->
-  <div id="planetFlightHud" class="flight-hud flight-hud--planet" role="status" hidden>
-    <span class="flight-hud__speed"><span data-speed>0</span><small>km/j</small></span>
-    <span class="flight-hud__state" data-state>Terbang</span>
-    <span class="flight-hud__keys">W/S dorong, A/D belok, R/F naik turun, Shift boost, seret untuk melihat sekeliling.</span>
-    <button class="menu-circle menu-circle--close flight-hud__close" type="button" data-act="stop" aria-label="Selesai terbang">
-      <span></span><span></span>
-    </button>
-  </div>
-
-  <!-- Ride-along (POV) controls, shown while following a vehicle -->
-  <section id="povHud" class="pov" aria-label="Mode POV kendaraan" hidden>
-    <div class="pov__info">
-      <span id="povMode" class="pov__eyebrow">POV darat</span>
-      <span id="povName" class="pov__name">Karavan</span>
-      <span id="povRoute" class="pov__route">Rute</span>
-    </div>
-    <div class="pov__modes" role="group" aria-label="Pilih jenis jalur">
-      <button class="pill pill--ghost pov__mode" type="button" data-mode="air" aria-pressed="false">Udara <span data-count="air">0</span></button>
-      <button class="pill pill--ghost pov__mode" type="button" data-mode="land" aria-pressed="false">Darat <span data-count="land">0</span></button>
-      <button class="pill pill--ghost pov__mode" type="button" data-mode="sea" aria-pressed="false">Laut <span data-count="sea">0</span></button>
-    </div>
-    <div class="pov__nav">
-      <button id="povPrevBtn" class="pill pill--ghost" type="button" aria-label="Kendaraan sebelumnya">Sebelumnya</button>
-      <span id="povIndex" class="pov__index">1 / 1</span>
-      <button id="povNextBtn" class="pill pill--ghost" type="button" aria-label="Kendaraan berikutnya">Berikutnya</button>
-      <button id="povExitBtn" class="menu-circle menu-circle--close" type="button" aria-label="Keluar dari mode POV">
-        <span></span><span></span>
-      </button>
-    </div>
-  </section>
-
-  <aside id="sidebarDrawer" class="panel" aria-label="Pengaturan globe" aria-hidden="true">
-    <div class="panel__head">
-      <h2 class="panel__title">Pengaturan</h2>
-      <button id="closeSidebarBtn" class="menu-circle menu-circle--close" type="button" aria-label="Tutup pengaturan">
-        <span></span><span></span>
-      </button>
-    </div>
-
-    <div class="panel__body">
-      <section class="panel__section home-only" aria-labelledby="secWorld">
-        <div class="panel__heading-row">
-          <h3 id="secWorld" class="panel__heading">Dunia</h3>
-          <label class="switch-inline">
-            <span>Garis hexagon</span>
-            <input type="checkbox" id="gridToggle" class="switch" checked />
-          </label>
-        </div>
-
-        <div class="field">
-          <label for="seedInput" class="field__label">Seed</label>
-          <div class="field__row">
-            <input type="number" id="seedInput" class="field__input" placeholder="Angka seed, misal 123456" />
-            <button id="randomSeedBtn" class="pill pill--ghost" type="button">Acak seed</button>
+    <main id="main">
+      <!-- HERO: type is the surface; the game screenshot sits in a space-colored block below it -->
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="shell">
+          <h1 id="hero-title">Dari orbit<br />sampai ruang tamu.</h1>
+          <div class="hero-row">
+            <p class="hero-lead">Aethergate adalah dunia 3D prosedural yang berjalan di browser. Kamu terbang antar planet, turun ke kota yang dibangun otomatis, masuk ke rumah warga, lalu merancang rumahmu sendiri.</p>
+            <div class="cta-pair">
+              <span>Mau coba sekarang?</span>
+              <a class="pill" href="/play/">Masuk ke dunia</a>
+            </div>
           </div>
         </div>
-
-        <div class="field">
-          <div class="field__row field__row--split">
-            <label for="seaLevelSlider" class="field__label">Permukaan laut</label>
-            <output id="seaLevelValue" class="field__value" for="seaLevelSlider">50%</output>
+        <div class="stage">
+          <div class="shell">
+            <img src="/landing/shots/space-system.jpg" width="1440" height="900" alt="Kapal luar angkasa di orbit planet rumah dalam sistem bintang, dengan daftar enam planet di kiri dan kartu informasi planet di kanan." fetchpriority="high" />
           </div>
-          <input type="range" id="seaLevelSlider" min="-0.3" max="0.2" step="0.02" value="-0.05" />
         </div>
+        <div class="shell">
+          <p class="micro">Tangkapan layar dari game: sistem Gorqu di dunia dengan seed 42. Paling nyaman dimainkan dengan keyboard dan mouse. Progres tersimpan di browser yang kamu pakai.</p>
+        </div>
+      </section>
 
-        <div class="field">
-          <div class="field__row field__row--split">
-            <label for="mountainSlider" class="field__label">Kerapatan gunung</label>
-            <output id="mountainValue" class="field__value" for="mountainSlider">60%</output>
+      <!-- LEVEL INDEX: five colour blocks, each one links to its section -->
+      <section class="levels-section" id="level" aria-labelledby="level-title">
+        <div class="shell">
+          <div class="section-head">
+            <h2 id="level-title">Lima level</h2>
+            <p class="section-lead">Kamu bisa turun dari orbit ke ruang tamu dalam satu sesi. Tiap level punya generator, mode, dan kontrol sendiri. Semua gambar di halaman ini adalah tangkapan layar dari game yang berjalan, di dunia dengan seed 42.</p>
           </div>
-          <input type="range" id="mountainSlider" min="0.25" max="0.55" step="0.02" value="0.38" />
         </div>
+        <ul class="level-index">
+          <li><a class="idx idx--orbit" href="#orbit"><span class="idx-num">01</span><span class="idx-text"><span class="idx-name">Orbit</span><span class="idx-desc">Terbang di tata surya.</span></span></a></li>
+          <li><a class="idx idx--planet" href="#planet"><span class="idx-num">02</span><span class="idx-text"><span class="idx-name">Planet</span><span class="idx-desc">Putar globe heksagon.</span></span></a></li>
+          <li><a class="idx idx--kota" href="#kota"><span class="idx-num">03</span><span class="idx-text"><span class="idx-name">Kota</span><span class="idx-desc">Jalan kaki, nyetir, atau lihat dari atas.</span></span></a></li>
+          <li><a class="idx idx--interior" href="#interior"><span class="idx-num">04</span><span class="idx-text"><span class="idx-name">Interior</span><span class="idx-desc">Masuk ke rumah warga.</span></span></a></li>
+          <li><a class="idx idx--rumah" href="#rumah"><span class="idx-num">05</span><span class="idx-text"><span class="idx-name">Rumah</span><span class="idx-desc">Gambar denah sendiri.</span></span></a></li>
+        </ul>
 
-        <div class="field">
-          <div class="field__row field__row--split">
-            <label for="subdivisionSlider" class="field__label">Jumlah tile</label>
-            <output id="subdivisionValue" class="field__value" for="subdivisionSlider">10.242</output>
+        <div class="shell levels">
+          <nav class="level-rail" aria-label="Daftar level" data-rail>
+            <ol>
+              <li><a href="#orbit" data-level-link="orbit"><i class="sw sw--orbit" aria-hidden="true"></i>Orbit</a></li>
+              <li><a href="#planet" data-level-link="planet"><i class="sw sw--planet" aria-hidden="true"></i>Planet</a></li>
+              <li><a href="#kota" data-level-link="kota"><i class="sw sw--kota" aria-hidden="true"></i>Kota</a></li>
+              <li><a href="#interior" data-level-link="interior"><i class="sw sw--interior" aria-hidden="true"></i>Interior</a></li>
+              <li><a href="#rumah" data-level-link="rumah"><i class="sw sw--rumah" aria-hidden="true"></i>Rumah</a></li>
+            </ol>
+          </nav>
+
+          <div class="level-list">
+
+            <!-- 01 ORBIT -->
+            <article class="level" id="orbit" data-level="orbit" aria-labelledby="orbit-title">
+              <header class="level-head">
+                <p class="level-tag">Level 01 <code>/play/#/space</code></p>
+                <h3 id="orbit-title">Tata surya dari satu seed</h3>
+                <p class="level-lead">Kamu mulai di kapal. Bintang, planet, bulan, cincin, dan sabuk asteroid dihasilkan dari seed dunia. Terbang bebas dengan keyboard, atau pilih planet dan biarkan autopilot membawamu.</p>
+              </header>
+
+              <div class="viewer" data-viewer>
+                <div class="viewer-tabs" role="tablist" aria-label="Tampilan level Orbit">
+                  <button type="button" role="tab" aria-selected="true" data-src="/landing/shots/space-system.jpg" data-alt="Kapal luar angkasa di orbit planet rumah dalam sistem bintang, dengan daftar enam planet dan kartu informasi planet." data-title="Kokpit dan daftar planet" data-desc="Sistem Gorqu: bintang kelas F, enam planet, bulan, dan sabuk asteroid. Setiap planet punya kartu informasi dan tombol Mendarat.">Kokpit</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/space-map.jpg" data-alt="Peta sistem tata surya dari atas: bintang di tengah, orbit planet, sabuk asteroid, dan posisi kapal." data-title="Peta sistem" data-desc="Tekan M untuk melihat seluruh orbit. Klik planet mana pun untuk menyalakan autopilot ke sana.">Peta sistem</button>
+                </div>
+                <figure class="viewer-frame" role="tabpanel">
+                  <div class="frame"><img src="/landing/shots/space-system.jpg" width="1440" height="900" alt="Kapal luar angkasa di orbit planet rumah dalam sistem bintang, dengan daftar enam planet dan kartu informasi planet." loading="lazy" /></div>
+                  <figcaption><span class="cap-title"><strong data-cap-title>Kokpit dan daftar planet</strong><small data-count>01 / 02</small></span><span data-cap-desc>Sistem Gorqu: bintang kelas F, enam planet, bulan, dan sabuk asteroid. Setiap planet punya kartu informasi dan tombol Mendarat.</span></figcaption>
+                </figure>
+              </div>
+
+              <div class="cols">
+                <section class="col" aria-labelledby="orbit-proc">
+                  <h4 id="orbit-proc">Fitur prosedural</h4>
+                  <ul class="feature-list">
+                    <li>Seed menentukan kelas bintang, lima sampai delapan planet, bulan, cincin, dan sabuk asteroid.</li>
+                    <li>Ada tujuh tipe planet: terran, samudra, gurun, es, vulkanik, tandus, dan raksasa gas. Masing-masing punya palet, atmosfer, dan aturan generator sendiri.</li>
+                    <li>Tekstur planet di-bake dari peta tile yang sama dengan globe, jadi benua yang kamu lihat dari orbit sama dengan yang kamu daratkan.</li>
+                    <li>Sisi malam planet berhias lampu kota, planet vulkanik bercahaya lava, dan kapal NPC lalu-lalang di sistem.</li>
+                  </ul>
+                </section>
+                <section class="col" aria-labelledby="orbit-manual">
+                  <h4 id="orbit-manual">Manual</h4>
+                  <dl class="keys">
+                    <div><dt><kbd>W</kbd><kbd>S</kbd></dt><dd>Dorong maju atau mundur</dd></div>
+                    <div><dt><kbd>A</kbd><kbd>D</kbd></dt><dd>Belok kiri atau kanan</dd></div>
+                    <div><dt><kbd>Q</kbd><kbd>E</kbd></dt><dd>Geser kiri atau kanan</dd></div>
+                    <div><dt><kbd>R</kbd><kbd>F</kbd></dt><dd>Naik atau turun</dd></div>
+                    <div><dt><kbd>Shift</kbd></dt><dd>Boost</dd></div>
+                    <div><dt><kbd>Klik</kbd></dt><dd>Pilih planet, kapal terbang otomatis ke orbitnya</dd></div>
+                    <div><dt><kbd>L</kbd></dt><dd>Mendarat di planet yang sedang diorbit</dd></div>
+                    <div><dt><kbd>M</kbd></dt><dd>Buka atau tutup peta sistem</dd></div>
+                  </dl>
+                  <p class="manual-note">Tombol Hangar menukar kapal: fregat, interceptor, atau freighter.</p>
+                </section>
+              </div>
+            </article>
+
+            <!-- 02 PLANET -->
+            <article class="level" id="planet" data-level="planet" aria-labelledby="planet-title">
+              <header class="level-head">
+                <p class="level-tag">Level 02 <code>/play/#/planet/…</code></p>
+                <h3 id="planet-title">Globe heksagon dari noise</h3>
+                <p class="level-lead">Mendarat, dan planet menjadi globe yang bisa diputar. Benua, sungai, kota, jalan, dan dua peradaban muncul dari seed yang sama. Seed bisa diubah kapan saja.</p>
+              </header>
+
+              <div class="viewer" data-viewer>
+                <div class="viewer-tabs" role="tablist" aria-label="Tampilan level Planet">
+                  <button type="button" role="tab" aria-selected="true" data-src="/landing/shots/planet-globe.jpg" data-alt="Globe planet terran dengan laut, hutan, gunung bersalju, kutub es, dan label kota New Babylon, Riverend, Coralis, dan Oakshire." data-title="Planet terran" data-desc="Gorqu Prime: laut berlapis kedalaman, pesisir, hutan, gunung dengan puncak salju, dan kota-kota berlabel. Angka besar di kiri bawah adalah seed.">Terran</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/planet-desert.jpg" data-alt="Planet gurun berwarna kuning dengan danau toska, punggung bukit, dan jalur penghubung antar kota." data-title="Planet gurun" data-desc="Tipe gurun memakai aturan generator lain: dune, danau kecil, dan kota yang tetap terhubung jalan.">Gurun</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/planet-barren.jpg" data-alt="Planet tandus berwarna abu kecokelatan dengan gugusan batu dan tutup salju di kutub." data-title="Planet tandus" data-desc="Dunia tandus tanpa kota: hamparan abu-abu, gugusan batu, dan salju di kutub. Tetap bisa didarati dan dijelajahi.">Tandus</button>
+                </div>
+                <figure class="viewer-frame" role="tabpanel">
+                  <div class="frame"><img src="/landing/shots/planet-globe.jpg" width="1440" height="900" alt="Globe planet terran dengan laut, hutan, gunung bersalju, kutub es, dan label kota New Babylon, Riverend, Coralis, dan Oakshire." loading="lazy" /></div>
+                  <figcaption><span class="cap-title"><strong data-cap-title>Planet terran</strong><small data-count>01 / 03</small></span><span data-cap-desc>Gorqu Prime: laut berlapis kedalaman, pesisir, hutan, gunung dengan puncak salju, dan kota-kota berlabel. Angka besar di kiri bawah adalah seed.</span></figcaption>
+                </figure>
+              </div>
+
+              <div class="cols">
+                <section class="col" aria-labelledby="planet-proc">
+                  <h4 id="planet-proc">Fitur prosedural</h4>
+                  <ul class="feature-list">
+                    <li>Globe dibangun dari tile heksagon dan 12 pentagon dengan ketetanggaan yang akurat (Goldberg polyhedron). Jumlah tile bisa diatur.</li>
+                    <li>Terrain berasal dari simplex noise 3D di permukaan bola, jadi tidak ada sambungan di kutub. Hasilnya laut dalam sampai pesisir, pantai, padang rumput, hutan, gurun, tundra, dan gunung bersalju.</li>
+                    <li>Garis pantai dan batas bioma dibulatkan dengan kontur, tidak mengikuti sisi heksagon yang lurus.</li>
+                    <li>Sungai berkelok menuju laut. Gunung yang bersebelahan menyatu menjadi satu pegunungan.</li>
+                    <li>Ada dua peradaban, fantasi dan modern, dengan kota, jalan darat (A*), jalur laut antar pelabuhan, dan jembatan yang muncul otomatis di titik jalan memotong sungai.</li>
+                    <li>Seed, permukaan laut, dan kerapatan gunung bisa diubah, atau tekan Acak dunia untuk planet dan tata surya baru.</li>
+                  </ul>
+                </section>
+                <section class="col" aria-labelledby="planet-manual">
+                  <h4 id="planet-manual">Manual</h4>
+                  <dl class="keys">
+                    <div><dt><kbd>Seret</kbd></dt><dd>Putar globe</dd></div>
+                    <div><dt><kbd>Scroll</kbd></dt><dd>Zoom</dd></div>
+                    <div><dt><kbd>Klik</kbd></dt><dd>Tile atau kota untuk detail. Kartu kota punya tombol Mendarat</dd></div>
+                    <div class="stack"><dt><kbd>Naik kendaraan</kbd></dt><dd>Ikut karavan, kapal, atau pesawat. Pilih jalur Udara, Darat, atau Laut. <kbd>←</kbd><kbd>→</kbd> ganti kendaraan, <kbd>Esc</kbd> keluar</dd></div>
+                    <div><dt><kbd>Terbang</kbd></dt><dd>Kendalikan kapal di atas permukaan dengan <kbd>W</kbd><kbd>S</kbd> <kbd>A</kbd><kbd>D</kbd> <kbd>R</kbd><kbd>F</kbd> dan <kbd>Shift</kbd></dd></div>
+                    <div><dt><kbd>O</kbd></dt><dd>Kembali ke orbit</dd></div>
+                    <div><dt><kbd>Simpan gambar</kbd></dt><dd>Unduh tampilan saat ini sebagai PNG</dd></div>
+                  </dl>
+                  <p class="manual-note">Panel Pengaturan (ikon menu) berisi seed, permukaan laut, kerapatan gunung, jumlah tile, dan toggle garis heksagon.</p>
+                </section>
+              </div>
+            </article>
+
+            <!-- 03 KOTA -->
+            <article class="level" id="kota" data-level="kota" aria-labelledby="kota-title">
+              <header class="level-head">
+                <p class="level-tag">Level 03 <code>/play/#/town/…</code></p>
+                <h3 id="kota-title">Kota yang tumbuh dari peta planet</h3>
+                <p class="level-lead">Pilih kota di globe dan turun ke sana. Kota dipotong dari tile planet, jadi pantai, sungai, gunung, dan jalan keluarnya sama dengan yang kamu lihat dari atas. Lihat sebagai diorama, berjalan kaki, atau menyetir.</p>
+              </header>
+
+              <div class="viewer" data-viewer>
+                <div class="viewer-tabs" role="tablist" aria-label="Tampilan level Kota">
+                  <button type="button" role="tab" aria-selected="true" data-src="/landing/shots/town-diorama.jpg" data-alt="Diorama kota fantasi dilihat dari atas: rumah beratap merah, sungai dengan jembatan, plaza pasar, tembok kayu, dan pantai." data-title="Diorama" data-desc="Amberfall, kota fantasi: jalan memancar dari plaza, sungai dengan jembatan, kapal di dermaga, dan lahan di sekelilingnya dari tile tetangga.">Diorama</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/town-walk.jpg" data-alt="Pemain berjalan di jalan berbatu kota fantasi, dengan penduduk, kereta kuda, dan lampu jalan." data-title="Jalan kaki" data-desc="Turun ke jalan. Penduduk, kereta kuda, lampu jalan, dan minimap yang berputar mengikuti kamera.">Jalan kaki</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/town-drive.jpg" data-alt="Kereta kuda dikemudikan di jalan kota dengan penduduk di sisi jalan dan speedometer di pojok layar." data-title="Nyetir" data-desc="Naik kendaraan apa pun: dekati lalu tekan E. Ada 11 tipe, dari sedan sampai kereta kuda, dengan fisika drift dan tabrakan memantul.">Nyetir</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/town-pixel.jpg" data-alt="Kota yang sama dalam tampilan pixel art: jembatan kayu, menara batu, sungai, dan lapak pasar." data-title="Tampilan Pixel" data-desc="Satu klik mengubah kota yang sama menjadi pixel art dengan kamera ortografis dan tiga tingkat zoom. Tata kota dan tabrakan tidak berubah.">Pixel</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/town-modern.jpg" data-alt="Ibukota modern: gedung pencakar langit kaca, grid jalan beraspal, plaza dengan air mancur, dan kapal kontainer di pelabuhan." data-title="Kota modern" data-desc="Aegis Citadel, ibukota modern: grid jalan, gedung tinggi di pusat, taman, dan pelabuhan kontainer. Dibangun dari generator yang sama dengan arketipe berbeda.">Modern</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/town-planner.jpg" data-alt="Peta 2D tata kota dengan jalan, bangunan, sungai, ladang, dan panel pengaturan kepadatan." data-title="Tata kota (peta 2D)" data-desc="Susun ulang kota di peta 2D: pilih kepadatan Jarang, Normal, atau Padat, acak ulang tata letak, lalu Terapkan. Terrain tetap sama.">Tata kota</button>
+                </div>
+                <figure class="viewer-frame" role="tabpanel">
+                  <div class="frame"><img src="/landing/shots/town-diorama.jpg" width="1440" height="900" alt="Diorama kota fantasi dilihat dari atas: rumah beratap merah, sungai dengan jembatan, plaza pasar, tembok kayu, dan pantai." loading="lazy" /></div>
+                  <figcaption><span class="cap-title"><strong data-cap-title>Diorama</strong><small data-count>01 / 06</small></span><span data-cap-desc>Amberfall, kota fantasi: jalan memancar dari plaza, sungai dengan jembatan, kapal di dermaga, dan lahan di sekelilingnya dari tile tetangga.</span></figcaption>
+                </figure>
+              </div>
+
+              <div class="cols">
+                <section class="col" aria-labelledby="kota-proc">
+                  <h4 id="kota-proc">Fitur prosedural</h4>
+                  <ul class="feature-list">
+                    <li>Kota dipotong dari tile planet. Garis pantai, sungai, gunung, dan jalan keluar kota sama dengan yang terlihat dari globe, lalu diproyeksikan ke skala meter.</li>
+                    <li>Kota fantasi punya jalan yang memancar dari plaza, tembok dan gerbang, lapak pasar, sumur, dan dermaga. Kota modern punya grid jalan, trotoar, gedung tinggi di pusat, taman, dan lampu jalan.</li>
+                    <li>Bangunan ditempatkan dari footprint asli aset dan menghadap jalan, jadi tidak saling tembus.</li>
+                    <li>Di sekitar kota ada ladang yang berbaris sejajar, hutan, kaki gunung, pantai, danau, dan jembatan di titik jalan memotong sungai.</li>
+                    <li>Planner 2D mengacak ulang tata letak dan mengatur kepadatan tanpa mengubah terrain. Planner terkunci kalau sudah ada rumah buatanmu, supaya rumah itu tidak rusak.</li>
+                    <li>Penduduk berjalan di jalan, lalu lintas berjalan, dan waktu berganti siang dan malam mengikuti jam dunia, dengan lampu menyala saat gelap. Tampilan bisa Normal atau Pixel.</li>
+                  </ul>
+                </section>
+                <section class="col" aria-labelledby="kota-manual">
+                  <h4 id="kota-manual">Manual</h4>
+                  <h5>Diorama</h5>
+                  <dl class="keys">
+                    <div><dt><kbd>Seret</kbd></dt><dd>Putar kamera</dd></div>
+                    <div><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Geser kamera (tombol panah juga bisa)</dd></div>
+                    <div><dt><kbd>Scroll</kbd></dt><dd>Zoom. Tampilan Pixel punya tiga tingkat: Dekat, Normal, Jauh</dd></div>
+                    <div><dt><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></dt><dd>Diorama, jalan kaki, nyetir</dd></div>
+                  </dl>
+                  <h5>Jalan kaki</h5>
+                  <dl class="keys">
+                    <div><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Berjalan</dd></div>
+                    <div><dt><kbd>Shift</kbd></dt><dd>Lari</dd></div>
+                    <div><dt><kbd>Spasi</kbd></dt><dd>Lompat</dd></div>
+                    <div><dt><kbd>E</kbd></dt><dd>Masuk rumah atau naik kendaraan</dd></div>
+                    <div><dt><kbd>Esc</kbd></dt><dd>Kembali ke diorama</dd></div>
+                  </dl>
+                  <h5>Nyetir</h5>
+                  <dl class="keys">
+                    <div><dt><kbd>W</kbd><kbd>S</kbd></dt><dd>Gas, lalu rem dan mundur</dd></div>
+                    <div><dt><kbd>A</kbd><kbd>D</kbd></dt><dd>Belok</dd></div>
+                    <div><dt><kbd>Spasi</kbd></dt><dd>Rem tangan (drift)</dd></div>
+                    <div><dt><kbd>Shift</kbd></dt><dd>Ngebut</dd></div>
+                    <div><dt><kbd>E</kbd></dt><dd>Turun</dd></div>
+                  </dl>
+                  <h5>Tata kota (peta 2D)</h5>
+                  <dl class="keys">
+                    <div class="stack"><dt><kbd>Jarang</kbd><kbd>Normal</kbd><kbd>Padat</kbd></dt><dd>Kepadatan bangunan</dd></div>
+                    <div><dt><kbd>Enter</kbd></dt><dd>Acak ulang tata letak</dd></div>
+                    <div><dt><kbd>Backspace</kbd></dt><dd>Kembali ke variasi sebelumnya</dd></div>
+                    <div><dt><kbd>Esc</kbd></dt><dd>Batal. Tombol Terapkan membangun ulang kota</dd></div>
+                  </dl>
+                </section>
+              </div>
+            </article>
+
+            <!-- 04 INTERIOR (split layout: the level is short, so text sits beside the shot) -->
+            <article class="level level--split" id="interior" data-level="interior" aria-labelledby="interior-title">
+              <header class="level-head">
+                <p class="level-tag">Level 04 <code>dari mode Kota</code></p>
+                <h3 id="interior-title">Masuk ke rumah warga</h3>
+                <p class="level-lead">Berdiri di depan pintu dan tekan E. Rumah, pondok, apartemen, toko, kedai, dan kantor punya denah dalam yang mengikuti bentuk bangunan di luar.</p>
+              </header>
+
+              <div class="split">
+                <div class="viewer" data-viewer>
+                  <figure class="viewer-frame">
+                    <div class="frame"><img src="/landing/shots/interior.jpg" width="1440" height="900" alt="Interior rumah dilihat dari atas bergaya dollhouse: lantai ubin oranye, lampu berdiri, kursi, jendela bertirai, tangga ke lantai atas, dan karakter pemain." loading="lazy" /></div>
+                    <figcaption><span class="cap-title"><strong>Tampilan dollhouse</strong><small>Lantai 1 dari 2</small></span><span>Dinding yang menghalangi kamera disembunyikan. Tangga di kanan menuju lantai dua, dan tombol Keluar muncul di dekat pintu.</span></figcaption>
+                  </figure>
+                </div>
+                <div class="cols">
+                  <section class="col" aria-labelledby="interior-proc">
+                    <h4 id="interior-proc">Fitur prosedural</h4>
+                    <ul class="feature-list">
+                      <li>Ukuran ruang dalam dibatasi footprint bangunan, dan posisi pintu sama dengan di luar.</li>
+                      <li>Tangga, pintu, dan jalur jalan dipesan lebih dulu, baru furnitur ditempatkan. Setiap furnitur diperiksa apakah bisa dijangkau.</li>
+                      <li>Tangga menghubungkan lantai, dan keadaan tiap lantai disimpan terpisah.</li>
+                      <li>Lampu, kabinet, TV, api, dan posisi barang tetap seperti kamu tinggalkan, bahkan setelah pindah planet atau memuat ulang halaman.</li>
+                    </ul>
+                  </section>
+                  <section class="col" aria-labelledby="interior-manual">
+                    <h4 id="interior-manual">Manual</h4>
+                    <dl class="keys">
+                      <div><dt><kbd>E</kbd></dt><dd>Masuk lewat pintu. Di dalam: pakai, ambil, atau taruh barang</dd></div>
+                      <div><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Berjalan</dd></div>
+                      <div><dt><kbd>Seret</kbd></dt><dd>Putar kamera</dd></div>
+                      <div><dt><kbd>Esc</kbd></dt><dd>Keluar rumah</dd></div>
+                    </dl>
+                    <p class="manual-note">Di dalam rumah kamu bisa duduk, tidur sampai pagi (jam dunia maju), membuka lemari dan kulkas, menyalakan lampu, TV, radio, dan perapian, serta memindahkan barang. Naik dan turun tangga juga lewat <kbd>E</kbd>.</p>
+                  </section>
+                </div>
+              </div>
+            </article>
+
+            <!-- 05 RUMAH -->
+            <article class="level" id="rumah" data-level="rumah" aria-labelledby="rumah-title">
+              <header class="level-head">
+                <p class="level-tag">Level 05 <code>/play/#/home/…</code></p>
+                <h3 id="rumah-title">Rancang rumah dan pekarangan</h3>
+                <p class="level-lead">Dari mode Kota, tekan Bangun Rumah lalu klik sebuah rumah. Seed memberi denah lengkap berperabot. Kamu bisa menggambar ulang ruangan, mengubah atap, menata barang, lalu menerapkannya ke kota.</p>
+              </header>
+
+              <div class="viewer" data-viewer>
+                <div class="viewer-tabs" role="tablist" aria-label="Tampilan level Rumah">
+                  <button type="button" role="tab" aria-selected="true" data-src="/landing/shots/home-plan.jpg" data-alt="Editor denah 2D: kavling dengan empat ruangan, tangga, pekarangan hijau, panel gaya dan seed di kiri, dan katalog barang di bawah." data-title="Peta 2D" data-desc="Denah yang dihasilkan seed: ruang tamu, dapur, kamar tidur, dan kamar mandi di sekitar sirkulasi, plus pekarangan di dalam batas kavling.">Peta 2D</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/home-diorama.jpg" data-alt="Diorama 3D rumah dengan dinding dan atap dibuka: sofa, tempat tidur, bak mandi, tangga, dan pekarangan berpagar dengan bangku dan tanaman." data-title="Diorama 3D" data-desc="Generate 3D membangun rumah dari denah yang sama. Atap dan dinding dibuka agar interior terlihat, dan barang bisa digeser dan ditata.">Diorama</button>
+                  <button type="button" role="tab" aria-selected="false" data-src="/landing/shots/home-exterior.jpg" data-alt="Rumah bata empat tingkat dengan atap pelana merah, jendela berbingkai, dan pagar kayu." data-title="Rumah jadi" data-desc="Matikan cutaway untuk melihat hasil akhirnya: bata, jendela berbingkai, atap pelana, dan pagar. Terapkan ke kota menggantikan rumah lama.">Rumah jadi</button>
+                </div>
+                <figure class="viewer-frame" role="tabpanel">
+                  <div class="frame"><img src="/landing/shots/home-plan.jpg" width="1440" height="900" alt="Editor denah 2D: kavling dengan empat ruangan, tangga, pekarangan hijau, panel gaya dan seed di kiri, dan katalog barang di bawah." loading="lazy" /></div>
+                  <figcaption><span class="cap-title"><strong data-cap-title>Peta 2D</strong><small data-count>01 / 03</small></span><span data-cap-desc>Denah yang dihasilkan seed: ruang tamu, dapur, kamar tidur, dan kamar mandi di sekitar sirkulasi, plus pekarangan di dalam batas kavling.</span></figcaption>
+                </figure>
+              </div>
+
+              <div class="cols">
+                <section class="col" aria-labelledby="rumah-proc">
+                  <h4 id="rumah-proc">Fitur prosedural</h4>
+                  <ul class="feature-list">
+                    <li>Seed menghasilkan denah, atap, tangga, bukaan, perabot sesuai fungsi ruangan, dan pekarangan. Seed baru memulai ulang, sedangkan Variasi mengacak bagian otomatis dan menjaga bagian yang sudah kamu edit.</li>
+                    <li>Ada tiga gaya: Klasik (bata dan atap pelana), Cottage, dan Modern Tropis, masing-masing dengan material, perabot, dan tanaman sendiri.</li>
+                    <li>Rumah bisa 1 sampai 3 lantai plus loteng. Denah bisa berupa kotak, poligon bersudut bebas, atau lengkung, termasuk ruang bundar.</li>
+                    <li>Peta 2D dan model 3D dibaca dari satu rancangan, jadi hasil edit di salah satunya langsung terlihat di yang lain.</li>
+                    <li>Atap bisa pelana, limas, atau kerucut. Tinggi dan ujung atap bisa diatur, dipisah per bagian, atau ditarik langsung di 3D.</li>
+                    <li>Barang menempel ke lantai, dinding, atau meja. Posisi yang tidak valid ditandai merah dan ditolak. Terapkan juga menolak pekarangan yang menabrak jalan atau kavling tetangga.</li>
+                    <li>Draf tersimpan otomatis dengan Undo dan Redo sampai kamu menekan Terapkan ke kota.</li>
+                  </ul>
+                </section>
+                <section class="col" aria-labelledby="rumah-manual">
+                  <h4 id="rumah-manual">Manual</h4>
+                  <h5>Peta 2D</h5>
+                  <dl class="keys">
+                    <div><dt><kbd>Pilih / geser</kbd></dt><dd>Pilih ruangan, tarik titik denah untuk mengubah bentuk</dd></div>
+                    <div class="stack"><dt><kbd>Kotak</kbd><kbd>Poligon</kbd><kbd>Lengkung</kbd></dt><dd>Gambar ruangan baru. Klik ganda menyelesaikan poligon</dd></div>
+                    <div class="stack"><dt><kbd>Pekarangan</kbd><kbd>Batas lahan</kbd></dt><dd>Gambar zona taman dan perluas kavling ke lahan kosong</dd></div>
+                    <div><dt><kbd>Jumlah lantai</kbd></dt><dd>1 sampai 3 lantai. Centang Tambahkan loteng untuk loteng</dd></div>
+                  </dl>
+                  <h5>Diorama</h5>
+                  <dl class="keys">
+                    <div><dt><kbd>Klik katalog</kbd></dt><dd>Tambah sofa, tempat tidur, kabinet, lampu, tanaman, dan lainnya ke lantai aktif atau pekarangan</dd></div>
+                    <div><dt><kbd>Seret</kbd></dt><dd>Geser barang yang dipilih. Klik kanan untuk pan, scroll untuk zoom</dd></div>
+                    <div class="stack"><dt><kbd>Edit atap di 3D</kbd><kbd>Edit dinding di 3D</kbd></dt><dd>Tarik titik kendali langsung pada model</dd></div>
+                    <div class="stack"><dt><kbd>Buka atap / dinding</kbd></dt><dd>Cutaway untuk melihat interior</dd></div>
+                  </dl>
+                  <h5>Umum</h5>
+                  <dl class="keys">
+                    <div><dt><kbd>Ctrl/⌘</kbd><kbd>Z</kbd></dt><dd>Undo. Tombol Redo ada di kanan atas</dd></div>
+                    <div><dt><kbd>Jelajah</kbd></dt><dd>Berjalan orang pertama di dalam rumah dan pekarangan: WASD berjalan, Shift lari, seret untuk melihat, Esc kembali</dd></div>
+                    <div class="stack"><dt><kbd>Terapkan ke kota</kbd></dt><dd>Memperbarui rumah, pekarangan, pintu, dan tabrakan di kota</dd></div>
+                  </dl>
+                </section>
+              </div>
+            </article>
+
           </div>
-          <input type="range" id="subdivisionSlider" min="2" max="5" step="1" value="5" />
-        </div>
-
-        <div class="cta-pair cta-pair--block">
-          <span class="cta-pair__question">Siap dengan pengaturan ini?</span>
-          <button id="regenerateBtn" class="pill" type="button">Bangun ulang dunia</button>
         </div>
       </section>
 
-      <section class="panel__section panel__section--flush inhabited-only" aria-labelledby="secFaction">
-        <h3 id="secFaction" class="panel__heading panel__heading--inset">Faksi</h3>
-        <div class="blocks">
-          <button type="button" class="block block--green" data-focus-faction="player" aria-label="Fokus ke wilayah New Babylon">
-            <span class="block__name">New Babylon</span>
-            <span class="block__meta">Pemain <span class="sep">/</span> <span id="playerTilesBadge">0 tile</span></span>
-            <span class="block__meta">Kota fantasi, balon udara</span>
-          </button>
-          <button type="button" class="block block--red" data-focus-faction="system" aria-label="Fokus ke wilayah Aegis Citadel">
-            <span class="block__name">Aegis Citadel</span>
-            <span class="block__meta">Sistem <span class="sep">/</span> <span id="systemTilesBadge">0 tile</span></span>
-            <span class="block__meta">Kota modern, pesawat</span>
-          </button>
-        </div>
-        <p id="settlementSummary" class="panel__note panel__note--inset">Belum ada pemukiman.</p>
-      </section>
-
-      <section class="panel__section inhabited-only" aria-labelledby="secCities">
-        <h3 id="secCities" class="panel__heading">Kota</h3>
-        <p class="panel__note">Pilih kota untuk terbang ke sana.</p>
-        <ul id="cityList" class="city-list"></ul>
-      </section>
-
-      <section class="panel__section inhabited-only" aria-labelledby="secRoutes">
-        <h3 id="secRoutes" class="panel__heading">Jalur</h3>
-        <label class="switch-row">
-          <span class="switch-row__text">
-            <span class="switch-row__title">Udara</span>
-            <span id="airRouteMeta" class="switch-row__meta">Balon udara dan pesawat</span>
-          </span>
-          <input type="checkbox" id="airRouteToggle" class="switch" checked />
-        </label>
-        <label class="switch-row">
-          <span class="switch-row__text">
-            <span class="switch-row__title">Darat</span>
-            <span id="landRouteMeta" class="switch-row__meta">Jalan dan karavan</span>
-          </span>
-          <input type="checkbox" id="groundRouteToggle" class="switch" checked />
-        </label>
-        <label class="switch-row">
-          <span class="switch-row__text">
-            <span class="switch-row__title">Laut</span>
-            <span id="seaRouteMeta" class="switch-row__meta">Rute kapal antar pelabuhan</span>
-          </span>
-          <input type="checkbox" id="seaRouteToggle" class="switch" checked />
-        </label>
-      </section>
-
-      <section class="panel__section" aria-labelledby="secCamera">
-        <h3 id="secCamera" class="panel__heading">Tampilan</h3>
-        <label class="switch-row">
-          <span class="switch-row__text">
-            <span class="switch-row__title">Daratan rata dengan laut</span>
-            <span class="switch-row__meta">Matikan untuk daratan bertebing di atas laut</span>
-          </span>
-          <input type="checkbox" id="flatTerrainToggle" class="switch" />
-        </label>
-        <label class="switch-row">
-          <span class="switch-row__text">
-            <span class="switch-row__title">Putar otomatis</span>
-          </span>
-          <input type="checkbox" id="autoRotateToggle" class="switch" />
-        </label>
-        <div class="button-stack">
-          <button id="screenshotPanelBtn" class="pill" type="button">Simpan gambar tampilan ini</button>
-          <button id="resetCameraBtn" class="pill pill--ghost" type="button">Kembalikan posisi kamera</button>
-          <button id="clearStorageBtn" class="text-button" type="button">Hapus peta tersimpan</button>
+      <!-- PROCEDURAL: a plain chain of rows, then four short definitions -->
+      <section class="proc-section" id="prosedural" aria-labelledby="proc-title">
+        <div class="shell">
+          <div class="section-head">
+            <h2 id="proc-title">Dari seed sampai perabot</h2>
+            <p class="section-lead">Tidak ada level yang digambar satu per satu. Seed yang sama selalu menghasilkan dunia yang sama, dan tiap level mewarisi dari level di atasnya. Contoh di bawah memakai dunia dengan seed 42.</p>
+          </div>
+          <ol class="chain">
+            <li><span class="chain-label">Seed</span><span class="chain-name">42</span><span class="chain-desc">Angka dunia. Bisa diacak atau diketik sendiri.</span></li>
+            <li><span class="chain-label">Orbit</span><span class="chain-name">Sistem Gorqu</span><span class="chain-desc">Bintang kelas F, 6 planet, bulan, dan sabuk asteroid.</span></li>
+            <li><span class="chain-label">Planet</span><span class="chain-name">Gorqu Prime</span><span class="chain-desc">Globe heksagon dengan 16 kota dan dua faksi.</span></li>
+            <li><span class="chain-label">Kota</span><span class="chain-name">Amberfall</span><span class="chain-desc">Tata letak diturunkan dari pantai, sungai, dan jalan planet.</span></li>
+            <li><span class="chain-label">Rumah</span><span class="chain-name">Denah dan perabot</span><span class="chain-desc">Diturunkan dari bangunan dan kavling di kota.</span></li>
+          </ol>
+          <dl class="tech">
+            <div><dt>Deterministik</dt><dd>Seed yang sama menghasilkan dunia yang sama. Tiap subsistem punya namespace seed sendiri, jadi mengubah satu bagian tidak mengacak bagian lain.</dd></div>
+            <div><dt>Tersimpan di browser</dt><dd>Planet rumah, rancangan rumah, dan keadaan interior disimpan di IndexedDB dan localStorage, lalu dipulihkan saat kamu kembali.</dd></div>
+            <div><dt>Satu mesin 3D</dt><dd>Semua level memakai satu konteks WebGL berbasis three.js. Hanya mode yang sedang tampil yang dimuat dan dirender.</dd></div>
+            <div><dt>Grafis menyesuaikan</dt><dd>Pilih Auto, Tinggi, Sedang, atau Rendah. Pada Auto, resolusi turun atau naik mengikuti frame rate perangkatmu.</dd></div>
+          </dl>
         </div>
       </section>
 
-    </div>
-  </aside>
+      <!-- START: The Red block -->
+      <section class="start" id="mulai" aria-labelledby="start-title">
+        <div class="shell start-inner">
+          <h2 id="start-title">Buka tab.<br />Mulai menjelajah.</h2>
+          <div class="start-side">
+            <ol class="steps">
+              <li>Pilih planet dan tekan <kbd>L</kbd> untuk mendarat.</li>
+              <li>Klik sebuah kota di globe, lalu pilih Mendarat di kota.</li>
+              <li>Tekan <kbd>E</kbd> di depan pintu untuk masuk, atau pakai Bangun Rumah untuk merancang sendiri.</li>
+            </ol>
+            <div class="cta-pair">
+              <span>Sudah siap?</span>
+              <a class="pill" href="/play/">Masuk ke dunia</a>
+            </div>
+            <p class="micro">Bergerak dengan <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>. Tombol umum: <kbd>J</kbd> misi, <kbd>P</kbd> menu jeda, <kbd>B</kbd> bisu. Progres tersimpan di browser yang kamu pakai.</p>
+          </div>
+        </div>
+      </section>
+    </main>
 
-  <!-- Focus card: details for the selected city, faction or tile -->
-  <aside id="infoCard" class="info-card" aria-live="polite" hidden>
-    <div id="infoCardBody"></div>
-  </aside>
-
-  <div id="tileTooltip" class="tooltip" role="tooltip"></div>
-  </div>
-
-  <!-- ============================================================ SPACE MODE -->
-  <div id="spaceUi" class="mode-ui" hidden></div>
-
-  <!-- ============================================================ TOWN MODE -->
-  <div id="townUi" class="mode-ui" hidden></div>
-
-  <!-- Mission log, onboarding tips and the pause menu (all modes) -->
-  <div id="missionUi"></div>
-  <div id="tipUi"></div>
-  <div id="pauseUi"></div>
-
-  <!-- Cover between modes: last frame / clouds / dark, with a loading line -->
-  <div id="cover" class="cover is-on" data-kind="fade">
-    <canvas class="cover__snap" aria-hidden="true"></canvas>
-    <div class="cover__fx" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
-    <div class="cover__loading is-visible" role="status">
-      <span class="cover__spinner" aria-hidden="true"></span>
-      <span class="cover__label">Memuat</span>
-      <span class="cover__bar" aria-hidden="true"><i></i></span>
-    </div>
-  </div>
-
-  <script type="module" src="./src/main.js"></script>
-</body>
+    <footer class="site-footer">
+      <div class="shell site-footer__inner">
+        <a class="wordmark" href="/">AETHERGATE</a>
+        <p>Planet Globe, dunia 3D prosedural untuk dijelajahi.</p>
+        <a href="#main">Kembali ke atas</a>
+      </div>
+    </footer>
+  </body>
 </html>

@@ -1,0 +1,27 @@
+{
+  "capturedAt": "2026-10-08T07:07:43.367Z",
+  "browser": "154.0.8037.98",
+  "fixture": {
+    "seed": 42,
+    "city": 3,
+    "name": "Amberfall"
+  },
+  "shots": [
+    "space-system",
+    "space-map",
+    "planet-globe",
+    "planet-desert",
+    "planet-barren",
+    "town-diorama",
+    "town-planner",
+    "town-walk",
+    "town-drive",
+    "town-pixel",
+    "town-modern",
+    "interior",
+    "home-plan",
+    "home-diorama",
+    "home-exterior"
+  ],
+  "errors": []
+}

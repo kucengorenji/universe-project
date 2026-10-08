@@ -6,6 +6,13 @@
 
 Proyek simulasi 3D planet globe dengan daratan berbasis grid heksagon prosedural (*Goldberg Polyhedron*), border wilayah ala Civilization, penyimpanan map di `localStorage`, menu navigasi di kiri atas, dan garis koneksi diplomatik antar-ibukota.
 
+Landing page berada di `/`; tombol **Play Game** membuka game di `/play/`.
+Landing memuat screenshot dan manual untuk lima level (orbit, planet, kota, interior, rumah). Gambarnya diambil dari game yang berjalan: jalankan `npm run dev -- --port 5198`, lalu `node tools/qa/landing_shots.mjs` untuk memperbarui `public/landing/shots/`, dan `node tools/qa/landing.mjs` untuk memeriksa halamannya (keduanya memakai `playwright-core`, lewat `PLAYWRIGHT_CORE`).
+Versi publik: [aethergate.cloud](https://aethergate.cloud/).
+Konfigurasi Cloudflare, status domain, dan cara memperbarui deployment ada di
+[Deployment](docs/DEPLOYMENT.md). Tampilan Pixel untuk kota dijelaskan di
+[Pixel Town](docs/PIXEL_TOWN.md).
+
 ---
 
 ## ✨ Fitur Utama
@@ -52,7 +59,8 @@ npm run build
 npm run preview
 ```
 
-Buka URL yang ditampilkan di terminal (biasanya `http://localhost:5173`) di browser pilihan Anda.
+Buka URL yang ditampilkan di terminal (biasanya `http://localhost:5173`) di browser pilihan Anda,
+lalu pilih **Play Game** atau buka `/play/` langsung.
 
 ---
 
@@ -60,7 +68,8 @@ Buka URL yang ditampilkan di terminal (biasanya `http://localhost:5173`) di brow
 
 ```
 globe/
-├── index.html                  # Halaman utama dengan markup HUD & sidebar menu
+├── index.html                  # Landing page dengan CTA Play Game
+├── play/index.html             # Game dengan markup HUD & sidebar menu
 ├── package.json                # Dependensi Three.js & Vite
 ├── TILES_ROADMAP.md            # Catatan rencana generasi aset tile 3D lanjutan
 ├── src/

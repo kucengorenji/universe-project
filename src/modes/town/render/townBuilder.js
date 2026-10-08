@@ -13,6 +13,7 @@ import { patchTownPaintedProps, patchTownPaintedGround } from './paintedStyle.js
 import { refineTownModel } from './modelRefinements.js';
 import { WATER_Y, HORIZON_R } from '../scale.js';
 import { ENVIRONMENT } from './environmentKit.js';
+import { orthographicLodScale } from './pixelConfig.js';
 
 // Turns a town layout into a tabletop diorama: one terrain disc (heights and
 // colours from the blended hex fields), street ribbons, water, a soil skirt
@@ -1325,6 +1326,7 @@ export class TownBuilder {
         const geometry = roofed ? wrapGeometry(part.geometry) : part.geometry;
         if (roofed) geometry.setAttribute('aRoof', lod.roof);
         const inst = new THREE.InstancedMesh(geometry, foliage ? this.foliageMaterial(part.material) : part.material, n);
+        inst.userData.townAsset = res.key;
         inst.instanceMatrix = all;
         inst.computeBoundingSphere(); // over every item, whatever level each one is drawn at
         inst.instanceMatrix = lod.matrix;
@@ -1359,7 +1361,7 @@ export class TownBuilder {
       // From the table: distance to the point it circles, so orbiting never swaps levels
       const d = orbit ? Math.sqrt(zoom2 + dx * dx + dz * dz) : Math.hypot(dx, where[o + 1] - y, dz);
       const budget = 1 - (1 - this.detailBudget.lod) * THREE.MathUtils.smoothstep(d, 35, 110);
-      const s = (where[o + 3] * k * budget) / Math.max(d, 1);
+      const s = where[o + 3] * budget * (view.orthographicScale || k / Math.max(d, 1));
       let lvl = classify(s);
       const cur = level[i];
       // Hysteresis: only move once clearly past the line
@@ -1427,7 +1429,8 @@ export class TownBuilder {
     const zoom = orbit ? p.distanceTo(orbit) : 0;
     const at = orbit || p;
     // Lower quality tiers switch to lighter models sooner; a narrow lens keeps detail further out
-    const k = this.quality.settings.detail * (Math.tan(THREE.MathUtils.degToRad(27.5)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+    const ortho = orthographicLodScale(camera);
+    const k = this.quality.settings.detail * (ortho || Math.tan(THREE.MathUtils.degToRad(27.5)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
     const v = this.lodView;
     const shadows = this.quality.settings.shadows;
     for (const mesh of this.groundCover?.meshes || []) mesh.receiveShadow = shadows;
@@ -1441,7 +1444,7 @@ export class TownBuilder {
       this.liveShadows = shadows;
     }
     if (v && v.shadows === shadows && v.budget === budget.lod && v.shadow === budget.shadow && !!v.orbit === !!orbit && Math.abs(v.x - at.x) < 1.5 && Math.abs(v.y - at.y) < 1.5 && Math.abs(v.z - at.z) < 1.5 && Math.abs(v.zoom - zoom) < Math.max(1.5, zoom * 0.02) && Math.abs(v.k - k) < 0.01) return;
-    this.lodView = { x: at.x, y: at.y, z: at.z, orbit: !!orbit, zoom, zoom2: zoom * zoom, k, budget: budget.lod, shadow: budget.shadow, shadows };
+    this.lodView = { x: at.x, y: at.y, z: at.z, orbit: !!orbit, zoom, zoom2: zoom * zoom, k, orthographicScale: ortho ? k : 0, budget: budget.lod, shadow: budget.shadow, shadows };
     for (const chunk of this.chunks) for (const set of chunk.sets) for (const lod of set.lods) for (const mesh of lod.meshes) {
       mesh.castShadow = shadows && mesh.userData.townShadow && (budget.shadow >= 0.9 || mesh.userData.townLod < 2);
       mesh.receiveShadow = shadows && mesh.userData.townLod < 2;

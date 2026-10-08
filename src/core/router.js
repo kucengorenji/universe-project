@@ -36,7 +36,7 @@ export function formatRoute(r) {
   if (r.mode === 'space') return r.planet !== null && r.planet !== undefined ? `#/space/${r.planet}` : '#/space';
   if (r.mode === 'planet') return r.city !== null && r.city !== undefined ? `#/planet/${r.planet}/city/${r.city}` : `#/planet/${r.planet}`;
   if (r.mode === 'home') {
-    if (!isSafeHomeId(r.home)) throw new TypeError('Identitas rumah tidak valid');
+    if (!isSafeHomeId(r.home)) throw new TypeError('Invalid home identity');
     return `#/home/${r.planet}/${r.city}/${encodeURIComponent(r.home)}`;
   }
   return `#/town/${r.planet}/${r.city}`;

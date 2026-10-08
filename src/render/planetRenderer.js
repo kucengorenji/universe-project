@@ -9,6 +9,7 @@ import { ASSETS } from './assetManifest.js';
 import { buildMountainGeometry } from './mountainBuilder.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../world/planetTypes.js';
 import { createSpaceBackdrop } from './spaceBackdrop.js';
+import { t } from '../i18n/index.js';
 
 // Cartoon (Civ VI-like) terrain palette (lives with the planet types, shared with the space baker)
 export const BIOME_PALETTE = TERRAN_PALETTE;
@@ -29,9 +30,9 @@ const LOD1_RANGE = 1.1;
 
 // Vehicles per civilisation and travel mode
 export const VEHICLES = {
-  land: { fantasy: { asset: 'caravan', name: 'Karavan', scale: 0.5, speed: 0.22 }, modern: { asset: 'truck', name: 'Truk kargo', scale: 0.45, speed: 0.35 } },
-  sea: { fantasy: { asset: 'ship', name: 'Kapal layar', scale: 0.8, speed: 0.3 }, modern: { asset: 'container_ship', name: 'Kapal kontainer', scale: 0.8, speed: 0.4 } },
-  air: { fantasy: { asset: 'balloon', name: 'Balon udara', scale: 0.75, speed: 0.25 }, modern: { asset: 'airplane', name: 'Pesawat', scale: 0.7, speed: 0.9 } }
+  land: { fantasy: { asset: 'caravan', get name() { return t('vehicle.caravan'); }, scale: 0.5, speed: 0.22 }, modern: { asset: 'truck', get name() { return t('vehicle.truck'); }, scale: 0.45, speed: 0.35 } },
+  sea: { fantasy: { asset: 'ship', get name() { return t('vehicle.ship'); }, scale: 0.8, speed: 0.3 }, modern: { asset: 'container_ship', get name() { return t('vehicle.container_ship'); }, scale: 0.8, speed: 0.4 } },
+  air: { fantasy: { asset: 'balloon', get name() { return t('vehicle.balloon'); }, scale: 0.75, speed: 0.25 }, modern: { asset: 'airplane', get name() { return t('vehicle.airplane'); }, scale: 0.7, speed: 0.9 } }
 };
 // Chase camera offsets in tile radii: behind, above, look-ahead
 const POV_RIG = { land: [1.6, 0.55, 3.0], sea: [2.2, 0.75, 3.5], air: [2.6, 0.6, 4.0] };

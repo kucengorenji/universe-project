@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index.js';
 // Skirmish rules: numbers only (docs/SKIRMISH_PLAN.md, "Keputusan M1"). Pure data and small
 // pure functions, shared by the battle state, the AI, the HUD and the tests.
 
@@ -52,9 +53,9 @@ export const INTERCEPT = { every: 0.7, shots: 2, spread: 2.5, damage: 0.6, guard
 export const GUARDS = 3; // enemy soldiers that hold their base instead of advancing
 
 export const DIFFICULTY = {
-  easy: { label: 'Mudah', infantry: 6, cp: 4, accuracy: 0.7 },
-  normal: { label: 'Normal', infantry: 9, cp: 5, accuracy: 0.85 },
-  hard: { label: 'Sulit', infantry: 12, cp: 6, accuracy: 1 }
+  easy: { get label() { return t('skirmish.difficulty.easy'); }, infantry: 6, cp: 4, accuracy: 0.7 },
+  normal: { get label() { return t('skirmish.difficulty.normal'); }, infantry: 9, cp: 5, accuracy: 0.85 },
+  hard: { get label() { return t('skirmish.difficulty.hard'); }, infantry: 12, cp: 6, accuracy: 1 }
 };
 
 /** Damage of one hit at distance d (full to 60% of range, then down to 40% at range, 20% beyond). */

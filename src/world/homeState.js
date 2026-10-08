@@ -2,6 +2,7 @@ import { buildingId, seedFor } from './identity.js';
 import { describeBuilding, localToTown, townToLocal } from './buildingBlueprint.js';
 import { pavementWidth } from '../modes/town/scale.js';
 import { riverDistance } from '../modes/town/layout/townPlan.js';
+import { t } from '../i18n/index.js';
 
 const copy = value => structuredClone(value);
 const validPolygon = poly => Array.isArray(poly) && poly.length >= 3 && poly.every(p => Number.isFinite(p.x) && Number.isFinite(p.z));
@@ -43,7 +44,7 @@ export function ensureHomeRecord(state, { planet, city, townSeed, layoutSeed, la
 
 function requireHome(state, route) {
   const record = loadHomeRecord(state, route);
-  if (!record) throw new Error('Kavling rumah tidak ditemukan. Pilih rumah dari kota terlebih dahulu.');
+  if (!record) throw new Error(t('home.err.noHome'));
   return record;
 }
 
@@ -57,13 +58,13 @@ export function saveHomeDraft(state, route, blueprint) {
 export function applyHomeDraft(state, route, blueprint) {
   const record = requireHome(state, route);
   const bp = blueprint || record.draft;
-  if (!bp || !validPolygon(bp.plot)) throw new Error('Pekarangan rumah belum valid.');
-  if (record.obstacles.some(o => polygonsOverlap(bp.plot, obstaclePoints(o)))) throw new Error('Pekarangan mengambil jalan, kavling tetangga, atau lahan yang dilindungi.');
+  if (!bp || !validPolygon(bp.plot)) throw new Error(t('home.err.yardInvalid'));
+  if (record.obstacles.some(o => polygonsOverlap(bp.plot, obstaclePoints(o)))) throw new Error(t('home.err.yardTakesRoad'));
   const worldPlot = bp.plot.map(p => localToTown(record.origin, p));
   for (const neighbor of listTownHomes(state, route.planet, route.city)) {
     if (neighbor.id === record.id) continue;
     const other = (neighbor.applied?.plot || neighbor.plot).map(p => localToTown(neighbor.origin, p));
-    if (polygonsOverlap(worldPlot, other)) throw new Error('Pekarangan bertabrakan dengan kavling rumah lain.');
+    if (polygonsOverlap(worldPlot, other)) throw new Error(t('home.err.yardCollides'));
   }
   record.draft = copy(bp);
   record.applied = copy(bp);

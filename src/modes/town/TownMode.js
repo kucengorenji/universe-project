@@ -33,6 +33,9 @@ import { loadTownPaintedSurfaces } from './render/paintedStyle.js';
 import { TownDetailBudget } from './render/detailBudget.js';
 import { Minimap, Speedo } from '../../ui/gauges.js';
 import { FLEETS, pickRecipe } from './vehicles/vehicleKit.js';
+import { TownPixelStyle } from './render/pixelStyle.js';
+import { readTownStyle, saveTownStyle, PIXEL_YAW } from './render/pixelConfig.js';
+import { t as tr } from '../../i18n/index.js';
 
 const STREET_FOV = 55;
 const HOME_SHELLS = new Set(['f_house_small', 'f_house', 'f_house_tall', 'f_townhouse', 'm_house']);
@@ -86,6 +89,7 @@ export default class TownMode {
     this.keys = new Set();
     this.tween = null;
     this.detailBudget = new TownDetailBudget();
+    this.townStyle = readTownStyle();
   }
 
   async enter() {
@@ -237,6 +241,8 @@ export default class TownMode {
         liftoff: () => this.ctx.director.go({ mode: 'planet', planet: this.route.planet, city: this.route.city }),
         city: city => this.ctx.director.go({ mode: 'town', planet: this.route.planet, city }),
         view: (v) => this.setView(v),
+        style: (style) => this.setTownStyle(style),
+        zoom: (level) => this.setPixelZoom(level),
         plan: () => this.openPlanner(),
         interact: () => this.interact()
       }
@@ -251,17 +257,74 @@ export default class TownMode {
     this.camera.position.set(0.1, 950, 60);
     this.camera.lookAt(0, 0, 0);
     this.orbit.target.set(0, 0, 0);
+    this.setTownStyle(this.townStyle, { persist: false });
     // ...or, driven in from the planet, already on the road into town
     if (this.roadVehicle) this.startRoadArrival();
   }
 
   arrived() {
     if (this.arrivedByRoad) return;
+    if (this.pixelActive) {
+      this.tween = null;
+      this.orbit.target.set(this.layout.plaza?.x ?? 0, 0, this.layout.plaza?.z ?? 0);
+      this.setView('diorama');
+      this.pixel.update(0, true);
+      return;
+    }
     const to = this.dioramaPose({});
     this.flyCamera(to, 2.8, () => this.setView('diorama'));
   }
 
   // ------------------------------------------------------------------ views
+
+  get pixelActive() { return this.townStyle === 'pixel' && !this.interior; }
+
+  get renderCamera() { return this.pixelActive ? this.pixel.rig.camera : this.camera; }
+
+  setTownStyle(style, { persist = true } = {}) {
+    this.townStyle = style === 'pixel' ? 'pixel' : 'normal';
+    if (persist) saveTownStyle(this.townStyle);
+    if (this.townStyle === 'pixel' && !this.pixel) this.pixel = new TownPixelStyle(this);
+    this.pixel?.setActive(this.pixelActive);
+    this.tween = null;
+    this.drag = null;
+    this.orbit.enabled = !this.pixelActive && this.view === 'diorama' && !this.interior;
+    if (this.pixelActive) {
+      this.pixel.setView(this.view);
+      this.pixel.update(0, true);
+      this.camera.position.copy(this.pixel.rig.camera.position);
+    } else if (!this.interior) {
+      this.camera.fov = this.view === 'diorama' ? 40 : STREET_FOV;
+      this.camera.updateProjectionMatrix();
+      if (this.view === 'diorama') {
+        const to = this.dioramaPose({});
+        to.pos.sub(to.target).add(this.orbit.target);
+        this.camera.position.copy(to.pos); this.camera.lookAt(this.orbit.target);
+      } else {
+        this.follow.yaw = this.player.yaw + Math.PI;
+        this.follow.pitch = .32;
+        this.updateFollowCamera(1, this.player, 1.6);
+      }
+    }
+    this.hud.setStyle(this.townStyle, this.pixel?.rig.levels[this.view] ?? 1);
+    this.builder.lodView = null;
+  }
+
+  setPixelZoom(level) {
+    if (!this.pixelActive) return;
+    this.pixel.setZoom(level);
+    this.pixel.update(0, true);
+    this.hud.setStyle(this.townStyle, this.pixel.rig.levels[this.view]);
+  }
+
+  panPixelDiorama(dx, dy) {
+    const right = new THREE.Vector3(Math.cos(PIXEL_YAW), 0, -Math.sin(PIXEL_YAW));
+    const forward = new THREE.Vector3(-Math.sin(PIXEL_YAW), 0, -Math.cos(PIXEL_YAW));
+    this.orbit.target.addScaledVector(right, dx).addScaledVector(forward, dy);
+    const r = Math.hypot(this.orbit.target.x, this.orbit.target.z), limit = this.layout.dioramaR * .85;
+    if (r > limit) { this.orbit.target.x *= limit / r; this.orbit.target.z *= limit / r; }
+    this.orbit.target.y = Math.max(0, this.builder.groundAt(this.orbit.target.x, this.orbit.target.z));
+  }
 
   prepareAuthoredHomes() {
     this.homes = listTownHomes(this.ctx.world.state, this.route.planet, this.route.city).filter(home => home.layoutSeed === this.layout.seed);
@@ -313,8 +376,8 @@ export default class TownMode {
     this.homeButton = document.createElement('button');
     this.homeButton.type = 'button';
     this.homeButton.className = 'pill pill--ghost town-home';
-    this.homeButton.textContent = 'Bangun Rumah';
-    this.homeButton.title = 'Pilih rumah di kota, susun denah dan pekarangannya';
+    this.homeButton.textContent = tr('town.home.build');
+    this.homeButton.title = tr('town.home.build.title');
     this.homeButton.setAttribute('aria-pressed', 'false');
     this.onHomeEntry = () => this.toggleHomeSelection();
     this.homeButton.addEventListener('click', this.onHomeEntry);
@@ -335,11 +398,11 @@ export default class TownMode {
     if (enabled && this.view !== 'diorama') this.setView('diorama');
     this.homePicking = enabled;
     this.homeButton?.setAttribute('aria-pressed', String(enabled));
-    if (this.homeButton) this.homeButton.textContent = enabled ? 'Batal pilih rumah' : 'Bangun Rumah';
+    if (this.homeButton) this.homeButton.textContent = tr(enabled ? 'town.home.cancel' : 'town.home.build');
     this.ctx.engine.renderer.domElement.style.cursor = enabled ? 'crosshair' : '';
     if (enabled) {
       this.homePreviousHint = this.hud.hint.textContent;
-      this.hud.hint.textContent = 'Klik rumah untuk membuka denah 2D dan pekarangannya. Seret untuk melihat kota; Esc membatalkan pilihan.';
+      this.hud.hint.textContent = tr('town.home.pickHint');
     } else if (this.homePreviousHint) this.hud.hint.textContent = this.homePreviousHint;
   }
 
@@ -347,7 +410,7 @@ export default class TownMode {
     if (!this.homePicking || this.view !== 'diorama' || this.tween || this.planner) return;
     const canvas = this.ctx.engine.renderer.domElement, rect = canvas.getBoundingClientRect();
     const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2((clientX - rect.left) / rect.width * 2 - 1, -(clientY - rect.top) / rect.height * 2 + 1), this.camera);
+    raycaster.setFromCamera(new THREE.Vector2((clientX - rect.left) / rect.width * 2 - 1, -(clientY - rect.top) / rect.height * 2 + 1), this.renderCamera);
     let best = null, distance = Infinity;
     for (const b of this.layout.buildings) {
       if (!HOME_SHELLS.has(b.asset)) continue;
@@ -361,10 +424,10 @@ export default class TownMode {
       const d = hit.applyMatrix4(matrix).distanceTo(raycaster.ray.origin);
       if (d < distance) { best = b; distance = d; }
     }
-    if (!best) { this.showHomeMessage('Klik salah satu rumah berukuran kecil atau sedang untuk mulai membangun.'); return; }
+    if (!best) { this.showHomeMessage(tr('town.home.pickMissed')); return; }
     const context = townHomeContext(this.layout, best, this.footprints, this.homes);
     if (context.unavailable && !best.homeRecord) {
-      this.showHomeMessage('Rumah ini terlalu dekat dengan fasilitas bersama. Pilih rumah dengan lahan kosong di sekitarnya.');
+      this.showHomeMessage(tr('town.home.tooClose'));
       return;
     }
     const home = ensureHomeRecord(this.ctx.world.state, { planet: this.route.planet, city: this.route.city, townSeed: this.townSeed, layoutSeed: this.layout.seed, layoutVersion: this.layout.layoutVersion, building: best, ...context });
@@ -459,6 +522,17 @@ export default class TownMode {
       to.pos.sub(new THREE.Vector3(this.layout.plaza?.x ?? 0, 0, this.layout.plaza?.z ?? 0)).multiplyScalar(0.55).add(to.target);
       this.flyCamera(to, 1.6, () => (this.orbit.enabled = true));
     }
+    if (this.pixelActive) {
+      this.tween = null; this.orbit.enabled = false;
+      this.pixel.setView(v);
+      if (v === 'diorama' && prev !== 'diorama') {
+        const focus = prev === 'drive' && this.drive ? this.drive.car : this.player;
+        this.orbit.target.set(focus.x, focus.y, focus.z);
+      }
+      if (v === 'walk') this.follow.yaw = PIXEL_YAW;
+      this.pixel.update(0, true);
+      this.hud.setStyle(this.townStyle, this.pixel.rig.levels[v]);
+    }
   }
 
   /** The player: the NPC v1 hero in the faction's colour (the older rigged explorer without that pack). */
@@ -501,7 +575,7 @@ export default class TownMode {
     if (this.planner || this.view !== 'diorama' || this.tween || this.transfer || this.interior) return;
     const { world, director } = this.ctx;
     if (townHasSavedHomes(world.state, this.route.planet, this.townSeed)) {
-      this.showHomeMessage('Tata kota dikunci karena ada rancangan rumah tersimpan. Gunakan Bangun Rumah untuk mengubah rumah dan pekarangannya.');
+      this.showHomeMessage(tr('town.plan.locked'));
       return;
     }
     const planet = this.route.planet;
@@ -645,6 +719,7 @@ export default class TownMode {
     this.hud.setPrompt(null);
     const overlay = this.ctx.overlay;
     await overlay.cover('fade', { duration: 280 });
+    this.pixel?.setActive(false);
     await this.ctx.world.ready;
     const stateKey = `interior:${this.route.planet}:${door.b.id}`;
     const saved = this.ctx.world.state.get(stateKey);
@@ -719,6 +794,10 @@ export default class TownMode {
     this.camera.updateProjectionMatrix();
     this.view = 'walk';
     this.hud.setView('walk');
+    if (this.pixelActive) {
+      this.pixel.setActive(true); this.pixel.setView('walk'); this.follow.yaw = PIXEL_YAW; this.pixel.update(0, true);
+      this.hud.setStyle(this.townStyle, this.pixel.rig.levels.walk);
+    }
     this.ctx.engine.post.configure('town');
     this.minimap.show(true);
     this.ctx.audio?.stopRoom();
@@ -867,7 +946,7 @@ export default class TownMode {
     inside.update(dt, t, this.camera, p);
     // Prompt: the thing you are standing at
     let text = null;
-    if (this.pose) text = this.pose.name === 'sleep' ? 'Bangun' : 'Berdiri';
+    if (this.pose) text = tr(this.pose.name === 'sleep' ? 'town.prompt.wake' : 'town.prompt.stand');
     else if (!this.fading) text = inside.promptFor(inside.nearest(p.x, p.z));
     this.hud.setPrompt(text, 'E');
   }
@@ -1022,7 +1101,7 @@ export default class TownMode {
       if (exit) break;
     }
     if (!exit) return;
-    this.roadHint = `Terus ke ${exit.to || 'kota berikutnya'}`;
+    this.roadHint = tr('town.roadHint', { city: exit.to || tr('town.roadHint.next') });
     if (r > R - 32) {
       this.leaving = { kit: d.v.kit, type: d.v.type, fromCity: this.route.city, toCity: exit.toIndex };
       this.ctx.director.go({ mode: 'planet', planet: this.route.planet, city: null });
@@ -1238,11 +1317,26 @@ export default class TownMode {
     this.onKeyUp = (e) => this.keys.delete(e.key.toLowerCase());
     this.onBlur = () => this.keys.clear();
     this.onPointerDown = (e) => {
+      if (this.pixelActive) {
+        if (this.view === 'diorama') {
+          this.homeClickStart = { x: e.clientX, y: e.clientY, id: e.pointerId };
+          this.drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+        }
+        return;
+      }
       if (this.view === 'diorama') { this.homeClickStart = { x: e.clientX, y: e.clientY, id: e.pointerId }; return; }
       this.drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
     };
     this.onPointerMove = (e) => {
       if (!this.drag || e.pointerId !== this.drag.id) return;
+      if (this.pixelActive) {
+        if (this.view === 'diorama') {
+          const unit = this.pixel.rig.span / Math.max(1, this.ctx.engine.size.height);
+          this.panPixelDiorama(-(e.clientX - this.drag.x) * unit, (e.clientY - this.drag.y) * unit * Math.SQRT2);
+        }
+        this.drag.x = e.clientX; this.drag.y = e.clientY;
+        return;
+      }
       if (this.view === 'drive') this.chase.look(e.clientX - this.drag.x, e.clientY - this.drag.y, this.ctx.engine.time);
       this.follow.yaw -= (e.clientX - this.drag.x) * 0.006;
       this.follow.pitch = THREE.MathUtils.clamp(this.follow.pitch + (e.clientY - this.drag.y) * 0.004, -0.15, 1.2);
@@ -1256,6 +1350,12 @@ export default class TownMode {
       this.drag = null;
     };
     this.onWheel = (e) => {
+      if (this.pixelActive) {
+        if (Math.abs(e.deltaY) < 1 || this.ctx.engine.time - (this.pixelWheelTime ?? -Infinity) < .15) return;
+        this.pixelWheelTime = this.ctx.engine.time;
+        this.setPixelZoom(this.pixel.rig.levels[this.view] + Math.sign(e.deltaY));
+        return;
+      }
       if (this.view === 'diorama') {
         // OrbitControls clamps zoom. Leaving the city is an explicit action.
         return;
@@ -1401,8 +1501,8 @@ export default class TownMode {
         const vd = v ? Math.hypot(v.car.x - this.player.x, v.car.z - this.player.z) : Infinity;
         const dd = door ? Math.hypot(door.x - this.player.x, door.z - this.player.z) : Infinity;
         if (door && dd <= vd) text = ENTERABLE[door.b.asset].label;
-        else if (v) text = v.mode === 'traffic' ? 'Ambil kendaraan' : 'Masuk kendaraan';
-      } else if (this.view === 'drive' && this.drive && this.drive.car.speed < 4) text = 'Turun';
+        else if (v) text = tr(v.mode === 'traffic' ? 'town.prompt.takeover' : 'town.prompt.enterVehicle');
+      } else if (this.view === 'drive' && this.drive && this.drive.car.speed < 4) text = tr('town.prompt.exitVehicle');
     }
     if (this.roadHint && this.view === 'drive') {
       this.hud.setPrompt(this.roadHint, '↑');
@@ -1412,6 +1512,7 @@ export default class TownMode {
   }
 
   updateFollowCamera(dt, target, height) {
+    if (this.pixelActive) { this.follow.yaw = PIXEL_YAW; return; }
     const f = this.follow;
     const t = this.ctx.engine.time;
     // Swing back behind the direction of travel when the player lets go of the camera
@@ -1447,6 +1548,7 @@ export default class TownMode {
       this.footsteps('wood');
       return;
     }
+    if (this.pixelActive && this.view === 'walk') this.follow.yaw = PIXEL_YAW;
     if (this.tween) {
       const tw = this.tween;
       const raw = Math.min(1, (t - tw.t0) / tw.dur);
@@ -1462,8 +1564,10 @@ export default class TownMode {
         tw.done?.();
       }
     } else if (this.view === 'diorama') {
-      this.panDiorama(dt);
-      this.orbit.update();
+      if (this.pixelActive) {
+        const i = this.intent(), speed = this.pixel.rig.span * (i.run ? 1.2 : .5);
+        this.panPixelDiorama(i.right * speed * dt, i.forward * speed * dt);
+      } else { this.panDiorama(dt); this.orbit.update(); }
       // Keep the table in reach
       const tg = this.orbit.target;
       const r = Math.hypot(tg.x, tg.z);
@@ -1477,7 +1581,7 @@ export default class TownMode {
     } else if (this.view === 'drive') {
       if (this.transfer) this.updateTransfer(t);
       this.updateDrive(dt);
-      if (this.drive) this.chase.update(dt, t, this.drive.car, (x, z) => this.builder.groundAt(x, z), { dist: 5 + this.drive.v.spec.length * 0.55, height: 1.4 + this.drive.v.spec.length * 0.12 });
+      if (this.drive && !this.pixelActive) this.chase.update(dt, t, this.drive.car, (x, z) => this.builder.groundAt(x, z), { dist: 5 + this.drive.v.spec.length * 0.55, height: 1.4 + this.drive.v.spec.length * 0.12 });
       this.updatePrompt();
     }
     if (this.view === 'walk') this.footsteps(this.layout.modern ? 'road' : 'grass');
@@ -1485,8 +1589,12 @@ export default class TownMode {
     const obstacles = [this.player];
     if (this.drive) obstacles.push(this.drive.car);
     this.fleet.update(dt, obstacles, { deferFlush: true });
+    if (this.pixelActive) {
+      this.pixel.update(dt);
+      this.camera.position.copy(this.pixel.rig.camera.position);
+    }
     const detail = this.ctx.engine.quality.preset === 'auto' ? this.detailBudget.current : { lod: 1, shadow: 1, vegetation: 1 };
-    this.fleet.updateLod(this.camera, this.view === 'diorama' ? this.orbit.target : null, detail.lod, detail.shadow);
+    this.fleet.updateLod(this.renderCamera, this.view === 'diorama' ? this.orbit.target : null, detail.lod, detail.shadow);
     const cam = this.camera.position;
     const near = (x, z) => Math.hypot(x - cam.x, z - cam.z) < 260 + cam.y;
     // People jump out of the way of a car coming at them
@@ -1497,7 +1605,8 @@ export default class TownMode {
     this.crowd.pose();
     this.updateAvatar(dt);
     this.updateDepthRange();
-    this.builder.update(this.camera, this.view === 'diorama' ? this.orbit.target : null, detail);
+    this.builder.update(this.renderCamera, this.view === 'diorama' ? this.orbit.target : null, detail);
+    if (this.pixelActive) this.pixel.update(0);
     this.updateEnvironment(dt, t);
     this.hud.update(this);
     this.cpuUpdateMs = (this.cpuUpdateMs ?? 0) * 0.9 + (performance.now() - cpuStart) * 0.1;
@@ -1613,7 +1722,8 @@ export default class TownMode {
   render() {
     if (this.planner) return; // the planner covers the view; keep the last frame
     const cpuStart = performance.now();
-    this.ctx.engine.draw(this.interior ? this.interior.scene : this.scene, this.camera);
+    if (this.pixelActive) this.pixel.render();
+    else this.ctx.engine.draw(this.interior ? this.interior.scene : this.scene, this.camera);
     this.cpuRenderMs = (this.cpuRenderMs ?? 0) * 0.9 + (performance.now() - cpuStart) * 0.1;
   }
 
@@ -1621,6 +1731,7 @@ export default class TownMode {
     if (!this.camera) return;
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    this.pixel?.resize(w, h);
   }
 
   depart(route) {
@@ -1635,6 +1746,7 @@ export default class TownMode {
       // Off down the road: a quick fade, the car carries on on the globe
       return Promise.resolve({ cover: 'fade', arrival: { drive: this.leaving } });
     }
+    if (this.pixelActive) return Promise.resolve({ cover: 'fade', arrival: route.mode === 'planet' ? { city: this.route.city, fromTown: true } : null });
     // Climb straight up into the clouds
     const cam = this.camera.position.clone();
     const to = { pos: new THREE.Vector3(cam.x * 0.3, 1100, cam.z * 0.3 + 40), target: new THREE.Vector3(0, 0, 0) };
@@ -1669,6 +1781,7 @@ export default class TownMode {
     this.homeButton?.removeEventListener('click', this.onHomeEntry);
     this.ctx.engine.renderer.domElement.style.cursor = '';
     this.orbit.dispose();
+    this.pixel?.dispose();
     this.hud.dispose();
     this.ui.hidden = true;
     this.builder.dispose();

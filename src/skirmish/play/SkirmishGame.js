@@ -22,6 +22,7 @@ import { Combat } from './combat.js';
 import { ActionControl } from './actionControl.js';
 import { EnemyTurn } from './enemyTurn.js';
 import { Sound } from './sound.js';
+import { t } from '../../i18n/index.js';
 
 // The skirmish as an engine mode. Phases:
 //   prep     flat map + setup panel (no 3D yet): seed, squad, deployment, briefing
@@ -228,7 +229,7 @@ export class SkirmishGame {
     if (this.phase !== 'command') return;
     const u = this.battle.unit(id);
     if (!this.battle.canSelect(u)) {
-      if (u && u.side === 'fed' && u.state === 'ok' && this.battle.cp < u.cost) this.hud.toast('CP habis — akhiri giliran');
+      if (u && u.side === 'fed' && u.state === 'ok' && this.battle.cp < u.cost) this.hud.toast(t('skirmish.toast.noCp'));
       return;
     }
     const ap = this.battle.select(u);
@@ -259,7 +260,7 @@ export class SkirmishGame {
     this.fly(this.overhead(u), RISE, () => {
       this.mapZoom(u, 'rising');
       this.setPhase('command');
-      if (this.battle.cp <= 0) this.hud.toast('CP habis — akhiri giliran');
+      if (this.battle.cp <= 0) this.hud.toast(t('skirmish.toast.noCp'));
     });
   }
 
@@ -518,9 +519,9 @@ export class SkirmishGame {
       // an enemy that fires on the squad gives itself away
       for (const e of events) if (e.type === 'hit' && e.by && this.battle.unit(e.by)?.side === 'imp') this.spot.reveal(e.by);
       for (const e of events) {
-        if (e.type === 'capture') this.hud.toast(e.side === 'fed' ? 'Camp direbut!' : 'Musuh merebut camp!');
-        if (e.type === 'evac') this.hud.toast('Kawan dievakuasi');
-        if (e.type === 'resupply') this.hud.toast('Amunisi diisi ulang');
+        if (e.type === 'capture') this.hud.toast(t(e.side === 'fed' ? 'skirmish.toast.captured' : 'skirmish.toast.lost'));
+        if (e.type === 'evac') this.hud.toast(t('skirmish.toast.evac'));
+        if (e.type === 'resupply') this.hud.toast(t('skirmish.toast.resupply'));
       }
     }
     if (this.battle.over && (p === 'action' || p === 'enemy') && !this.control.firing && !this.enemy.running) this.finish();

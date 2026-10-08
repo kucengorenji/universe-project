@@ -1,0 +1,140 @@
+{
+  "verifiedAt": "2026-10-08T07:32:29.098Z",
+  "browser": "154.0.8037.98",
+  "base": "http://127.0.0.1:5198/",
+  "checks": [
+    {
+      "name": "landing does not initialize WebGL or download game models",
+      "pass": true,
+      "canvas": 0,
+      "gameResources": [],
+      "ctas": 3
+    },
+    {
+      "name": "five levels each have screenshots, procedural features and a manual",
+      "pass": true,
+      "levels": [
+        {
+          "id": "orbit",
+          "shots": 2,
+          "features": 4,
+          "keys": 12,
+          "rail": true
+        },
+        {
+          "id": "planet",
+          "shots": 3,
+          "features": 6,
+          "keys": 17,
+          "rail": true
+        },
+        {
+          "id": "kota",
+          "shots": 6,
+          "features": 6,
+          "keys": 30,
+          "rail": true
+        },
+        {
+          "id": "interior",
+          "shots": 1,
+          "features": 4,
+          "keys": 7,
+          "rail": true
+        },
+        {
+          "id": "rumah",
+          "shots": 3,
+          "features": 7,
+          "keys": 16,
+          "rail": true
+        }
+      ]
+    },
+    {
+      "name": "no em dash, no dead anchors, flat surfaces, no endless animation",
+      "pass": true,
+      "emDash": false,
+      "dead": [],
+      "nonFlat": [],
+      "endlessAnimations": 0
+    },
+    {
+      "name": "text meets WCAG AA contrast on its own background",
+      "pass": true
+    },
+    {
+      "name": "keyboard focus is visible, skip link comes first",
+      "pass": true,
+      "text": "Lewati ke konten",
+      "outline": "solid",
+      "width": "2px"
+    },
+    {
+      "name": "all screenshots resolve",
+      "pass": true,
+      "count": 15
+    },
+    {
+      "name": "screenshot tabs switch by click and arrow keys",
+      "pass": true,
+      "afterClick": {
+        "src": "/landing/shots/town-pixel.jpg",
+        "title": "Tampilan Pixel",
+        "count": "04 / 06",
+        "selected": "Pixel"
+      }
+    },
+    {
+      "name": "responsive layout at 1440px",
+      "pass": true,
+      "width": 1440,
+      "scrollWidth": 1440,
+      "overflow": []
+    },
+    {
+      "name": "responsive layout at 1024px",
+      "pass": true,
+      "width": 1024,
+      "scrollWidth": 1024,
+      "overflow": []
+    },
+    {
+      "name": "responsive layout at 768px",
+      "pass": true,
+      "width": 768,
+      "scrollWidth": 768,
+      "overflow": []
+    },
+    {
+      "name": "responsive layout at 390px",
+      "pass": true,
+      "width": 390,
+      "scrollWidth": 390,
+      "overflow": []
+    },
+    {
+      "name": "responsive layout at 320px",
+      "pass": true,
+      "width": 320,
+      "scrollWidth": 320,
+      "overflow": []
+    },
+    {
+      "name": "level rail follows scroll",
+      "pass": true
+    },
+    {
+      "name": "hero pill opens /play/",
+      "pass": true,
+      "url": "http://127.0.0.1:5198/play/"
+    },
+    {
+      "name": "old root hash routes redirect to the game",
+      "pass": true,
+      "url": "http://127.0.0.1:5198/play/#/space/2"
+    }
+  ],
+  "errors": [],
+  "failedRequests": []
+}

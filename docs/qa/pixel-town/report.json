@@ -1,0 +1,130 @@
+{
+  "verifiedAt": "2026-10-08T04:46:01.708Z",
+  "environment": {
+    "browser": "154.0.8037.98",
+    "headless": true,
+    "desktopViewport": "1440x900",
+    "narrowViewport": "390x844",
+    "deviceScaleFactor": 1
+  },
+  "checks": [
+    {
+      "pass": true,
+      "worldSeed": 74291,
+      "seed": 9734075,
+      "planet": 2,
+      "city": 2,
+      "cityName": "Eastmere",
+      "buildings": 17,
+      "vegetationInstances": 3561,
+      "bridges": 1,
+      "camera": "OrthographicCamera",
+      "name": "pixel shares layout, collider and player state"
+    },
+    {
+      "pass": true,
+      "moved": 1.4124916858002563,
+      "angle": 0,
+      "name": "walking responds and camera direction stays fixed"
+    },
+    {
+      "pass": true,
+      "surface": 2.5,
+      "name": "bridge deck preserves analytical surface and collision identity"
+    },
+    {
+      "pass": true,
+      "found": true,
+      "occluded": true,
+      "name": "building occlusion draws a player silhouette"
+    },
+    {
+      "pass": true,
+      "changedPixels": 1572,
+      "outsideRadius": 0,
+      "name": "foliage fade changes pixels only near the followed actor"
+    },
+    {
+      "pass": true,
+      "spans": [
+        20,
+        32,
+        52
+      ],
+      "font": "\"Town Pixel\", monospace",
+      "target": {
+        "width": 480,
+        "height": 300,
+        "scale": 3
+      },
+      "postEnabled": false,
+      "name": "three zoom presets, scoped HUD and low quality pixel rendering"
+    },
+    {
+      "pass": true,
+      "inside": true,
+      "view": "walk",
+      "name": "interior uses perspective and restores pixel exterior"
+    },
+    {
+      "pass": true,
+      "moved": 0.701256512960348,
+      "angle": 0,
+      "vehicle": "cart",
+      "name": "vehicle controls and fixed camera"
+    },
+    {
+      "pass": true,
+      "before": {
+        "geometries": 203,
+        "textures": 65
+      },
+      "after": {
+        "geometries": 203,
+        "textures": 65
+      },
+      "name": "repeated style switches retain the same resources and world"
+    },
+    {
+      "pass": true,
+      "fps": 60.07,
+      "p95Ms": 18.8,
+      "drawCalls": 56,
+      "triangles": 156387,
+      "memory": {
+        "geometries": 203,
+        "textures": 65
+      },
+      "name": "pixel frame cadence and renderer resources are measurable"
+    },
+    {
+      "pass": true,
+      "name": "normal style restores materials and simulation state"
+    },
+    {
+      "pass": true,
+      "overflow": [],
+      "covered": [],
+      "name": "narrow HUD exposes style, view and zoom controls"
+    },
+    {
+      "pass": true,
+      "overflow": [],
+      "headerHeight": 312.15625,
+      "name": "narrow HUD wraps long city and planet names"
+    },
+    {
+      "pass": true,
+      "clean": true,
+      "style": "pixel",
+      "name": "global style survives reload and does not leak to planet"
+    },
+    {
+      "pass": true,
+      "style": "pixel",
+      "camera": "OrthographicCamera",
+      "name": "persisted preference opens the town in pixel after page reload"
+    }
+  ],
+  "errors": []
+}

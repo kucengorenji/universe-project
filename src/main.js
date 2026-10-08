@@ -1,4 +1,5 @@
 import './style.css';
+import './modes/town/ui/pixel.css';
 import { Engine } from './core/engine.js';
 import { Overlay } from './core/overlay.js';
 import { Director } from './core/director.js';
@@ -8,12 +9,14 @@ import { Audio } from './core/audio.js';
 import { Tips } from './core/tips.js';
 import { PauseMenu } from './core/pauseMenu.js';
 import './core/firebase.js';
+import { applyDom } from './i18n/index.js';
 
 // App shell: one canvas, one world, one mode on screen at a time.
 //   #/space          star system (ship, orbits, landing)
 //   #/planet/<i>     the hex globe of a planet
 //   #/town/<i>/<c>   inside a city
 window.addEventListener('DOMContentLoaded', async () => {
+  applyDom(); // static markup is English; this swaps in the saved language before any module reads the DOM
   const engine = new Engine(document.getElementById('canvas-container'));
   const audio = (engine.audio = new Audio());
   const world = new World();

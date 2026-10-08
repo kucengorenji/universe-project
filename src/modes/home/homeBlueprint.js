@@ -1,29 +1,30 @@
+import { t as tr } from '../../i18n/index.js';
 /** The editable, deterministic source of truth for a procedural home (metres, y-up). */
 export const HOME_STYLES = {
-  classic: { label: 'Klasik', palette: { wall: '#d4ac82', trim: '#f4e5c9', roof: '#ab614e', wood: '#826044', floor: '#b99166', garden: '#769358' } },
-  cottage: { label: 'Cottage', palette: { wall: '#dacdb0', trim: '#f5efd7', roof: '#77716c', wood: '#795b42', floor: '#bea17a', garden: '#718d5d' } },
-  tropical: { label: 'Modern Tropis', palette: { wall: '#ede0c5', trim: '#f7f0df', roof: '#63736d', wood: '#946b45', floor: '#d2bd96', garden: '#557f58' } },
+  classic: { get label() { return tr('home.style.classic'); }, palette: { wall: '#d4ac82', trim: '#f4e5c9', roof: '#ab614e', wood: '#826044', floor: '#b99166', garden: '#769358' } },
+  cottage: { get label() { return tr('home.style.cottage'); }, palette: { wall: '#dacdb0', trim: '#f5efd7', roof: '#77716c', wood: '#795b42', floor: '#bea17a', garden: '#718d5d' } },
+  tropical: { get label() { return tr('home.style.tropical'); }, palette: { wall: '#ede0c5', trim: '#f7f0df', roof: '#63736d', wood: '#946b45', floor: '#d2bd96', garden: '#557f58' } },
 };
 
 /** Size order is width, height, depth. Support bounds intentionally stay simple. */
 export const HOME_CATALOG = {
-  sofa: { label: 'Sofa', size: [2.05, .95, .88], surface: 'floor' },
-  chair: { label: 'Kursi', size: [.48, .90, .50], surface: 'floor' },
-  table: { label: 'Meja', size: [1.40, .78, .85], surface: 'floor', supports: true },
-  bed: { label: 'Tempat tidur', size: [1.60, .95, 2.15], surface: 'floor' },
-  wardrobe: { label: 'Lemari', size: [1.05, 1.95, .58], surface: 'floor', supports: true },
-  shelf: { label: 'Rak', size: [.90, 1.70, .32], surface: 'floor', supports: true },
-  kitchen: { label: 'Kabinet dapur', size: [1.85, .95, .64], surface: 'floor', supports: true },
-  sink: { label: 'Wastafel', size: [.64, .92, .50], surface: 'floor' },
-  toilet: { label: 'Toilet', size: [.40, .82, .70], surface: 'floor' },
-  bath: { label: 'Bak mandi', size: [1.70, .64, .76], surface: 'floor' },
-  lamp: { label: 'Lampu', size: [.45, 1.65, .45], surface: 'floor' },
-  rug: { label: 'Karpet', size: [1.90, .04, 1.40], surface: 'floor', collision: false },
-  plant: { label: 'Tanaman', size: [.65, .95, .65], surface: 'floor' },
-  picture: { label: 'Hiasan dinding', size: [.70, .52, .08], surface: 'wall', collision: false },
-  bench: { label: 'Bangku taman', size: [1.40, .85, .52], surface: 'floor' },
-  planter: { label: 'Pot bunga', size: [.60, .75, .60], surface: 'floor', supports: true },
-  vase: { label: 'Vas meja', size: [.18, .26, .18], surface: 'surface' },
+  sofa: { get label() { return tr('home.item.sofa'); }, size: [2.05, .95, .88], surface: 'floor' },
+  chair: { get label() { return tr('home.item.chair'); }, size: [.48, .90, .50], surface: 'floor' },
+  table: { get label() { return tr('home.item.table'); }, size: [1.40, .78, .85], surface: 'floor', supports: true },
+  bed: { get label() { return tr('home.item.bed'); }, size: [1.60, .95, 2.15], surface: 'floor' },
+  wardrobe: { get label() { return tr('home.item.wardrobe'); }, size: [1.05, 1.95, .58], surface: 'floor', supports: true },
+  shelf: { get label() { return tr('home.item.shelf'); }, size: [.90, 1.70, .32], surface: 'floor', supports: true },
+  kitchen: { get label() { return tr('home.item.kitchen'); }, size: [1.85, .95, .64], surface: 'floor', supports: true },
+  sink: { get label() { return tr('home.item.sink'); }, size: [.64, .92, .50], surface: 'floor' },
+  toilet: { get label() { return tr('home.item.toilet'); }, size: [.40, .82, .70], surface: 'floor' },
+  bath: { get label() { return tr('home.item.bath'); }, size: [1.70, .64, .76], surface: 'floor' },
+  lamp: { get label() { return tr('home.item.lamp'); }, size: [.45, 1.65, .45], surface: 'floor' },
+  rug: { get label() { return tr('home.item.rug'); }, size: [1.90, .04, 1.40], surface: 'floor', collision: false },
+  plant: { get label() { return tr('home.item.plant'); }, size: [.65, .95, .65], surface: 'floor' },
+  picture: { get label() { return tr('home.item.picture'); }, size: [.70, .52, .08], surface: 'wall', collision: false },
+  bench: { get label() { return tr('home.item.bench'); }, size: [1.40, .85, .52], surface: 'floor' },
+  planter: { get label() { return tr('home.item.planter'); }, size: [.60, .75, .60], surface: 'floor', supports: true },
+  vase: { get label() { return tr('home.item.vase'); }, size: [.18, .26, .18], surface: 'surface' },
 };
 
 const EPS = 1e-6;
@@ -142,37 +143,37 @@ function allItems(bp) { return [...bp.items, ...bp.yard.items]; }
 function obstaclePolygon(obstacle) { if (Array.isArray(obstacle)) return obstacle; if (obstacle.points || obstacle.polygon) return obstacle.points || obstacle.polygon; if (Number.isFinite(obstacle.minX)) return rect(obstacle.minX, obstacle.minZ, obstacle.maxX, obstacle.maxZ); if (Number.isFinite(obstacle.width)) return orientedRect(obstacle.x ?? obstacle.center?.x ?? 0, obstacle.z ?? obstacle.center?.z ?? 0, obstacle.width, obstacle.depth, obstacle.rotation || 0); return null; }
 
 function placementIssue(bp, item, options = {}) {
-  const cat = HOME_CATALOG[item.type]; if (!cat) return 'Jenis barang tidak tersedia.';
-  if (!Object.values(item.position).every(Number.isFinite) || !Number.isFinite(item.rotation)) return 'Posisi barang tidak valid.';
+  const cat = HOME_CATALOG[item.type]; if (!cat) return tr('home.err.noType');
+  if (!Object.values(item.position).every(Number.isFinite) || !Number.isFinite(item.rotation)) return tr('home.err.badPosition');
   const shape = itemFootprint(item), floor = bp.floors.find(f => f.id === item.floorId);
   if (item.floorId === 'yard') {
-    if (!insidePolygon(shape, bp.plot)) return 'Barang melewati batas kavling.';
-    if (bp.floors[0].rooms.some(room => polygonsOverlap(shape, sampleRoom(room)))) return 'Barang taman menembus rumah.';
+    if (!insidePolygon(shape, bp.plot)) return tr('home.err.crossesPlot');
+    if (bp.floors[0].rooms.some(room => polygonsOverlap(shape, sampleRoom(room)))) return tr('home.err.yardThroughHouse');
     const entry = bp.openings.find(o => o.kind === 'door' && o.exterior);
-    if (entry) { const t = openingTransform(bp, entry), approach = orientedRect(t.x - t.normal.x, t.z - t.normal.z, entry.width + .5, 2, Math.atan2(t.normal.x, t.normal.z)); if (rectanglesOverlap(shape, approach)) return 'Barang menghalangi akses pintu masuk.'; }
+    if (entry) { const t = openingTransform(bp, entry), approach = orientedRect(t.x - t.normal.x, t.z - t.normal.z, entry.width + .5, 2, Math.atan2(t.normal.x, t.normal.z)); if (rectanglesOverlap(shape, approach)) return tr('home.err.blocksEntrance'); }
   } else {
-    if (!floor) return 'Lantai tidak ditemukan.';
+    if (!floor) return tr('home.err.noFloor');
     const room = floor.rooms.find(r => insidePolygon(shape, sampleRoom(r)));
-    if (!room) return 'Barang menembus dinding atau berada di luar ruangan.';
-    if (item.position.y < floor.elevation - EPS || item.position.y + cat.size[1] > floor.elevation + floor.height + EPS) return 'Barang melampaui tinggi ruangan.';
-    if (cat.surface === 'floor' && Math.abs(item.position.y - floor.elevation) > .01) return 'Barang harus menempel ke lantai.';
+    if (!room) return tr('home.err.outsideRoom');
+    if (item.position.y < floor.elevation - EPS || item.position.y + cat.size[1] > floor.elevation + floor.height + EPS) return tr('home.err.tooTall');
+    if (cat.surface === 'floor' && Math.abs(item.position.y - floor.elevation) > .01) return tr('home.err.needsFloor');
     if (cat.surface === 'surface') {
       const support = allItems(bp).find(i => i.id === item.anchor?.targetId);
-      if (!support || !HOME_CATALOG[support.type]?.supports || !insidePolygon(shape, itemFootprint(support)) || Math.abs(item.position.y - support.position.y - HOME_CATALOG[support.type].size[1]) > .01) return 'Barang harus menempel ke meja atau rak.';
+      if (!support || !HOME_CATALOG[support.type]?.supports || !insidePolygon(shape, itemFootprint(support)) || Math.abs(item.position.y - support.position.y - HOME_CATALOG[support.type].size[1]) > .01) return tr('home.err.needsSurface');
     }
-    if (cat.surface === 'wall' && item.anchor?.kind !== 'wall') return 'Dekorasi harus menempel ke dinding.';
+    if (cat.surface === 'wall' && item.anchor?.kind !== 'wall') return tr('home.err.needsWall');
     if (cat.collision !== false) {
-      if (bp.openings.some(o => o.floorId === item.floorId && o.kind === 'door' && rectanglesOverlap(shape, doorClearance(bp, o)))) return 'Barang menghalangi pintu.';
-      if (bp.stairs.some(s => (s.fromFloorId === item.floorId || s.toFloorId === item.floorId) && rectanglesOverlap(shape, orientedRect(s.x, s.z, s.width + .15, s.depth + .5)))) return 'Barang menghalangi tangga.';
+      if (bp.openings.some(o => o.floorId === item.floorId && o.kind === 'door' && rectanglesOverlap(shape, doorClearance(bp, o)))) return tr('home.err.blocksDoor');
+      if (bp.stairs.some(s => (s.fromFloorId === item.floorId || s.toFloorId === item.floorId) && rectanglesOverlap(shape, orientedRect(s.x, s.z, s.width + .15, s.depth + .5)))) return tr('home.err.blocksStairs');
     }
   }
   if (cat.collision !== false) for (const other of allItems(bp)) {
     if (other.id === item.id || other.floorId !== item.floorId || HOME_CATALOG[other.type]?.collision === false || other.id === item.anchor?.targetId) continue;
     const otherCat = HOME_CATALOG[other.type]; if (!otherCat) continue;
     if (item.position.y + cat.size[1] <= other.position.y + EPS || other.position.y + otherCat.size[1] <= item.position.y + EPS) continue;
-    if (rectanglesOverlap(shape, itemFootprint(other))) return 'Barang bertabrakan dengan barang lain.';
+    if (rectanglesOverlap(shape, itemFootprint(other))) return tr('home.err.collides');
   }
-  for (const obstacle of options.obstacles || []) { const polygon = obstaclePolygon(obstacle); if (polygon && polygonsOverlap(shape, polygon)) return 'Barang mengambil jalan atau kavling tetangga.'; }
+  for (const obstacle of options.obstacles || []) { const polygon = obstaclePolygon(obstacle); if (polygon && polygonsOverlap(shape, polygon)) return tr('home.err.takesRoad'); }
   return null;
 }
 
@@ -184,21 +185,21 @@ function nearestWall(floor, position) {
 
 /** Returns a new blueprint on success; failures preserve the original object and transform. */
 export function placeHomeItem(bp, itemId, transform, options = {}) {
-  const original = allItems(bp).find(item => item.id === itemId); if (!original) return { ok: false, blueprint: bp, reason: 'Barang tidak ditemukan.' };
+  const original = allItems(bp).find(item => item.id === itemId); if (!original) return { ok: false, blueprint: bp, reason: tr('home.err.noItem') };
   const cat = HOME_CATALOG[original.type], floor = bp.floors.find(f => f.id === original.floorId);
   const position = { ...original.position, ...Object.fromEntries(['x', 'y', 'z'].filter(k => transform[k] !== undefined).map(k => [k, transform[k]])) };
-  if (!Object.values(position).every(Number.isFinite)) return { ok: false, blueprint: bp, reason: 'Posisi barang tidak valid.' };
+  if (!Object.values(position).every(Number.isFinite)) return { ok: false, blueprint: bp, reason: tr('home.err.badPosition') };
   position.x = round(position.x, .05); position.z = round(position.z, .05);
   let rotation = round(transform.rotation ?? original.rotation ?? 0, Math.PI / 12), anchor;
   if (cat.surface === 'wall') {
-    if (!floor) return { ok: false, blueprint: bp, reason: 'Hiasan dinding membutuhkan ruangan.' };
-    const wall = nearestWall(floor, position); if (!wall) return { ok: false, blueprint: bp, reason: 'Dinding tidak ditemukan.' };
+    if (!floor) return { ok: false, blueprint: bp, reason: tr('home.err.decorNeedsRoom') };
+    const wall = nearestWall(floor, position); if (!wall) return { ok: false, blueprint: bp, reason: tr('home.err.noWall') };
     position.x = wall.x + wall.normal.x * (cat.size[2] / 2 + .025); position.z = wall.z + wall.normal.z * (cat.size[2] / 2 + .025);
     position.y = clamp(position.y || floor.elevation + 1.4, floor.elevation + .35, floor.elevation + floor.height - cat.size[1] - .1);
     rotation = Math.atan2(wall.normal.x, wall.normal.z); anchor = { kind: 'wall', targetId: wall.roomId };
   } else if (cat.surface === 'surface') {
     const support = allItems(bp).filter(i => i.id !== original.id && i.floorId === original.floorId && HOME_CATALOG[i.type]?.supports && pointInPolygon(position, itemFootprint(i))).sort((a, b) => b.position.y + HOME_CATALOG[b.type].size[1] - a.position.y - HOME_CATALOG[a.type].size[1])[0];
-    if (!support) return { ok: false, blueprint: bp, reason: 'Pilih permukaan meja atau rak.' };
+    if (!support) return { ok: false, blueprint: bp, reason: tr('home.err.pickSurface') };
     position.y = support.position.y + HOME_CATALOG[support.type].size[1]; anchor = { kind: 'surface', targetId: support.id };
   } else { position.y = floor?.elevation || 0; anchor = { kind: 'floor', targetId: roomAt(bp, position.x, position.z, original.floorId)?.id || 'yard' }; }
   const item = { ...original, position, rotation, anchor, authored: options.authored !== false };
@@ -375,26 +376,26 @@ export function varyHomeBlueprint(bp) {
 
 export function validateHomeBlueprint(bp, { obstacles = [] } = {}) {
   const issues = [], report = (code, message, elementId = null) => issues.push({ code, message, elementId });
-  if (!bp || !Array.isArray(bp.plot) || !Array.isArray(bp.floors)) return { ok: false, valid: false, issues: [{ code: 'schema', message: 'Blueprint rumah tidak valid.', elementId: null }], errors: ['Blueprint rumah tidak valid.'] };
-  if (bp.plot.length < 3 || Math.abs(signedArea(bp.plot)) < 1 || selfIntersects(bp.plot)) report('plot', 'Batas kavling tidak valid.');
+  if (!bp || !Array.isArray(bp.plot) || !Array.isArray(bp.floors)) return { ok: false, valid: false, issues: [{ code: 'schema', message: tr('home.err.badBlueprint'), elementId: null }], errors: [tr('home.err.badBlueprint')] };
+  if (bp.plot.length < 3 || Math.abs(signedArea(bp.plot)) < 1 || selfIntersects(bp.plot)) report('plot', tr('home.err.badPlot'));
   const ids = new Set();
-  for (const element of [...bp.floors, ...bp.floors.flatMap(f => f.rooms), ...bp.openings, ...bp.stairs, ...allItems(bp), ...bp.yard.zones]) { if (ids.has(element.id)) report('id', 'ID elemen harus unik.', element.id); ids.add(element.id); }
+  for (const element of [...bp.floors, ...bp.floors.flatMap(f => f.rooms), ...bp.openings, ...bp.stairs, ...allItems(bp), ...bp.yard.zones]) { if (ids.has(element.id)) report('id', tr('home.err.dupId'), element.id); ids.add(element.id); }
   for (const floor of bp.floors) {
-    if (!Number.isFinite(floor.elevation) || !Number.isFinite(floor.height) || floor.height < 2) report('height', 'Tinggi lantai minimal 2 meter.', floor.id);
-    for (const room of floor.rooms) { const pts = sampleRoom(room); if (pts.length < 3 || pts.some(p => !Number.isFinite(p.x) || !Number.isFinite(p.z)) || Math.abs(signedArea(pts)) < .8 || selfIntersects(pts)) report('room-shape', 'Bentuk ruangan memotong dirinya sendiri atau terlalu kecil.', room.id); if (!insidePolygon(pts, bp.plot)) report('plot-boundary', 'Bangunan melewati batas kavling.', room.id); for (const obstacle of obstacles) { const p = obstaclePolygon(obstacle); if (p && polygonsOverlap(pts, p)) report('obstacle', 'Bangunan mengambil jalan atau kavling tetangga.', room.id); } }
-    for (let i = 0; i < floor.rooms.length; i++) for (let j = i + 1; j < floor.rooms.length; j++) { const a = sampleRoom(floor.rooms[i]), b = sampleRoom(floor.rooms[j]); if (a.some((p, k) => b.some((q, n) => segmentsIntersect(p, a[(k + 1) % a.length], q, b[(n + 1) % b.length], true))) || a.some(p => pointInPolygon(p, b) && !b.some((q, k) => onSegment(p, q, b[(k + 1) % b.length]))) || b.some(p => pointInPolygon(p, a) && !a.some((q, k) => onSegment(p, q, a[(k + 1) % a.length])))) report('room-overlap', 'Ruangan saling menumpuk.', floor.rooms[j].id); }
+    if (!Number.isFinite(floor.elevation) || !Number.isFinite(floor.height) || floor.height < 2) report('height', tr('home.err.floorHeight'), floor.id);
+    for (const room of floor.rooms) { const pts = sampleRoom(room); if (pts.length < 3 || pts.some(p => !Number.isFinite(p.x) || !Number.isFinite(p.z)) || Math.abs(signedArea(pts)) < .8 || selfIntersects(pts)) report('room-shape', tr('home.err.roomShape'), room.id); if (!insidePolygon(pts, bp.plot)) report('plot-boundary', tr('home.err.buildingCrossesPlot'), room.id); for (const obstacle of obstacles) { const p = obstaclePolygon(obstacle); if (p && polygonsOverlap(pts, p)) report('obstacle', tr('home.err.buildingTakesRoad'), room.id); } }
+    for (let i = 0; i < floor.rooms.length; i++) for (let j = i + 1; j < floor.rooms.length; j++) { const a = sampleRoom(floor.rooms[i]), b = sampleRoom(floor.rooms[j]); if (a.some((p, k) => b.some((q, n) => segmentsIntersect(p, a[(k + 1) % a.length], q, b[(n + 1) % b.length], true))) || a.some(p => pointInPolygon(p, b) && !b.some((q, k) => onSegment(p, q, b[(k + 1) % b.length]))) || b.some(p => pointInPolygon(p, a) && !a.some((q, k) => onSegment(p, q, a[(k + 1) % a.length])))) report('room-overlap', tr('home.err.roomsOverlap'), floor.rooms[j].id); }
     const connections = new Map(floor.rooms.map(r => [r.id, new Set()]));
-    for (const opening of bp.openings.filter(o => o.floorId === floor.id && o.kind === 'door' && !o.exterior)) { const t = openingTransform(bp, opening); if (!t) continue; const interior = roomAt(bp, t.x + t.normal.x * .1, t.z + t.normal.z * .1, floor.id), adjacent = roomAt(bp, t.x - t.normal.x * .1, t.z - t.normal.z * .1, floor.id); if (interior && adjacent && interior.id !== adjacent.id) { connections.get(interior.id)?.add(adjacent.id); connections.get(adjacent.id)?.add(interior.id); } else report('door-access', 'Pintu antar-ruang harus menghubungkan dua ruangan.', opening.id); }
+    for (const opening of bp.openings.filter(o => o.floorId === floor.id && o.kind === 'door' && !o.exterior)) { const t = openingTransform(bp, opening); if (!t) continue; const interior = roomAt(bp, t.x + t.normal.x * .1, t.z + t.normal.z * .1, floor.id), adjacent = roomAt(bp, t.x - t.normal.x * .1, t.z - t.normal.z * .1, floor.id); if (interior && adjacent && interior.id !== adjacent.id) { connections.get(interior.id)?.add(adjacent.id); connections.get(adjacent.id)?.add(interior.id); } else report('door-access', tr('home.err.doorConnects'), opening.id); }
     const rootRoom = floor.rooms.find(r => r.type === 'hall') || floor.rooms[0], reached = new Set(rootRoom ? [rootRoom.id] : []), queue = [...reached];
     while (queue.length) for (const id of connections.get(queue.shift()) || []) if (!reached.has(id)) { reached.add(id); queue.push(id); }
-    for (const room of floor.rooms) if (!reached.has(room.id)) report('room-access', 'Ruangan belum terhubung ke jalur tangga atau pintu masuk.', room.id);
+    for (const room of floor.rooms) if (!reached.has(room.id)) report('room-access', tr('home.err.roomAccess'), room.id);
   }
-  for (const opening of bp.openings) { const floor = bp.floors.find(f => f.id === opening.floorId), room = floor?.rooms.find(r => r.id === opening.roomId), a = room?.points[opening.edge], b = room?.points[(opening.edge + 1) % room?.points.length]; if (!a || !b || opening.t < 0 || opening.t > 1 || opening.width <= 0 || opening.width > length(a, b) || opening.sill < 0 || opening.sill + opening.height > floor.height + EPS) report('opening', 'Pintu atau jendela tidak sesuai dinding.', opening.id); }
-  for (let i = 1; i < bp.floors.length; i++) { const floor = bp.floors[i], previous = bp.floors[i - 1], stair = bp.stairs.find(s => s.fromFloorId === previous.id && s.toFloorId === floor.id); if (!stair) report('stairs', 'Lantai atas membutuhkan tangga.', floor.id); else { const fp = orientedRect(stair.x, stair.z, stair.width, stair.depth); if (!previous.rooms.some(r => insidePolygon(fp, sampleRoom(r))) || !floor.rooms.some(r => insidePolygon(fp, sampleRoom(r)))) report('stairs', 'Tangga berada di luar ruangan.', stair.id); } if (Math.abs(floor.elevation - previous.elevation - previous.height) > .05) report('floor-gap', 'Elevasi lantai tidak mengikuti tinggi lantai di bawahnya.', floor.id); }
-  if (!bp.openings.some(o => o.kind === 'door' && o.exterior && o.floorId === bp.floors[0]?.id)) report('entry', 'Rumah membutuhkan pintu masuk.');
-  if (![bp.roof.rise, bp.roof.overhang, bp.roof.ridgeOffset].every(Number.isFinite) || bp.roof.rise < .2 || bp.roof.overhang < 0 || bp.roof.overhang > 1.5 || Math.abs(bp.roof.ridgeOffset) >= footprintBounds(bp).width / 2) report('roof', 'Bentuk atap tidak valid.');
+  for (const opening of bp.openings) { const floor = bp.floors.find(f => f.id === opening.floorId), room = floor?.rooms.find(r => r.id === opening.roomId), a = room?.points[opening.edge], b = room?.points[(opening.edge + 1) % room?.points.length]; if (!a || !b || opening.t < 0 || opening.t > 1 || opening.width <= 0 || opening.width > length(a, b) || opening.sill < 0 || opening.sill + opening.height > floor.height + EPS) report('opening', tr('home.err.openingFit'), opening.id); }
+  for (let i = 1; i < bp.floors.length; i++) { const floor = bp.floors[i], previous = bp.floors[i - 1], stair = bp.stairs.find(s => s.fromFloorId === previous.id && s.toFloorId === floor.id); if (!stair) report('stairs', tr('home.err.needsStairs'), floor.id); else { const fp = orientedRect(stair.x, stair.z, stair.width, stair.depth); if (!previous.rooms.some(r => insidePolygon(fp, sampleRoom(r))) || !floor.rooms.some(r => insidePolygon(fp, sampleRoom(r)))) report('stairs', tr('home.err.stairsOutside'), stair.id); } if (Math.abs(floor.elevation - previous.elevation - previous.height) > .05) report('floor-gap', tr('home.err.elevation'), floor.id); }
+  if (!bp.openings.some(o => o.kind === 'door' && o.exterior && o.floorId === bp.floors[0]?.id)) report('entry', tr('home.err.needsEntry'));
+  if (![bp.roof.rise, bp.roof.overhang, bp.roof.ridgeOffset].every(Number.isFinite) || bp.roof.rise < .2 || bp.roof.overhang < 0 || bp.roof.overhang > 1.5 || Math.abs(bp.roof.ridgeOffset) >= footprintBounds(bp).width / 2) report('roof', tr('home.err.badRoof'));
   for (const item of allItems(bp)) { const reason = placementIssue(bp, item, { obstacles }); if (reason) report('placement', reason, item.id); }
-  for (const zone of bp.yard.zones) if (zone.points.length < 3 || selfIntersects(zone.points) || !insidePolygon(zone.points, bp.plot)) report('yard', 'Zona pekarangan melewati kavling atau bentuknya tidak valid.', zone.id);
+  for (const zone of bp.yard.zones) if (zone.points.length < 3 || selfIntersects(zone.points) || !insidePolygon(zone.points, bp.plot)) report('yard', tr('home.err.badYardZone'), zone.id);
   return { ok: issues.length === 0, valid: issues.length === 0, issues, errors: issues.map(i => i.message) };
 }
 

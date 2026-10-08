@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js';
+
 // Mission log: checklists that span every mode. Modes report what the player
 // did (emit('sit'), emit('drive_m', 12.5), emit('land', 3)); a checklist item
 // ticks when its event reaches its goal. Finishing a whole mission throws a
@@ -8,48 +10,40 @@ const KEY = 'planet_globe_missions';
 export const MISSIONS = [
   {
     id: 'home',
-    title: 'Rumah pertama',
-    blurb: 'Masuk ke sebuah rumah dan anggap seperti rumah sendiri.',
     items: [
-      { id: 'enter', label: 'Masuk ke rumah atau toko', event: 'enter_house' },
-      { id: 'sit', label: 'Duduk di kursi atau sofa', event: 'sit' },
-      { id: 'light', label: 'Nyalakan lampu', event: 'light_on' },
-      { id: 'fridge', label: 'Buka kulkas atau lemari', event: 'open' },
-      { id: 'apple', label: 'Ambil sebuah apel', event: 'pickup_apple' },
-      { id: 'sleep', label: 'Tidur sampai pagi', event: 'sleep' }
+      { id: 'enter', event: 'enter_house' },
+      { id: 'sit', event: 'sit' },
+      { id: 'light', event: 'light_on' },
+      { id: 'fridge', event: 'open' },
+      { id: 'apple', event: 'pickup_apple' },
+      { id: 'sleep', event: 'sleep' }
     ]
   },
   {
     id: 'cozy',
-    title: 'Malam santai',
-    blurb: 'Hiburan kecil di dalam rumah.',
     items: [
-      { id: 'tv', label: 'Nyalakan TV atau radio', event: 'media_on' },
-      { id: 'fire', label: 'Nyalakan perapian', event: 'fire_on' },
-      { id: 'book', label: 'Ambil buku dari rak', event: 'pickup_book' },
-      { id: 'place', label: 'Taruh barang di meja', event: 'place_item' }
+      { id: 'tv', event: 'media_on' },
+      { id: 'fire', event: 'fire_on' },
+      { id: 'book', event: 'pickup_book' },
+      { id: 'place', event: 'place_item' }
     ]
   },
   {
     id: 'explorer',
-    title: 'Penjelajah',
-    blurb: 'Kenali tata surya dan kota-kotanya.',
     items: [
-      { id: 'land3', label: 'Mendarat di 3 planet berbeda', event: 'land', distinct: 3 },
-      { id: 'town', label: 'Masuk ke sebuah kota', event: 'visit_town' },
-      { id: 'drive', label: 'Nyetir sejauh 1 km di kota', event: 'drive_m', total: 1000 },
-      { id: 'jack', label: 'Ambil alih mobil di jalan', event: 'carjack' }
+      { id: 'land3', event: 'land', distinct: 3 },
+      { id: 'town', event: 'visit_town' },
+      { id: 'drive', event: 'drive_m', total: 1000 },
+      { id: 'jack', event: 'carjack' }
     ]
   },
   {
     id: 'pilot',
-    title: 'Pilot',
-    blurb: 'Kuasai kapal, orbit, dan langit planet.',
     items: [
-      { id: 'boost', label: 'Pakai boost di luar angkasa', event: 'boost' },
-      { id: 'hangar', label: 'Ganti kapal di hangar', event: 'hangar' },
-      { id: 'orbit3', label: 'Parkir di orbit 3 planet berbeda', event: 'orbit', distinct: 3 },
-      { id: 'rover', label: 'Terbang 1 km di langit planet', event: 'rover_m', total: 1000 }
+      { id: 'boost', event: 'boost' },
+      { id: 'hangar', event: 'hangar' },
+      { id: 'orbit3', event: 'orbit', distinct: 3 },
+      { id: 'rover', event: 'rover_m', total: 1000 }
     ]
   }
 ];
@@ -104,7 +98,7 @@ export class Missions {
           st.done = st.n >= it.total;
         } else st.done = true;
         changed = true;
-        if (st.done) this.toast(`${it.label}`, m.title);
+        if (st.done) this.toast(this.label(m, it), this.title(m));
       }
       if (!wasDone && this.missionDone(m)) this.celebrate(m);
     }
@@ -125,9 +119,13 @@ export class Missions {
     return m.items.every((it) => this.itemState(m, it).done);
   }
 
+  title(m) { return t(`mission.${m.id}.title`); }
+  blurb(m) { return t(`mission.${m.id}.blurb`); }
+  label(m, it) { return t(`mission.${m.id}.${it.id}`); }
+
   progress(it, st) {
     if (it.distinct) return `${Math.min(st.seen.length, it.distinct)}/${it.distinct}`;
-    if (it.total) return `${Math.min(it.total, Math.round(st.n))}/${it.total} m`;
+    if (it.total) return `${Math.min(it.total, Math.round(st.n))}/${it.total} ${t('unit.m')}`;
     return '';
   }
 
@@ -136,20 +134,20 @@ export class Missions {
   buildUi() {
     const r = this.root;
     r.innerHTML = `
-      <button type="button" class="pill pill--ghost mission-toggle" data-act="toggle" aria-expanded="false">Misi <span data-count></span></button>
-      <aside class="mission-log" hidden aria-label="Daftar misi">
-        <header class="mission-log__head"><h2>Misi</h2><button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="toggle" aria-label="Tutup misi"><span></span><span></span></button></header>
+      <button type="button" class="pill pill--ghost mission-toggle" data-act="toggle" aria-expanded="false">${t('missions.title')} <span data-count></span></button>
+      <aside class="mission-log" hidden aria-label="${t('missions.list')}">
+        <header class="mission-log__head"><h2>${t('missions.title')}</h2><button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="toggle" aria-label="${t('missions.close')}"><span></span><span></span></button></header>
         <div class="mission-log__body" data-list></div>
       </aside>
       <div class="mission-toast" hidden role="status"></div>
       <div class="mission-party" hidden>
         <canvas class="mission-party__confetti"></canvas>
         <section class="mission-party__card" role="dialog" aria-modal="true" aria-labelledby="partyTitle">
-          <span class="card-block__eyebrow">Misi selesai</span>
+          <span class="card-block__eyebrow">${t('missions.complete')}</span>
           <h2 id="partyTitle" class="mission-party__title" data-title></h2>
           <p class="mission-party__text" data-text></p>
           <ul class="mission-party__list" data-items></ul>
-          <button type="button" class="pill" data-act="party-close">Mantap</button>
+          <button type="button" class="pill" data-act="party-close">${t('missions.great')}</button>
         </section>
       </div>`;
     this.el = {
@@ -193,12 +191,12 @@ export class Missions {
       const all = this.missionDone(m);
       if (all) done++;
       return `<section class="mission${all ? ' is-done' : ''}">
-        <h3 class="mission__title">${m.title}${all ? ' <small>selesai</small>' : ''}</h3>
-        <p class="mission__blurb">${m.blurb}</p>
+        <h3 class="mission__title">${this.title(m)}${all ? ` <small>${t('missions.done')}</small>` : ''}</h3>
+        <p class="mission__blurb">${this.blurb(m)}</p>
         <ul class="mission__items">${m.items
           .map((it) => {
             const st = this.itemState(m, it);
-            return `<li class="${st.done ? 'is-done' : ''}"><span class="mission__check" aria-hidden="true"></span><span>${it.label}</span><small>${st.done ? '' : this.progress(it, st)}</small></li>`;
+            return `<li class="${st.done ? 'is-done' : ''}"><span class="mission__check" aria-hidden="true"></span><span>${this.label(m, it)}</span><small>${st.done ? '' : this.progress(it, st)}</small></li>`;
           })
           .join('')}</ul>
       </section>`;
@@ -207,14 +205,14 @@ export class Missions {
   }
 
   toast(label, mission) {
-    const t = this.el.toast;
-    t.innerHTML = `<span class="mission__check is-on" aria-hidden="true"></span><span><small>${mission}</small>${label}</span>`;
-    t.hidden = false;
-    t.classList.remove('is-out');
+    const el = this.el.toast;
+    el.innerHTML = `<span class="mission__check is-on" aria-hidden="true"></span><span><small>${mission}</small>${label}</span>`;
+    el.hidden = false;
+    el.classList.remove('is-out');
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => {
-      t.classList.add('is-out');
-      setTimeout(() => (t.hidden = true), 400);
+      el.classList.add('is-out');
+      setTimeout(() => (el.hidden = true), 400);
     }, 2600);
     this.sound?.sfx('tick');
     this.listeners.forEach((fn) => fn('tick'));
@@ -222,9 +220,9 @@ export class Missions {
 
   celebrate(m) {
     const p = this.el.party;
-    p.querySelector('[data-title]').textContent = m.title;
-    p.querySelector('[data-text]').textContent = `${m.items.length} tugas beres. ${m.blurb}`;
-    p.querySelector('[data-items]').innerHTML = m.items.map((it, i) => `<li style="animation-delay:${300 + i * 90}ms"><span class="mission__check is-on" aria-hidden="true"></span>${it.label}</li>`).join('');
+    p.querySelector('[data-title]').textContent = this.title(m);
+    p.querySelector('[data-text]').textContent = t('missions.partyText', { count: m.items.length, blurb: this.blurb(m) });
+    p.querySelector('[data-items]').innerHTML = m.items.map((it, i) => `<li style="animation-delay:${300 + i * 90}ms"><span class="mission__check is-on" aria-hidden="true"></span>${this.label(m, it)}</li>`).join('');
     p.hidden = false;
     p.querySelector('[data-act="party-close"]').focus({ preventScroll: true });
     if (this.sound) this.sound.fanfare();

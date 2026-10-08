@@ -7,8 +7,7 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 700,
     rollupOptions: {
-      // two pages: the universe game and the skirmish battle
-      input: { main: resolve(import.meta.dirname, 'index.html'), skirmish: resolve(import.meta.dirname, 'skirmish.html') },
+      input: { landing: resolve(import.meta.dirname, 'index.html'), game: resolve(import.meta.dirname, 'play/index.html'), skirmish: resolve(import.meta.dirname, 'skirmish.html') },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/three/')) return 'three';

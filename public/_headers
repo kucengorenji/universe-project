@@ -1,0 +1,14 @@
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/models/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/play/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/landing/shots/*
+  Cache-Control: public, max-age=86400

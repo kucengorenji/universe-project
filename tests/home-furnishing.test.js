@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { t } from '../src/i18n/index.js';
 import {
   createHomeBlueprint, reconcileHomeBlueprint, validateHomeBlueprint,
   removeHomeItem, placeHomeItem,
@@ -19,7 +20,7 @@ function withNewRoom(type = 'living', size = 4, floors = 1) {
   // by clearing only automatic plants covered by its new footprint; furnishing
   // must retain every item that exists when Generate begins.
   const covered = new Set(validateHomeBlueprint(prepared).issues
-    .filter(issue => issue.code === 'placement' && issue.message === 'Barang taman menembus rumah.')
+    .filter(issue => issue.code === 'placement' && issue.message === t('home.err.yardThroughHouse'))
     .map(issue => issue.elementId));
   for (const item of prepared.yard.items.filter(item => covered.has(item.id))) assert.equal(item.authored, false);
   prepared.yard.items = prepared.yard.items.filter(item => !covered.has(item.id));

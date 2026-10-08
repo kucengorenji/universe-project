@@ -3,6 +3,7 @@ import { CLASSES } from '../units/soldierLook.js';
 import { ROSTER, MAX_SQUAD, briefing } from '../game/roster.js';
 import { DIFFICULTY, STATS, WEAPONS } from '../game/rules.js';
 import { shield } from './emblems.js';
+import { t, setLocale, getLocale, LOCALES } from '../../i18n/index.js';
 
 // Preparation Mode as an open field notebook on the desk. Left page: the operation's heading
 // (title stamp, village, chips for time, difficulty and river), the deployment map (the
@@ -13,10 +14,12 @@ import { shield } from './emblems.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-export const COVER_LEVELS = { sparse: { label: 'Jarang', value: 0.6 }, normal: { label: 'Normal', value: 1 }, dense: { label: 'Padat', value: 1.4 } };
-const TIMES = { day: 'Siang', dusk: 'Senja', night: 'Malam' };
-const RIVERS = { auto: 'Acak', yes: 'Ada', no: 'Tidak ada' };
-const GFX = { auto: 'Otomatis', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' };
+export const COVER_LEVELS = {
+  sparse: { get label() { return t('skirmish.cover.sparse'); }, value: 0.6 },
+  normal: { get label() { return t('skirmish.cover.normal'); }, value: 1 },
+  dense: { get label() { return t('skirmish.cover.dense'); }, value: 1.4 }
+};
+const options = (prefix, keys) => Object.fromEntries(keys.map((k) => [k, t(`${prefix}.${k}`)]));
 const WEAPON_NAME = { rifle: 'Rifle', rifle_eng: 'Rifle', smg: 'SMG', lance: 'Lance', sniper: 'Sniper rifle' };
 
 export class PrepPanel {
@@ -29,6 +32,10 @@ export class PrepPanel {
     this.onChange = onChange;
     const opt = (obj, cur) => Object.entries(obj).map(([k, v]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${v}</option>`).join('');
     const diffs = Object.fromEntries(Object.entries(DIFFICULTY).map(([k, v]) => [k, v.label]));
+    const TIMES = options('skirmish.time', ['day', 'dusk', 'night']);
+    const RIVERS = options('skirmish.river', ['auto', 'yes', 'no']);
+    const GFX = options('skirmish.gfx', ['auto', 'high', 'medium', 'low']);
+    this.times = TIMES;
     root.innerHTML = `
       <section class="page page--left" aria-labelledby="opTitle">
         <header class="op">
@@ -44,12 +51,12 @@ export class PrepPanel {
         <p class="intel"></p>
       </section>
       <section class="page page--right">
-        <div class="tabs" role="tablist" aria-label="Persiapan">
+        <div class="tabs" role="tablist" aria-label="${t('skirmish.prep')}">
           <button type="button" role="tab" class="tab" id="tabSquad" aria-selected="true" aria-controls="paneSquad">Squad <b class="p-count"></b></button>
           <button type="button" role="tab" class="tab" id="tabBrief" aria-selected="false" aria-controls="paneBrief">Briefing</button>
         </div>
         <div class="pane" id="paneSquad" role="tabpanel" aria-labelledby="tabSquad">
-          <p class="pane__hint">Pilih maks. ${MAX_SQUAD} prajurit, satu jadi Leader (★, +1 CP). Di peta: klik token lalu lingkaran deploy untuk memindah.</p>
+          <p class="pane__hint">${t('skirmish.squadHint', { max: MAX_SQUAD })}</p>
           <ul class="cards"></ul>
         </div>
         <div class="pane" id="paneBrief" role="tabpanel" aria-labelledby="tabBrief" hidden>
@@ -58,15 +65,16 @@ export class PrepPanel {
         <div class="drawer">
           <button type="button" class="drawer__handle" aria-expanded="false" aria-controls="setupDrawer">Setup</button>
           <div class="drawer__body" id="setupDrawer">
-            <label class="field">Seed <span class="field__seed"><input class="p-seed" type="number" min="1" step="1" inputmode="numeric" value="${setup.seed}" /><button type="button" class="paperbtn p-roll">Acak</button></span></label>
-            <label class="field">Kesulitan <select class="p-diff">${opt(diffs, setup.difficulty)}</select></label>
+            <label class="field">Seed <span class="field__seed"><input class="p-seed" type="number" min="1" step="1" inputmode="numeric" value="${setup.seed}" /><button type="button" class="paperbtn p-roll">${t('skirmish.roll')}</button></span></label>
+            <label class="field">${t('skirmish.field.difficulty')} <select class="p-diff">${opt(diffs, setup.difficulty)}</select></label>
             <label class="field">Cover <select class="p-cover">${opt(Object.fromEntries(Object.entries(COVER_LEVELS).map(([k, v]) => [k, v.label])), setup.cover)}</select></label>
-            <label class="field">Waktu <select class="p-time">${opt(TIMES, setup.time)}</select></label>
-            <label class="field">Sungai <select class="p-river">${opt(RIVERS, setup.river)}</select></label>
-            <label class="field">Grafis <select class="p-gfx">${opt(GFX, quality)}</select></label>
+            <label class="field">${t('skirmish.field.time')} <select class="p-time">${opt(TIMES, setup.time)}</select></label>
+            <label class="field">${t('skirmish.field.river')} <select class="p-river">${opt(RIVERS, setup.river)}</select></label>
+            <label class="field">${t('skirmish.field.graphics')} <select class="p-gfx">${opt(GFX, quality)}</select></label>
+            <label class="field">${t('skirmish.field.language')} <select class="p-lang">${LOCALES.map((l) => `<option value="${l.code}" lang="${l.code}" ${l.code === getLocale() ? 'selected' : ''}>${l.label}</option>`).join('')}</select></label>
           </div>
         </div>
-        <button type="button" class="stampbtn p-start">Mulai operasi</button>
+        <button type="button" class="stampbtn p-start">${t('skirmish.start')}</button>
       </section>`;
     const $ = (s) => root.querySelector(s);
     this.root = root;
@@ -85,6 +93,8 @@ export class PrepPanel {
     field('time', '.p-time');
     field('river', '.p-river');
     $('.p-gfx').addEventListener('change', (e) => onQuality?.(e.target.value));
+    // The page text is built once, so a new language restarts the page (the seed stays in the setup)
+    $('.p-lang').addEventListener('change', (e) => setLocale(e.target.value) && location.reload());
     $('.p-roll').addEventListener('click', () => {
       setup.seed = 1 + Math.floor(Math.random() * 999999);
       this.el.seed.value = setup.seed;
@@ -135,7 +145,7 @@ export class PrepPanel {
       const face = this.portraits?.[r.id];
       return `<li data-id="${r.id}" class="pcard ${on ? 'on' : ''} ${lead ? 'lead' : ''} ${!on && full ? 'full' : ''}">
         <label class="pcard__pick">
-          <input type="checkbox" ${on ? 'checked' : ''} ${!on && full ? 'disabled' : ''} aria-label="Ikut operasi: ${esc(r.name)}" />
+          <input type="checkbox" ${on ? 'checked' : ''} ${!on && full ? 'disabled' : ''} aria-label="${t('skirmish.join', { name: esc(r.name) })}" />
           <span class="pcard__face">${face ? `<img src="${face}" alt="" />` : ''}<span class="pcard__shield">${shield('fed', CLASSES[r.cls].short)}</span></span>
           <span class="pcard__body">
             <b class="pcard__name">${esc(r.name)}</b>
@@ -145,7 +155,7 @@ export class PrepPanel {
           </span>
           <span class="pcard__stamp">Deployed</span>
         </label>
-        <label class="pcard__lead" title="Jadikan Leader"><input type="radio" name="leader" ${lead ? 'checked' : ''} ${on ? '' : 'disabled'} aria-label="Leader: ${esc(r.name)}" /><span>★</span></label>
+        <label class="pcard__lead" title="${t('skirmish.makeLeader')}"><input type="radio" name="leader" ${lead ? 'checked' : ''} ${on ? '' : 'disabled'} aria-label="${t('skirmish.leaderOf', { name: esc(r.name) })}" /><span>★</span></label>
       </li>`;
     }).join('');
     this.el.start.disabled = !s.squad.length;
@@ -162,8 +172,8 @@ export class PrepPanel {
     this.el.title.textContent = b.title;
     const chip = (label, value) => `<span class="chip"><i>${label}</i> ${esc(value)}</span>`;
     this.el.chips.innerHTML =
-      chip('AO', b.village) + chip('Time', TIMES[s.time] || s.time) + chip('Threat', DIFFICULTY[s.difficulty].label) + chip('River', field.river ? 'Ada' : 'Tidak');
-    this.el.intel.innerHTML = `<b>Intel</b> ${DIFFICULTY[s.difficulty].infantry} infanteri · ${field.bunkers.length || 'tanpa'} bunker · 1 tank berat${field.river ? ` · ${field.bridges.length} jembatan` : ''}`;
+      chip('AO', b.village) + chip('Time', this.times[s.time] || s.time) + chip('Threat', DIFFICULTY[s.difficulty].label) + chip('River', t(field.river ? 'skirmish.river.yes' : 'skirmish.river.no'));
+    this.el.intel.innerHTML = `<b>Intel</b> ${t('skirmish.intel', { infantry: DIFFICULTY[s.difficulty].infantry, bunkers: field.bunkers.length ? t('skirmish.bunkerCount', { count: field.bunkers.length }) : t('skirmish.noBunkers') })}${field.river ? ` · ${t('skirmish.bridges', { count: field.bridges.length })}` : ''}`;
     this.el.brief.innerHTML = `
       <h3 class="brief__title">${esc(b.title)}</h3>
       ${b.paragraphs.map((p) => `<p>${esc(p)}</p>`).join('')}

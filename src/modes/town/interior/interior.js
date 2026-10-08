@@ -6,6 +6,7 @@ import { generateInteriorLayout, measureFurnitureBounds } from './interiorLayout
 import { seedFor } from '../../../world/identity.js';
 import { assignInteractionIds, captureInterior, restoreInterior } from '../../../world/interiorState.js';
 import { buildShell, addWindow, roomScheme, roundedSlab, slab, WALL_H, WINDOW_Y } from './roomShell.js';
+import { t } from '../../../i18n/index.js';
 
 // Inside a building: a room (or a few, split by half walls) generated from the
 // building's type and seed, furnished from furniture.glb and dressed like a
@@ -48,16 +49,16 @@ function propMaterial() {
 
 /** Which room a building opens into. */
 export const ENTERABLE = {
-  f_house_small: { kind: 'cottage', label: 'Masuk rumah' },
-  f_house: { kind: 'house', label: 'Masuk rumah' },
-  f_house_tall: { kind: 'house', label: 'Masuk rumah' },
-  f_townhouse: { kind: 'house', label: 'Masuk rumah' },
-  f_tavern: { kind: 'tavern', label: 'Masuk kedai' },
-  f_shop: { kind: 'shop', label: 'Masuk toko' },
-  m_house: { kind: 'house', label: 'Masuk rumah' },
-  m_shop: { kind: 'shop', label: 'Masuk toko' },
-  m_apartment: { kind: 'apartment', label: 'Masuk apartemen' },
-  m_office: { kind: 'office', label: 'Masuk kantor' }
+  f_house_small: { kind: 'cottage', get label() { return t('interior.enter.house'); } },
+  f_house: { kind: 'house', get label() { return t('interior.enter.house'); } },
+  f_house_tall: { kind: 'house', get label() { return t('interior.enter.house'); } },
+  f_townhouse: { kind: 'house', get label() { return t('interior.enter.house'); } },
+  f_tavern: { kind: 'tavern', get label() { return t('interior.enter.tavern'); } },
+  f_shop: { kind: 'shop', get label() { return t('interior.enter.shop'); } },
+  m_house: { kind: 'house', get label() { return t('interior.enter.house'); } },
+  m_shop: { kind: 'shop', get label() { return t('interior.enter.shop'); } },
+  m_apartment: { kind: 'apartment', get label() { return t('interior.enter.apartment'); } },
+  m_office: { kind: 'office', get label() { return t('interior.enter.office'); } }
 };
 
 const SIZES = { cottage: [7, 6], house: [10, 8], tavern: [12, 9], shop: [9, 7], apartment: [10, 8], office: [12, 10] };
@@ -243,7 +244,7 @@ export class Interior {
     const m = this.put(asset, x, z, yaw, opts);
     if (!m) return;
     const f = this.front(x, z, yaw, 0.15);
-    this.interactables.push({ kind: 'seat', x: f.x, z: f.z, reach: 1.5, label: () => 'Duduk', seat: { x: f.x, z: f.z, yaw, lift: 0 } });
+    this.interactables.push({ kind: 'seat', x: f.x, z: f.z, reach: 1.5, label: () => t('interior.sit'), seat: { x: f.x, z: f.z, yaw, lift: 0 } });
     return m;
   }
 
@@ -256,7 +257,7 @@ export class Interior {
     const item = (asset, x, y, z, variant = 0) => {
       const m = this.put(asset, x, z, rng() * 6, { variant, collide: false, y });
       if (!m) return;
-      const it = { kind: 'item', asset, variant, mesh: m, x, z, reach: 1.3, label: () => `Ambil ${ITEM_NAMES[asset] || 'barang'}` };
+      const it = { kind: 'item', asset, variant, mesh: m, x, z, reach: 1.3, label: () => t('interior.take', { item: itemName(asset) }) };
       this.items.push(it);
       this.interactables.push(it);
     };
@@ -272,7 +273,7 @@ export class Interior {
       const glow = new THREE.Mesh(this.track(new THREE.SphereGeometry(floorLamp ? 0.085 : 0.05, 12, 8)), this.track(new THREE.MeshBasicMaterial({ color: 0xffe6b0, transparent: true, opacity: 0 })));
       glow.position.set(x, y + (floorLamp ? 1.36 : 0.29), z);
       this.scene.add(glow);
-      const l = { kind: 'light', x, z, reach: 1.4, light, glow, lit: m.material.userData.lit, on: false, label: () => (l.on ? 'Matikan lampu' : 'Nyalakan lampu') };
+      const l = { kind: 'light', x, z, reach: 1.4, light, glow, lit: m.material.userData.lit, on: false, label: () => t(l.on ? 'interior.light.off' : 'interior.light.on') };
       this.lamps.push(l);
       this.interactables.push(l);
     };
@@ -296,7 +297,7 @@ export class Interior {
       };
       const leaves = doorW > 0.8 ? [make(-hingeX, false), make(hingeX, true)] : [make(-hingeX, false)];
       const f = this.front(x, z, yaw, 0.8);
-      const d = { kind: 'door', x: f.x, z: f.z, reach: 1.5, leaves: leaves.filter(Boolean), open: 0, target: 0, event, label: () => (d.target ? `Tutup ${label}` : `Buka ${label}`) };
+      const d = { kind: 'door', x: f.x, z: f.z, reach: 1.5, leaves: leaves.filter(Boolean), open: 0, target: 0, event, label: () => t(d.target ? `interior.close.${label}` : `interior.open.${label}`) };
       this.interactables.push(d);
     };
     const tv = (x, z, yaw) => {
@@ -309,13 +310,13 @@ export class Interior {
       screen.rotation.y = yaw;
       this.scene.add(screen);
       const f = this.front(x, z, yaw, 1.2);
-      const t = { kind: 'media', x: f.x, z: f.z, reach: 1.8, mat, on: false, label: () => (t.on ? 'Matikan TV' : 'Nyalakan TV') };
-      this.interactables.push(t);
-      this.tvs = [...(this.tvs || []), t];
+      const tv = { kind: 'media', x: f.x, z: f.z, reach: 1.8, mat, on: false, label: () => t(tv.on ? 'interior.tv.off' : 'interior.tv.on') };
+      this.interactables.push(tv);
+      this.tvs = [...(this.tvs || []), tv];
     };
     const radio = (x, y, z) => {
       this.put('fu_radio', x, z, 0, { collide: false, y });
-      const r = { kind: 'media', radio: true, x, z, reach: 1.3, on: false, label: () => (r.on ? 'Matikan radio' : 'Nyalakan radio') };
+      const r = { kind: 'media', radio: true, x, z, reach: 1.3, on: false, label: () => t(r.on ? 'interior.radio.off' : 'interior.radio.on') };
       this.interactables.push(r);
     };
     const fireplace = (x, z, yaw) => {
@@ -327,14 +328,14 @@ export class Interior {
       light.position.set(f.x, 0.5, f.z);
       this.scene.add(light);
       const p = this.front(x, z, yaw, 1.1);
-      const fp = { kind: 'fire', x: p.x, z: p.z, reach: 1.6, fire, light, on: false, label: () => (fp.on ? 'Padamkan perapian' : 'Nyalakan perapian') };
+      const fp = { kind: 'fire', x: p.x, z: p.z, reach: 1.6, fire, light, on: false, label: () => t(fp.on ? 'interior.fire.off' : 'interior.fire.on') };
       this.interactables.push(fp);
       this.fires = [...(this.fires || []), fp];
     };
     const bed = (x, z, yaw) => {
       this.put('fu_bed', x, z, yaw, { variant: Math.floor(rng() * 2) });
       const side = this.front(x, z, yaw + Math.PI / 2, 1.2);
-      this.interactables.push({ kind: 'bed', x: side.x, z: side.z, reach: 1.7, label: () => 'Tidur', bed: { x, z, yaw } });
+      this.interactables.push({ kind: 'bed', x: side.x, z: side.z, reach: 1.7, label: () => t('interior.sleep'), bed: { x, z, yaw } });
     };
     const table = (x, z, yaw, chairs = 2) => {
       this.put('fu_table', x, z, yaw, { variant: Math.floor(rng() * 2) });
@@ -356,8 +357,8 @@ export class Interior {
         if(kind==='bed')bed(x,z,yaw);
         else if(kind==='seat')this.seat(asset,x,z,yaw,{variant});
         else if(kind==='light')lamp(asset,x,z);
-        else if(kind==='cabinet')hinged(asset,'fu_wardrobe_door',x,z,yaw,.6,.27,1.2,'lemari','open');
-        else if(kind==='fridge')hinged(asset,'fu_fridge_door',x,z,yaw,.33,.35,.66,'kulkas','open');
+        else if(kind==='cabinet')hinged(asset,'fu_wardrobe_door',x,z,yaw,.6,.27,1.2,'cabinet','open');
+        else if(kind==='fridge')hinged(asset,'fu_fridge_door',x,z,yaw,.33,.35,.66,'fridge','open');
         else if(kind==='media')tv(x,z,yaw);
         else if(kind==='fire')fireplace(x,z,yaw);
         else {
@@ -378,8 +379,8 @@ export class Interior {
         const seat=this.interactables.slice(start).find(it=>it.kind==='seat');
         if(seat && !this.residentSpot)this.residentSpot={seat:true,...seat.seat};
       }
-      for(const stair of this.blueprint.stairs)this.interactables.push({kind:'stairs',...stair,reach:.8,label:()=>this.holding?'Taruh barang sebelum memakai tangga':`${stair.target>this.floor?'Naik':'Turun'} ke lantai ${stair.target+1}`});
-      if(this.floor===0)this.interactables.push({kind:'exit',x:this.door.x,z:this.door.z,reach:1.1,label:()=> 'Keluar'});
+      for(const stair of this.blueprint.stairs)this.interactables.push({kind:'stairs',...stair,reach:.8,label:()=>this.holding?t('interior.stairs.drop'):t(stair.target>this.floor?'interior.stairs.up':'interior.stairs.down',{floor:stair.target+1})});
+      if(this.floor===0)this.interactables.push({kind:'exit',x:this.door.x,z:this.door.z,reach:1.1,label:()=> t('interior.exit')});
       return;
     }
 
@@ -387,7 +388,7 @@ export class Interior {
       const big = k !== 'cottage';
       // Bedroom corner (left back)
       bed(-W / 2 + 1.2, back + 0.6, 0);
-      hinged('fu_wardrobe', 'fu_wardrobe_door', -W / 2 + 0.4, -D / 2 + 3.2, Math.PI / 2, 0.6, 0.27, 1.2, 'lemari', 'open');
+      hinged('fu_wardrobe', 'fu_wardrobe_door', -W / 2 + 0.4, -D / 2 + 3.2, Math.PI / 2, 0.6, 0.27, 1.2, 'cabinet', 'open');
       this.put('fu_rug', -W / 2 + 1.3, back + 2.2, 0, { variant: 0, collide: false });
       // Living (right)
       const lx = big ? W / 2 - 2.6 : W / 2 - 2.0;
@@ -412,7 +413,7 @@ export class Interior {
         this.partition(-W / 2, -W / 2 + 3.4, 0.2, 0.35);
         this.put('fu_counter', -W / 2 + 1.1, D / 2 - 1.2, Math.PI / 2 + Math.PI, { variant: fantasy ? 1 : 0 });
         surface(-W / 2 + 0.6, D / 2 - 1.2, 0.93, 0.9);
-        if (!fantasy) hinged('fu_fridge', 'fu_fridge_door', -W / 2 + 0.45, D / 2 - 2.8, Math.PI / 2, 0.33, 0.35, 0.66, 'kulkas', 'open');
+        if (!fantasy) hinged('fu_fridge', 'fu_fridge_door', -W / 2 + 0.45, D / 2 - 2.8, Math.PI / 2, 0.33, 0.35, 0.66, 'fridge', 'open');
         this.put('fu_stove', -W / 2 + 0.45, D / 2 - 3.6 + (fantasy ? 0.8 : 0), Math.PI / 2);
         const t = table(-W / 2 + 2.6, 1.7, 0, 2);
         item('it_apple', t.x - 0.2, 0.78, t.z);
@@ -455,7 +456,7 @@ export class Interior {
       item('it_apple', -0.4, 0.94, back + 1.4);
       item('it_apple', -0.2, 0.94, back + 1.35);
       item('it_book', 0.3, 0.94, back + 1.45, 2);
-      if (!fantasy) hinged('fu_fridge', 'fu_fridge_door', W / 2 - 1.4, back, 0, 0.33, 0.35, 0.66, 'lemari pendingin', 'open');
+      if (!fantasy) hinged('fu_fridge', 'fu_fridge_door', W / 2 - 1.4, back, 0, 0.33, 0.35, 0.66, 'fridge', 'open');
       else radio(0.7, 0.93, back + 1.4);
       this.put('fu_plant', -W / 2 + 0.6, D / 2 - 0.6, 0, { variant: 1 });
       this.put('fu_rug', 0, 1.2, 0, { variant: 0, collide: false });
@@ -477,7 +478,7 @@ export class Interior {
       item('it_book', t.x, 0.78, t.z, 1);
       this.put('fu_counter', W / 2 - 1.2, D / 2 - 0.8, Math.PI, { variant: 0 });
       surface(W / 2 - 1.2, D / 2 - 0.8, 0.93, 0.9);
-      hinged('fu_fridge', 'fu_fridge_door', W / 2 - 0.45, D / 2 - 2.3, -Math.PI / 2, 0.33, 0.35, 0.66, 'kulkas', 'open');
+      hinged('fu_fridge', 'fu_fridge_door', W / 2 - 0.45, D / 2 - 2.3, -Math.PI / 2, 0.33, 0.35, 0.66, 'fridge', 'open');
       item('it_apple', W / 2 - 1.4, 0.94, D / 2 - 0.8);
       tv(0, -D / 2 + 0.4, 0);
       this.put('fu_plant', -W / 2 + 0.5, D / 2 - 0.6, 0);
@@ -485,7 +486,7 @@ export class Interior {
       lamp('fu_lamp_floor', -W / 2 + 0.5, -D / 2 + 0.5);
       this.residentSpot = { seat: true, x: -W / 2 + 2.1, z: -D / 2 + 2.55, yaw: Math.PI };
     }
-    this.interactables.push({ kind: 'exit', x: this.door.x, z: this.door.z, reach: 1.3, label: () => 'Keluar' });
+    this.interactables.push({ kind: 'exit', x: this.door.x, z: this.door.z, reach: 1.3, label: () => t('interior.exit') });
   }
 
   /** Along-wall interval of a placed piece standing within `reach` of the wall's inner face, else null. */
@@ -627,7 +628,7 @@ export class Interior {
 
   promptFor(it) {
     if (!it) return null;
-    if (it.kind === 'surface') return `Taruh ${ITEM_NAMES[this.holding.asset] || 'barang'}`;
+    if (it.kind === 'surface') return t('interior.put', { item: itemName(this.holding.asset) });
     return it.label();
   }
 
@@ -718,4 +719,4 @@ export class Interior {
   }
 }
 
-const ITEM_NAMES = { it_apple: 'apel', it_book: 'buku', it_cup: 'cangkir', it_candle: 'lilin' };
+const itemName = (asset) => t(['it_apple', 'it_book', 'it_cup', 'it_candle'].includes(asset) ? `interior.item.${asset}` : 'interior.item.other');

@@ -205,3 +205,13 @@ Urutan perbaikan yang disarankan ada di [REVIEW_2026_09_29.md](REVIEW_2026_09_29
 - **Tipe planet baru:** tambah entri di `PLANET_TYPES` (`gen` dan `look`), lalu periksa bake orbit, globe, dan town.
 - **Warna baru:** jangan tambah literal hex baru di modul render. Tambahkan token di `src/art/palette.js` ([ART_DIRECTION.md](ART_DIRECTION.md)).
 - **Opsi generator kota:** teruskan lewat `options` di `generateTownLayout`, simpan di `world/townGeneration.js`, tampilkan di `planner/townPlanner.js`, dan pastikan nilai default menghasilkan kota asli ([TOWN_GENERATION_PLAN.md](TOWN_GENERATION_PLAN.md) §4).
+
+## 14. Backend dan dashboard
+
+Ditambahkan 9 Oktober 2026; detail lengkap di [BACKEND.md](BACKEND.md).
+
+- `functions/api/[[path]].ts` → `server/router.ts`: API Pages Functions (TypeScript, tanpa dependensi) di atas D1. Kontrak tipe ada di `shared/api.ts`; skema di `migrations/`.
+- `src/net/`: klien di game. `main.js` hanya memuat `net/inspect.js` secara statis (harus jalan sebelum `World` dibuat); sisanya (`net/index.js`) dimuat sebagai chunk terpisah setelah scene pertama. Firebase Auth hanya diunduh saat pemain masuk atau sesi lama dipulihkan.
+- Hook baru untuk modul lain: `director.listeners` (setiap route yang dicapai), `world.listeners` (setelah `regenerateHome`), `world.fresh`, `missions.listeners` (`'item'`/`'mission'`), `engine.drawCount`, `pauseMenu.accountSlot`, event DOM `pause:open`.
+- `src/core/missionList.js` dan `src/core/firebaseConfig.js` bebas dependensi supaya dashboard (`dashboard/`, React) memakai data yang sama dengan game.
+- Kunci browser baru: `planet_globe_device`, `planet_globe_telemetry`, `planet_globe_signed_in`, `planet_globe_sync`, `planet_globe_progress`, `planet_globe_announcements`.

@@ -233,3 +233,12 @@ Tiga mode, masing-masing di "halaman" sendiri (URL hash) dan chunk JS sendiri. H
 | Planet | Seret putar, klik kota, O kembali ke orbit; rover: WASD, Spasi drift, Esc keluar |
 | Kota | 1/2/3 diorama/jalan/nyetir, WASD, Shift lari/ngebut, Spasi lompat/rem tangan, E masuk atau pakai, Esc keluar |
 | Umum | J misi, P menu, B bisu |
+
+---
+
+## Update 10: backend dan dashboard
+
+- **API** di `aethergate.cloud/api/*` (Cloudflare Pages Functions + D1): telemetri anonim (sesi, mode, misi, dunia, error, frame rate), akun Google lewat Firebase Auth, cloud save per dunia dengan revisi dan dialog bentrok, pengumuman terjadwal, dan link inspeksi admin.
+- **Game:** panel *Akun & cloud* di menu jeda (P) untuk masuk dengan Google, status sinkron, dan saklar data penggunaan. Satu baris pemberitahuan privasi di kartu judul. Pengumuman tampil sebagai kartu di game dan banner di landing.
+- **Dashboard** (`dashboard/`, React, `dashboard.aethergate.cloud`): pemain melihat dunianya, melanjutkan di perangkat lain, mengunduh, atau menghapus data. Admin melihat ringkasan, funnel misi, pemain, dunia, event, pengumuman, dan log.
+- Setup dan development lokal: [docs/BACKEND.md](docs/BACKEND.md). Deploy berikutnya butuh setup D1 dan secret sekali.

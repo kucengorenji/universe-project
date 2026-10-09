@@ -22,6 +22,8 @@ npm run build    # build produksi ke dist/
 |---|---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Peta sistem inti | Aktif; perbarui saat menambah modul atau mode |
 | [ASSETS.md](ASSETS.md) | Registry aset runtime, sumber, tekstur prosedural, audio | Aktif; perbarui setiap kali aset berubah |
+| [BACKEND.md](BACKEND.md) | API Pages Functions + D1, telemetri, cloud save, dashboard React, setup produksi | Aktif; perbarui saat API atau skema berubah |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Cloudflare Pages, domain, deploy | Aktif |
 | [ART_DIRECTION.md](ART_DIRECTION.md) | Diagnosis visual, kontrak tampilan, status migrasi | Aktif; arah disetujui 29 September |
 | [TOWN_GENERATION_PLAN.md](TOWN_GENERATION_PLAN.md) | Planner kota 2D, reroll, kepadatan, usulan generator ala Watabou (TG-1–6) | Aktif |
 | [WORLD_BUILDING_ROADMAP.md](WORLD_BUILDING_ROADMAP.md) | Milestone WB-00–08 | Roadmap aktif |

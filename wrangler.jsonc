@@ -6,7 +6,7 @@
   // Secrets (not here): ADMIN_EMAILS, INSPECT_SECRET.
   "vars": {
     "FIREBASE_PROJECT_ID": "universe-project-da6af",
-    "DASHBOARD_ORIGINS": "https://dashboard.aethergate.cloud,http://localhost:5174,http://127.0.0.1:5174",
+    "DASHBOARD_ORIGINS": "https://dashboard.aethergate.cloud,https://aethergate-dashboard.pages.dev,http://localhost:5174,http://127.0.0.1:5174",
     "GAME_ORIGIN": "https://aethergate.cloud"
   },
   "d1_databases": [
@@ -22,7 +22,7 @@
     "preview": {
       "vars": {
         "FIREBASE_PROJECT_ID": "universe-project-da6af",
-        "DASHBOARD_ORIGINS": "https://dashboard.aethergate.cloud,http://localhost:5174,http://127.0.0.1:5174"
+        "DASHBOARD_ORIGINS": "https://dashboard.aethergate.cloud,https://aethergate-dashboard.pages.dev,http://localhost:5174,http://127.0.0.1:5174"
       },
       "d1_databases": [
         {

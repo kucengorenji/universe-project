@@ -59,6 +59,15 @@ domain lewat API resmi. Mode `attach` menambahkan domain jika belum ada; mode `d
 hanya membuat record CNAME, tidak menghapus atau mengganti record yang ada.
 Token dari CLI hanya berada di memori dan dikirim ke endpoint Cloudflare.
 
+## Backend (API + D1) dan dashboard
+
+Sejak 9 Oktober 2026 project ini juga menjalankan Pages Functions di `/api/*` dengan
+database D1, dan ada project Pages kedua `aethergate-dashboard` untuk
+`dashboard.aethergate.cloud`. **Deploy berikutnya butuh setup sekali:** buat database
+D1, isi ID-nya di `wrangler.jsonc`, jalankan migrasi, pasang secret `ADMIN_EMAILS`
+dan `INSPECT_SECRET`, dan daftarkan domain di Firebase Auth. Langkah lengkap ada di
+[BACKEND.md §6](BACKEND.md#6-setup-produksi-sekali).
+
 ## Routing dan cache
 
 - `/`: landing statis, tidak memuat engine WebGL atau model game.
@@ -67,8 +76,11 @@ Token dari CLI hanya berada di memori dan dikirim ke endpoint Cloudflare.
 - `skirmish.html` tetap menjadi entry build tersendiri.
 - Asset ber-hash dicache immutable; model dicache satu jam dengan revalidation;
   HTML landing dan game direvalidasi. Aturannya ada di `public/_headers`.
+- `/api/*` dilayani Pages Functions (`functions/`); `_routes.json` yang dibuat Wrangler
+  hanya memanggil function untuk path itu, jadi aset statis tidak terpengaruh.
 - Progres tersimpan di localStorage per origin. Save lokal atau save dari domain
-  `pages.dev` tidak otomatis pindah ke custom domain.
+  `pages.dev` tidak otomatis pindah ke custom domain, kecuali lewat cloud save
+  (masuk dengan Google, lalu *Lanjutkan di perangkat ini* dari dashboard).
 
 ## Verifikasi
 

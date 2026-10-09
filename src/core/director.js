@@ -33,6 +33,7 @@ export class Director {
     this.route = null;
     this.busy = false;
     this.pending = null;
+    this.listeners = new Set(); // called with each route reached (mode switches and in-mode navigation)
     this.ctx = { engine, world, overlay, missions, audio, tips, director: this };
     window.addEventListener('hashchange', () => {
       if (this.ignoreHash === location.hash) {
@@ -88,12 +89,14 @@ export class Director {
       if (this.mode && this.route?.mode === route.mode && this.mode.navigate?.(route)) {
         this.route = route;
         if (!fromHash) this.setHash(route, replace);
+        this.listeners.forEach((fn) => fn(route));
         return;
       }
       await this.switchTo(route);
       if (!fromHash) this.setHash(route, replace || !this.route);
       else if (formatRoute(route) !== location.hash) this.setHash(route, true);
       this.route = route;
+      this.listeners.forEach((fn) => fn(route));
     } catch (err) {
       console.error('Mode switch failed:', err);
       this.overlay.setProgress(null, t('loading.failed'));

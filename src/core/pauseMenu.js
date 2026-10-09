@@ -49,6 +49,7 @@ export class PauseMenu {
               <div class="pause__row"><span>${t('pause.missions')}</span><button type="button" class="pill pill--ghost pill--small" data-act="reset">${t('pause.missions.reset')}</button></div>
             </section>
             </div>
+            <div class="pause__col pause__col--end">
             <section class="pause__group">
               <h3>${t('pause.sound')}</h3>
               ${['master', 'music', 'sfx']
@@ -56,6 +57,8 @@ export class PauseMenu {
                 .join('')}
               <div class="pause__row"><span>${t('pause.mute')} <small>${t('pause.mute.hint')}</small></span><button type="button" class="pill pill--ghost pill--small" data-act="mute" aria-pressed="false"></button></div>
             </section>
+            <section class="pause__group" data-account-slot hidden></section>
+            </div>
             <section class="pause__group pause__group--wide">
               <h3>${t('pause.controls')}</h3>
               <div class="pause__keys">${CONTROLS.map(
@@ -73,6 +76,7 @@ export class PauseMenu {
       reset: root.querySelector('[data-act="reset"]'),
       tips: root.querySelector('[data-act="tips"]')
     };
+    this.accountSlot = root.querySelector('[data-account-slot]'); // filled by net/accountPanel.js once it loads
     root.addEventListener('click', (e) => this.onClick(e));
     root.addEventListener('input', (e) => {
       const k = e.target.dataset.vol;
@@ -167,6 +171,7 @@ export class PauseMenu {
     this.world?.clock.pause(true);
     this.audio.setPaused(true);
     this.sync();
+    this.root.dispatchEvent(new Event('pause:open', { bubbles: true }));
     this.root.querySelector('[data-act="close"]').focus({ preventScroll: true });
   }
 

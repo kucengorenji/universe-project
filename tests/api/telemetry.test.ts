@@ -108,3 +108,13 @@ test('user agents are reduced to browser and OS', () => {
   assert.equal(coarseUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0 Safari/537.36 Edg/141.0'), 'Edge · Windows');
   assert.equal(coarseUserAgent(null), null);
 });
+
+test('a heartbeat without a frame rate (menu open) still keeps the session alive', async () => {
+  const { env, db } = makeEnv();
+  await call(env, 'POST', '/api/telemetry', { now: NOW, body: batch(deviceA, session1, [{ type: 'session_start' }], {}, 0) });
+  await call(env, 'POST', '/api/telemetry', { now: NOW + 60_000, body: batch(deviceA, session1, [{ type: 'heartbeat' }], {}, 0) });
+  const [session] = db.rows('SELECT * FROM sessions');
+  assert.equal(session.last_seen_at, NOW + 60_000);
+  assert.equal(session.fps_n, 0);
+  assert.equal(db.count('events'), 1);
+});

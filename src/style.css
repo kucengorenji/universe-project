@@ -2666,3 +2666,157 @@ body.is-flying .asset-status {
     display: none;
   }
 }
+
+/* ================================================================ backend: account, dialogs, announcements, inspect */
+
+.pause__group[hidden] {
+  display: none;
+}
+
+.pause__col--end {
+  border-right: none;
+}
+
+/* Until the account panel loads, the group above it is the last one shown. */
+.pause__col .pause__group:has(+ .pause__group[hidden]:last-child) {
+  border-bottom: none;
+}
+
+.pause__note,
+.intro__privacy {
+  font-family: var(--font-system);
+  font-size: var(--text-caption);
+  line-height: 1.45;
+  color: var(--color-iron-soft);
+}
+
+.net-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: var(--space-20);
+  background: radial-gradient(ellipse at center, rgba(7, 12, 25, 0.25), rgba(7, 12, 25, 0.8));
+}
+
+.net-dialog__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-15);
+  width: min(520px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  padding: var(--space-30);
+  background: var(--color-concrete);
+  border: var(--hairline);
+  animation: party-pop 320ms cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+.net-dialog__title {
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.net-dialog__text {
+  font-family: var(--font-system);
+  font-size: var(--text-body);
+  line-height: 1.45;
+}
+
+.net-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-10);
+  margin-top: var(--space-5);
+}
+
+.notice-stack {
+  position: fixed;
+  top: 84px;
+  left: 50%;
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  width: min(520px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-15);
+  padding: var(--space-15) var(--space-15) var(--space-15) var(--space-20);
+  background: var(--color-concrete);
+  border: var(--hairline);
+  border-left: 6px solid var(--color-iron);
+  border-radius: 4px;
+  pointer-events: auto;
+  animation: toast-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.notice--important {
+  border-left-color: var(--color-the-red);
+}
+
+.notice__body {
+  flex: 1;
+}
+
+.notice__body strong {
+  display: block;
+  font-size: var(--text-body-lg);
+  font-weight: 500;
+}
+
+.notice__body p {
+  margin-top: 2px;
+  font-family: var(--font-system);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-iron-soft);
+}
+
+.inspect-bar {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  gap: var(--space-15);
+  max-width: calc(100vw - 32px);
+  padding: var(--space-5) var(--space-5) var(--space-5) var(--space-15);
+  background: var(--color-the-yellow);
+  border: var(--hairline);
+  border-top: none;
+  font-family: var(--font-system);
+  font-size: 13px;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 640px) {
+  .notice-stack {
+    top: 64px;
+  }
+
+  .net-dialog__card {
+    padding: var(--space-20);
+  }
+
+  .net-dialog__title {
+    font-size: 32px;
+  }
+
+  .inspect-bar {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    transform: none;
+  }
+}

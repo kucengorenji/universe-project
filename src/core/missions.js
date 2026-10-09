@@ -98,9 +98,15 @@ export class Missions {
           st.done = st.n >= it.total;
         } else st.done = true;
         changed = true;
-        if (st.done) this.toast(this.label(m, it), this.title(m));
+        if (st.done) {
+          this.toast(this.label(m, it), this.title(m));
+          this.listeners.forEach((fn) => fn('item', `${m.id}.${it.id}`));
+        }
       }
-      if (!wasDone && this.missionDone(m)) this.celebrate(m);
+      if (!wasDone && this.missionDone(m)) {
+        this.celebrate(m);
+        this.listeners.forEach((fn) => fn('mission', m.id));
+      }
     }
     if (changed) {
       this.save();

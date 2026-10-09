@@ -37,6 +37,7 @@ export class Tips {
             <li><strong>${t('intro.town')}</strong><span>${t('intro.town.text')}</span></li>
           </ol>
           <p class="intro__hint">${t('intro.hint')}</p>
+          <p class="intro__privacy">${t('intro.privacy')}</p>
           <button type="button" class="pill" data-act="start">${t('intro.start')}</button>
         </section>
       </div>`;

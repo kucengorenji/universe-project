@@ -1,4 +1,5 @@
 import './landing.css';
+import { fetchAnnouncements, showNotice, unseen } from './net/announcements.js';
 
 // Existing bookmarks keep their world route when the homepage becomes the landing page.
 if (/^#\/?(?:space|planet|town|home)(?:\/|$)/.test(location.hash)) {
@@ -65,3 +66,14 @@ if (links.size && 'IntersectionObserver' in window) {
   }, { rootMargin: '-35% 0px -60% 0px' });
   document.querySelectorAll('.level').forEach(el => spy.observe(el));
 }
+
+// Announcements from the admin dashboard, under the header. The game shows its own.
+fetchAnnouncements('landing').then(items => {
+  const fresh = unseen(items);
+  if (!fresh.length) return;
+  const locale = document.documentElement.lang === 'en' ? 'en' : 'id'; // the landing page is written in Indonesian
+  const host = document.createElement('div');
+  host.className = 'landing-notices shell';
+  document.querySelector('.site-header')?.after(host);
+  for (const a of fresh.slice(0, 2)) showNotice(host, a, { locale, closeLabel: locale === 'id' ? 'Tutup' : 'Close', className: 'landing-notice' });
+});

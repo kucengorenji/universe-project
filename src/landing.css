@@ -223,3 +223,16 @@ dd kbd, .manual-note kbd, .steps kbd, .micro kbd { margin-inline: 1px; }
   html { scroll-behavior: auto; }
   .pill, .viewer-tabs [role='tab'], .frame img { transition: none; }
 }
+
+/* Admin announcements (src/net/announcements.js) */
+.landing-notices { display: flex; flex-direction: column; gap: 8px; padding-block: 12px; }
+.landing-notices:empty { display: none; }
+.landing-notice { display: flex; align-items: flex-start; gap: 16px; padding: 12px 12px 12px 18px; border: var(--hairline); border-left: 6px solid var(--color-iron); background: var(--color-concrete); }
+.landing-notice--important { border-left-color: var(--the-red); }
+.landing-notice__body { flex: 1; min-width: 0; }
+.landing-notice__body strong { display: block; font-size: 20px; font-weight: 500; }
+.landing-notice__body p { margin-top: 2px; font: 14px/1.45 var(--font-system); color: var(--color-iron-soft); overflow-wrap: anywhere; }
+.landing-notice .menu-circle { flex: none; width: 32px; height: 32px; border: var(--hairline); border-radius: 100px; background: transparent; cursor: pointer; position: relative; }
+.landing-notice .menu-circle span { position: absolute; left: 9px; right: 9px; top: 50%; height: 1px; background: var(--color-iron); }
+.landing-notice .menu-circle span:first-child { transform: rotate(45deg); }
+.landing-notice .menu-circle span:last-child { transform: rotate(-45deg); }

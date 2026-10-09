@@ -3,12 +3,14 @@ import { t } from '../i18n/index.js';
 // IndexedDB is the durable store. A small synchronous write-ahead journal
 // protects the latest interactions when a tab closes before a transaction ends.
 const browserStore = name => { try { return globalThis[name]; } catch { return null; } };
+export const STATE_DB = 'globe-world-state';
+export const journalKey = worldId => `globe:journal:${worldId}`;
 export class WorldStateStore {
   constructor(worldId, { storage = browserStore('localStorage'), indexedDB = browserStore('indexedDB') } = {}) {
     this.worldId = worldId;
     this.storage = storage;
     this.indexedDB = indexedDB;
-    this.key = `globe:journal:${worldId}`;
+    this.key = journalKey(worldId);
     this.records = new Map();
     this.pending = {};
     this.error = null;
@@ -25,7 +27,7 @@ export class WorldStateStore {
     if (!this.indexedDB) return;
     try {
       this.db = await new Promise((resolve, reject) => {
-        const request = this.indexedDB.open('globe-world-state', 1);
+        const request = this.indexedDB.open(STATE_DB, 1);
         request.onupgradeneeded = () => request.result.createObjectStore('entities');
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);

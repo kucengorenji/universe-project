@@ -49,6 +49,7 @@ export class Engine {
     this.lastDraw = -Infinity;
     this.nextDraw = 0;
     this.frameHooks = [];
+    this.drawCount = 0; // frames drawn; telemetry samples the frame rate from it
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.renderer.setAnimationLoop((ts) => this.frame(ts));
@@ -103,6 +104,7 @@ export class Engine {
       this.quality.beginGpu();
       this.mode.render();
       this.quality.endGpu();
+      this.drawCount++;
     } catch (err) {
       this.quality.endGpu();
       if (!this.lastError || this.lastError.message !== err.message) console.error(err);

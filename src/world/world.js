@@ -36,6 +36,8 @@ export class World {
     this.mapGenerator = new MapGenerator(this.hexasphere);
     this.cache = new Map();
     this.applied = null;
+    this.listeners = new Set(); // called with the world after regenerateHome()
+    this.fresh = false; // true when this boot generated the home world
 
     const saved = this.mapGenerator.loadFromStorage();
     if (saved) {
@@ -45,6 +47,7 @@ export class World {
       this.homeMap = this.mapGenerator.generate(null, { planetType: 'terran' });
       this.mapGenerator.saveToStorage(this.homeMap);
       this.applied = this.homeMap;
+      this.fresh = true;
     }
     this.system = generateSystem(this.homeMap.seed);
     this.openState();
@@ -158,6 +161,7 @@ export class World {
     this.system = generateSystem(this.homeMap.seed);
     this.cache.clear();
     this.openState();
+    this.listeners.forEach((fn) => fn(this));
     return this.homeMap;
   }
 }

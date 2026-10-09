@@ -44,11 +44,12 @@ export async function ingestTelemetry(request: Request, env: Env, ctx: Ctx, now 
   const ua = coarseUserAgent(request.headers.get('user-agent'));
 
   let worldId = typeof body.worldId === 'string' && WORLD_ID.test(body.worldId) ? body.worldId : null;
-  let fpsSum = 0, fpsN = 0, errors = 0, ended: number | null = null, mode: string | null = null;
+  let valid = 0, fpsSum = 0, fpsN = 0, errors = 0, ended: number | null = null, mode: string | null = null;
   const events: Parsed[] = [];
   const worlds = new Map<string, number>();
   for (const raw of body.events) {
     if (!isObject(raw) || typeof raw.type !== 'string' || !TYPES.has(raw.type)) continue;
+    valid++;
     const t = finite(raw.t);
     const at = t === null ? now : now - Math.min(DAY, Math.max(0, sentAt - t));
     const name = eventName(raw.name);
@@ -63,7 +64,8 @@ export async function ingestTelemetry(request: Request, env: Env, ctx: Ctx, now 
     }
     if (STORED.has(raw.type)) events.push({ at, type: raw.type, name, value, data: smallJson(raw.data, 2048) });
   }
-  if (!events.length && !fpsN) return new Response(null, { status: 204 });
+  // A heartbeat without a frame rate (menu open) still keeps the session alive.
+  if (!valid) return new Response(null, { status: 204 });
   const startedAt = Math.min(now, ...events.map(e => e.at));
 
   const db = env.DB;

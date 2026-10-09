@@ -4,16 +4,26 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.js",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/*.test.js tests/api/*.test.ts",
+    "test:api": "node --disable-warning=ExperimentalWarning --test tests/api/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "api:dev": "wrangler pages dev dist --port 8788",
+    "db:migrate:local": "wrangler d1 migrations apply aethergate --local",
+    "db:migrate:preview": "wrangler d1 migrations apply aethergate-preview --remote --env preview",
+    "db:migrate:remote": "wrangler d1 migrations apply aethergate --remote",
+    "db:seed:local": "node tools/backend/seed-local.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",
     "three": "^0.170.0"
   },
   "devDependencies": {
-    "vite": "^6.0.0"
+    "@cloudflare/workers-types": "^5.20261009.1",
+    "typescript": "^7.0.2",
+    "vite": "^6.0.0",
+    "wrangler": "^4.149.0"
   }
 }

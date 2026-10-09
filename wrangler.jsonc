@@ -1,5 +1,37 @@
 {
   "name": "aethergate-globe",
   "pages_build_output_dir": "./dist",
-  "compatibility_date": "2026-10-08"
+  "compatibility_date": "2026-10-08",
+  // Production (branch main) and `wrangler pages dev`. Setup: docs/BACKEND.md.
+  // Secrets (not here): ADMIN_EMAILS, INSPECT_SECRET.
+  "vars": {
+    "FIREBASE_PROJECT_ID": "universe-project-da6af",
+    "DASHBOARD_ORIGINS": "https://dashboard.aethergate.cloud,http://localhost:5174,http://127.0.0.1:5174",
+    "GAME_ORIGIN": "https://aethergate.cloud"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "aethergate",
+      "database_id": "REPLACE_WITH_PRODUCTION_D1_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "env": {
+    // Preview deployments (any branch but main) get their own database.
+    "preview": {
+      "vars": {
+        "FIREBASE_PROJECT_ID": "universe-project-da6af",
+        "DASHBOARD_ORIGINS": "https://dashboard.aethergate.cloud,http://localhost:5174,http://127.0.0.1:5174"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "aethergate-preview",
+          "database_id": "REPLACE_WITH_PREVIEW_D1_ID",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
 }

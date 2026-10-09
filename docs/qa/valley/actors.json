@@ -1,0 +1,32 @@
+{
+  "height": 1.35,
+  "heads": 4.440789473684211,
+  "legs": {
+    "thigh": 0.24,
+    "shin": 0.24,
+    "ankle": 0.1
+  },
+  "actors": {
+    "player": {
+      "triangles": 6390,
+      "expressionTriangles": 405,
+      "meshes": 118
+    },
+    "seller": {
+      "triangles": 3763,
+      "expressionTriangles": 405,
+      "meshes": 69
+    },
+    "child": {
+      "triangles": 4353,
+      "expressionTriangles": 405,
+      "meshes": 84
+    },
+    "elder": {
+      "triangles": 3507,
+      "expressionTriangles": 405,
+      "meshes": 72
+    }
+  },
+  "bytes": 643536
+}

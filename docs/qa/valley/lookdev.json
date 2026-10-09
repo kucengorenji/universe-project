@@ -1,0 +1,265 @@
+{
+  "stats": {
+    "build": 1113,
+    "tufts": 16000,
+    "flowers": 700,
+    "kit": {
+      "house_player": {
+        "count": 1,
+        "triangles": 6828
+      },
+      "tree_oak": {
+        "count": 33,
+        "triangles": 2232
+      },
+      "bush": {
+        "count": 11,
+        "triangles": 1368
+      },
+      "rock_a": {
+        "count": 39,
+        "triangles": 80
+      },
+      "rock_b": {
+        "count": 26,
+        "triangles": 80
+      },
+      "barn": {
+        "count": 1,
+        "triangles": 2612
+      },
+      "coop": {
+        "count": 1,
+        "triangles": 1432
+      },
+      "shipping_bin": {
+        "count": 1,
+        "triangles": 112
+      },
+      "mailbox": {
+        "count": 1,
+        "triangles": 100
+      },
+      "woodpile": {
+        "count": 1,
+        "triangles": 336
+      },
+      "barrel": {
+        "count": 2,
+        "triangles": 132
+      },
+      "signpost": {
+        "count": 1,
+        "triangles": 132
+      },
+      "tree_apple": {
+        "count": 3,
+        "triangles": 2872
+      },
+      "hay_bale": {
+        "count": 2,
+        "triangles": 280
+      },
+      "milk_pail": {
+        "count": 1,
+        "triangles": 364
+      },
+      "bucket": {
+        "count": 2,
+        "triangles": 364
+      },
+      "wheelbarrow": {
+        "count": 1,
+        "triangles": 564
+      },
+      "shop": {
+        "count": 1,
+        "triangles": 3324
+      },
+      "house_villager_a": {
+        "count": 1,
+        "triangles": 3316
+      },
+      "house_villager_b": {
+        "count": 1,
+        "triangles": 3000
+      },
+      "well": {
+        "count": 1,
+        "triangles": 344
+      },
+      "bench": {
+        "count": 2,
+        "triangles": 396
+      },
+      "tree_sakura": {
+        "count": 1,
+        "triangles": 2232
+      },
+      "crate": {
+        "count": 2,
+        "triangles": 164
+      },
+      "bush_flower": {
+        "count": 2,
+        "triangles": 1548
+      },
+      "tree_pine": {
+        "count": 42,
+        "triangles": 1868
+      },
+      "fence": {
+        "count": 23,
+        "triangles": 264
+      },
+      "stepping_stone": {
+        "count": 5,
+        "triangles": 32
+      },
+      "bridge_9": {
+        "count": 1,
+        "triangles": 3168
+      }
+    },
+    "actors": 10,
+    "animals": 5,
+    "actorTriangles": {
+      "player": 6390,
+      "seller": 3763,
+      "child": 4353,
+      "elder": 3507
+    }
+  },
+  "shots": [
+    {
+      "file": "pagi-yaw0.jpg",
+      "calls": 93,
+      "triangles": 440436
+    },
+    {
+      "file": "pagi-yaw1.jpg",
+      "calls": 89,
+      "triangles": 431200
+    },
+    {
+      "file": "pagi-house.jpg",
+      "calls": 89,
+      "triangles": 440288
+    },
+    {
+      "file": "pagi-field.jpg",
+      "calls": 88,
+      "triangles": 447824
+    },
+    {
+      "file": "pagi-wide.jpg",
+      "calls": 95,
+      "triangles": 450280
+    },
+    {
+      "file": "pagi-orbit-low.jpg",
+      "calls": 90,
+      "triangles": 431316
+    },
+    {
+      "file": "pagi-pan-river.jpg",
+      "calls": 87,
+      "triangles": 437840
+    },
+    {
+      "file": "pagi-square.jpg",
+      "calls": 87,
+      "triangles": 440080
+    },
+    {
+      "file": "pagi-bridge.jpg",
+      "calls": 80,
+      "triangles": 409580
+    },
+    {
+      "file": "pagi-barn.jpg",
+      "calls": 89,
+      "triangles": 446192
+    },
+    {
+      "file": "pagi-valley.jpg",
+      "calls": 97,
+      "triangles": 453376
+    },
+    {
+      "file": "siang-yaw0.jpg",
+      "calls": 93,
+      "triangles": 440436
+    },
+    {
+      "file": "siang-yaw1.jpg",
+      "calls": 89,
+      "triangles": 431200
+    },
+    {
+      "file": "sore-yaw0.jpg",
+      "calls": 93,
+      "triangles": 440436
+    },
+    {
+      "file": "sore-yaw1.jpg",
+      "calls": 89,
+      "triangles": 431200
+    },
+    {
+      "file": "malam-yaw0.jpg",
+      "calls": 93,
+      "triangles": 440436
+    },
+    {
+      "file": "malam-yaw1.jpg",
+      "calls": 89,
+      "triangles": 431200
+    }
+  ],
+  "input": {
+    "before": {
+      "yaw": 0,
+      "pitch": 0.6981317007977318,
+      "pan": 0,
+      "dist": 19
+    },
+    "orbited": {
+      "yaw": -1.3200000000000003,
+      "pitch": 0.968131700797732,
+      "pan": 0,
+      "dist": 19
+    },
+    "panned": {
+      "yaw": -1.3200000000000003,
+      "pitch": 0.968131700797732,
+      "pan": 3.3032943225042,
+      "dist": 19
+    },
+    "zoomed": {
+      "yaw": -1.3200000000000003,
+      "pitch": 0.968131700797732,
+      "pan": 3.3032943225042,
+      "dist": 20.900000000000002
+    }
+  },
+  "actorShots": [
+    "front",
+    "side",
+    "back",
+    "face-smile",
+    "face-curious",
+    "face-worried",
+    "face-asleep"
+  ],
+  "perf": {
+    "heavy": false,
+    "fps": 59.604227926567624,
+    "gpuMs": 6.440732286666665,
+    "resolutionFull": true,
+    "actors": 10,
+    "calls": 112,
+    "triangles": 519914
+  },
+  "errors": []
+}

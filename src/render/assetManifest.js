@@ -28,7 +28,10 @@ export const ASSET_FILES = {
   envSurfaces: 'textures/skirmish_surfaces.png', // skirmish painted surface tiles, 512² each, stacked (texture array)
   militaryPack: 'models/military.glb', // skirmish kit: weapons, fortifications, camp props, tank, windmill
   interiorAtlas: 'textures/interior_atlas.jpg', // floor and wall tiles
-  townSurfaces: 'textures/town_surfaces.png' // neutral modulation atlas for buildings and ground
+  townSurfaces: 'textures/town_surfaces.png', // neutral modulation atlas for buildings and ground
+  valleyKit: 'models/valley_kit.glb', // farm.html kit: oak, bush, player house, fence, rocks (vertex colour + baked AO)
+  valleyActors: 'models/valley_actors.glb', // farm.html semi-chibi actors on the townsfolk rig (player, seller, child, elder)
+  valleyAnimals: 'models/valley_animals.glb' // farm.html chibi chicken, cow and dog (pivot bones, rigid parts)
 };
 
 export const ASSETS = Object.fromEntries(Object.entries(ASSET_FILES).map(([key, path]) => [key, `${base}${path}`]));

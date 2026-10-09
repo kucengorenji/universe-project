@@ -1,0 +1,98 @@
+{
+  "results": {
+    "hoe": {
+      "ok": true,
+      "tilled": 1
+    },
+    "water": {
+      "ok": true,
+      "wet": 0.987
+    },
+    "plant": {
+      "ok": true,
+      "crop": 1
+    },
+    "harvest": {
+      "ok": true,
+      "carrying": "crop_ripe"
+    },
+    "ship": {
+      "ok": true,
+      "shipped": 1
+    },
+    "lift": {
+      "ok": true,
+      "carrying": "stone_small"
+    },
+    "throw": {
+      "ok": true,
+      "landed": [
+        0.72,
+        -2.86
+      ]
+    },
+    "shake": {
+      "ok": true,
+      "apples": 4,
+      "applesBefore": 3
+    },
+    "log": [
+      {
+        "t": 0.93,
+        "what": "hoe",
+        "detail": 67
+      },
+      {
+        "t": 2.5,
+        "what": "water",
+        "detail": 67
+      },
+      {
+        "t": 4.68,
+        "what": "plant",
+        "detail": 67
+      },
+      {
+        "t": 6.25,
+        "what": "harvest",
+        "detail": 10
+      },
+      {
+        "t": 7.98,
+        "what": "throw",
+        "detail": "crop_ripe"
+      },
+      {
+        "t": 10.47,
+        "what": "lift",
+        "detail": "stone_small"
+      },
+      {
+        "t": 11.88,
+        "what": "throw",
+        "detail": "stone_small"
+      },
+      {
+        "t": 14.35,
+        "what": "apple",
+        "detail": 2
+      },
+      {
+        "t": 14.35,
+        "what": "shake",
+        "detail": "tree_apple"
+      },
+      {
+        "t": 14.63,
+        "what": "apple",
+        "detail": 2
+      },
+      {
+        "t": 14.63,
+        "what": "shake",
+        "detail": "tree_apple"
+      }
+    ]
+  },
+  "errors": []
+}

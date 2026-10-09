@@ -1,0 +1,131 @@
+{
+  "shots": [
+    {
+      "file": "semi-pagi-valley.jpg",
+      "season": "semi",
+      "time": "pagi",
+      "view": "valley",
+      "particles": 17
+    },
+    {
+      "file": "semi-pagi-square.jpg",
+      "season": "semi",
+      "time": "pagi",
+      "view": "square",
+      "particles": 32
+    },
+    {
+      "file": "semi-sore-valley.jpg",
+      "season": "semi",
+      "time": "sore",
+      "view": "valley",
+      "particles": 41
+    },
+    {
+      "file": "semi-sore-square.jpg",
+      "season": "semi",
+      "time": "sore",
+      "view": "square",
+      "particles": 47
+    },
+    {
+      "file": "panas-pagi-valley.jpg",
+      "season": "panas",
+      "time": "pagi",
+      "view": "valley",
+      "particles": 28
+    },
+    {
+      "file": "panas-pagi-square.jpg",
+      "season": "panas",
+      "time": "pagi",
+      "view": "square",
+      "particles": 11
+    },
+    {
+      "file": "panas-sore-valley.jpg",
+      "season": "panas",
+      "time": "sore",
+      "view": "valley",
+      "particles": 1
+    },
+    {
+      "file": "panas-sore-square.jpg",
+      "season": "panas",
+      "time": "sore",
+      "view": "square",
+      "particles": 0
+    },
+    {
+      "file": "gugur-pagi-valley.jpg",
+      "season": "gugur",
+      "time": "pagi",
+      "view": "valley",
+      "particles": 12
+    },
+    {
+      "file": "gugur-pagi-square.jpg",
+      "season": "gugur",
+      "time": "pagi",
+      "view": "square",
+      "particles": 25
+    },
+    {
+      "file": "gugur-sore-valley.jpg",
+      "season": "gugur",
+      "time": "sore",
+      "view": "valley",
+      "particles": 34
+    },
+    {
+      "file": "gugur-sore-square.jpg",
+      "season": "gugur",
+      "time": "sore",
+      "view": "square",
+      "particles": 38
+    },
+    {
+      "file": "dingin-pagi-valley.jpg",
+      "season": "dingin",
+      "time": "pagi",
+      "view": "valley",
+      "particles": 88
+    },
+    {
+      "file": "dingin-pagi-square.jpg",
+      "season": "dingin",
+      "time": "pagi",
+      "view": "square",
+      "particles": 141
+    },
+    {
+      "file": "dingin-sore-valley.jpg",
+      "season": "dingin",
+      "time": "sore",
+      "view": "valley",
+      "particles": 185
+    },
+    {
+      "file": "dingin-sore-square.jpg",
+      "season": "dingin",
+      "time": "sore",
+      "view": "square",
+      "particles": 213
+    },
+    {
+      "file": "dingin-malam-square.jpg",
+      "season": "dingin",
+      "time": "malam",
+      "view": "square",
+      "particles": 204
+    },
+    {
+      "file": "panas-malam-valley.jpg",
+      "season": "panas",
+      "time": "malam",
+      "view": "valley",
+      "particles": 152
+    }
+  ],
+  "errors": []
+}

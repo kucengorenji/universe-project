@@ -7,7 +7,7 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 700,
     rollupOptions: {
-      input: { landing: resolve(import.meta.dirname, 'index.html'), game: resolve(import.meta.dirname, 'play/index.html'), skirmish: resolve(import.meta.dirname, 'skirmish.html') },
+      input: { landing: resolve(import.meta.dirname, 'index.html'), game: resolve(import.meta.dirname, 'play/index.html'), skirmish: resolve(import.meta.dirname, 'skirmish.html'), farm: resolve(import.meta.dirname, 'farm.html') },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/three/')) return 'three';

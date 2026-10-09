@@ -48,3 +48,31 @@ Bootstrap membuat layout, start/verify session, dan dispatch brief awal sesuai b
 Saat worker blocked/unknown, lead memeriksa status/output dan laporkan kebutuhan nyata kepada pengguna; jangan menjawab dialog permission secara otomatis. Gunakan skill Herdr terpasang di `~/.agents/skills/herdr/SKILL.md`, ID/nama eksplisit, wait berbatas, dan jangan close pane/session yang tidak dibuat studio. Jika quota/model unavailable, jangan mengganti model diam-diam; simpan handoff dan laporkan.
 
 Sesudah semua output checkpoint siap, hentikan pekerjaan pada rekomendasi roadmap dan tunggu keputusan pengguna. Tidak lanjut implementasi hanya karena audit selesai.
+
+## Fase 2 — keputusan pengguna 10 Oktober 2026 (setelah checkpoint 1)
+
+Keputusan: (1) **Opsi B** — slice Universe terukur; (2) commit dirapikan, dan selanjutnya **lead meng-commit setiap milestone tercapai** (branch non-main, tanpa atribusi AI, tanpa push/deploy kecuali diminta); (3) arah art direction mengikuti sprint Codex GUI di `/Users/mikelrisyad/Developer/globe/output/universe-art-sprint/` (diperbarui berkala; read-only bagi studio); (4) target minimum laptop iGPU, RAM 8 GB, 30 FPS profil Hemat **disetujui**; (5) **AGY Gemini 3.8 Flash High** ditambahkan untuk QA paralel di akhir milestone, tidak boleh menjadi bottleneck. Goal fase: **struktur kode rapi dan gameplay jalan end-to-end**. Lead menentukan milestone.
+
+Mandat fase 2 mengizinkan perubahan source/test/docs, `npm ci`/test/build, server dev lokal dan browser QA headless di worktree studio. Tetap dilarang: `.env*`/credential, push/deploy, layanan berbayar, mengubah konfigurasi global, commit ke `main`, dan mengubah folder art sprint.
+
+### Lokasi kerja
+
+Checkout utama `/Users/mikelrisyad/Developer/globe` dipakai sesi lain (branch `claude/pensive-hypatia-bvwgyu`) — **jangan diubah**. Studio bekerja di worktree **`/Users/mikelrisyad/Developer/globe-studio`** (branch `feat/skirmish-vc`). Tool Blender `build_town_space.py` menulis ke checkout utama kecuali `GLOBE_ROOT` diset; jangan jalankan generator tanpa persetujuan lead. Gunakan path absolut / `git -C` / `npm --prefix` (cd bermasalah di profil gvm).
+
+### Tim fase 2 (maksimal tiga worker aktif)
+
+| Role | Model | Ownership |
+|---|---|---|
+| Lead | Claude Opus 5.5 medium | Board, milestone, integrasi, commit, dokumen gabungan |
+| Engineering | Claude Sonnet 5.5 high | Source/test milestone yang di-dispatch |
+| Design/technical artist | Codex GPT-6.1 Sol high | Kajian art book + spesifikasi slice/onboarding; tidak mengedit source tanpa task |
+| QA | AGY Gemini 3.8 Flash High | Harness QA di `tools/qa/` + run QA akhir milestone; laporan di `docs/qa/` dan `docs/studio/globe-universe/qa/` |
+
+### Milestone (ditetapkan lead)
+
+| ID | Tujuan | Selesai bila |
+|---|---|---|
+| **M0** Repo rapi + baseline | Pecah commit besar per produk; baseline segar | **Selesai 10 Okt**: commit `968939c` Town, `36e7fa1` Trade, `57860e2` Valley, `0beb9c9` Docs; tiap snapshot build lolos; `npm test` 202/202 (Node 22.23.1). Backup `backup/skirmish-vc-5033bd3`. |
+| **M1** Fondasi aman | Save/versi, identitas dunia, jalur gagal, smoke lintas route, registry docs | Test baru untuk G-03/G-04/G-06 lulus; smoke semua route 0 error (`engine.lastError` + page error); `npm test` + build lulus; docs K1–K14 direkonsiliasi; QA AGY lulus; lead commit |
+| **M2** Slice Universe end-to-end | Satu tujuan pemain Space → Planet → Town → rumah → perubahan persisten → reload → kembali; onboarding/wayfinding; pemecahan TownMode yang disentuh slice; baseline perf Hemat | Skrip e2e slice lulus; playtest pengguna; tabel perf per rute; lead commit |
+| **M3** Dunia hidup + Hemat | Implementasi bertahap art book (hasil kajian artist + sprint) dan profil Hemat | Ditentukan setelah M2 dan art sprint selesai |

@@ -8,7 +8,7 @@ Diperbarui 29 September 2026 dari pembacaan source di working tree branch `feat/
 
 - Empat level yang dialami pemain: **space → planet → town → interior**. Interior bukan mode tersendiri, melainkan substate `TownMode`.
 - Satu canvas WebGL, satu `THREE.WebGLRenderer`, satu render loop, dan tepat satu mode aktif. Mode yang ditinggalkan membuang scene-nya sendiri.
-- Stack: three.js r170, Vite 6, JavaScript ES module tanpa framework UI. Test memakai `node --test`. Hosting lewat Firebase Hosting (`firebase.json`, output `dist/`).
+- Stack: three.js r170, Vite 6, JavaScript ES module tanpa framework UI. Test memakai `node --test`. Hosting lewat Cloudflare Pages (`wrangler.jsonc`, output `dist/`, lihat [DEPLOYMENT.md](DEPLOYMENT.md)). Firebase hanya dipakai untuk Analytics (`src/core/firebase.js`); `firebase.json` adalah sisa konfigurasi hosting lama.
 - Semua konten diturunkan dari satu seed dunia: tata surya, peta hex tiap planet, tata kota, dan denah rumah. Yang disimpan hanya peta planet rumah dan delta state pemain.
 
 ```text
@@ -48,6 +48,9 @@ src/
 | `#/planet/<i>`, `#/planet/<i>/city/<c>` | `PlanetMode` |
 | `#/trade/<i>/<campaignId>` | `TradeMode`, namespace campaign terpisah |
 | `#/town/<i>/<c>` | `TownMode` (interior di dalamnya) |
+| `#/home/<i>/<c>/<homeId>` | `HomeMode`, editor rumah prosedural; rumah yang diterapkan dimasuki dari pintunya di town |
+
+Halaman terpisah tanpa Director/World: `skirmish.html` (`src/skirmish/`) dan `farm.html` (Valley, `src/valley/`). Town memakai sebagian kode dan aset Skirmish (`render/paintedStyle.js`, `people/skirmishPeople.js`).
 
 `Director.switchTo(route)` (`src/core/director.js`) menjalankan urutan berikut:
 
@@ -169,7 +172,7 @@ Scene audio diatur Director (`setScene`), sedangkan town memilih bed sesuai era.
 
 ## 10. UI
 
-Markup ada di `index.html`, gaya di `src/style.css` (arah "The1": permukaan concrete, Barlow Condensed, pill, blok warna faksi, tanpa glow). Panel per mode: `ui/menuController.js` (planet), `modes/town/ui/hud.js`, `modes/space/hud.js`. Komponen bersama: `ui/gauges.js`, `ui/cityNavigation.js`, `core/pauseMenu.js`, `core/tips.js`, `core/missions.js`, `core/overlay.js`. Semua teks UI berbahasa Indonesia dan ditulis langsung di JS/HTML.
+Markup ada di `index.html`, gaya di `src/style.css` (arah "The1": permukaan concrete, Barlow Condensed, pill, blok warna faksi, tanpa glow). Panel per mode: `ui/menuController.js` (planet), `modes/town/ui/hud.js`, `modes/space/hud.js`. Komponen bersama: `ui/gauges.js`, `ui/cityNavigation.js`, `core/pauseMenu.js`, `core/tips.js`, `core/missions.js`, `core/overlay.js`. Teks UI melalui `src/i18n/` (locale `id` dan `en`, lihat [I18N.md](I18N.md)); jangan menulis string UI langsung di JS/HTML.
 
 ## 11. Konvensi
 
@@ -181,7 +184,7 @@ Markup ada di `index.html`, gaya di `src/style.css` (arah "The1": permukaan conc
 
 ## 12. Test dan QA
 
-- `npm test`: 30 test unit/regresi (29 September 2026), termasuk manifest aset dan planner kota.
+- `npm test`: 202 test lolos pada 10 Oktober 2026 (Node 22.23.1, studio M0), mencakup world/save, town, home, interior, Trade, Valley, Skirmish dan manifest aset. Angka lama (15/30/197) adalah snapshot historis.
 - `GLOBE_SWEEP_SEEDS=100 node --test tests/town-generation.test.js`: sweep layout multi-seed.
 - `npm run build`: build produksi.
 - Harness browser: `/tests/browser/index.html` (interior, IndexedDB, 20 siklus) dan `/tests/browser/living-town.html` (overview, close-up, galeri aset, profil, navigasi, lifecycle).

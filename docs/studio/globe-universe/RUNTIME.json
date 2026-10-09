@@ -1,15 +1,15 @@
 {
   "studio": "globe-universe",
   "created_date": "2026-10-10",
-  "root": "/Users/mikelrisyad/Developer/globe",
+  "root": "/Users/mikelrisyad/Developer/globe-studio",
   "branch": "feat/skirmish-vc",
-  "checkout": "existing-dirty-working-tree",
+  "checkout": "git worktree (studio)",
   "workspace_id": "w4",
   "workspace_label": "Globe Studio",
   "max_active_product_agents": 3,
   "controller": "globe-lead",
   "handover_status": "accepted-by-lead",
-  "phase": "review-checkpoint-ready",
+  "phase": "phase-2-M1",
   "subscription_verification": {
     "claude": "claude.ai subscription verified",
     "codex": "ChatGPT login verified"
@@ -25,9 +25,9 @@
       "observed_model": "claude-opus-5-5",
       "observed_effort": "medium",
       "verification": "verified-session-header",
-      "task": "ST-03",
-      "dispatch_status": "done",
-      "readiness": "standby",
+      "task": "M1-L1",
+      "dispatch_status": "in-progress",
+      "readiness": "working",
       "artifact": "PROGRESS_MATRIX.md, GAME_CHECKLIST.md, ROADMAP.md, CHECKPOINT.md"
     },
     "engineering": {
@@ -40,10 +40,10 @@
       "observed_model": "claude-sonnet-5-5",
       "observed_effort": "high",
       "verification": "verified-session-header",
-      "task": "ST-01",
-      "dispatch_status": "done",
-      "readiness": "standby",
-      "artifact": "ENGINEERING_REVIEW.md (2026-10-10 01:38)"
+      "task": "M1-E1",
+      "dispatch_status": "prompt-accepted",
+      "readiness": "working",
+      "artifact": null
     },
     "design_art": {
       "name": "globe-artist",
@@ -55,24 +55,35 @@
       "observed_model": "gpt-6.1-sol",
       "observed_effort": "high",
       "verification": "verified-session-header",
-      "task": "ST-02",
-      "dispatch_status": "done",
-      "readiness": "standby",
+      "task": "M1-A1",
+      "dispatch_status": "prompt-accepted",
+      "readiness": "working",
       "quota_note": "Codex 5h limit 40% left at ~01:36, resets 02:25 (observed in pane)",
-      "artifact": "DESIGN_ART_REVIEW.md (2026-10-10 01:37)"
+      "artifact": null
+    },
+    "qa": {
+      "name": "globe-qa",
+      "kind": "agy",
+      "tab_id": "w4:t4",
+      "pane_id": "w4:p4",
+      "desired_model": "gemini-3.8-flash-high",
+      "observed_model": "Gemini 3.8 Flash · high (pane footer)",
+      "verification": "observed-pane-footer",
+      "mode": "accept-edits (pre-existing session, renamed by lead)",
+      "task": "M1-Q1",
+      "dispatch_status": "prompt-accepted",
+      "readiness": "working"
     }
   },
   "runtime_shell": {
-    "tab_id": "w4:t4",
-    "pane_id": "w4:p4",
-    "agent": null
+    "note": "w4:p4 now hosts globe-qa (AGY)"
   },
   "limitations": [
-    "No fresh runtime/gameplay QA in this documentation review milestone",
-    "No source/assets/old-doc changes authorized",
-    "No commit/push/deploy authorized"
+    "No push/deploy",
+    "No paid services",
+    "Main checkout belongs to another session"
   ],
-  "checkpoint_status": "ready-awaiting-user-decision",
+  "checkpoint_status": "checkpoint-1-accepted-option-B",
   "last_updated_by": "globe-lead 2026-10-10",
   "working_tree_snapshot": {
     "observed_at": "2026-10-10 ~01:36",
@@ -84,6 +95,15 @@
   "lead_drafts": [],
   "notes": [
     "Engineer blocked once on cd+git metadata; bootstrap cancelled via Esc; lead redirected to Read/Grep/git -C without new approvals; no new task.",
-    "Lead stopped its own 40-min file watcher per user instruction; used bounded <=45s herdr waits."
-  ]
+    "Lead stopped its own 40-min file watcher per user instruction; used bounded <=45s herdr waits.",
+    "Lead restart of worker sessions into the worktree was denied by the auto-mode classifier; workers stay in original sessions (cwd main checkout) and are instructed to use absolute worktree paths only."
+  ],
+  "main_checkout_note": "/Users/mikelrisyad/Developer/globe is on claude/pensive-hypatia-bvwgyu (other session); studio must not touch it",
+  "backup_branch": "backup/skirmish-vc-5033bd3",
+  "milestones": {
+    "M0": "done 968939c 36e7fa1 57860e2 0beb9c9; npm test 202/202; build pass",
+    "M1": "in-progress",
+    "M2": "planned",
+    "M3": "planned"
+  }
 }

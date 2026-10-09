@@ -1,6 +1,8 @@
 # Dokumentasi Globe Universe
 
-Game eksplorasi prosedural dengan empat level: tata surya (space), globe hex tiap planet, kota skala meter, dan interior bangunan. Semua konten diturunkan dari satu seed dunia. Dibuat dengan three.js dan Vite.
+Game eksplorasi prosedural dengan empat level: tata surya (space), globe hex tiap planet, kota skala meter, dan interior bangunan, ditambah editor rumah (Home). Semua konten diturunkan dari satu seed dunia. Dibuat dengan three.js dan Vite.
+
+Produk dan prototype lain di repo yang sama: **Trade Game** (mode campaign ekonomi terpisah dari CTA planet), **Skirmish** (`skirmish.html`, taktik), dan **Valley** (`farm.html`, look-dev art/animasi). Ketiganya punya status sendiri di [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 ```sh
 npm install
@@ -29,11 +31,19 @@ npm run build    # build produksi ke dist/
 | [TRADE_GAME_IMPLEMENTATION_PLAN.md](TRADE_GAME_IMPLEMENTATION_PLAN.md) | Gameplay ekonomi, flow masuk melalui CTA planet, layout desktop, resource procedural, save, dan tahapan TG-0–7 | Implementasi v1 terpasang; hasil runtime di TRADE_GAME_RUNTIME |
 | [TRADE_GAME_RUNTIME.md](TRADE_GAME_RUNTIME.md) | Cara bermain, sistem ekonomi aktual, batas v1 dan bukti QA | Implementasi 9 Oktober 2026 |
 | [ASSET_ART_AUDIO_PLAN.md](ASSET_ART_AUDIO_PLAN.md) | Milestone AA-00–09, budget, pipeline Blender, musik | Roadmap aktif; arah visual §1 mengikuti ART_DIRECTION setelah disetujui |
+| [PROCEDURAL_HOME_BUILDING_PLAN.md](PROCEDURAL_HOME_BUILDING_PLAN.md), [PROCEDURAL_HOME_BUILDING_QA.md](PROCEDURAL_HOME_BUILDING_QA.md) | Editor rumah (Home): spesifikasi dan QA | QA 4 Oktober; lebih tua dari layout v5 |
+| [PIXEL_TOWN.md](PIXEL_TOWN.md) | Gaya tampilan Pixel untuk town | Prototype playable |
+| [TOWN_COMPACT_ASSETS_QA.md](TOWN_COMPACT_ASSETS_QA.md), [TOWN_GRAPHICS_LOD_QA.md](TOWN_GRAPHICS_LOD_QA.md) | Layout v5 compact, refresh aset, painted/LOD | QA 7 Oktober; JSON benchmark tidak ada di repo |
+| [SKIRMISH_PLAN.md](SKIRMISH_PLAN.md) | Skirmish: keputusan, milestone M-A–M-F, peta kode | Aktif; M-E berjalan |
+| [FARM_PLAN.md](FARM_PLAN.md) | Valley/Farm: art, aset, animasi, rencana port G1–G6 | Prototype V0–V5; port belum dimulai |
+| [I18N.md](I18N.md) | Lokalisasi ID/EN | Aktif |
+| [LANDING_DESIGN.md](LANDING_DESIGN.md), [DEPLOYMENT.md](DEPLOYMENT.md) | Landing page dan deploy Cloudflare Pages | Deploy terverifikasi 8 Oktober |
+| [studio/globe-universe/](studio/globe-universe/) | Studio Herdr: review checkpoint, milestone, board | Aktif sejak 10 Oktober |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Status aktual per milestone dan hasil verifikasi | Sumber kebenaran status |
 | [REVIEW_2026_09_29.md](REVIEW_2026_09_29.md) | Gap rencana, inkonsistensi, dan urutan perapian | Review titik-waktu |
 | [LIVING_TOWNS_IMPLEMENTATION.md](LIVING_TOWNS_IMPLEMENTATION.md) | Log implementasi 27 September | Log bertanggal; tidak diedit ulang |
 | [TOWN_REFINEMENT_2026_09_29.md](TOWN_REFINEMENT_2026_09_29.md) | Log implementasi 29 September | Log bertanggal; tidak diedit ulang |
-| [TOWN_PLAN_V3.md](TOWN_PLAN_V3.md) | Tata kota blok (layout v4 di cabang ini): template dan blok dibelah ala Neighbourhood, parameter kepadatan, versi save | Aktif; perbarui saat generator kota berubah |
+| [TOWN_PLAN_V3.md](TOWN_PLAN_V3.md) | Tata kota blok (dokumen menulis layout v4; kode sekarang `TOWN_LAYOUT_VERSION = 5`, lihat TOWN_COMPACT_ASSETS_QA): template dan blok dibelah ala Neighbourhood, parameter kepadatan, versi save | Aktif; perbarui saat generator kota berubah |
 | [WATABOU_WORLD_BUILDING_NOTES.md](WATABOU_WORLD_BUILDING_NOTES.md) | Riset generator Watabou dan audit awal | Riset |
 | [`../README.md`](../README.md) | Changelog Update 1–9 | Riwayat; beberapa angka sudah basi (lihat review §2.4) |
 | [`../plan.md`](../plan.md), [`../TILES_ROADMAP.md`](../TILES_ROADMAP.md) | Rencana 14 September dan upgrade tile | Historis; jangan dipakai sebagai acuan |

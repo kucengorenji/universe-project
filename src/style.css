@@ -241,6 +241,31 @@ output {
   color: var(--color-concrete);
 }
 
+/* One clear primary action at both landing levels. */
+.pill.pill--landing {
+  min-height: 48px;
+  gap: 12px;
+  padding: 12px 22px;
+  background: #f2ce72;
+  border: 1px solid #ffe6a2;
+  border-radius: 8px;
+  color: #242922;
+  font-weight: 600;
+  box-shadow: 0 3px 0 #b9903e, 0 5px 18px #171b2426;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+.pill--landing[hidden] { display: none; }
+.pill--landing kbd { font: 12px var(--font-system); border: 1px solid #24292245; padding: 2px 5px; border-radius: 3px; }
+.info-card__actions .pill--landing { flex-basis: 100%; }
+.pill--landing:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.pill--landing:active { box-shadow: 0 1px 0 #b9903e; }
+@media (hover: hover) and (pointer: fine) {
+  .pill.pill--landing:hover { background: #ffe09a; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill.pill--landing { transition: none; }
+}
+
 .menu-circle {
   position: relative;
   width: 48px;
@@ -2343,10 +2368,10 @@ body.is-flying .asset-status {
   z-index: 11;
   width: 168px;
   height: 168px;
-  border: 2px solid var(--color-iron);
-  border-radius: 50%;
-  background: var(--color-concrete);
-  box-shadow: 0 0 0 4px rgba(217, 217, 217, 0.6);
+  border: 4px solid rgba(255, 255, 255, .18);
+  border-radius: 0;
+  background: rgba(18, 24, 29, .45);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, .18);
 }
 
 .minimap[hidden] {
@@ -2357,7 +2382,7 @@ body.is-flying .asset-status {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
+  opacity: .9;
 }
 
 .minimap__label {
@@ -2367,8 +2392,8 @@ body.is-flying .asset-status {
   width: 20px;
   height: 20px;
   margin: -10px 0 0 -10px;
-  border-radius: 50%;
-  background: var(--color-iron);
+  border-radius: 3px;
+  background: rgba(18, 24, 29, .85);
   color: var(--color-concrete);
   font-size: 12px;
   line-height: 20px;
@@ -2648,6 +2673,76 @@ body.is-flying .asset-status {
 .planner__keys kbd {
   font-family: var(--font-system);
   font-size: 11px;
+}
+
+/* Street play: compact, translucent HUD with the map anchored at the left. */
+#townUi.is-street { --street-glass: rgba(17, 23, 29, .76); --street-line: rgba(255, 255, 255, .2); }
+#townUi.is-street .topbar { align-items: flex-start; gap: 12px; padding: 20px 24px; }
+#townUi.is-street .crumbs { gap: 12px; max-width: 55%; }
+#townUi.is-street .wordmark {
+  min-width: 0; padding: 8px 12px; font-size: 20px; line-height: 1.2;
+  color: #f5f3ec; background: var(--street-glass); border-left: 2px solid #f2ce72;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#townUi.is-street .wordmark__meta { display: block; margin: 3px 0 0; font-size: 10px; color: #c4cbd0; overflow: hidden; text-overflow: ellipsis; }
+#townUi.is-street .topbar .pill--ghost,
+#townUi.is-street .town-view { background: var(--street-glass); color: #f5f3ec; border: 1px solid var(--street-line); border-radius: 4px; }
+#townUi.is-street .topbar .pill--ghost { min-height: 44px; padding: 10px 14px; }
+#townUi.is-street .town-view .seg__btn { min-height: 44px; color: #c4cbd0; border-color: var(--street-line); font-size: 13px; }
+#townUi.is-street .town-view .seg__btn[aria-pressed='true'] { background: #f5f3ec; color: #171d23; }
+#townUi.is-street .town-style,
+#townUi.is-street .town-plan,
+#townUi.is-street .town-quality { display: none; }
+#townUi.is-street .minimap { left: 24px; right: auto; bottom: 76px; width: 184px; height: 184px; }
+#townUi.is-street .town-hud {
+  left: auto; right: 88px; bottom: 25px; transform: none; max-width: calc(100vw - 340px);
+  padding: 8px 12px; border: 1px solid var(--street-line); border-radius: 4px;
+  background: var(--street-glass); color: #e0e4e7; font-size: 11px; text-align: left;
+}
+#townUi.is-street .interact-prompt {
+  bottom: 76px; max-width: min(440px, calc(100vw - 48px)); min-height: 48px;
+  padding: 8px 14px 8px 8px; gap: 10px; border: 1px solid var(--street-line);
+  border-left: 3px solid #f2ce72; border-radius: 4px; background: var(--street-glass);
+  color: #f5f3ec; font-size: 15px;
+}
+#townUi.is-street .interact-prompt kbd { border-radius: 3px; background: #f5f3ec; color: #171d23; font-size: 16px; }
+#townUi.is-street .interact-prompt:focus-visible,
+#townUi.is-street .topbar button:focus-visible { outline: 2px solid #f2ce72; outline-offset: 3px; }
+#townUi.is-street .speedo { right: 24px; bottom: 76px; background: var(--street-glass); color: #f5f3ec; border-color: var(--street-line); border-radius: 4px; }
+#townUi.is-street .speedo__num span { color: #c4cbd0; }
+#townUi.is-street .speedo__bar { background: #ffffff24; }
+#townUi.is-street .speedo__bar i { background: #f2ce72; }
+body[data-mode='town']:has(#townUi.is-street) .mission-toggle {
+  top: auto; right: auto; left: 24px; bottom: 20px;
+  background: rgba(17, 23, 29, .76); color: #f5f3ec; border-color: rgba(255,255,255,.2); border-radius: 4px;
+}
+body[data-mode='town']:has(#townUi.is-street) .tip {
+  background: rgba(17, 23, 29, .9); border: 1px solid rgba(255,255,255,.2); border-left: 3px solid #f2ce72;
+  border-radius: 4px; color: #f5f3ec; animation: none; bottom: 140px;
+}
+body[data-mode='town']:has(#townUi.is-street) .tip__body p { color: #c4cbd0; }
+body[data-mode='town']:has(#townUi.is-street) .tip kbd { background: #f5f3ec; color: #171d23; border-radius: 3px; }
+body[data-mode='town']:has(#townUi.is-street) .tip .menu-circle { background: #ffffff18; }
+body[data-mode='town']:has(#townUi.is-street) .tip .menu-circle span { background: #f5f3ec; }
+@media (max-width: 720px) {
+  #townUi.is-street .topbar { padding: 12px; gap: 8px; }
+  #townUi.is-street .crumbs { max-width: 100%; width: 100%; }
+  #townUi.is-street .wordmark { flex: 1; font-size: 17px; padding: 5px 9px; }
+  #townUi.is-street .wordmark__meta { font-size: 9px; }
+  #townUi.is-street .town-view .seg__btn { min-height: 38px; padding: 6px 12px; font-size: 12px; }
+  #townUi.is-street .minimap { left: auto; right: 16px; bottom: 82px; width: 132px; height: 132px; }
+  #townUi.is-street .interact-prompt { bottom: 232px; font-size: 13px; max-width: calc(100vw - 32px); }
+  #townUi.is-street .minimap:not([hidden]) ~ .speedo { right: 16px; bottom: 232px; }
+  #townUi.is-street .speedo { width: 100px; }
+  #townUi.is-street .topbar__right { margin-left: auto; }
+  body[data-mode='town']:has(#townUi.is-street) .mission-toggle { left: 16px; bottom: 22px; }
+  body[data-mode='town']:has(#townUi.is-street) .tip { top: 132px; bottom: auto; padding: 12px; gap: 10px; }
+  body[data-mode='town']:has(#townUi.is-street) .tip__keys { width: 54px; }
+  body[data-mode='town']:has(#townUi.is-street) .tip__body p { font-size: 12px; }
+  .flight-hud--planet { max-width: calc(100vw - 24px); bottom: 80px; gap: 8px; padding: 8px; flex-wrap: wrap; border-radius: 8px; }
+  .flight-hud--planet .flight-hud__state { flex: 1; font-size: 14px; white-space: normal; }
+  .flight-hud--planet .flight-hud__keys { display: none; }
+  .flight-hud--planet .pill--landing { min-height: 44px; padding: 10px 14px; order: 4; flex-basis: 100%; }
 }
 
 @media (max-width: 720px) {

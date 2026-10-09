@@ -123,7 +123,13 @@ test('traffic keeps moving and animating at low LOD, and bounds follow its curre
   assert.ok(v.car.z > oldZ && v.dist > oldDistance, 'traffic is not frozen at a distance');
   assert.equal(v.lod, 2);
   assert.ok(!equalMatrix(oldWheel, wheel.matrix), 'wheel rolls at low LOD');
-  assert.ok(horse.matrix.elements[13] > 0, 'horse trot is preserved');
+  assert.equal(horse.matrix.elements[13], 0, 'the horse body stays grounded rather than pogoing');
+  const motion = horse.inst.geometry.attributes.aHorseMotion;
+  assert.ok(motion.getX(horse.i) > 0 && motion.getY(horse.i) > .9, 'distance-driven articulated trot survives low LOD');
+  assert.ok(horse.inst.customDepthMaterial && horse.inst.customDistanceMaterial, 'shadows use the same leg pose');
+  v.speed = 0;
+  fleet.write(v); fleet.flush();
+  assert.equal(motion.getY(horse.i), 0, 'stopped horses return to a standing pose');
   assert.ok(equalMatrix(renderedMatrix(wheel), wheel.matrix));
 
   v.car.x = 1500;

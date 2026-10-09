@@ -51,7 +51,7 @@ test('water gaps, occupied entrances, empty input and bridge clearance', () => {
   assert.equal(isolated.portals[0].node,null);assert.equal(isolated.portals[0].reason,'isolated-path');
 });
 
-test('walkers branch continuously, preserve routes across crowd tiers and flee on safe paths', () => {
+test('walkers branch continuously, preserve routes across crowd tiers and ignore vehicles passing through people', () => {
   const graph=createWalkNetwork([line([[-20,0],[20,0]]),line([[0,-20],[0,20]]),line([[20,0],[20,20],[0,20]],'garden')]);
   const a=crowd(8),b=crowd(32);
   const small=new Pedestrians(a,1,graph,mulberry32(45),()=>2),large=new Pedestrians(b,1,graph,mulberry32(45),()=>2);
@@ -62,12 +62,12 @@ test('walkers branch continuously, preserve routes across crowd tiers and flee o
     for(let i=1;i<a.count;i++)assert.ok(Math.hypot(a.people[i].x-previous[i].x,a.people[i].z-previous[i].z)<.4,'no junction teleport');
   }
   assert.ok(small.walkers.every(w=>w.transitions>4));
-  const w=small.walkers[0],p=a.people[w.i],before={...p};
-  small.startle(w,p.x+2,p.z+2,5);small.pose(w,null);
-  assert.ok(Math.hypot(p.x-before.x,p.z-before.z)<1e-6,'reversing preserves lane');
-  small.update(.1);
-  assert.ok(Math.hypot(p.x-before.x,p.z-before.z)<1);
-  assert.ok(w.flee>0);
+  const w=small.walkers[0],p=a.people[w.i];
+  const threat={x:p.x,z:p.z-1,vx:0,vz:12,speed:12};
+  small.update(.1, null, threat); large.update(.1);
+  assert.deepEqual(a.people.slice(1),b.people.slice(1,8),'car overlap cannot change route, speed or animation');
+  assert.ok(small.walkers.every(w=>!w.flee),'no panic state');
+
 });
 
 test('modern and fantasy navigation uses canonical geometry and collision-safe lanes', () => {

@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { getToonGradient } from '../../render/assetLibrary.js';
 import { CLASSES, FACTIONS } from './soldierLook.js';
-import HERO_LOOKS from './heroLooks.json';
+import HERO_LOOKS from './heroLooks.json' with { type: 'json' };
 import { HOLDS, gunMaterial, placeWeapon, gripWorld, supportWorld, poleR, poleL, reachArm, rotate } from './soldiers.js';
 
 // Skirmish soldiers v5 (models/soldier_v5_m.glb, tools/blender/skirmish/soldier_v5.py): a VRoid
@@ -50,6 +50,11 @@ async function loadTemplate(url, clothUrl, headUrl) {
   cloth.colorSpace = THREE.NoColorSpace;
   head.colorSpace = THREE.SRGBColorSpace;
   cloth.anisotropy = head.anisotropy = 8;
+  return soldierTemplate(gltf, cloth, head);
+}
+
+/** Shared rig/geometry template; town uses the same proven bodies and painted atlases. */
+export function soldierTemplate(gltf, cloth, head) {
   let mesh = null, far = null;
   gltf.scene.traverse((o) => o.isSkinnedMesh && (o.name.includes('lod1') ? (far = o) : (mesh = o)));
   const pieces = mesh.userData.pieces;
@@ -159,11 +164,11 @@ function soldierMaterial(uniforms) {
 }
 
 /** One soldier from the template: its own skeleton, material, mixer, pieces and weapon. */
-export function makeSoldier(templates, weapons, { faction = 'fed', cls = 'scout', seed = 1, id = null, shadows = true } = {}) {
+export function makeSoldier(templates, weapons, { faction = 'fed', cls = 'scout', seed = 1, id = null, shadows = true, civilian = false, look: customLook = null, colours = {} } = {}) {
   const C = CLASSES[cls];
   const F = FACTIONS[faction];
   const D = DRESS[faction];
-  const look = (faction === 'fed' && LOOKS[id]) || { hair: 'hair_base', hairColor: '#2a2624', iris: '#3a3430' };
+  const look = customLook || (faction === 'fed' && LOOKS[id]) || { hair: 'hair_base', hairColor: '#2a2624', iris: '#3a3430' };
   const template = templates[look.sex || 'm'];
   const root = cloneSkinned(template.scene);
   // the close model, and the far one (decimated) shown past LOD_FAR metres
@@ -174,13 +179,13 @@ export function makeSoldier(templates, weapons, { faction = 'fed', cls = 'scout'
   // the short base cut lies under every style (VRoid hair leaves the nape open between its locks),
   // unless the style shows the brow it would cover
   const under = helmet || look.underlay !== false ? ['hair_base'] : [];
-  const names = ['always', 'face', ...under, ...(helmet ? [helmet] : [look.hair]), ...(look.scarf ? ['scarf'] : []), ...C.kit.map((k) => `kit_${k}`)];
+  const names = ['always', 'face', ...under, ...(helmet ? [helmet] : [look.hair]), ...(look.scarf ? ['scarf'] : []), ...(civilian ? [] : C.kit.map((k) => `kit_${k}`))];
   mesh.geometry = geometryFor(template, mesh.geometry, 'close', names);
   if (far) far.geometry = geometryFor(template, far.geometry, 'far', names);
   const color = (hex) => new THREE.Color(hex);
   const palette = {
     skin: look.skin || '#ffffff', hair: look.hairColor, tunic: F.top, scarf: F.scarf, pants: F.legs, boots: F.boots, helmet: F.helmet_color,
-    glove: D.glove, leather: D.leather, brass: D.brass, metal: D.metal, canvas: D.canvas, lens: D.lens, face: '#ffffff', iris: look.iris
+    glove: D.glove, leather: D.leather, brass: D.brass, metal: D.metal, canvas: D.canvas, lens: D.lens, face: '#ffffff', iris: look.iris, ...colours
   };
   const pal = Array.from({ length: 16 }, () => new THREE.Color(1, 1, 1));
   for (const [k, v] of Object.entries(palette)) pal[SLOT[k] - 1] = color(v);
@@ -215,13 +220,12 @@ export function makeSoldier(templates, weapons, { faction = 'fed', cls = 'scout'
     actions[clip.name] = a;
   }
   actions.idle.play();
-  const gun = new THREE.Mesh(weapons[C.weapon].geometry, gunMaterial());
-  gun.castShadow = shadows;
-  root.add(gun);
+  const gun = civilian ? null : new THREE.Mesh(weapons[C.weapon].geometry, gunMaterial());
+  if (gun) { gun.castShadow = shadows; root.add(gun); }
   const fingers = FINGER_BONES.map(([name, side, k]) => bones[name] && [bones[name].node, side, k]).filter(Boolean);
   return {
     root, mesh, far, material: mesh.material, uniforms, bones, mixer, actions, current: 'idle', faction, cls, gun,
-    weapon: weapons[C.weapon], hold: HOLDS[C.hold], aimYaw: 0, aimPitch: 0, aimBlend: 0, crouchBlend: 0,
+    weapon: civilian ? null : weapons[C.weapon], hold: HOLDS[C.hold], aimYaw: 0, aimPitch: 0, aimBlend: 0, crouchBlend: 0,
     speed: 0, recoil: 0, flinch: 0, vc: true, chestRest, fingers, clipSpeed: template.clipSpeed, bodyScale: template.scale
   };
 }
@@ -246,7 +250,7 @@ function grip(s, k) {
 export function disposeSoldier(s) {
   s.mixer.stopAllAction();
   s.material.dispose();
-  s.gun.removeFromParent();
+  s.gun?.removeFromParent();
   s.root.removeFromParent();
 }
 

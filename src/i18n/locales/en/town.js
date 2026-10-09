@@ -1,5 +1,8 @@
 // Town mode: HUD, prompts, 2D planner, house interiors.
 export default {
+  'town.streetHint.walk': 'WASD walk · Shift run · Space jump · E interact',
+  'town.streetHint.drive': 'W/S throttle & brake · A/D steer · Space handbrake · E exit',
+  'town.streetHint.interior': 'WASD walk · E interact · Esc leave',
   'town.hint.diorama': 'Drag to rotate, WASD or arrows to pan, scroll to zoom. Press 2 to walk, 3 to drive.',
   'town.hint.walk': 'WASD walk, Shift run, Space jump, E enter a vehicle or house. Drag to look around. Esc back to the diorama.',
   'town.hint.interior': 'WASD walk, E use or pick up items, drag to rotate the camera, Esc to leave.',

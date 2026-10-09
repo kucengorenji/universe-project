@@ -1,5 +1,8 @@
 // Town mode: HUD, prompts, 2D planner, house interiors.
 export default {
+  'town.streetHint.walk': 'WASD jalan · Shift lari · Spasi lompat · E interaksi',
+  'town.streetHint.drive': 'W/S gas & rem · A/D belok · Spasi rem tangan · E turun',
+  'town.streetHint.interior': 'WASD jalan · E interaksi · Esc keluar',
   'town.hint.diorama': 'Seret untuk memutar, WASD atau panah untuk menggeser, scroll untuk zoom. Tombol 2 jalan kaki, 3 nyetir.',
   'town.hint.walk': 'WASD jalan, Shift lari, Spasi lompat, E masuk kendaraan atau rumah. Seret untuk melihat sekeliling. Esc kembali ke diorama.',
   'town.hint.interior': 'WASD jalan, E pakai atau ambil barang, seret untuk memutar kamera, Esc keluar.',

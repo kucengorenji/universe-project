@@ -367,7 +367,7 @@ export class MenuController {
             [t('planet.fact.air'), t('planet.routes.count', { count: air }) + (air ? t(c.style === 'modern' ? 'planet.fact.air.planes' : 'planet.fact.air.balloons') : '')]
           ])}
           <div class="info-card__actions">
-            <button type="button" class="pill" data-action="land" data-city="${c.index}">${t('planet.card.land')}</button>
+            <button type="button" class="pill pill--landing" data-action="land" data-city="${c.index}"><span class="arrow-down" aria-hidden="true"></span>${t('planet.card.land')}</button>
             <button type="button" class="pill pill--ghost" data-action="ride" data-city="${c.index}">${t('planet.card.ride')}</button>
             <button type="button" class="pill pill--ghost" data-action="close">${t('planet.card.back')}</button>
           </div>

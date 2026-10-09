@@ -89,6 +89,7 @@ export class TownPixelStyle {
           vec2 pixelPlane=pixelNormal.y>pixelNormal.x&&pixelNormal.y>pixelNormal.z?vPixelWorld.xz:pixelNormal.x>pixelNormal.z?vPixelWorld.zy:vPixelWorld.xy;
           float pixelSemantic=vPixelSemantic>.5?clamp(floor(vPixelSemantic+.5),0.,15.):(pixelNormal.y>.7?12.:1.);
           vec3 pixelPigment=texture(uPixelSurfaces,vec3(pixelPlane*.32,pixelSemantic)).rgb;
+          ${source === this.mode.builder.terrainMaterial ? 'if(cozyCoverage<.01)' : source.userData.cozyPath ? 'if(false)' : ''}
           diffuseColor.rgb*=mix(vec3(1.),pixelPigment/.80,.7);`)
         .replace('#include <dithering_fragment>', 'gl_FragColor.rgb=floor(clamp(gl_FragColor.rgb,0.,1.)*31.+.5)/31.;\n#include <dithering_fragment>');
     };

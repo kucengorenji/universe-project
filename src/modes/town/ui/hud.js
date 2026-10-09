@@ -4,7 +4,7 @@ import { t, formatNumber } from '../../../i18n/index.js';
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const qualityLabel = (preset) => t(`pause.quality.${preset}`);
-const hint = (id, pixel) => t(`town.${pixel ? 'pixelHint' : 'hint'}.${id}`);
+const hint = (id, pixel) => t(`town.${pixel ? 'pixelHint' : id === 'diorama' ? 'hint' : 'streetHint'}.${id}`);
 
 /** Rough head count from the buildings (shared by the HUD and the town planner). */
 export function estimatePopulation(layout) {
@@ -71,7 +71,7 @@ export class TownHud {
             <button type="button" class="seg__btn" data-style="normal" aria-pressed="true">${t('town.style.normal')}</button>
             <button type="button" class="seg__btn" data-style="pixel" aria-pressed="false">${t('town.style.pixel')}</button>
           </div>
-          <div class="seg" role="group" aria-label="${t('town.view.aria')}">
+          <div class="seg town-view" role="group" aria-label="${t('town.view.aria')}">
             <button type="button" class="seg__btn" data-view="diorama" aria-pressed="true">${t('town.view.diorama')}</button>
             <button type="button" class="seg__btn" data-view="walk" aria-pressed="false">${t('town.view.walk')}</button>
             <button type="button" class="seg__btn" data-view="drive" aria-pressed="false">${t('town.view.drive')}</button>

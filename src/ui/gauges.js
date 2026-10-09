@@ -88,7 +88,7 @@ export class Minimap {
    * radius   metres from the centre to the rim
    */
   draw(pos, facing, view, cars, radius, { doors = true } = {}) {
-    const css = this.el.clientWidth;
+    const css = this.canvas.clientWidth;
     if (!css) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const S = Math.round(css * dpr);
@@ -103,11 +103,15 @@ export class Minimap {
     const fz = view.z / len;
     const rx = -fz;
     const rz = fx;
+    const inView = p => {
+      const x = p.x - pos.x, z = p.z - pos.z;
+      return Math.abs(rx * x + rz * z) < radius && Math.abs(fx * x + fz * z) < radius;
+    };
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, S, S);
     g.save();
     g.beginPath();
-    g.arc(h, h, h, 0, Math.PI * 2);
+    g.rect(0, 0, S, S);
     g.clip();
     g.fillStyle = '#8f9678';
     g.fillRect(0, 0, S, S);
@@ -117,10 +121,10 @@ export class Minimap {
     // Doors you can open, and the traffic
     g.fillStyle = '#fbb833';
     const dr = 2.2 / Math.max(0.4, k / dpr);
-    if (doors) for (const d of this.doors) if (Math.abs(d.x - pos.x) < radius && Math.abs(d.z - pos.z) < radius) g.fillRect(d.x - dr, d.z - dr, dr * 2, dr * 2);
+    if (doors) for (const d of this.doors) if (inView(d)) g.fillRect(d.x - dr, d.z - dr, dr * 2, dr * 2);
     g.fillStyle = '#fa4d43';
     const cr = 3 / Math.max(0.4, k / dpr);
-    for (const c of cars) if (Math.abs(c.x - pos.x) < radius && Math.abs(c.z - pos.z) < radius) g.fillRect(c.x - cr, c.z - cr, cr * 2, cr * 2);
+    for (const c of cars) if (inView(c)) g.fillRect(c.x - cr, c.z - cr, cr * 2, cr * 2);
     g.setTransform(1, 0, 0, 1, 0, 0);
     // The player: an arrow turned by facing relative to the view
     const px = Math.sin(facing);
@@ -143,7 +147,7 @@ export class Minimap {
     g.restore();
     // North (-Z) marker on the rim
     const na = Math.atan2(-rz, -fz); // screen angle of world -Z
-    const nr = css / 2 - 11;
+    const nr = (css / 2 - 12) / Math.max(Math.abs(Math.sin(na)), Math.abs(Math.cos(na)));
     this.north.style.transform = `translate(${Math.sin(na) * nr}px, ${-Math.cos(na) * nr}px)`;
   }
 

@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { loadAssetPack, getToonGradient } from '../../render/assetLibrary.js';
 import { ASSETS } from '../../render/assetManifest.js';
@@ -19,8 +18,7 @@ import { TownHud } from './ui/hud.js';
 import { TownSky } from './render/sky.js';
 import { Fleet } from './vehicles/fleet.js';
 import { Car, ChaseCamera } from './vehicles/vehicle.js';
-import { RiggedPeople, makePerson, animatePerson, disposePerson } from './people/peopleRig.js';
-import { ChunkyPeople, loadNpcPack, makeNpc, dressPlayer, animateNpc, disposeNpc } from './people/chunkyPeople.js';
+import { SkirmishPeople, loadTownPeople, makeTownPerson, animateTownPerson, disposeTownPerson } from './people/skirmishPeople.js';
 import { Interior, ENTERABLE, FURNITURE_PACK } from './interior/interior.js';
 import { buildingId, seedFor } from '../../world/identity.js';
 import { describeBuilding, buildingApproach, localToTown, townToLocal } from '../../world/buildingBlueprint.js';
@@ -51,20 +49,17 @@ const loadAtlas = () =>
     t.anisotropy = 4;
     return t;
   }).catch(() => null));
-let characterGltf = null;
-const loadCharacter = () => (characterGltf ||= new GLTFLoader().loadAsync(ASSETS.characterPack).catch(() => null));
 const packs = () =>
   Promise.all([
     loadAssetPack(ASSETS.planetPack),
     loadAssetPack(ASSETS.planetPackLod0).catch(() => null),
     loadAssetPack(ASSETS.townPack).catch(() => null),
-    loadCharacter(),
+    loadTownPeople(),
     loadAssetPack(ASSETS.furniturePack, FURNITURE_PACK).catch(() => null),
     loadAtlas(),
     loadTexturedPack(ASSETS.sceneryPack).catch(() => null),
     loadTownSurfaces(ASSETS.townSurfaces).catch(() => null),
     loadTexturedPack(ASSETS.environmentPack, { mergeShades: true }).catch(() => null),
-    loadNpcPack(ASSETS.npcPack).catch(() => null),
     loadTownPaintedSurfaces(ASSETS.envSurfaces).catch(() => null)
   ]);
 
@@ -100,9 +95,9 @@ export default class TownMode {
     const city = map.cities[this.route.city];
     this.planet = planet;
     this.city = city;
-    const [base, lod0, townPack, character, furniture, atlas, sceneryPack, surfaceAtlas, environmentPack, npcPack, paintedSurfaces] = await packs();
-    this.character = character;
-    this.npcPack = npcPack;
+    const [base, lod0, townPack, townPeople, furniture, atlas, sceneryPack, surfaceAtlas, environmentPack, paintedSurfaces] = await packs();
+    this.character = townPeople;
+    this.townPeople = townPeople;
     this.furniture = furniture;
     this.atlas = atlas;
     const planetPack = {};
@@ -185,10 +180,11 @@ export default class TownMode {
     this.scene.add(sun, sun.target);
 
     // People: #0 is the player, the rest walk the streets
-    const count = { high: 90, medium: 60, low: 30 }[quality.tier];
+    const count = { high: 13, medium: 9, low: 5 }[quality.tier];
     this.crowd = new Crowd(count, { modern: this.layout.modern, seed: this.layout.seed, shadows });
     this.crowd.dress(0, { shirt: city.owner === 'system' ? 0xfa4d43 : 0x027b49, pants: 0x2f2f33 });
-    this.scene.add(this.crowd.group);
+    // Crowd provides movement data only; every visible person uses the complete v5 body.
+    this.crowd.group.visible = false;
     const rng = mulberry32(this.layout.seed + 5);
     const navField = {};
     this.walkNetwork = createWalkNetwork(this.layout.walkGraph, {
@@ -205,11 +201,10 @@ export default class TownMode {
     this.player = this.crowd.people[0];
     const sp = this.layout.spawn;
     Object.assign(this.player, { x: sp.x, z: sp.z, y: this.builder.groundAt(sp.x, sp.z), yaw: sp.yaw, vy: 0, visible: false });
-    const rigCount = { high: 24, medium: 14, low: 6 }[quality.tier];
-    if (this.npcPack || character) this.setupAvatar(character, city.owner === 'system' ? 'explorer_red' : 'explorer', shadows);
-    // Townsfolk near the camera: the NPC v1 cast when its pack loaded, else the older rigged outfits
-    if (this.npcPack) this.rigged = new ChunkyPeople(this.npcPack, this.scene, { count: rigCount, shadows, seed: this.layout.seed });
-    else if (character) this.rigged = new RiggedPeople(character, this.scene, { count: rigCount, modern: this.layout.modern, shadows, seed: this.layout.seed });
+    const rigCount = count - 1;
+    this.setupAvatar(city.owner === 'system' ? 'explorer_red' : 'explorer', shadows);
+    // A small, consistent cast of townsfolk uses the actual skirmish humanoids.
+    this.rigged = new SkirmishPeople(townPeople, this.scene, { count: rigCount, shadows, seed: this.layout.seed });
     this.buildFleet(rng, shadows);
     // Lamp posts light the street at night only: compile that variant of every material now, the
     // hidden townsfolk pool and LOD levels included, so dusk does not stall on shader compiles
@@ -501,7 +496,10 @@ export default class TownMode {
     this.hud.setView(v);
     this.minimap.show(v !== 'diorama');
     this.speedo.show(v === 'drive');
-    if (v !== 'diorama') this.ctx.tips?.show(v);
+    if (v !== 'diorama') {
+      if (this.ctx.tips?.current !== v) this.ctx.tips?.hide();
+      this.ctx.tips?.show(v);
+    }
     this.orbit.enabled = v === 'diorama' && !this.tween;
     this.player.visible = v === 'walk' && !this.avatar;
     this.camera.fov = v === 'diorama' ? 40 : STREET_FOV;
@@ -535,15 +533,9 @@ export default class TownMode {
     }
   }
 
-  /** The player: the NPC v1 hero in the faction's colour (the older rigged explorer without that pack). */
-  setupAvatar(gltf, outfit, shadows) {
-    let person = null;
-    if (this.npcPack) {
-      person = makeNpc(this.npcPack, { shadows });
-      person.npc = true;
-      dressPlayer(person, { top: outfit === 'explorer_red' ? 0xc8453b : 0x027b49 });
-    } else person = makePerson(gltf, outfit, { shadows }) || makePerson(gltf, 'explorer', { shadows });
-    if (!person) return;
+  /** The skirmish v5 hero, in the town faction colour. */
+  setupAvatar(outfit, shadows) {
+    const person = makeTownPerson(this.townPeople, { player: true, shadows, top: outfit === 'explorer_red' ? 0xc8453b : 0x027b49 });
     person.root.visible = false;
     this.scene.add(person.root);
     this.avatar = person;
@@ -559,15 +551,10 @@ export default class TownMode {
     if (!on) return;
     av.root.position.set(p.x, p.y + p.jump + (this.pose?.lift || 0), p.z);
     const speed = this.interior || this.transfer ? p.speed : (p.motionSpeed ?? p.speed);
-    if (av.npc) {
-      const dyaw = Math.atan2(Math.sin(p.yaw - av.root.rotation.y), Math.cos(p.yaw - av.root.rotation.y));
-      av.root.rotation.y = p.yaw;
-      av.turn = (av.turn || 0) + ((dt > 0 ? dyaw / dt : 0) - (av.turn || 0)) * (1 - Math.exp(-dt * 8));
-      animateNpc(av, dt, speed, { pose: this.pose?.name || null, jump: p.jump, turn: av.turn });
-    } else {
-      av.root.rotation.y = p.yaw;
-      animatePerson(av, dt, speed, { pose: this.pose?.name || null });
-    }
+    const dyaw = Math.atan2(Math.sin(p.yaw - av.root.rotation.y), Math.cos(p.yaw - av.root.rotation.y));
+    av.root.rotation.y = p.yaw;
+    av.turn = (av.turn || 0) + ((dt > 0 ? dyaw / dt : 0) - (av.turn || 0)) * (1 - Math.exp(-dt * 8));
+    animateTownPerson(av, dt, speed, { pose: this.pose?.name || null, jump: p.jump, turn: av.turn });
   }
 
   /** The 2D town planner (diorama view only). Applying rebuilds this mode with the chosen plan. */
@@ -929,7 +916,7 @@ export default class TownMode {
         let d = Math.atan2(mx, mz) - p.yaw;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         p.yaw += d * (1 - Math.exp(-dt * 12));
-        p.speed = THREE.MathUtils.lerp(p.speed, (i.run ? 3.4 : 1.8) * Math.min(1, len), 1 - Math.exp(-dt * 8));
+        p.speed = THREE.MathUtils.lerp(p.speed, (i.run ? 3.4 : 1.5) * Math.min(1, len), 1 - Math.exp(-dt * 8));
       } else p.speed = THREE.MathUtils.lerp(p.speed, 0, 1 - Math.exp(-dt * 10));
       const r = inside.colliders.resolve(p.x + Math.sin(p.yaw) * p.speed * dt, p.z + Math.cos(p.yaw) * p.speed * dt, 0.32);
       p.x = THREE.MathUtils.clamp(r.x, -inside.W / 2 + 0.3, inside.W / 2 - 0.3);
@@ -1124,13 +1111,12 @@ export default class TownMode {
     return { x: car.x + lx * side + Math.sin(car.yaw) * back, z: car.z + lz * side + Math.cos(car.yaw) * back };
   }
 
-  /** Walk to the door, open it (and pull the driver out of traffic), get in. */
+  /** Stop a traffic vehicle, walk to its door, and get in. */
   enterVehicle(v) {
     if (this.transfer || !v) return;
-    const jack = v.mode === 'traffic';
-    if (jack) v.stopped = 1e9;
+    if (v.mode === 'traffic') v.stopped = 1e9;
     const p = this.player;
-    this.transfer = { kind: 'enter', v, t0: this.ctx.engine.time, dur: jack ? 1.5 : 0.95, from: { x: p.x, z: p.z }, jack, fled: false };
+    this.transfer = { kind: 'enter', v, t0: this.ctx.engine.time, dur: 0.95, from: { x: p.x, z: p.z }, fromTraffic: v.mode === 'traffic' };
     this.hud.setPrompt(null);
   }
 
@@ -1148,12 +1134,6 @@ export default class TownMode {
     if (tr.kind === 'enter') {
       const car = tr.v.car;
       const door = this.doorOf(car, tr.v.spec);
-      if (tr.jack && !tr.fled && raw > 0.3) {
-        // The driver jumps out and runs for it
-        tr.fled = true;
-        this.walkers.flee(door.x, door.z, p.x, p.z);
-        this.ctx.missions?.emit('carjack');
-      }
       const walkT = Math.min(1, raw / 0.55);
       p.x = THREE.MathUtils.lerp(tr.from.x, door.x, walkT);
       p.z = THREE.MathUtils.lerp(tr.from.z, door.z, walkT);
@@ -1165,6 +1145,8 @@ export default class TownMode {
       p.yaw += dy * 0.25;
       if (raw >= 1) {
         this.transfer = null;
+        // Keep the existing exploration checklist reachable without a fleeing-driver effect.
+        if (tr.fromTraffic) this.ctx.missions?.emit('carjack');
         this.ctx.audio?.sfx('carDoor');
         this.ctx.audio?.sfx('ignition');
         const drive = new Car(tr.v.spec, { x: car.x, z: car.z, yaw: car.yaw });
@@ -1441,7 +1423,8 @@ export default class TownMode {
     let mx = fx * i.forward - fz * i.right;
     let mz = fz * i.forward + fx * i.right;
     const len = Math.hypot(mx, mz);
-    const speed = i.run ? 5.6 : 2.3;
+    // A brisk stroll keeps the authored walking cadence natural; Shift still sprints.
+    const speed = i.run ? 5.6 : 1.7;
     if (len > 0.01) {
       mx /= Math.max(1, len);
       mz /= Math.max(1, len);
@@ -1453,8 +1436,8 @@ export default class TownMode {
     } else p.speed = THREE.MathUtils.lerp(p.speed, 0, 1 - Math.exp(-dt * 10));
     const nx = p.x + Math.sin(p.yaw) * p.speed * dt;
     const nz = p.z + Math.cos(p.yaw) * p.speed * dt;
-    const r0 = this.colliders.resolve(nx, nz, 0.42);
-    const r = this.fleet.resolve(r0.x, r0.z, 0.42);
+    // Vehicles pass through people; buildings and terrain still block walking.
+    const r = this.colliders.resolve(nx, nz, 0.42);
     // No wading into deep water, no stepping off the edge of the table
     const g = this.builder.surfaceAt(r.x, r.z);
     // Too steep to climb: stop at the foot of cliffs (going down is fine)
@@ -1586,7 +1569,7 @@ export default class TownMode {
     }
     if (this.view === 'walk') this.footsteps(this.layout.modern ? 'road' : 'grass');
     this.updateGauges();
-    const obstacles = [this.player];
+    const obstacles = []; // Traffic only brakes for other vehicles.
     if (this.drive) obstacles.push(this.drive.car);
     this.fleet.update(dt, obstacles, { deferFlush: true });
     if (this.pixelActive) {
@@ -1597,9 +1580,8 @@ export default class TownMode {
     this.fleet.updateLod(this.renderCamera, this.view === 'diorama' ? this.orbit.target : null, detail.lod, detail.shadow);
     const cam = this.camera.position;
     const near = (x, z) => Math.hypot(x - cam.x, z - cam.z) < 260 + cam.y;
-    // People jump out of the way of a car coming at them
-    const threat = this.drive && this.drive.car.speed > 5 ? this.drive.car : null;
-    this.walkers.update(dt, near, threat);
+    // Vehicles never startle or displace townsfolk.
+    this.walkers.update(dt, near);
     this.rigged?.update(dt, this.walkers.walkers, this.crowd.people, this.camera.position);
     if (this.avatar) this.player.visible = false;
     this.crowd.pose();
@@ -1788,8 +1770,7 @@ export default class TownMode {
     this.homeGroups?.forEach(disposeHomeGroup);
     this.streetLighting.dispose();
     this.crowd.dispose();
-    if (this.avatar?.npc) disposeNpc(this.avatar);
-    else disposePerson(this.avatar);
+    if (this.avatar) disposeTownPerson(this.avatar);
     this.rigged?.dispose();
     this.fleet.dispose();
     if (this.drive) this.scene.remove(this.drive.obj);

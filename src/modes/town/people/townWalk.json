@@ -1,0 +1,13 @@
+{
+  "source": "Quaternius Universal Animation Library, Walk_Loop (CC0)",
+  "bodies": {
+    "m": {
+      "speed": 1.02,
+      "bytes": 55376
+    },
+    "f": {
+      "speed": 0.93,
+      "bytes": 55796
+    }
+  }
+}

@@ -5,7 +5,8 @@ import { createToonMaterial, wrapGeometry } from '../../../render/assetLibrary.j
 import { createNoise3D } from '../../../math/simplex3d.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../../../world/planetTypes.js';
 import { GroundPaint, detailNoiseTexture } from './groundPaint.js';
-import { roadMarkings } from './roadMarkings.js';
+import { createCozyPathAtlas, patchCozyPathGround, cozyBridgeMaterial } from '../../../render/cozyPaths.js';
+import { PATH_PALETTE } from '../../../art/palette.js';
 import { GroundCover } from './groundCover.js';
 import { FarTrees } from './farTrees.js';
 import { applySurfaceCoordinates } from '../../../render/townSurfaces.js';
@@ -266,6 +267,7 @@ export class TownBuilder {
     this.paint = new GroundPaint(layout, { res: detail >= 1 ? 4096 : detail >= 0.75 ? 2048 : 1536, farRes: detail >= 0.75 ? 1024 : 512 });
     this.disposables.push(this.paint);
     this.detailTex = this.track(detailNoiseTexture());
+    this.pathAtlas = this.track(createCozyPathAtlas());
     this.material = this.track(this.makePropMaterial());
     this.terrainMaterial = this.track(this.makeTerrainMaterial());
     this.buildTerrain();
@@ -274,7 +276,6 @@ export class TownBuilder {
     this.buildFieldRows();
     this.buildInstances();
     this.buildBridges();
-    if(layout.modern){const markings=roadMarkings(layout,(x,z)=>this.surfaceAt(x,z),WATER_Y+.1);this.group.add(markings.mesh);this.disposables.push(markings);}
     // Grass, flowers, ferns, reeds and pebbles: one instanced sprite mesh
     const cover = detail >= 1 ? 72000 : detail >= 0.75 ? 36000 : 14000;
     this.groundCover = new GroundCover(this, { count: cover });
@@ -356,9 +357,7 @@ export class TownBuilder {
   /** Bridges where streets cross rivers: a deck and parapets, stone or concrete. */
   buildBridges() {
     const geos = [];
-    const colors = this.L.modern
-      ? { deck: 0xb9b6ad, road: 0x4a4b50, walk: 0xcfcbc1, side: 0xd5d2ca, beam: 0xa9a59b, pier: 0x9d9a92, rail: 0x6f757d }
-      : { deck: 0x9c8f7a, road: 0x8d806a, walk: 0xa99b80, side: 0xb5a88f, beam: 0x94876f, pier: 0x8a7e6a, rail: 0x7d705a, cope: 0xc4b89d };
+    const colors = { ...PATH_PALETTE.bridge, road: PATH_PALETTE.stone.fill, cope: PATH_PALETTE.border };
     const box = (cx, cy, cz, sx, sy, sz, yaw, hex) => {
       const g = new THREE.BoxGeometry(sx, sy, sz);
       g.rotateY(-yaw);
@@ -483,7 +482,8 @@ export class TownBuilder {
     const merged = this.track(mergeGeometries(flat));
     flat.forEach((g) => !geos.includes(g) && g.dispose());
     geos.forEach((g) => g.dispose());
-    const mesh = new THREE.Mesh(merged, this.material);
+    const mesh = new THREE.Mesh(merged, this.track(cozyBridgeMaterial(createToonMaterial, this.pathAtlas)));
+    mesh.name = 'cozy-path-bridges';
     mesh.castShadow = this.quality.settings.shadows;
     mesh.userData.townShadow = true;
     mesh.receiveShadow = this.quality.settings.shadows;
@@ -673,8 +673,12 @@ export class TownBuilder {
         );
     };
       const previousCompile = m.onBeforeCompile;
-      m.onBeforeCompile = shader => { previousCompile(shader); patchTownPaintedGround(shader, this.paintedSurfaces, { near, far, modern: this.L.modern }); };
-    m.customProgramCacheKey = () => `town-ground-surfaces-${!!this.surfaceAtlas}-${!!this.paintedSurfaces}`;
+      m.onBeforeCompile = shader => {
+        previousCompile(shader);
+        patchTownPaintedGround(shader, this.paintedSurfaces, { near, far, modern: this.L.modern });
+        patchCozyPathGround(shader, this.pathAtlas, near, far);
+      };
+    m.customProgramCacheKey = () => `town-ground-cozy-paths-${!!this.surfaceAtlas}-${!!this.paintedSurfaces}`;
     return m;
   }
 

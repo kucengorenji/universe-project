@@ -18,6 +18,7 @@ export default {
   "play.flight.state": "Terbang",
   "play.flight.keys": "W/S dorong, A/D belok, R/F naik turun, Shift boost, seret untuk melihat sekeliling.",
   "play.flight.stop": "Selesai terbang",
+  "play.flight.land": "Mendarat di kota",
   "play.pov.aria": "Mode POV kendaraan",
   "play.pov.mode.default": "POV darat",
   "play.pov.name.default": "Karavan",

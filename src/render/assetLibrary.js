@@ -67,7 +67,12 @@ function bakeNode(root, { crease = 0, glow: glowNames = null } = {}) {
     const glow = glowNames?.[node.material?.name] ?? EMISSIVE[node.material?.name] ?? 0;
     geo.setAttribute('emissive', new THREE.BufferAttribute(new Float32Array(count).fill(glow), 1));
     // Paint: surfaces the game tints per instance (vehicle bodies, horses)
-    geo.setAttribute('paint', new THREE.BufferAttribute(new Float32Array(count).fill(node.material?.name === 'M_paint' ? 1 : 0), 1));
+    const materialName = node.material?.name || '';
+    geo.setAttribute('paint', new THREE.BufferAttribute(new Float32Array(count).fill(materialName === 'M_paint' || /^M_horse_\d+$/.test(materialName) ? 1 : 0), 1));
+    if (/^vh_horse_LOD/.test(root.name)) {
+      const part = Number(materialName.match(/^M_horse_(\d+)/)?.[1] || 0);
+      geo.setAttribute('horsePart', new THREE.BufferAttribute(new Float32Array(count).fill(part), 1));
+    }
     // Roof: 1 = tiles, 2 = the darker ridge/eave tone. The town paints them from its palette (b.roof).
     const roofName = node.material?.name || '';
     geo.setAttribute('roof', new THREE.BufferAttribute(new Float32Array(count).fill(/^M_roof_/.test(roofName) ? (/_dark$/.test(roofName) ? 2 : 1) : 0), 1));
@@ -115,7 +120,7 @@ async function loadPack(url, options) {
     for (const child of holder.children) {
       const m = /_LOD(\d)/.exec(child.name);
       if (!m) continue;
-      const geo = bakeNode(child, options);
+      const geo = bakeNode(child, holder.userData.smoothCrease ? { ...options, crease: holder.userData.smoothCrease } : options);
       if (!geo) continue;
       // Refreshed town models keep the original parcel measurements in the
       // pack. Visual mesh changes must not move coordinate-based saved rooms.

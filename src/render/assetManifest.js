@@ -21,6 +21,8 @@ export const ASSET_FILES = {
   soldierPackF: 'models/soldier_v5_f.glb', // skirmish soldiers, the women's body (same pieces and clips)
   soldierAtlasF: 'textures/soldier_v5_f_cloth.png', // the women's cloth atlas
   soldierHeadF: 'textures/soldier_v5_f_head.png', // the women's head atlas
+  townWalk: 'models/town_walk_m.glb', // UAL Walk_Loop retargeted to the unchanged skirmish rig
+  townWalkF: 'models/town_walk_f.glb', // same authored walk, fitted to the women's rig
   soldierPortraits: 'textures/soldier_portraits.png', // the nine heroes' painted portraits, 3 x 3 in roster order
   envPack: 'models/skirmish_env.glb', // skirmish environment kit: village houses, trees, hedges, cover (surface ids + baked occlusion)
   envSurfaces: 'textures/skirmish_surfaces.png', // skirmish painted surface tiles, 512² each, stacked (texture array)

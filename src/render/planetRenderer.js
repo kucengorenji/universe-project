@@ -9,6 +9,7 @@ import { ASSETS } from './assetManifest.js';
 import { buildMountainGeometry } from './mountainBuilder.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../world/planetTypes.js';
 import { createSpaceBackdrop } from './spaceBackdrop.js';
+import { cozyRouteMaterial } from './cozyPaths.js';
 import { t } from '../i18n/index.js';
 
 // Cartoon (Civ VI-like) terrain palette (lives with the planet types, shared with the space baker)
@@ -290,8 +291,8 @@ export class PlanetRenderer {
     this.camTween = null;
     this.onFocusChange = null;
     // Screen area covered by UI (focus card): left side on desktop, bottom sheet on phones
-    this.inset = { left: 0, bottom: 0 };
-    this.insetTarget = { left: 0, bottom: 0 };
+    this.inset = { left: 0, bottom: 0, right: 0, top: 0 };
+    this.insetTarget = { left: 0, bottom: 0, right: 0, top: 0 };
 
     this.autoRotate = false;
     this.animTime = 0;
@@ -930,7 +931,7 @@ export class PlanetRenderer {
       this.buildSettlements(mapData, props);
       this.buildFarms(mapData, props);
       this.flushProps(props);
-      this.buildMovers(mapData);
+      if (this.options.decorativeMovers !== false) this.buildMovers(mapData);
       this.applyRouteVisibility();
       if (this.focus) this.setHighlight(this.focus.spec, this.highlightTiles(this.focus.spec));
       if (povWas) this.enterPov(this.moversOf(povWas.mode)[Math.max(0, povWas.index)] || null);
@@ -1631,8 +1632,8 @@ export class PlanetRenderer {
         this.corridor.add(p.clone().normalize(), (s * 0.08) / this.radius, { kind: 'road', tan, style });
       });
     }
-    this.addMerged(roads.fantasy, createToonMaterial({ color: 0xc49a5c, polygonOffset: true, polygonOffsetFactor: -3 }), this.groundRouteGroup);
-    this.addMerged(roads.modern, createToonMaterial({ color: 0x5d6066, polygonOffset: true, polygonOffsetFactor: -3 }), this.groundRouteGroup);
+    this.addMerged(roads.fantasy, cozyRouteMaterial(createToonMaterial, false, s), this.groundRouteGroup);
+    this.addMerged(roads.modern, cozyRouteMaterial(createToonMaterial, true, s), this.groundRouteGroup);
 
     const laneMat = new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 }, uDash: { value: 1 / (s * 0.45) }, uColor: { value: new THREE.Color(0xffffff) } },
@@ -2699,6 +2700,12 @@ export class PlanetRenderer {
     this.pressAt = null;
     if (this.driving) return;
     if (!press || Math.hypot(e.clientX - press.x, e.clientY - press.y) > 5) return;
+    if (this.options.onSelect) {
+      this.pendingPointer = e;
+      this.processPointer();
+      this.options.onSelect({ tile: this.hoveredTile, city: this.pickLabel(e.clientX, e.clientY), event: e });
+      return;
+    }
     // Clicking a vehicle rides along with it; otherwise the click inspects a tile
     const mover = this.pickMover(e.clientX, e.clientY);
     if (mover) {
@@ -2876,14 +2883,14 @@ export class PlanetRenderer {
   }
 
   /** Keep the focused spot centred in the part of the screen the UI leaves free. */
-  setInset({ left = 0, bottom = 0 } = {}) {
-    this.insetTarget = { left, bottom };
+  setInset({ left = 0, bottom = 0, right = 0, top = 0 } = {}) {
+    this.insetTarget = { left, bottom, right, top };
   }
 
   applyInset(dt) {
     const k = 1 - Math.exp(-dt * 6);
     let changed = false;
-    for (const side of ['left', 'bottom']) {
+    for (const side of ['left', 'bottom', 'right', 'top']) {
       const diff = this.insetTarget[side] - this.inset[side];
       if (diff === 0) continue;
       this.inset[side] = Math.abs(diff) < 0.5 ? this.insetTarget[side] : this.inset[side] + diff * k;
@@ -2892,8 +2899,8 @@ export class PlanetRenderer {
     if (!changed) return;
     const w = this.container.clientWidth || window.innerWidth;
     const h = this.container.clientHeight || window.innerHeight;
-    if (this.inset.left < 0.5 && this.inset.bottom < 0.5) this.camera.clearViewOffset();
-    else this.camera.setViewOffset(w, h, -this.inset.left / 2, this.inset.bottom / 2, w, h);
+    if (Object.values(this.inset).every(value => value < 0.5)) this.camera.clearViewOffset();
+    else this.camera.setViewOffset(w, h, (this.inset.right - this.inset.left) / 2, (this.inset.bottom - this.inset.top) / 2, w, h);
   }
 
   setControlsUp(up) {

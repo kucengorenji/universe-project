@@ -1,0 +1,45 @@
+{
+  "errors": [],
+  "tiers": [
+    {
+      "preset": "high",
+      "tier": "high",
+      "npcs": 12,
+      "crowdInScene": false,
+      "lastError": null
+    },
+    {
+      "preset": "medium",
+      "tier": "medium",
+      "npcs": 8,
+      "crowdInScene": false,
+      "lastError": null
+    },
+    {
+      "preset": "low",
+      "tier": "low",
+      "npcs": 4,
+      "crowdInScene": false,
+      "lastError": null
+    }
+  ],
+  "touch": {
+    "coarse": true,
+    "joystickVisible": true,
+    "joystick": {
+      "x": 28,
+      "y": 650,
+      "width": 124,
+      "height": 124
+    },
+    "map": {
+      "x": 242,
+      "y": 630,
+      "width": 132,
+      "height": 132
+    },
+    "cornerAlpha": 255,
+    "overflow": false,
+    "lastError": null
+  }
+}

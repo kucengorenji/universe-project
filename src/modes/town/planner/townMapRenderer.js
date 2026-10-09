@@ -1,4 +1,5 @@
 import { MAP_COLORS as C } from '../../../art/palette.js';
+import { PATH_PALETTE, streetPathStyle } from '../../../art/palette.js';
 import { townSurfaceHeight } from '../../../world/townRelief.js';
 import { mulberry32 } from '../../../math/random.js';
 
@@ -240,7 +241,7 @@ function drawRoads(ctx, L, X, Y, k) {
   const streets = L.streets || [];
   const width = (s) => Math.max(1.2, s.w * k);
   // Outline pass, then the surface, so junctions merge into one network
-  ctx.strokeStyle = C.roadEdge;
+  ctx.strokeStyle = PATH_PALETTE.border;
   for (const s of streets) {
     pathOf(ctx, s.pts, X, Y);
     ctx.lineWidth = width(s) + Math.max(1.2, k * 1.1);
@@ -249,27 +250,25 @@ function drawRoads(ctx, L, X, Y, k) {
   if (L.plaza?.poly) {
     pathOf(ctx, L.plaza.poly, X, Y);
     ctx.closePath();
-    ctx.fillStyle = C.plaza;
+    ctx.fillStyle = PATH_PALETTE.brick.fill;
     ctx.fill();
     ctx.lineWidth = Math.max(1, k * 0.6);
     ctx.stroke();
   } else if (L.plaza?.r) {
     ctx.beginPath();
     ctx.arc(X(L.plaza.x), Y(L.plaza.z), L.plaza.r * k, 0, Math.PI * 2);
-    ctx.fillStyle = C.plaza;
+    ctx.fillStyle = PATH_PALETTE.brick.fill;
     ctx.fill();
     ctx.lineWidth = Math.max(1, k * 0.6);
     ctx.stroke();
   }
   for (const s of streets) {
     pathOf(ctx, s.pts, X, Y);
-    ctx.strokeStyle = L.modern && s.kind !== 'road' ? '#8f9094' : C.road;
+    ctx.strokeStyle = streetPathStyle(s.kind).fill;
     ctx.lineWidth = width(s);
     ctx.stroke();
   }
-  // Footpaths: thin and dotted, as in the reference maps
-  ctx.strokeStyle = C.path;
-  ctx.setLineDash([k * 1.6, k * 1.4]);
+  ctx.strokeStyle = PATH_PALETTE.earth.fill;
   for (const p of L.paths || []) {
     if (!p.pts) continue;
     pathOf(ctx, p.pts, X, Y);

@@ -81,6 +81,22 @@ export const ROOM_SCHEMES = {
 /** Backdrop behind the cut-away room, and the plinth the room stands on. */
 export const ROOM_STAGE = { day: '#7c7f8c', night: '#1b2130', plinth: '#8a5533', plinthTop: '#f2b766' };
 
+/** Cozy outdoor paths: RGB mask channels select earth, stone and terracotta. */
+export const PATH_PALETTE = {
+  earth: { fill: '#dfbd83', edge: '#c7a56c', mask: '#f00' },
+  stone: { fill: '#d9d2b9', edge: '#bbb59c', mask: '#0f0' },
+  brick: { fill: '#dca68a', edge: '#c68d73', mask: '#00f' },
+  border: '#e9dcc0',
+  verge: '#b7bd84',
+  bridge: { deck: '#c8b99a', walk: '#ede0c4', side: '#ddcfb0', beam: '#b3a388', pier: '#bbab8e', rail: '#a79a7e' }
+};
+
+export function streetPathStyle(kind) {
+  if (kind === 'road' || kind === 'lane') return PATH_PALETTE.earth;
+  if (kind === 'residential' || kind === 'ring') return PATH_PALETTE.brick;
+  return PATH_PALETTE.stone;
+}
+
 /** Tokens for the 2D town plan (Watabou-style map) and future 3D migrations. */
 export const MAP_COLORS = {
   meadow: '#a9c48b',

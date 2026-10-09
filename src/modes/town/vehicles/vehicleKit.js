@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { wrapGeometry } from '../../../render/assetLibrary.js';
+import { attachHorseMotion, horseGait } from './horseMotion.js';
 
 // Vehicles assembled from a kit (town.glb): a body without wheels, wheels
 // (unit radius and width, axis X), accessories and horses. A recipe says
@@ -8,21 +9,21 @@ import { wrapGeometry } from '../../../render/assetLibrary.js';
 // Positions are in the vehicle's frame: x right, y up, z forward (metres).
 
 const PAINTS = {
-  car: ['#b8433a', '#3f6fb0', '#eeeeea', '#2c2d31', '#b9bec4', '#e0b030', '#3f7d4d', '#dd7a33', '#2f8a8a', '#6e2a30', '#d5c9a8', '#27406a'],
-  van: ['#eeeeea', '#b9bec4', '#3f6fb0', '#b8433a', '#e0b030'],
-  truck: ['#b8433a', '#3f6fb0', '#b9bec4', '#2c2d31', '#3f7d4d', '#8a6a44'],
-  sport: ['#d8342a', '#f0c020', '#ef7a1f', '#2a5fd0', '#1f1f22', '#7ac23a'],
-  bus: ['#e0b030', '#eeeeea', '#3f7d4d', '#b8433a', '#3f6fb0'],
-  accent: ['#b8433a', '#027b49', '#3f6fb0', '#fbb833', '#2c2d31'],
-  horse: ['#7b5236', '#4e3524', '#a0764e', '#2e2622', '#c9b59a', '#8a5a3a'],
-  cargo: ['#d6c9a4', '#8a9a6a', '#6f7f8f', '#b8a07a']
+  car: ['#d98f80', '#91b7ce', '#f2dfbb', '#a0c6ad', '#b5a6cc', '#e6c779', '#83b7b6', '#e5b091'],
+  van: ['#f2dfbb', '#a0c6ad', '#91b7ce', '#d98f80', '#e6c779'],
+  truck: ['#d98f80', '#91b7ce', '#a0c6ad', '#c8ad8e'],
+  sport: ['#e39782', '#ecd084', '#e6b087', '#96b9d2', '#b5a6cc', '#a8c98b'],
+  bus: ['#e6c779', '#f2dfbb', '#a0c6ad', '#d98f80', '#91b7ce'],
+  accent: ['#d98f80', '#a0c6ad', '#91b7ce', '#e6c779', '#b5a6cc'],
+  horse: ['#c79c78', '#9b745a', '#dbc19b', '#aa8872', '#efd7b4', '#bc8c65'],
+  cargo: ['#e1cbaa', '#b3c397', '#a0b8c4', '#d1b58f']
 };
 
 const ROOF = (y, z, len = 1.2, wide = 1.3) => ({ pick: ['va_roof_rack', 'va_roof_rack', 'va_roof_box'], p: 0.16, at: [0, y, z], scale: [wide, 1, len] });
 
 export const RECIPES = {
   sedan: { body: 'vb_sedan', physics: 'sedan', paints: 'car', wheel: 'vw_road', r: 0.34, w: 0.28, x: 0.805, axles: [1.4, -1.35], acc: [ROOF(1.54, -0.32)] },
-  taxi: { body: 'vb_sedan', physics: 'sedan', paints: ['#e8b320'], wheel: 'vw_road', r: 0.34, w: 0.28, x: 0.805, axles: [1.4, -1.35], acc: [{ pick: ['va_taxi_sign'], p: 1, at: [0, 1.54, -0.3] }] },
+  taxi: { body: 'vb_sedan', physics: 'sedan', paints: ['#e8c477'], wheel: 'vw_road', r: 0.34, w: 0.28, x: 0.805, axles: [1.4, -1.35], acc: [{ pick: ['va_taxi_sign'], p: 1, at: [0, 1.54, -0.3] }] },
   police: {
     body: 'vb_sedan', physics: 'police', paints: ['#f2f2ee'], wheel: 'vw_road', r: 0.34, w: 0.28, x: 0.805, axles: [1.4, -1.35],
     acc: [{ pick: ['va_lightbar'], p: 1, at: [0, 1.54, -0.3] }, { pick: ['va_police_stripes'], p: 1, at: [0, 0.47, -0.1] }]
@@ -151,15 +152,18 @@ export function buildKitModel(kit, pack, material) {
   const white = new THREE.Color(1, 1, 1);
   add(kit.body, new THREE.Matrix4(), kit.paint);
   for (const p of kit.parts) add(p.asset, new THREE.Matrix4().compose(_kv.set(p.x, p.y, p.z), _kq.identity(), new THREE.Vector3(p.sx, p.sy, p.sz)), p.paint);
-  for (const h of kit.horses) add('vh_horse', new THREE.Matrix4().makeTranslation(h.x, 0, h.z), h.paint);
+  const horses = kit.horses.map(h => {
+    const mesh = add('vh_horse', new THREE.Matrix4().makeTranslation(h.x, 0, h.z), h.paint);
+    return mesh && { h, mesh, motion: attachHorseMotion(mesh) };
+  }).filter(Boolean);
   const wheels = kit.wheels.map((w) => ({ w, mesh: add(w.kind, new THREE.Matrix4(), white) })).filter((x) => x.mesh);
-  const model = { group, wheels };
+  const model = { group, wheels, horses, distance: 0 };
   poseKitWheels(model, 0, 0);
   return model;
 }
 
 /** Roll the wheels by the distance travelled and steer the front ones (angle > 0 turns left). */
-export function poseKitWheels(model, dist, steer) {
+export function poseKitWheels(model, dist, steer, speed = dist === model.distance ? 0 : 2) {
   for (const { w, mesh } of model.wheels) {
     _km.makeTranslation(w.x, w.y, w.z);
     if (w.steer) _km.multiply(_kr.makeRotationY(steer));
@@ -168,4 +172,9 @@ export function poseKitWheels(model, dist, steer) {
     mesh.setMatrixAt(0, _km);
     mesh.instanceMatrix.needsUpdate = true;
   }
+  for (const { h, motion } of model.horses || []) {
+    motion.array.set(horseGait(dist, speed, h.x));
+    motion.needsUpdate = true;
+  }
+  model.distance = dist;
 }

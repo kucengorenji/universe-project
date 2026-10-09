@@ -1,0 +1,7 @@
+{
+  // Second Cloudflare Pages project: dashboard.aethergate.cloud. Static only;
+  // it calls the API on aethergate.cloud (CORS: DASHBOARD_ORIGINS in ../wrangler.jsonc).
+  "name": "aethergate-dashboard",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-10-08"
+}

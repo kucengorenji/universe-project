@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.js';
+import { MISSIONS } from './missionList.js';
 
 // Mission log: checklists that span every mode. Modes report what the player
 // did (emit('sit'), emit('drive_m', 12.5), emit('land', 3)); a checklist item
@@ -7,46 +8,7 @@ import { t } from '../i18n/index.js';
 
 const KEY = 'planet_globe_missions';
 
-export const MISSIONS = [
-  {
-    id: 'home',
-    items: [
-      { id: 'enter', event: 'enter_house' },
-      { id: 'sit', event: 'sit' },
-      { id: 'light', event: 'light_on' },
-      { id: 'fridge', event: 'open' },
-      { id: 'apple', event: 'pickup_apple' },
-      { id: 'sleep', event: 'sleep' }
-    ]
-  },
-  {
-    id: 'cozy',
-    items: [
-      { id: 'tv', event: 'media_on' },
-      { id: 'fire', event: 'fire_on' },
-      { id: 'book', event: 'pickup_book' },
-      { id: 'place', event: 'place_item' }
-    ]
-  },
-  {
-    id: 'explorer',
-    items: [
-      { id: 'land3', event: 'land', distinct: 3 },
-      { id: 'town', event: 'visit_town' },
-      { id: 'drive', event: 'drive_m', total: 1000 },
-      { id: 'jack', event: 'carjack' }
-    ]
-  },
-  {
-    id: 'pilot',
-    items: [
-      { id: 'boost', event: 'boost' },
-      { id: 'hangar', event: 'hangar' },
-      { id: 'orbit3', event: 'orbit', distinct: 3 },
-      { id: 'rover', event: 'rover_m', total: 1000 }
-    ]
-  }
-];
+export { MISSIONS };
 
 export class Missions {
   constructor(root, audio = null) {

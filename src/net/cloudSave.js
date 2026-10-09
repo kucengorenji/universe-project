@@ -1,5 +1,5 @@
 import { STORAGE_KEY as MAP_KEY } from '../map/mapGenerator.js';
-import { MISSIONS } from '../core/missions.js';
+import { MISSIONS } from '../core/missionList.js';
 import { STATE_DB, journalKey } from '../world/stateStore.js';
 import { KEYS, readJson, writeJson } from './config.js';
 import { apiFetch } from './api.js';

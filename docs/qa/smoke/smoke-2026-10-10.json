@@ -1,0 +1,201 @@
+{
+  "timestamp": "2026-10-09T19:45:27.356Z",
+  "date": "2026-10-10",
+  "timezone": "WIB (UTC+7)",
+  "url": "http://localhost:5233",
+  "browser": "154.0.8037.98",
+  "routes": {
+    "play_space": {
+      "route": "#/space",
+      "pass": true,
+      "mode": "space",
+      "view": null,
+      "lastError": null,
+      "geometries": 17,
+      "textures": 20,
+      "calls": 1,
+      "triangles": 1
+    },
+    "play_planet": {
+      "route": "#/planet/2",
+      "pass": true,
+      "mode": "planet",
+      "view": null,
+      "lastError": null,
+      "geometries": 67,
+      "textures": 21,
+      "calls": 1,
+      "triangles": 1
+    },
+    "play_town_diorama": {
+      "route": "#/town/2/0 (diorama)",
+      "pass": true,
+      "mode": "town",
+      "view": "diorama",
+      "lastError": null,
+      "geometries": 278,
+      "textures": 48,
+      "calls": 1,
+      "triangles": 1
+    },
+    "play_town_walk": {
+      "route": "#/town/2/0 (walk)",
+      "pass": true,
+      "mode": "town",
+      "view": "walk",
+      "lastError": null,
+      "geometries": 331,
+      "textures": 49,
+      "calls": 1,
+      "triangles": 1
+    },
+    "play_interior": {
+      "route": "town interior",
+      "pass": true,
+      "mode": "town",
+      "view": "interior",
+      "lastError": null,
+      "geometries": 446,
+      "textures": 51,
+      "calls": 1,
+      "triangles": 1
+    },
+    "play_home": {
+      "route": "#/home/2/0/town%3A16445609%3Abuilding%3Af_castle%3A6552%3A7940%3A-24615",
+      "pass": true,
+      "mode": "home",
+      "view": "walk",
+      "lastError": null,
+      "geometries": 258,
+      "textures": 31,
+      "calls": 1,
+      "triangles": 1
+    },
+    "play_trade": {
+      "route": "#/trade/2",
+      "pass": true,
+      "mode": "trade",
+      "view": "custom",
+      "lastError": null,
+      "geometries": 245,
+      "textures": 34,
+      "calls": 1,
+      "triangles": 1
+    },
+    "farm_valley": {
+      "route": "farm.html",
+      "mode": "valley",
+      "pass": true,
+      "lastError": null,
+      "geometries": 48,
+      "textures": 28,
+      "calls": 93,
+      "triangles": 440436
+    },
+    "skirmish_battle": {
+      "route": "skirmish.html",
+      "mode": "skirmish",
+      "view": "command",
+      "pass": true,
+      "phase": "command",
+      "lastError": null,
+      "geometries": 0,
+      "textures": 0,
+      "calls": 0,
+      "triangles": 0
+    }
+  },
+  "cycleStress": {
+    "cyclesCount": 6,
+    "initial": {
+      "mode": "space",
+      "view": null,
+      "lastError": null,
+      "geometries": 246,
+      "textures": 38,
+      "calls": 1,
+      "triangles": 1
+    },
+    "cycles": [
+      {
+        "cycle": 1,
+        "mode": "space",
+        "view": null,
+        "lastError": null,
+        "geometries": 247,
+        "textures": 38,
+        "calls": 1,
+        "triangles": 1
+      },
+      {
+        "cycle": 2,
+        "mode": "space",
+        "view": null,
+        "lastError": null,
+        "geometries": 247,
+        "textures": 38,
+        "calls": 1,
+        "triangles": 1
+      },
+      {
+        "cycle": 3,
+        "mode": "space",
+        "view": null,
+        "lastError": null,
+        "geometries": 247,
+        "textures": 38,
+        "calls": 1,
+        "triangles": 1
+      },
+      {
+        "cycle": 4,
+        "mode": "space",
+        "view": null,
+        "lastError": null,
+        "geometries": 248,
+        "textures": 38,
+        "calls": 1,
+        "triangles": 1
+      },
+      {
+        "cycle": 5,
+        "mode": "space",
+        "view": null,
+        "lastError": null,
+        "geometries": 250,
+        "textures": 39,
+        "calls": 1,
+        "triangles": 1
+      },
+      {
+        "cycle": 6,
+        "mode": "space",
+        "view": null,
+        "lastError": null,
+        "geometries": 252,
+        "textures": 39,
+        "calls": 1,
+        "triangles": 1
+      }
+    ],
+    "growth": {
+      "geometryDelta": 5,
+      "textureDelta": 1,
+      "callsDelta": 0
+    },
+    "stable": false
+  },
+  "errors": [],
+  "limitations": [
+    "Pointer lock fisik: Diuji via event sintetis dan direct mode API; pointer lock browser di headless tidak mengunci hardware mouse.",
+    "Audio decode / hardware playback: Driver WebAudio di lingkungan headless berjalan dalam mode software buffer tanpa speaker fisik.",
+    "Multiplayer / WebSocket sync: Backend live-ops dan turnamen online belum terintegrasi di mode explorasi lokal.",
+    "Spesifikasi mobile GPU low-end: Pengujian dilakukan pada Chrome desktop (Apple Metal backend); profil memori iGPU <8GB perlu QA terpisah."
+  ],
+  "summary": {
+    "totalRoutesTested": 9,
+    "passedRoutes": 9,
+    "failedRoutes": 0,
+    "totalErrors": 0
+  }
+}

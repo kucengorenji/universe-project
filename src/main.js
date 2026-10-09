@@ -10,6 +10,8 @@ import { Tips } from './core/tips.js';
 import { PauseMenu } from './core/pauseMenu.js';
 import './core/firebase.js';
 import { applyDom } from './i18n/index.js';
+import { TradeSession } from './trade/session.js';
+import './modes/trade/ui/trade.css';
 
 // App shell: one canvas, one world, one mode on screen at a time.
 //   #/space          star system (ship, orbits, landing)
@@ -20,12 +22,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   const engine = new Engine(document.getElementById('canvas-container'));
   const audio = (engine.audio = new Audio());
   const world = new World();
+  const trade = (engine.trade = new TradeSession(world));
   const overlay = new Overlay(document.getElementById('cover'));
   const missions = new Missions(document.getElementById('missionUi'), audio);
   const tips = new Tips(document.getElementById('tipUi'));
-  new PauseMenu(document.getElementById('pauseUi'), { engine, audio, missions, tips, world });
-  const director = new Director({ engine, world, overlay, missions, audio, tips });
+  engine.pauseMenu = new PauseMenu(document.getElementById('pauseUi'), { engine, audio, missions, tips, world });
+  const director = new Director({ engine, world, overlay, missions, audio, tips, trade });
   await world.ready;
   director.start();
-  if (import.meta.env.DEV) window.__globe = { engine, world, director, missions, audio, three: await import('three') }; // dev-only debug/visual QA handle
+  if (import.meta.env.DEV) window.__globe = { engine, world, director, missions, audio, trade, three: await import('three') }; // dev-only debug/visual QA handle
 });

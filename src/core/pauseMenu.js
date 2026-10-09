@@ -13,6 +13,7 @@ const POST = ['auto', 'on', 'off'];
 const CONTROLS = [
   ['space', [['W / S', 'thrust'], ['A / D', 'turn'], ['Q / E', 'strafe'], ['R / F', 'climb'], ['Shift', 'boost'], ['L', 'land'], ['key.click', 'autopilot'], ['M', 'map']]],
   ['planet', [['key.drag', 'rotate'], ['key.clickCity', 'viewCity'], ['key.fly', 'fly'], ['O', 'orbit']]],
+  ['trade', [['B', 'build'], ['R', 'route'], ['key.space', 'pause'], ['1 / 2 / 4', 'speed'], ['F', 'focus'], ['Esc', 'cancel']]],
   ['town', [['1 2 3', 'views'], ['WASD', 'move'], ['Shift', 'run'], ['key.space', 'jump'], ['E', 'enter'], ['Esc', 'exit']]],
   ['general', [['J', 'missions'], ['P', 'pause'], ['B', 'mute']]]
 ];
@@ -82,7 +83,7 @@ export class PauseMenu {
     window.addEventListener(
       'keydown',
       (e) => {
-        if (e.target.matches?.('input[type="text"], textarea')) return;
+        if (!this.open && e.target.closest?.('input, textarea, select, dialog')) return;
         const k = e.key.toLowerCase();
         if (this.open) {
           if (k === 'escape' || k === 'p') this.close();
@@ -93,7 +94,7 @@ export class PauseMenu {
         if (k === 'p' && !e.repeat) {
           e.stopImmediatePropagation();
           this.show();
-        } else if (k === 'b' && !e.repeat) this.audio.toggleMute();
+        } else if (k === 'b' && !e.repeat && document.body.dataset.mode !== 'trade') this.audio.toggleMute();
       },
       { capture: true }
     );
@@ -108,7 +109,11 @@ export class PauseMenu {
     const act = b.dataset.act;
     if (b.dataset.locale) {
       // Text is built once at load, so a language change restarts the page (the route stays in the hash)
-      if (setLocale(b.dataset.locale)) location.reload();
+      if (setLocale(b.dataset.locale)) {
+        const url = new URL(location.href);
+        if (url.searchParams.has('lang')) { url.searchParams.set('lang', b.dataset.locale); history.replaceState(null, '', url); }
+        location.reload();
+      }
       return;
     }
     const seg = b.closest('[data-seg]')?.dataset.seg;
@@ -164,6 +169,7 @@ export class PauseMenu {
     delete this.el.reset.dataset.armed;
     this.el.tips.textContent = t('pause.tips.show');
     this.engine.paused = true;
+    this.engine.trade?.setAppPaused(true);
     this.world?.clock.pause(true);
     this.audio.setPaused(true);
     this.sync();
@@ -175,6 +181,7 @@ export class PauseMenu {
     this.open = false;
     this.el.overlay.hidden = true;
     this.engine.paused = false;
+    this.engine.trade?.setAppPaused(false);
     this.world?.clock.pause(false);
     this.audio.setPaused(false);
   }

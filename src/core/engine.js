@@ -78,6 +78,7 @@ export class Engine {
   }
 
   frame(ts) {
+    this.trade?.pump();
     // 120 Hz displays would draw every scene twice as often for little gain: at most 60 frames a second
     if (ts + 0.5 < this.nextDraw) return;
     // Carry the scheduled deadline forward: resetting it to each drawn frame

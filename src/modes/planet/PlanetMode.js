@@ -8,6 +8,7 @@ import { PlanetFlight } from '../../render/planetFlight.js';
 
 import { BIOMES } from '../../map/mapGenerator.js';
 import { t } from '../../i18n/index.js';
+import { mountTradeEntry } from '../../trade/entry.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
 // created once and kept: leaving the planet suspends them (every per-planet
@@ -59,9 +60,18 @@ export default class PlanetMode {
     this.flightHud = document.getElementById('planetFlightHud');
     this.flightSpeed = this.flightHud.querySelector('[data-speed]');
     this.flightState = this.flightHud.querySelector('[data-state]');
+    this.flightLand = this.flightHud.querySelector('[data-act="land"]');
     this.onOrbit = () => ctx.director.go({ mode: 'space', planet: this.index });
     this.onFly = () => (this.flight ? this.stopFlight() : this.startFlight());
-    this.onHudClick = (e) => e.target.closest('[data-act="stop"]') && this.flight && this.stopFlight();
+    this.onHudClick = (e) => {
+      if (!this.flight) return;
+      const action = e.target.closest('[data-act]')?.dataset.act;
+      if (action === 'stop') this.stopFlight();
+      if (action === 'land') {
+        const city = this.flight.cityBelow();
+        if (city !== null) this.landCity(city);
+      }
+    };
     this.keys = new Set();
     this.onKey = (e) => {
       if (e.target.matches?.('input, textarea')) return;
@@ -112,6 +122,7 @@ export default class PlanetMode {
     document.getElementById('planetType').textContent = typeOf(this.planet.type).label;
     this.ui.hidden = false;
     document.body.dataset.mode = 'planet';
+    this.unmountTradeEntry = mountTradeEntry(this);
     this.orbitBtn.addEventListener('click', this.onOrbit);
     this.flyBtn.addEventListener('click', this.onFly);
     this.flightHud.addEventListener('click', this.onHudClick);
@@ -208,6 +219,8 @@ export default class PlanetMode {
     this.state.menu.updateUI(this.map);
     document.getElementById('planetName').textContent = this.planet.name;
     director.replaceRoute({ mode: 'planet', planet: home, city: null });
+    this.unmountTradeEntry?.();
+    this.unmountTradeEntry = mountTradeEntry(this);
   }
 
   update(dt, t, ts) {
@@ -247,6 +260,8 @@ export default class PlanetMode {
     if (kmh !== this.hudSpeed) this.flightSpeed.textContent = this.hudSpeed = kmh;
     const ci = f.cityBelow();
     const city = ci === null ? null : this.map.cities[ci];
+    this.flightLand.hidden = !city;
+    if (city) this.flightLand.title = `${t('planet.card.land')} · ${city.name}`;
     let state = t('planet.flight.hover');
     if (city) state = t('planet.flight.over', { city: city.name });
     else if (f.alt > f.ceiling * 0.9) state = t('planet.flight.ceiling');
@@ -423,6 +438,7 @@ export default class PlanetMode {
   }
 
   exit() {
+    this.unmountTradeEntry?.();
     if (this.flight) this.endFlight();
     this.orbitBtn.removeEventListener('click', this.onOrbit);
     this.flyBtn.removeEventListener('click', this.onFly);

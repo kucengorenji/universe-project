@@ -18,6 +18,9 @@ export function parseRoute(hash) {
     case 'planet':
       if (num(parts[1]) === null) return null;
       return { mode: 'planet', planet: num(parts[1]), city: parts[2] === 'city' ? num(parts[3]) : null };
+    case 'trade':
+      return parts.length === 3 && num(parts[1]) !== null && /^[a-zA-Z0-9:_-]{1,100}$/.test(parts[2])
+        ? { mode: 'trade', planet: num(parts[1]), campaign: parts[2] } : null;
     case 'town':
       if (num(parts[1]) === null || num(parts[2]) === null) return null;
       return { mode: 'town', planet: num(parts[1]), city: num(parts[2]) };
@@ -33,6 +36,10 @@ export function parseRoute(hash) {
 }
 
 export function formatRoute(r) {
+  if (r.mode === 'trade') {
+    if (!/^[a-zA-Z0-9:_-]{1,100}$/.test(r.campaign)) throw new TypeError('Invalid campaign identity');
+    return `#/trade/${r.planet}/${r.campaign}`;
+  }
   if (r.mode === 'space') return r.planet !== null && r.planet !== undefined ? `#/space/${r.planet}` : '#/space';
   if (r.mode === 'planet') return r.city !== null && r.city !== undefined ? `#/planet/${r.planet}/city/${r.city}` : `#/planet/${r.planet}`;
   if (r.mode === 'home') {

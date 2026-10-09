@@ -7,6 +7,7 @@ import { t } from '../i18n/index.js';
 const MODES = {
   space: () => import('../modes/space/SpaceMode.js'),
   planet: () => import('../modes/planet/PlanetMode.js'),
+  trade: () => import('../modes/trade/TradeMode.js'),
   town: () => import('../modes/town/TownMode.js'),
   home: () => import('../modes/home/HomeMode.js')
 };
@@ -24,7 +25,7 @@ const MODES = {
  *   exit()                      dispose everything
  */
 export class Director {
-  constructor({ engine, world, overlay, missions, audio, tips }) {
+  constructor({ engine, world, overlay, missions, audio, tips, trade }) {
     this.engine = engine;
     this.world = world;
     this.overlay = overlay;
@@ -33,7 +34,7 @@ export class Director {
     this.route = null;
     this.busy = false;
     this.pending = null;
-    this.ctx = { engine, world, overlay, missions, audio, tips, director: this };
+    this.ctx = { engine, world, overlay, missions, audio, tips, trade, director: this };
     window.addEventListener('hashchange', () => {
       if (this.ignoreHash === location.hash) {
         this.ignoreHash = null;
@@ -46,6 +47,7 @@ export class Director {
 
   async start() {
     await this.world.ready;
+    await this.ctx?.trade?.ready;
     const r = this.sanitize(parseRoute(location.hash)) || { mode: 'space', planet: this.world.homeIndex };
     const locationState = this.world.state.get('playerLocation');
     await this.go(r, { replace: true });
@@ -58,6 +60,10 @@ export class Director {
     const p = r.planet !== null && r.planet !== undefined ? this.world.planet(r.planet) : null;
     if (r.mode === 'space') return { mode: 'space', planet: p ? r.planet : null };
     if (!p || !p.landable) return { mode: 'space', planet: p ? r.planet : null };
+    if (r.mode === 'trade') {
+      const c = this.ctx.trade?.items.find(c => c.id === r.campaign && c.planet === r.planet && c.worldId === this.world.worldId);
+      if (!c) return { mode: 'planet', planet: r.planet, city: null };
+    }
     if (r.mode === 'town' || r.mode === 'home') {
       const map = this.world.mapFor(r.planet);
       if (!map?.cities?.[r.city]) return { mode: 'planet', planet: r.planet, city: null };
@@ -96,7 +102,13 @@ export class Director {
       this.route = route;
     } catch (err) {
       console.error('Mode switch failed:', err);
-      this.overlay.setProgress(null, t('loading.failed'));
+      if (route.mode === 'trade') {
+        this.ctx.trade.loadError = err.message;
+        const fallback = { mode: 'planet', planet: route.planet, city: null };
+        await this.switchTo(fallback); this.route = fallback; this.setHash(fallback, true);
+        const { openTradeSetup } = await import('../trade/entry.js');
+        await openTradeSetup(this.ctx, route.planet, this.world.mapFor(route.planet), { forceDialog: true });
+      } else this.overlay.setProgress(null, t('loading.failed'));
     } finally {
       this.busy = false;
       if (this.pending) {
@@ -138,8 +150,8 @@ export class Director {
     }
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
     const mode = new mod.default(this.ctx, route, handoff?.arrival ?? null);
-    engine.post.configure(route.mode, { boost: 0 });
-    this.ctx.audio?.setScene(route.mode === 'town' ? null : route.mode); // the town sets its own bed (it knows the era)
+    engine.post.configure(route.mode === 'trade' ? 'planet' : route.mode, { boost: 0 });
+    this.ctx.audio?.setScene(route.mode === 'town' ? null : route.mode === 'trade' ? 'planet' : route.mode); // the town sets its own bed (it knows the era)
     await mode.enter();
     this.mode = mode;
     engine.setMode(mode);
@@ -152,7 +164,9 @@ export class Director {
     mode.arrived?.(); // arrival camera moves while the cover fades
     await revealing;
     // First visit: the title card, then the tip for this place
-    this.ctx.tips?.intro();
-    this.ctx.tips?.show(route.mode);
+    if (route.mode !== 'trade') {
+      this.ctx.tips?.intro();
+      this.ctx.tips?.show(route.mode);
+    }
   }
 }

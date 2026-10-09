@@ -24,8 +24,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   const world = new World();
   const trade = (engine.trade = new TradeSession(world));
   const overlay = new Overlay(document.getElementById('cover'));
-  const missions = new Missions(document.getElementById('missionUi'), audio);
-  const tips = new Tips(document.getElementById('tipUi'));
+  const missions = new Missions(document.getElementById('missionUi'), audio, world);
+  const tips = new Tips(document.getElementById('tipUi'), world);
   engine.pauseMenu = new PauseMenu(document.getElementById('pauseUi'), { engine, audio, missions, tips, world });
   const director = new Director({ engine, world, overlay, missions, audio, tips, trade });
   await world.ready;

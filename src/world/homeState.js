@@ -2,6 +2,8 @@ import { buildingId, seedFor } from './identity.js';
 import { describeBuilding, localToTown, townToLocal } from './buildingBlueprint.js';
 import { pavementWidth } from '../modes/town/scale.js';
 import { riverDistance } from '../modes/town/layout/townPlan.js';
+import { HOME_SCHEMA_VERSION } from './versions.js';
+import { isSupportedHomeRecord, quarantineRecord } from './savedRecords.js';
 import { t } from '../i18n/index.js';
 
 const copy = value => structuredClone(value);
@@ -14,24 +16,34 @@ const obstaclePoints = obstacle => Array.isArray(obstacle) ? obstacle : obstacle
 
 export function homeKey(planet, city, homeId) { return `home:${planet}:${city}:${homeId}`; }
 
+// A record this build cannot read is held in quarantine (world/savedRecords.js) and
+// treated as absent; its key is only replaced when the player claims the lot again.
+function readHome(state, key) {
+  const record = state.get(key);
+  if (record === null || record === undefined) return null;
+  if (isSupportedHomeRecord(record)) return record;
+  quarantineRecord(state, key, record, record?.schemaVersion === undefined ? 'malformed' : 'unknown-schema');
+  return null;
+}
+
 export function loadHomeRecord(state, { planet, city, home }) {
-  return state.get(homeKey(planet, city, home));
+  return readHome(state, homeKey(planet, city, home));
 }
 
 export function listTownHomes(state, planet, city) {
   const prefix = `home:${planet}:${city}:`;
-  return [...state.records.keys()].filter(key => key.startsWith(prefix)).map(key => state.get(key)).filter(Boolean);
+  return [...state.records.keys()].filter(key => key.startsWith(prefix)).map(key => readHome(state, key)).filter(Boolean);
 }
 
 export function ensureHomeRecord(state, { planet, city, townSeed, layoutSeed, layoutVersion, building, plot, obstacles = [] }) {
   const id = building.id || buildingId(layoutSeed, building);
   const key = homeKey(planet, city, id);
-  const existing = state.get(key);
+  const existing = readHome(state, key);
   if (existing) return existing;
   const spec = describeBuilding({ ...building, id });
   const w = spec?.footprint.w || building.w || 8, d = spec?.footprint.d || building.d || 8;
   const record = {
-    schemaVersion: 1, id, planet, city, townSeed, layoutSeed, layoutVersion,
+    schemaVersion: HOME_SCHEMA_VERSION, id, planet, city, townSeed, layoutSeed, layoutVersion,
     buildingId: id, seed: seedFor(layoutSeed, id, 'home'),
     origin: { x: building.x, z: building.z, yaw: building.yaw },
     source: { asset: building.asset, w, d, floors: Math.min(3, spec?.floors || 2) },

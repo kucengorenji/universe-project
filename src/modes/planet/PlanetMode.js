@@ -9,6 +9,7 @@ import { PlanetFlight } from '../../render/planetFlight.js';
 import { BIOMES } from '../../map/mapGenerator.js';
 import { t } from '../../i18n/index.js';
 import { mountTradeEntry } from '../../trade/entry.js';
+import { worldImpact } from '../../world/worldImpact.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
 // created once and kept: leaving the planet suspends them (every per-planet
@@ -24,6 +25,8 @@ function getShared(ctx) {
   state.menu = new MenuController({
     renderer: pr,
     mapData: ctx.world.homeMap,
+    storageOk: () => !ctx.world.mapSaveError,
+    regenImpact: () => worldImpact({ world: ctx.world, trade: ctx.trade, missions: ctx.missions }),
     onRegenerate: (seed, options) => state.mode?.regenerate(seed, options),
     onResetCamera: () => pr.resetCamera(),
     onToggleAutoRotate: (active) => (pr.autoRotate = active),

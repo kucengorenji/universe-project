@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.js';
+import { ScopedProgress } from '../world/scopedProgress.js';
 
 // Onboarding: a title card on the very first visit, then one short tip the
 // first time the player reaches each place or way of moving. Seen tips are
@@ -17,9 +18,13 @@ const TIPS = {
 };
 
 export class Tips {
-  constructor(root) {
+  /** Seen tips are remembered per world, like the mission log. */
+  constructor(root, world = null) {
     this.root = root;
+    this.world = world;
+    this.store = new ScopedProgress(KEY);
     this.seen = new Set(this.load());
+    world?.subscribe?.((event) => { if (event === 'world') this.switchWorld(); });
     root.innerHTML = `
       <aside class="tip" hidden role="status" aria-live="polite">
         <div class="tip__keys" data-keys></div>
@@ -64,20 +69,22 @@ export class Tips {
     );
   }
 
+  get worldId() { return this.world?.worldId ?? 'default'; }
+
+  get saveError() { return this.store.error; }
+
   load() {
-    try {
-      return JSON.parse(localStorage.getItem(KEY) || '[]');
-    } catch {
-      return [];
-    }
+    const saved = this.store.load(this.worldId, []);
+    return Array.isArray(saved) ? saved : [];
   }
 
   save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify([...this.seen]));
-    } catch {
-      /* optional */
-    }
+    return this.store.save(this.worldId, [...this.seen]);
+  }
+
+  switchWorld() {
+    this.seen = new Set(this.load());
+    this.current = null;
   }
 
   /** Title card on the first visit; resolves when the player starts. */

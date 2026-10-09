@@ -2,6 +2,8 @@ import { BIOMES, STORAGE_KEY } from '../map/mapGenerator.js';
 import { PLANET_TYPES } from '../world/planetTypes.js';
 import { cityNavigation } from './cityNavigation.js';
 import { t, formatNumber, hasKey } from '../i18n/index.js';
+import { TwoStepConfirm } from './twoStep.js';
+import { flashToast } from './toast.js';
 
 const MODE_ORDER = ['land', 'sea', 'air'];
 const TILE_COUNTS = { 2: 162, 3: 642, 4: 2562, 5: 10242 };
@@ -11,8 +13,11 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt
 const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
 
 export class MenuController {
-  constructor({ onRegenerate, onResetCamera, onToggleAutoRotate, onLandCity, onFocus, mapData, renderer }) {
+  constructor({ onRegenerate, onResetCamera, onToggleAutoRotate, onLandCity, onFocus, mapData, renderer, storageOk = () => true, regenImpact = null }) {
     this.onRegenerate = onRegenerate;
+    this.storageOk = storageOk; // false while the home map could not be written to browser storage
+    this.regenImpact = regenImpact; // what replacing the world leaves behind, for the confirmation
+    this.confirm = new TwoStepConfirm({ ms: 8000 });
     this.onLandCity = onLandCity;
     this.onFocus = onFocus;
     this.onResetCamera = onResetCamera;
@@ -87,9 +92,9 @@ export class MenuController {
     el.regenerateBtn.addEventListener('click', () => {
       const typed = parseInt(el.seedInput.value.trim(), 10);
       const seed = this.seedManuallyEdited && !isNaN(typed) ? typed : this.randomSeed();
-      this.regenerate(seed);
+      this.confirmRegenerate(el.regenerateBtn, () => this.regenerate(seed));
     });
-    el.quickRegenerateBtn.addEventListener('click', () => this.regenerate(this.randomSeed()));
+    el.quickRegenerateBtn.addEventListener('click', () => this.confirmRegenerate(el.quickRegenerateBtn, () => this.regenerate(this.randomSeed())));
 
     el.randomSeedBtn.addEventListener('click', () => {
       el.seedInput.value = this.randomSeed();
@@ -206,6 +211,25 @@ export class MenuController {
     return Math.floor(Math.random() * 900000 + 100000);
   }
 
+  /** Replacing the world is not undone by a click: the first press says what it leaves behind, a second one confirms. */
+  confirmRegenerate(button, run) {
+    const confirmed = this.confirm.press(button.id);
+    clearTimeout(this.armTimer);
+    this.restoreRegenerateLabel();
+    if (confirmed) return run();
+    this.armedButton = [button, button.textContent];
+    button.textContent = t('planet.regen.confirmBtn');
+    this.flashStatus(t('planet.regen.confirm', this.regenImpact?.() ?? { seed: this.mapData?.seed ?? '', rooms: 0, homes: 0, campaigns: 0, missions: 0 }), 8000);
+    this.armTimer = setTimeout(() => { this.confirm.cancel(); this.restoreRegenerateLabel(); }, 8000);
+  }
+
+  restoreRegenerateLabel() {
+    if (!this.armedButton) return;
+    const [button, label] = this.armedButton;
+    button.textContent = label;
+    this.armedButton = null;
+  }
+
   regenerate(seed) {
     const el = this.el;
     el.seedInput.value = seed;
@@ -221,6 +245,7 @@ export class MenuController {
       setTimeout(() => {
         try {
           this.onRegenerate(seed, options);
+          if (!this.storageOk()) this.flashStatus(t('pause.save.mapError'), 7000);
         } catch (err) {
           console.error(err);
           this.flashStatus(t('planet.build.failed'));
@@ -294,7 +319,9 @@ export class MenuController {
     el.wallSeed.textContent = mapData.seed;
     el.playerTilesBadge.textContent = t('planet.tiles', { count: mapData.player?.claimedTileCount ?? 0 });
     el.systemTilesBadge.textContent = t('planet.tiles', { count: mapData.system?.claimedTileCount ?? 0 });
-    el.storageStatusBadge.textContent = t('planet.storage.saved');
+    const saved = this.storageOk();
+    el.storageStatusBadge.textContent = t(saved ? 'planet.storage.saved' : 'planet.storage.none');
+    el.storageStatusBadge.title = saved ? '' : t('pause.save.mapError');
 
     const cities = mapData.cities || [];
     const farms = mapData.farms || [];
@@ -470,18 +497,8 @@ export class MenuController {
     tip.classList.add('visible');
   }
 
-  flashStatus(message) {
-    let toast = document.getElementById('toastNotice');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'toastNotice';
-      toast.className = 'toast';
-      toast.setAttribute('role', 'status');
-      document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.classList.add('show');
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+  flashStatus(message, ms = 2800) {
+    flashToast(message, ms);
   }
+
 }

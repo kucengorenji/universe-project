@@ -38,6 +38,8 @@ export default {
   'planet.storage.denied': 'The browser denied storage access, the map could not be deleted.',
   'planet.ride.none': 'No vehicle serves this city yet',
   'planet.building': 'Building world',
+  'planet.regen.confirm': 'Replace this world? Staying saved under seed {seed}: {rooms} rooms, {homes} homes, {campaigns} Trade campaigns, {missions} mission steps. Rebuild that seed to get them back. Press the button again to confirm.',
+  'planet.regen.confirmBtn': 'Press again to confirm',
   'planet.build.failed': 'Failed to build the world. Try another seed.',
   'planet.pov.mode': '{mode} POV, {style} city',
   'planet.mode.air': 'Air',

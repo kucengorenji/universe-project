@@ -1,4 +1,5 @@
 import { t, getLocale, setLocale, LOCALES } from '../i18n/index.js';
+import { saveStatus } from '../world/saveStatus.js';
 
 // Pause menu: stops the world and gathers the settings in one place.
 //   Graphics   quality preset, post effects
@@ -99,6 +100,9 @@ export class PauseMenu {
       { capture: true }
     );
     this.audio.listeners.add(() => this.sync());
+    // A write can fail at any moment, long after the last click: look again now and then
+    this.world?.subscribe?.(() => this.syncAlert());
+    setInterval(() => this.syncAlert(), 2000);
     this.engine.quality.listeners.add(() => this.sync());
     this.sync();
   }
@@ -141,11 +145,21 @@ export class PauseMenu {
     this.sync();
   }
 
+  status() {
+    return saveStatus({ world: this.world, missions: this.missions, tips: this.tips });
+  }
+
+  /** The menu button shows a red dot while saving is failing, so the player need not open the menu to find out. */
+  syncAlert() {
+    const failing = this.status().level === 'error';
+    this.el.toggle.classList.toggle('has-alert', failing);
+    this.el.toggle.title = failing ? t('pause.save.alert') : t('pause.openTitle');
+  }
+
   sync() {
-    const state = this.world?.state;
-    this.root.querySelector('[data-save-status]').textContent = state?.error
-      ? t('pause.save.error')
-      : t('pause.save.ok');
+    const status = this.status();
+    this.root.querySelector('[data-save-status]').textContent = t(status.key, status.params);
+    this.syncAlert();
     const q = this.engine.quality.preset;
     const p = this.engine.post.pref;
     this.root.querySelectorAll('[data-seg="quality"] [data-val]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.val === q)));

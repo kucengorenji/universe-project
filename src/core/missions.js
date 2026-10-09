@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.js';
+import { ScopedProgress } from '../world/scopedProgress.js';
 
 // Mission log: checklists that span every mode. Modes report what the player
 // did (emit('sit'), emit('drive_m', 12.5), emit('land', 3)); a checklist item
@@ -49,31 +50,43 @@ export const MISSIONS = [
 ];
 
 export class Missions {
-  constructor(root, audio = null) {
+  /** Progress belongs to the world: it is stored per `world.worldId` and follows the world when it is replaced. */
+  constructor(root, audio = null, world = null) {
     this.root = root;
     this.sound = audio;
+    this.world = world;
+    this.store = new ScopedProgress(KEY);
     this.state = this.load();
     this.listeners = new Set();
     this.buildUi();
+    world?.subscribe?.((event) => { if (event === 'world') this.switchWorld(); });
   }
 
+  get worldId() { return this.world?.worldId ?? 'default'; }
+
+  /** True while the last write to browser storage failed (the pause menu says so). */
+  get saveError() { return this.store.error; }
+
   load() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
-      // Drop checklist items that no longer exist
-      const known = new Set(MISSIONS.flatMap((m) => m.items.map((it) => `${m.id}.${it.id}`)));
-      return Object.fromEntries(Object.entries(saved).filter(([k]) => known.has(k)));
-    } catch {
-      return {};
-    }
+    const saved = this.store.load(this.worldId, {});
+    // Drop checklist items that no longer exist
+    const known = new Set(MISSIONS.flatMap((m) => m.items.map((it) => `${m.id}.${it.id}`)));
+    return Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {}).filter(([k]) => known.has(k)));
   }
 
   save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(this.state));
-    } catch {
-      /* optional */
-    }
+    return this.store.save(this.worldId, this.state);
+  }
+
+  /** A new world replaced the old one: show its own checklist. */
+  switchWorld() {
+    this.state = this.load();
+    this.render();
+  }
+
+  /** Number of finished checklist items in the current world. */
+  doneCount() {
+    return Object.values(this.state).filter((st) => st?.done).length;
   }
 
   itemState(m, it) {

@@ -2051,6 +2051,18 @@ body.is-flying .asset-status {
   background: var(--color-the-red);
 }
 
+.pause-toggle.has-alert::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-concrete);
+  border-radius: 50%;
+  background: var(--color-the-red);
+}
+
 .pause {
   position: fixed;
   inset: 0;

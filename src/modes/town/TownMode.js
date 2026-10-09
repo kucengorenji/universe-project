@@ -21,9 +21,12 @@ import { Car, ChaseCamera } from './vehicles/vehicle.js';
 import { SkirmishPeople, loadTownPeople, makeTownPerson, animateTownPerson, disposeTownPerson } from './people/skirmishPeople.js';
 import { Interior, ENTERABLE, FURNITURE_PACK } from './interior/interior.js';
 import { buildingId, seedFor } from '../../world/identity.js';
-import { describeBuilding, buildingApproach, localToTown, townToLocal } from '../../world/buildingBlueprint.js';
+import { localToTown, townToLocal } from '../../world/buildingBlueprint.js';
 import { ensureHomeRecord, listTownHomes, townHomeContext } from '../../world/homeState.js';
-import { footprintBounds, pointInPolygon, openingTransform } from '../home/homeBlueprint.js';
+import { TransitionGuard, openInteriorSession, storeInterior } from './interior/interiorSession.js';
+import { findTownDoors, nearestDoor as closestDoor } from './interior/doors.js';
+import { optionalPack } from './render/packLoading.js';
+import { footprintBounds, pointInPolygon } from '../home/homeBlueprint.js';
 import { createHomeGroup, disposeHomeGroup, loadHomePack } from '../home/homeBuilder.js';
 import { loadTexturedPack } from '../../render/texturedAssetLibrary.js';
 import { loadTownSurfaces } from '../../render/townSurfaces.js';
@@ -51,7 +54,7 @@ const loadAtlas = () =>
   }).catch(() => null));
 const packs = () =>
   Promise.all([
-    loadAssetPack(ASSETS.planetPack),
+    optionalPack(loadAssetPack(ASSETS.planetPack), 'planet pack'), // only a last-resort fallback for town models
     loadAssetPack(ASSETS.planetPackLod0).catch(() => null),
     loadAssetPack(ASSETS.townPack).catch(() => null),
     loadTownPeople(),
@@ -84,6 +87,7 @@ export default class TownMode {
     this.keys = new Set();
     this.tween = null;
     this.detailBudget = new TownDetailBudget();
+    this.transitions = new TransitionGuard();
     this.townStyle = readTownStyle();
   }
 
@@ -650,149 +654,136 @@ export default class TownMode {
 
   // ------------------------------------------------------------------ buildings
 
-  /** Front doors of every building you can go into. */
+  /** Front doors of every building you can go into (interior/doors.js). */
   findDoors() {
-    const doors = [];
-    this.layout.buildings.forEach((b, i) => {
-      if (!ENTERABLE[b.asset] || !this.furniture) return;
-      b.id ||= buildingId(this.layout.seed, b);
-      if (b.homeRecord) {
-        const bp = b.homeRecord.applied, bounds = b.homeBounds;
-        const ground = bp.floors.find(floor => floor.index === 0) || bp.floors[0];
-        const door = bp.openings.find(opening => opening.kind === 'door' && opening.exterior !== false && opening.floorId === ground.id);
-        const socket = door ? openingTransform(bp, door) : { x: bounds.center.x, z: bounds.maxZ };
-        const normal = socket.normal ? { x: -socket.normal.x, z: -socket.normal.z } : { x: 0, z: 1 };
-        let reach = .95;
-        if (normal.x > .01) reach = Math.max(reach, (bounds.maxX - socket.x) / normal.x + .95);
-        if (normal.x < -.01) reach = Math.max(reach, (bounds.minX - socket.x) / normal.x + .95);
-        if (normal.z > .01) reach = Math.max(reach, (bounds.maxZ - socket.z) / normal.z + .95);
-        if (normal.z < -.01) reach = Math.max(reach, (bounds.minZ - socket.z) / normal.z + .95);
-        const approach = localToTown(b.homeRecord.origin, { x: socket.x + normal.x * reach, z: socket.z + normal.z * reach });
-        const direction = localToTown({ x: 0, z: 0, yaw: b.yaw }, normal);
-        b.blueprint = { id: b.id, floors: bp.floors.length, portalId: `${b.id}:entrance`, footprint: { w: bounds.width, d: bounds.depth } };
-        doors.push({ b, i, ...approach, outYaw: Math.atan2(direction.x, direction.z) });
-        return;
-      }
-      b.blueprint = describeBuilding(b);
-      const fx = -Math.sin(b.yaw);
-      const fz = Math.cos(b.yaw);
-      const approach = buildingApproach(b,this.footprints[b.asset]);
-      if(approach)doors.push({ b, i, ...approach, outYaw: Math.atan2(fx, fz) });
-    });
-    return doors;
+    return findTownDoors(this.layout, this.footprints, { enterable: ENTERABLE, hasInteriors: !!this.furniture });
   }
 
   nearestDoor(x, z, reach = 2.4) {
-    let best = null;
-    let bestD = reach;
-    for (const d of this.doors) {
-      const dd = Math.hypot(d.x - x, d.z - z);
-      if (dd < bestD) {
-        bestD = dd;
-        best = d;
-      }
-    }
-    return best;
+    return closestDoor(this.doors, x, z, reach);
   }
 
+  /** One fade-and-change at a time (TransitionGuard). A failure is recorded for QA and the cover is lifted. */
+  transition(task) {
+    return this.transitions.run(async (ticket) => {
+      try {
+        return await task(ticket);
+      } catch (error) {
+        console.error(error);
+        this.ctx.engine.lastError = error;
+        if (ticket.alive) {
+          ticket.end();
+          await this.ctx.overlay.reveal({ duration: 300 });
+        }
+      }
+    });
+  }
+
+  get fading() { return this.transitions.busy; }
+
   async enterBuilding(door, { floor = 0 } = {}) {
-    if (this.fading || this.transfer || this.interior) return;
+    if (this.transitions.busy || this.transfer || this.interior) return;
     if (door.b.homeRecord) {
       return this.ctx.director.go({ mode: 'home', planet: this.route.planet, city: this.route.city, home: door.b.homeRecord.id });
     }
-    this.fading = true;
-    this.tween = null;
-    this.orbit.enabled = false;
-    this.hud.setPrompt(null);
-    const overlay = this.ctx.overlay;
-    await overlay.cover('fade', { duration: 280 });
-    this.pixel?.setActive(false);
-    await this.ctx.world.ready;
-    const stateKey = `interior:${this.route.planet}:${door.b.id}`;
-    const saved = this.ctx.world.state.get(stateKey);
-    this.interiorRecord = saved?.schemaVersion === 2 ? saved : { schemaVersion:2,layoutVersion:2,floors:{} };
-    this.interiorArgs = {
-      building: door.b,
-      pack: this.furniture,
-      atlas: this.atlas,
-      character: this.character,
-      modern: this.layout.modern,
-      seed: seedFor(this.layout.seed, door.b.id, 'interior-v1'),
-      layoutVersion: saved?.schemaVersion === 1 ? 1 : 2,
-      night: this.night || 0,
-      shadows: this.ctx.engine.quality.settings.shadows
-    };
-    if(saved?.schemaVersion===1 || !Number.isInteger(floor) || floor<0 || floor>=door.b.blueprint.floors)floor=0;
-    const inside = new Interior({...this.interiorArgs, floor, state:saved?.schemaVersion===1?saved:this.interiorRecord.floors[floor]});
-    this.interior = inside;
-    this.interiorStateKey = stateKey;
-    this.interiorDoor = door;
-    this.outside = { x: this.player.x, z: this.player.z };
-    if (this.avatar) inside.scene.add(this.avatar.root);
-    Object.assign(this.player, { x: inside.spawn.x, z: inside.spawn.z, y: 0, yaw: inside.spawn.yaw, speed: 0, jump: 0, vy: 0 });
-    this.pose = null;
-    this.follow.yaw = inside.spawn.yaw + Math.PI;
-    this.follow.pitch = 0.85;
-    this.follow.dist = 7.5 * Math.max(1, Math.max(inside.W, inside.D * 1.3) / 10); // big rooms pull the camera back
-    this.camera.near = 0.1;
-    this.camera.fov = 48;
-    this.camera.updateProjectionMatrix();
-    this.snapInteriorCamera();
-    this.view = 'interior';
-    this.hud.setView('interior');
-    this.hud.setInteriorFloor(inside.floor,inside.blueprint?.floors||1);
-    this.ctx.engine.post.configure('interior', { boost: 0 });
-    this.ctx.audio?.setScene('interior');
-    for (const it of inside.interactables) {
-      if (it.kind === 'media' && it.on) it.radio ? this.ctx.audio?.radio(true) : this.ctx.audio?.tv(true);
-      if (it.kind === 'fire' && it.on) this.ctx.audio?.fire(true);
-    }
-    this.ctx.tips?.show('interior');
-    this.minimap.show(false);
-    this.ctx.audio?.sfx('door');
-    this.ui.classList.add('is-inside');
-    this.saveInterior();
-    this.saveInteriorLocation();
-    this.fading = false;
-    this.ctx.missions?.emit('enter_house');
-    await overlay.reveal({ duration: 420 });
+    return this.transition(async (ticket) => {
+      this.tween = null;
+      this.orbit.enabled = false;
+      this.hud.setPrompt(null);
+      const overlay = this.ctx.overlay;
+      await overlay.cover('fade', { duration: 280 });
+      if (!ticket.alive) return; // the director took the screen while this fade ran
+      this.pixel?.setActive(false);
+      await this.ctx.world.ready;
+      if (!ticket.alive) return;
+      // A room this build cannot read is quarantined (world/savedRecords.js), never replaced by an empty one
+      const session = openInteriorSession(this.ctx.world.state, this.route.planet, door, floor);
+      this.interiorRecord = session.record;
+      this.interiorArgs = {
+        building: door.b,
+        pack: this.furniture,
+        atlas: this.atlas,
+        character: this.character,
+        modern: this.layout.modern,
+        seed: seedFor(this.layout.seed, door.b.id, 'interior-v1'),
+        layoutVersion: session.legacy ? 1 : 2,
+        night: this.night || 0,
+        shadows: this.ctx.engine.quality.settings.shadows
+      };
+      const inside = new Interior({...this.interiorArgs, floor: session.floor, state: session.snapshot});
+      this.interior = inside;
+      this.interiorStateKey = session.key;
+      this.interiorDoor = door;
+      this.outside = { x: this.player.x, z: this.player.z };
+      if (this.avatar) inside.scene.add(this.avatar.root);
+      Object.assign(this.player, { x: inside.spawn.x, z: inside.spawn.z, y: 0, yaw: inside.spawn.yaw, speed: 0, jump: 0, vy: 0 });
+      this.pose = null;
+      this.follow.yaw = inside.spawn.yaw + Math.PI;
+      this.follow.pitch = 0.85;
+      this.follow.dist = 7.5 * Math.max(1, Math.max(inside.W, inside.D * 1.3) / 10); // big rooms pull the camera back
+      this.camera.near = 0.1;
+      this.camera.fov = 48;
+      this.camera.updateProjectionMatrix();
+      this.snapInteriorCamera();
+      this.view = 'interior';
+      this.hud.setView('interior');
+      this.hud.setInteriorFloor(inside.floor,inside.blueprint?.floors||1);
+      this.ctx.engine.post.configure('interior', { boost: 0 });
+      this.ctx.audio?.setScene('interior');
+      for (const it of inside.interactables) {
+        if (it.kind === 'media' && it.on) it.radio ? this.ctx.audio?.radio(true) : this.ctx.audio?.tv(true);
+        if (it.kind === 'fire' && it.on) this.ctx.audio?.fire(true);
+      }
+      this.ctx.tips?.show('interior');
+      this.minimap.show(false);
+      this.ctx.audio?.sfx('door');
+      this.ui.classList.add('is-inside');
+      this.saveInterior();
+      this.saveInteriorLocation();
+      if (session.quarantined) this.showHomeMessage(tr('save.quarantined'));
+      ticket.end();
+      this.ctx.missions?.emit('enter_house');
+      await overlay.reveal({ duration: 420 });
+    });
   }
 
   async exitBuilding() {
-    if (!this.interior || this.fading) return;
-    this.fading = true;
-    this.hud.setPrompt(null);
-    const overlay = this.ctx.overlay;
-    await overlay.cover('fade', { duration: 280 });
-    const d = this.interiorDoor;
-    this.saveInterior();
-    if (this.avatar) this.scene.add(this.avatar.root);
-    this.interior.dispose();
-    this.interior = null;
-    this.ctx.world.state.set('playerLocation', null);
-    this.pose = null;
-    this.placePlayer(d.x + Math.sin(d.outYaw) * 0.6, d.z + Math.cos(d.outYaw) * 0.6);
-    this.player.yaw = d.outYaw;
-    this.follow.yaw = d.outYaw + Math.PI;
-    this.follow.pitch = 0.32;
-    this.follow.dist = 6.5;
-    this.camera.near = 0.3;
-    this.camera.fov = STREET_FOV;
-    this.camera.updateProjectionMatrix();
-    this.view = 'walk';
-    this.hud.setView('walk');
-    if (this.pixelActive) {
-      this.pixel.setActive(true); this.pixel.setView('walk'); this.follow.yaw = PIXEL_YAW; this.pixel.update(0, true);
-      this.hud.setStyle(this.townStyle, this.pixel.rig.levels.walk);
-    }
-    this.ctx.engine.post.configure('town');
-    this.minimap.show(true);
-    this.ctx.audio?.stopRoom();
-    this.ctx.audio?.setScene('town', { modern: this.layout.modern });
-    this.ctx.audio?.sfx('door');
-    this.ui.classList.remove('is-inside');
-    this.fading = false;
-    await overlay.reveal({ duration: 420 });
+    if (!this.interior || this.transitions.busy) return;
+    return this.transition(async (ticket) => {
+      this.hud.setPrompt(null);
+      const overlay = this.ctx.overlay;
+      await overlay.cover('fade', { duration: 280 });
+      if (!ticket.alive) return; // exit() already saved and disposed the room
+      const d = this.interiorDoor;
+      this.saveInterior();
+      if (this.avatar) this.scene.add(this.avatar.root);
+      this.interior.dispose();
+      this.interior = null;
+      this.ctx.world.state.set('playerLocation', null);
+      this.pose = null;
+      this.placePlayer(d.x + Math.sin(d.outYaw) * 0.6, d.z + Math.cos(d.outYaw) * 0.6);
+      this.player.yaw = d.outYaw;
+      this.follow.yaw = d.outYaw + Math.PI;
+      this.follow.pitch = 0.32;
+      this.follow.dist = 6.5;
+      this.camera.near = 0.3;
+      this.camera.fov = STREET_FOV;
+      this.camera.updateProjectionMatrix();
+      this.view = 'walk';
+      this.hud.setView('walk');
+      if (this.pixelActive) {
+        this.pixel.setActive(true); this.pixel.setView('walk'); this.follow.yaw = PIXEL_YAW; this.pixel.update(0, true);
+        this.hud.setStyle(this.townStyle, this.pixel.rig.levels.walk);
+      }
+      this.ctx.engine.post.configure('town');
+      this.minimap.show(true);
+      this.ctx.audio?.stopRoom();
+      this.ctx.audio?.setScene('town', { modern: this.layout.modern });
+      this.ctx.audio?.sfx('door');
+      this.ui.classList.remove('is-inside');
+      ticket.end();
+      await overlay.reveal({ duration: 420 });
+    });
   }
 
   /** Sit / sleep poses, the bed skipping the night, and everything else the interior does. */
@@ -837,36 +828,41 @@ export default class TownMode {
       p.speed = 0;
       // Lights out, skip to the morning, lights up
       const overlay = this.ctx.overlay;
-      this.fading = true;
-      await overlay.cover('fade', { duration: 900 });
-      this.ctx.world.skipTime(this.secondsToMorning());
-      this.ctx.missions?.emit('sleep');
-      await new Promise((res) => setTimeout(res, 500));
-      this.fading = false;
-      await overlay.reveal({ duration: 1200 });
+      await this.transition(async (ticket) => {
+        await overlay.cover('fade', { duration: 900 });
+        if (!ticket.alive) return;
+        this.ctx.world.skipTime(this.secondsToMorning());
+        this.ctx.missions?.emit('sleep');
+        await new Promise((res) => setTimeout(res, 500));
+        if (!ticket.alive) return;
+        ticket.end();
+        await overlay.reveal({ duration: 1200 });
+      });
     }
   }
 
   async changeInteriorFloor(floor) {
-    if(this.fading || !this.interior?.blueprint || this.interior.holding || !Number.isInteger(floor) || floor<0 || floor>=this.interior.blueprint.floors)return;
-    this.fading=true;
-    await this.ctx.overlay.cover('fade',{duration:180});
-    this.saveInterior();
-    const previous=this.interior;
-    const next=new Interior({...this.interiorArgs,floor,state:this.interiorRecord.floors[floor]});
-    if(this.avatar)next.scene.add(this.avatar.root);
-    previous.dispose();
-    this.interior=next;
-    this.pose=null;
-    Object.assign(this.player,{...next.spawn,y:0,speed:0,jump:0,vy:0});
-    this.snapInteriorCamera();
-    this.ctx.audio?.stopRoom();
-    for(const it of next.interactables)if(it.kind==='media'&&it.on)it.radio?this.ctx.audio?.radio(true):this.ctx.audio?.tv(true);
-    this.hud.setInteriorFloor(floor,next.blueprint.floors);
-    this.saveInterior();
-    this.saveInteriorLocation();
-    this.fading=false;
-    await this.ctx.overlay.reveal({duration:220});
+    if(this.transitions.busy || !this.interior?.blueprint || this.interior.holding || !Number.isInteger(floor) || floor<0 || floor>=this.interior.blueprint.floors)return;
+    return this.transition(async (ticket) => {
+      await this.ctx.overlay.cover('fade',{duration:180});
+      if(!ticket.alive)return;
+      this.saveInterior();
+      const previous=this.interior;
+      const next=new Interior({...this.interiorArgs,floor,state:this.interiorRecord.floors[floor]});
+      if(this.avatar)next.scene.add(this.avatar.root);
+      previous.dispose();
+      this.interior=next;
+      this.pose=null;
+      Object.assign(this.player,{...next.spawn,y:0,speed:0,jump:0,vy:0});
+      this.snapInteriorCamera();
+      this.ctx.audio?.stopRoom();
+      for(const it of next.interactables)if(it.kind==='media'&&it.on)it.radio?this.ctx.audio?.radio(true):this.ctx.audio?.tv(true);
+      this.hud.setInteriorFloor(floor,next.blueprint.floors);
+      this.saveInterior();
+      this.saveInteriorLocation();
+      ticket.end();
+      await this.ctx.overlay.reveal({duration:220});
+    });
   }
 
   snapInteriorCamera() {
@@ -1746,14 +1742,11 @@ export default class TownMode {
 
   saveInterior() {
     if (!this.interior || !this.interiorStateKey) return;
-    if(this.interior.layoutVersion===1)this.ctx.world.state.set(this.interiorStateKey,this.interior.snapshot());
-    else {
-      this.interiorRecord.floors[this.interior.floor]=this.interior.snapshot();
-      this.ctx.world.state.set(this.interiorStateKey,this.interiorRecord);
-    }
+    storeInterior(this.ctx.world.state, { key: this.interiorStateKey, record: this.interiorRecord }, this.interior);
   }
 
   exit() {
+    this.transitions.cancel(); // a fade still running must not touch what is disposed below
     this.closePlanner();
     this.saveInterior();
     this.ctx.world.state.set('playerLocation', null);

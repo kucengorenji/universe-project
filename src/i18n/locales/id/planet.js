@@ -38,6 +38,8 @@ export default {
   'planet.storage.denied': 'Browser menolak akses penyimpanan, peta tidak bisa dihapus.',
   'planet.ride.none': 'Belum ada kendaraan yang melayani kota ini',
   'planet.building': 'Membangun dunia',
+  'planet.regen.confirm': 'Ganti dunia ini? Tetap tersimpan di bawah seed {seed}: {rooms} ruangan, {homes} rumah, {campaigns} kampanye Trade, {missions} langkah misi. Bangun ulang seed itu untuk memulihkannya. Tekan tombol sekali lagi untuk konfirmasi.',
+  'planet.regen.confirmBtn': 'Tekan lagi untuk konfirmasi',
   'planet.build.failed': 'Gagal membangun dunia. Coba seed lain.',
   'planet.pov.mode': 'POV {mode}, kota {style}',
   'planet.mode.air': 'udara',

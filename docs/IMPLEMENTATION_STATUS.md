@@ -1,6 +1,12 @@
 # Globe Universe — status implementasi
 
-Diperbarui 29 September 2026. Ini adalah catatan implementasi aktual untuk [world building](WORLD_BUILDING_ROADMAP.md) dan [aset/art/audio](ASSET_ART_AUDIO_PLAN.md), bukan daftar fitur yang seluruhnya sudah selesai.
+Diperbarui 9 Oktober 2026 untuk Trade Game. Checkpoint September di bawah tetap historis. Ini adalah catatan implementasi aktual untuk [world building](WORLD_BUILDING_ROADMAP.md) dan [aset/art/audio](ASSET_ART_AUDIO_PLAN.md), bukan daftar fitur yang seluruhnya sudah selesai.
+
+## Revisi 9 Oktober — Trade Game
+
+CTA planet membuka campaign ekonomi terpisah. V1 Terran/desktop mencakup enam barang, sembilan fasilitas, karavan/kapal, manifest balik dan reserve, gudang/depot, ekspansi kota, lima milestone, kontrak/event, recovery, background session, save/export/import dan lease multi-tab. HUD ID/EN serta private renderer mempertahankan kota dan terrain eksplorasi. Nilai ekonomi dan batas v1 dijelaskan di [TRADE_GAME_RUNTIME.md](TRADE_GAME_RUNTIME.md); [plan yang disetujui](TRADE_GAME_IMPLEMENTATION_PLAN.md) menjadi acuan desain.
+
+Pengujian repo dan build produksi lolos; jumlah pemeriksaan terbaru dicatat di [Trade Game Runtime](TRADE_GAME_RUNTIME.md). Playthrough deterministik mencapai seluruh milestone, tiga kota stabil, keenam barang dan arus kas positif tanpa grant buatan dalam 1.480 detik simulasi. Runtime Chrome memeriksa alur UI, port/laut, reload, multi-tab dan enam pergantian scene dengan geometry/texture/listener stabil. Hasil mesin terstruktur tersimpan di [QA report](qa/trade-game/report.json). Ini belum deployment atau penilaian fun lewat playtest manusia.
 
 **Checkpoint 26 September: kira-kira 25% dari cakupan gabungan.** Estimasi ini mempertimbangkan deliverable yang sudah terhubung ke game; bukan persentase LOC atau jumlah checkbox. Sistem penduduk, POI, ekonomi dan event masih besar. Validasi visual/performa yang belum dilakukan tidak dihitung sebagai selesai.
 

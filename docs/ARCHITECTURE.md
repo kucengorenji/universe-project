@@ -2,7 +2,7 @@
 
 Peta sistem untuk orang yang baru masuk ke repo ini. Isinya menjelaskan bagaimana game dirangkai, di mana data tinggal, dan aturan yang harus dijaga saat menambah fitur. Status fitur per milestone ada di [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md); daftar file aset ada di [ASSETS.md](ASSETS.md).
 
-Diperbarui 29 September 2026 dari pembacaan source di working tree branch `feat/space-planet-town`, setelah restrukturisasi Fase 1 (lihat §13). Angka baris berasal dari `wc -l` pada tanggal itu.
+Diperbarui 29 September 2026 dari pembacaan source di working tree branch `feat/space-planet-town`, setelah restrukturisasi Fase 1 (lihat §13). Integrasi Trade Game diperbarui 9 Oktober 2026. Angka baris historis berasal dari `wc -l` September.
 
 ## 1. Gambaran besar
 
@@ -22,6 +22,8 @@ src/
   render/            renderer globe, gunung, terbang di planet, backdrop space, loader aset v1/v2, surface atlas, assetManifest (semua URL aset)
   modes/space/       SpaceMode + bodies, ship, traffic, bake tekstur orbit, hud
   modes/planet/      PlanetMode (membungkus planetRenderer + menuController)
+  trade/             catalog, resource/scenario, graph, simulation, session, entry CTA
+  modes/trade/       TradeMode, overlay 3D dan HUD/CSS terisolasi
   modes/town/        TownMode.js, scale.js (konstanta skala), dan subfolder:
     layout/          data murni: townLayout, townPlan, wards, neighbourhoodPlan, vegetation, townGreenery,
                      streetJunctions, streetLightPlan, roofPlan
@@ -38,12 +40,13 @@ src/
 
 ## 2. Boot dan siklus hidup mode
 
-`main.js` membuat `Engine`, `Audio`, `World`, `Overlay`, `Missions`, `Tips`, `PauseMenu`, lalu `Director`. Setelah `world.ready`, `director.start()` membaca hash URL.
+`main.js` membuat `Engine`, `Audio`, `World`, `TradeSession`, `Overlay`, `Missions`, `Tips`, `PauseMenu`, lalu `Director`. Setelah world dan indeks campaign siap, `director.start()` membaca hash URL.
 
 | Route | Mode |
 |---|---|
 | `#/space`, `#/space/<planet>` | `SpaceMode` |
 | `#/planet/<i>`, `#/planet/<i>/city/<c>` | `PlanetMode` |
+| `#/trade/<i>/<campaignId>` | `TradeMode`, namespace campaign terpisah |
 | `#/town/<i>/<c>` | `TownMode` (interior di dalamnya) |
 
 `Director.switchTo(route)` (`src/core/director.js`) menjalankan urutan berikut:
@@ -53,7 +56,9 @@ src/
 3. `exit()` mode lama, lalu `new Mode(ctx, route, arrival)` dan `await enter()` di balik cover.
 4. Satu frame digambar di balik cover, cover dibuka, lalu `arrived()` dipanggil.
 
-Kontrak mode (semua opsional kecuali `update`/`render`): `prepare`, `constructor`, `enter`, `arrived`, `update(dt, t)`, `render()`, `resize(w, h)`, `navigate(route)`, `depart(route)`, `exit()`. `ctx` berisi `{ engine, world, overlay, missions, audio, tips, director }`.
+Kontrak mode (semua opsional kecuali `update`/`render`): `prepare`, `constructor`, `enter`, `arrived`, `update(dt, t)`, `render()`, `resize(w, h)`, `navigate(route)`, `depart(route)`, `exit()`. `ctx` berisi `{ engine, world, overlay, missions, audio, tips, trade, director }`.
+
+Trade memakai renderer WebGL bersama tetapi topologi hex private dan snapshot terrain campaign. `TradeSession` hidup pada app shell, bukan lifecycle scene: timer dan engine mem-pump clock monotonic yang sama, tick 1 detik, paling banyak 120 tick per chunk. Waktu aplikasi terbuka tetap dihitung saat berada di planet/town/space; reload tidak menghitung downtime. Menu pause dan dialog memakai pause/hold terpisah. Store `trade:index` memuat slot, `trade:<id>` menyimpan base sekali dan checkpoint ekonomi berkala. Web Locks (fallback lease localStorage) memberi satu writer. Rincian dan QA ada di [TRADE_GAME_RUNTIME.md](TRADE_GAME_RUNTIME.md).
 
 Mode baru ditambahkan dengan mendaftarkannya di `MODES` dan `LABELS` pada `director.js`, menambah parser di `router.js`, dan mematuhi kontrak di atas. Mode wajib membuang geometry, material, texture, dan listener miliknya pada `exit()`. Harness `tests/browser/living-town.html` punya pemeriksaan lifecycle untuk mendeteksi resource yang bocor.
 

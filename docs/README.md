@@ -24,7 +24,10 @@ npm run build    # build produksi ke dist/
 | [ASSETS.md](ASSETS.md) | Registry aset runtime, sumber, tekstur prosedural, audio | Aktif; perbarui setiap kali aset berubah |
 | [ART_DIRECTION.md](ART_DIRECTION.md) | Diagnosis visual, kontrak tampilan, status migrasi | Aktif; arah disetujui 29 September |
 | [TOWN_GENERATION_PLAN.md](TOWN_GENERATION_PLAN.md) | Planner kota 2D, reroll, kepadatan, usulan generator ala Watabou (TG-1–6) | Aktif |
+| [WEBGAME_RESOURCE_PERFORMANCE_REPORT_2026_10_09.md](WEBGAME_RESOURCE_PERFORMANCE_REPORT_2026_10_09.md) | Opsi teknologi, audit aset dan build, budget resource, serta prioritas untuk komputer lemah | Analisis 9 Oktober 2026; target hardware belum divalidasi |
 | [WORLD_BUILDING_ROADMAP.md](WORLD_BUILDING_ROADMAP.md) | Milestone WB-00–08 | Roadmap aktif |
+| [TRADE_GAME_IMPLEMENTATION_PLAN.md](TRADE_GAME_IMPLEMENTATION_PLAN.md) | Gameplay ekonomi, flow masuk melalui CTA planet, layout desktop, resource procedural, save, dan tahapan TG-0–7 | Implementasi v1 terpasang; hasil runtime di TRADE_GAME_RUNTIME |
+| [TRADE_GAME_RUNTIME.md](TRADE_GAME_RUNTIME.md) | Cara bermain, sistem ekonomi aktual, batas v1 dan bukti QA | Implementasi 9 Oktober 2026 |
 | [ASSET_ART_AUDIO_PLAN.md](ASSET_ART_AUDIO_PLAN.md) | Milestone AA-00–09, budget, pipeline Blender, musik | Roadmap aktif; arah visual §1 mengikuti ART_DIRECTION setelah disetujui |
 | [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Status aktual per milestone dan hasil verifikasi | Sumber kebenaran status |
 | [REVIEW_2026_09_29.md](REVIEW_2026_09_29.md) | Gap rencana, inkonsistensi, dan urutan perapian | Review titik-waktu |

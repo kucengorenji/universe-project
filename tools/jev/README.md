@@ -27,3 +27,26 @@ Setiap baris diberi satu kategori (`bug`, `performa`, `saran`, `pertanyaan`, `sp
 Tag dengan keyakinan di bawah 60% (`REVIEW_BELOW`) ditandai `cek_manual`. Hasilnya ditulis ke
 `tools/jev/example-feedback.tagged.csv`. Ganti CSV-nya dengan feedback asli (kolom `id,pesan`).
 `example-feedback.csv` berisi pesan contoh, bukan feedback pemain sungguhan.
+
+## Hands-on 2: NPC penjaga gerbang yang paham maksud pemain
+
+```sh
+node --env-file=.env tools/jev/npc-intent.mjs
+node --env-file=.env tools/jev/npc-intent.mjs "aku lapar banget" "mau jual ikan"
+```
+
+Pemain menulis bebas, Jev memilih satu tempat di kota (`bakery`, `harbor`, `market`, `smithy`, `inn`,
+`townhall`, atau `none`). Kalimat NPC sudah ditulis di `LINES`, jadi tidak ada LLM yang menulis jawaban.
+Kalau Jev kurang dari 60% yakin, NPC bertanya balik ("Maksudmu ...?") alih-alih mengirim pemain ke tempat yang salah.
+
+## Hands-on 3: satu panggilan, tiga bentuk jawaban
+
+```sh
+node --env-file=.env tools/jev/cek-nama.mjs
+node --env-file=.env tools/jev/cek-nama.mjs "Neo Batavia" "Kota Anjing"
+```
+
+Untuk setiap nama kota, satu request menanyakan tiga hal sekaligus: `kasar` (noul, ya/tidak dengan
+probabilitas), `tema` (choice), dan `kualitas` (score dari 4 level). Nama dengan probabilitas kasar di atas
+70% ditolak. Bentuk jawaban `noul` dan `score` belum dipastikan dari dokumentasi resmi; kalau kolomnya berisi
+JSON mentah, kirim isinya supaya parser-nya bisa disesuaikan.

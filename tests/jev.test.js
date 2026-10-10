@@ -43,3 +43,26 @@ test('triage flags low-confidence tags for review and keeps going when one call 
   assert.equal(out[1].cek_manual, true);
   assert.equal(out[2].error, 'down');
 });
+
+test('askJev sends several typed questions in one call and returns answers by key', async () => {
+  const { askJev } = await import('../tools/jev/callJev.mjs');
+  const { QUESTIONS } = await import('../tools/jev/cek-nama.mjs');
+  let body;
+  const answers = { kasar: { type: 'noul', noul: 0.1 }, tema: { type: 'choice', choice: 'scifi' }, kualitas: { type: 'score', score: 3 } };
+  const fetchImpl = async (url, init) => { body = JSON.parse(init.body); return { ok: true, json: async () => ({ answers }) }; };
+  assert.deepEqual(await askJev({ state: 'Nama kota: Neo', questions: QUESTIONS, apiKey: 'k', fetchImpl }), answers);
+  assert.deepEqual(Object.keys(body.questions), ['kasar', 'tema', 'kualitas']);
+  const missing = async () => ({ ok: true, json: async () => ({ answers: { kasar: answers.kasar } }) });
+  await assert.rejects(askJev({ state: 's', questions: QUESTIONS, apiKey: 'k', fetchImpl: missing }), /Unexpected Jev response/);
+});
+
+test('NPC asks again when Jev is unsure, and name check blocks only likely-rude names', async () => {
+  const { reply, LINES, ASK_BELOW } = await import('../tools/jev/npc-intent.mjs');
+  const { verdict, BLOCK_ABOVE } = await import('../tools/jev/cek-nama.mjs');
+  assert.equal(reply({ choice: 'bakery', confidence: 0.9 }), LINES.bakery);
+  assert.match(reply({ choice: 'bakery', confidence: ASK_BELOW - 0.1 }), /^Maksudmu bakery\?/);
+  assert.equal(reply({ choice: 'none', confidence: 0.2 }), LINES.none);
+  assert.match(verdict({ kasar: { noul: BLOCK_ABOVE + 0.1 } }), /TOLAK/);
+  assert.equal(verdict({ kasar: { noul: 0.05 } }), 'boleh tampil');
+  assert.match(verdict({ kasar: { type: 'noul' } }), /periksa manual/);
+});

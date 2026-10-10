@@ -1,6 +1,7 @@
 import { chooseStarterHome, findStarterDoor } from '../../world/starterHome.js';
 import { TownWaypoint } from './ui/waypoint.js';
 import { t } from '../../i18n/index.js';
+import { registerProof } from '../../core/proofMetrics.js';
 
 // What the town does for the First Journey: settles which house is the starter house
 // (once per world), tells the journey how far the door is, shows the marker while it is
@@ -33,6 +34,7 @@ export class TownJourney {
     if (this.door) {
       this.waypoint = makeWaypoint({ scene, parent: ui, groundAt, reducedMotion });
       this.waypoint.setTarget(this.door);
+      this.unregister = registerProof('beacon', () => ({ ...this.waypoint.metrics(), active: this.active, door: { ...this.door } }));
     }
   }
 
@@ -43,7 +45,7 @@ export class TownJourney {
   }
 
   /** Every frame outside a building. `pos` is the player, or the car being driven. */
-  update(time, { pos, view, camera }) {
+  update(time, { pos, view, camera, night = 0 }) {
     if (view !== this.lastView) {
       this.lastView = view;
       this.journey.setView({ view });
@@ -51,6 +53,7 @@ export class TownJourney {
     if (!this.door) return;
     if (pos) this.journey.near(Math.hypot(pos.x - this.door.x, pos.z - this.door.z)); // the diorama has no one standing anywhere
     const active = this.active;
+    this.waypoint?.setNight(night);
     this.waypoint?.update(time, { camera, active });
     this.minimap?.setPin(active ? this.door : null);
   }
@@ -74,6 +77,7 @@ export class TownJourney {
   }
 
   dispose() {
+    this.unregister?.();
     this.waypoint?.dispose();
     this.minimap?.setPin(null);
   }

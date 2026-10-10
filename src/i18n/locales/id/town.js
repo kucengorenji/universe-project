@@ -87,6 +87,8 @@ export default {
   'interior.item.it_cup': 'cangkir',
   'interior.item.it_candle': 'lilin',
   'interior.item.other': 'barang',
+  'actor.damar.name': 'Damar',
+  'actor.damar.greet': 'Halo! Selamat datang di kota ini.',
   'interior.light.on': 'Nyalakan lampu',
   'interior.light.off': 'Matikan lampu',
   'interior.open.cabinet': 'Buka lemari',

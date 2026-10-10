@@ -6,7 +6,8 @@ import { buildTemplate, makeNpc, animateNpc } from '../src/modes/town/people/chu
 import { templatesFrom, makeActor, LOOKS } from '../src/valley/world/actors.js';
 
 const parse = (name) => {
-  const bytes = readFileSync(new URL(`../public/models/${name}.glb`, import.meta.url));
+  // npc.glb is no longer shipped (tools/blender/legacy); the shared template is still tested against it
+  const bytes = readFileSync(new URL(name === 'npc' ? '../tools/blender/legacy/npc.glb' : `../public/models/${name}.glb`, import.meta.url));
   return new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length), '');
 };
 

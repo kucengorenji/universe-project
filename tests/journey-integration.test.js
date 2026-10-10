@@ -22,7 +22,7 @@ const LAYOUT = { spawn: { x: 0, z: 0 } };
 
 function fakeWaypoint() {
   const calls = { target: null, updates: [] };
-  return { calls, setTarget: t => { calls.target = t; }, update: (time, o) => calls.updates.push(o.active), dispose: () => { calls.disposed = true; } };
+  return { calls, setTarget: t => { calls.target = t; }, setNight: () => {}, metrics: () => ({}), update: (time, o) => calls.updates.push(o.active), dispose: () => { calls.disposed = true; } };
 }
 function bridge({ planet = 2, city = 1, journey, minimap = { pins: [], setPin(p) { this.pins.push(p); } } } = {}) {
   const m = memory();

@@ -60,7 +60,7 @@ function fakeTown(overrides = {}) {
   };
   const town = {
     transitions: new TransitionGuard(), transition: TownMode.prototype.transition,
-    transfer: null, interior: null, tween: {}, orbit: { enabled: true }, pixel: { setActive: () => log.push('pixel') },
+    furniturePack: { start: async () => ({}) }, transfer: null, interior: null, tween: {}, orbit: { enabled: true }, pixel: { setActive: () => log.push('pixel') },
     hud: { setPrompt: () => log.push('prompt') }, route: { planet: 1, city: 0 },
     showHomeMessage() {}, saveInterior: () => log.push('save'),
     ctx: {
@@ -99,9 +99,9 @@ test('leaving the town while the exit fade runs does not dispose the room twice 
   assert.ok(!log.includes('save') && !log.includes('reveal'));
 });
 
-test('a room that fails to build is reported and the cover is lifted, not left black', async () => {
+test('a room that fails to build, or whose furniture will not load, is reported and the cover is lifted, not left black', async () => {
   const { town, log, covers } = fakeTown();
-  const entering = TownMode.prototype.enterBuilding.call(town, door); // no furniture pack: building the room throws
+  const entering = TownMode.prototype.enterBuilding.call(town, door); // an empty furniture pack: building the room throws
   await tick();
   covers[0].resolve();
   await entering;
@@ -193,7 +193,7 @@ test('an optional pack that fails to load is dropped, not fatal, and the town as
     assert.equal(await optionalPack(Promise.resolve(pack)), pack, 'a pack that loads is passed through');
   } finally { console.warn = warn; }
   assert.equal(warnings.length, 1);
-  const source = readFileSync(new URL('../src/modes/town/TownMode.js', import.meta.url), 'utf8');
-  assert.match(source, /optionalPack\(loadAssetPack\(ASSETS\.planetPack\)/, 'the planet pack is optional in TownMode.packs()');
+  const source = readFileSync(new URL('../src/modes/town/townPacks.js', import.meta.url), 'utf8');
+  assert.match(source, /optionalPack\(loadAssetPack\(ASSETS\.planetPack\)/, 'the planet pack is optional in loadTownPacks()');
   assert.doesNotMatch(source, /^\s*loadAssetPack\(ASSETS\.planetPack\),/m);
 });

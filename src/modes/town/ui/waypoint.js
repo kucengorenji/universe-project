@@ -32,6 +32,7 @@ export class TownWaypoint {
     this.groundAt = groundAt;
     this.reducedMotion = reducedMotion;
     this.target = null;
+    this.night = 0;
     this.wasOn = false;
     this.avoid = [];
     this.avoidAt = -1;
@@ -105,6 +106,17 @@ export class TownWaypoint {
       const r = el.getBoundingClientRect();
       if (r.width && r.height) this.avoid.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
     }
+  }
+
+  /** At night the ground arcs glow in the target gold instead of the pale edge colour (no light, no extra mesh). */
+  setNight(night) {
+    this.night = night;
+    this.material.arcs.color.set(JOURNEY_PALETTE.edge).lerp(this._gold ||= new THREE.Color(JOURNEY_PALETTE.target), night);
+  }
+
+  /** For QA: what is on screen and in what colour. */
+  metrics() {
+    return { visible: this.group.visible, badge: !this.pin.hidden, arrow: !this.arrow.hidden, night: this.night, arcs: `#${this.material.arcs.color.getHexString()}`, pulse: this.material.face.opacity, calls: 3 };
   }
 
   /** `active` is false while the marker should be silent (interior, journey finished, no starter door). */

@@ -87,6 +87,8 @@ export default {
   'interior.item.it_cup': 'the cup',
   'interior.item.it_candle': 'the candle',
   'interior.item.other': 'the item',
+  'actor.damar.name': 'Damar',
+  'actor.damar.greet': 'Hello! Welcome to this town.',
   'interior.light.on': 'Turn on the light',
   'interior.light.off': 'Turn off the light',
   'interior.open.cabinet': 'Open cabinet',

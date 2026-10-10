@@ -141,3 +141,17 @@ export const JOURNEY_PALETTE = Object.freeze({
   success: MAP_COLORS.tree, // check mark after a save
   error: ROOM_SCHEMES.tavern[1].wainscot // error icon (always with words)
 });
+
+/**
+ * Warm night (LIVING_WORLD_BOOK Proof 3). The night stays the cool blue fill the town already has;
+ * it only gets a little of the house paper colour mixed in (softer, less saturated shadows and
+ * moonlight) and a floor under the ambient light, so the way to the starter house and its
+ * door stay readable. Aliases again: no new hex.
+ */
+export const WARM_NIGHT = Object.freeze({
+  tint: ROOM_SCHEMES.house[1].wall, // paper: mixed into the night fill and the moonlight
+  fillMix: 0.14, // how much of it reaches the hemisphere fill at full night
+  moonMix: 0.1, // and the moonlight
+  hemiBoost: 0.1, // extra fill intensity at full night
+  ambientFloor: 0.16 // the ambient light never drops below this at night
+});

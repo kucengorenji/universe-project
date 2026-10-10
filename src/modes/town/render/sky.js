@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { createNoise3D } from '../../../math/simplex3d.js';
 import { mulberry32 } from '../../../math/random.js';
+import { isOn } from '../../../core/experiments.js';
+import { registerProof } from '../../../core/proofMetrics.js';
+import { applyWarmNight } from './warmNight.js';
 
 // Town sky: gradient dome with sun disc and halo, drifting clouds, stars at
 // night. `update(sun)` also returns the matching lighting (sun or moon light,
@@ -57,6 +60,8 @@ export class TownSky {
     this.palette = { dayTop: col(p[0]), dayHorizon: col(p[1]), sunset: col(p[2]), nightTop: col(p[3]), nightHorizon: col(p[4]) };
     this.airless = planetType === 'barren';
     this.nightFill = col(0x3a4f86);
+    this.warm = isOn('night'); // Proof 3: a little warmth in the night fill and moonlight
+    this.unregister = registerProof('night', () => ({ enabled: this.warm, night: this.light.night, hemiIntensity: this.light.hemiIntensity, ambient: this.light.ambient, hemi: `#${this.light.hemiSky.getHexString()}`, moon: `#${this.light.sunColor.getHexString()}`, sunIntensity: this.light.sunIntensity }));
     this.starLight = col(starLight);
     this.group = new THREE.Group();
     this.cloudTex = clouds ? cloudTexture(seed, darkClouds) : null;
@@ -199,10 +204,11 @@ export class TownSky {
     L.hemiIntensity = 0.55 + day * 0.6;
     L.ambient = 0.12 + day * 0.1;
     L.fog.copy(hor);
-    return L;
+    return this.warm ? applyWarmNight(L) : L;
   }
 
   dispose() {
+    this.unregister?.();
     this.dome.geometry.dispose();
     this.dome.material.dispose();
     this.stars.geometry.dispose();

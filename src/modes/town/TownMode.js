@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { loadAssetPack, getToonGradient } from '../../render/assetLibrary.js';
-import { ASSETS } from '../../render/assetManifest.js';
+import { getToonGradient } from '../../render/assetLibrary.js';
 import { mulberry32 } from '../../math/random.js';
 import { PLANET_TYPES } from '../../world/planetTypes.js';
 import { generateTownLayout, segDist2, townBaseSeed } from './layout/townLayout.js';
@@ -18,19 +17,18 @@ import { TownHud } from './ui/hud.js';
 import { TownSky } from './render/sky.js';
 import { Fleet } from './vehicles/fleet.js';
 import { Car, ChaseCamera } from './vehicles/vehicle.js';
-import { SkirmishPeople, loadTownPeople, makeTownPerson, animateTownPerson, disposeTownPerson } from './people/skirmishPeople.js';
-import { Interior, ENTERABLE, FURNITURE_PACK } from './interior/interior.js';
+import { SkirmishPeople, makeTownPerson, animateTownPerson, disposeTownPerson } from './people/skirmishPeople.js';
+import { Interior, ENTERABLE } from './interior/interior.js';
 import { buildingId, seedFor } from '../../world/identity.js';
 import { ensureHomeRecord, listTownHomes, townHomeContext } from '../../world/homeState.js';
 import { TransitionGuard, openInteriorSession, storeInterior } from './interior/interiorSession.js';
 import { findTownDoors, nearestDoor as closestDoor } from './interior/doors.js';
 import { TownJourney } from './journeyTown.js';
+import { TownLife } from './townLife.js';
+import { loadTownPacks, createFurniturePack } from './townPacks.js';
+import { isOn } from '../../core/experiments.js';
 import { applyAuthoredHomes } from './authoredHomes.js';
-import { optionalPack } from './render/packLoading.js';
 import { createHomeGroup, disposeHomeGroup, loadHomePack } from '../home/homeBuilder.js';
-import { loadTexturedPack } from '../../render/texturedAssetLibrary.js';
-import { loadTownSurfaces } from '../../render/townSurfaces.js';
-import { loadTownPaintedSurfaces } from './render/paintedStyle.js';
 import { TownDetailBudget } from './render/detailBudget.js';
 import { Minimap, Speedo } from '../../ui/gauges.js';
 import { FLEETS, pickRecipe } from './vehicles/vehicleKit.js';
@@ -45,27 +43,6 @@ const HOME_SHELLS = new Set(['f_house_small', 'f_house', 'f_house_tall', 'f_town
 // streets (third person) or drive. Everything is built from the planet's map
 // data, so the town you land in is the one you clicked on the globe.
 
-let atlasTex = null;
-const loadAtlas = () =>
-  (atlasTex ||= new THREE.TextureLoader().loadAsync(ASSETS.interiorAtlas).then((t) => {
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.anisotropy = 4;
-    return t;
-  }).catch(() => null));
-const packs = () =>
-  Promise.all([
-    optionalPack(loadAssetPack(ASSETS.planetPack), 'planet pack'), // only a last-resort fallback for town models
-    loadAssetPack(ASSETS.planetPackLod0).catch(() => null),
-    loadAssetPack(ASSETS.townPack).catch(() => null),
-    loadTownPeople(),
-    loadAssetPack(ASSETS.furniturePack, FURNITURE_PACK).catch(() => null),
-    loadAtlas(),
-    loadTexturedPack(ASSETS.sceneryPack).catch(() => null),
-    loadTownSurfaces(ASSETS.townSurfaces).catch(() => null),
-    loadTexturedPack(ASSETS.environmentPack, { mergeShades: true }).catch(() => null),
-    loadTownPaintedSurfaces(ASSETS.envSurfaces).catch(() => null)
-  ]);
-
 const UP = new THREE.Vector3(0, 1, 0);
 const ORIGIN = new THREE.Vector3();
 const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
@@ -76,7 +53,7 @@ const _lightInv = new THREE.Matrix4();
 
 export default class TownMode {
   static prepare() {
-    return packs();
+    return loadTownPacks();
   }
 
   constructor(ctx, route, arrival) {
@@ -99,11 +76,11 @@ export default class TownMode {
     const city = map.cities[this.route.city];
     this.planet = planet;
     this.city = city;
-    const [base, lod0, townPack, townPeople, furniture, atlas, sceneryPack, surfaceAtlas, environmentPack, paintedSurfaces] = await packs();
+    const { base, lod0, townPack, townPeople, sceneryPack, surfaceAtlas, environmentPack, paintedSurfaces } = await loadTownPacks();
     this.character = townPeople;
     this.townPeople = townPeople;
-    this.furniture = furniture;
-    this.atlas = atlas;
+    this.furniturePack = createFurniturePack(); // the furniture loads when a door is near or the player goes in
+    if (!isOn('lazyInterior')) await this.furniturePack.start('boot');
     const planetPack = {};
     for (const [name, lods] of Object.entries(base || {})) planetPack[name] = { ...lods };
     for (const [name, lods] of Object.entries(lod0 || {})) planetPack[name] = { ...(planetPack[name] || {}), ...lods };
@@ -250,6 +227,7 @@ export default class TownMode {
     this.minimap = new Minimap(this.ui, { layout: this.layout, groundAt: (x, z) => this.builder.groundAt(x, z), waterY: WATER_Y, doors: this.doors });
     this.speedo = new Speedo(this.ui);
     this.journeyTown = this.ctx.journey && new TownJourney({ journey: this.ctx.journey, planet: this.route.planet, city: this.route.city, scene: this.scene, ui: this.ui, layout: this.layout, doors: this.doors, walkNetwork: this.walkNetwork, groundAt: (x, z) => this.builder.groundAt(x, z), minimap: this.minimap, reducedMotion: quality.tier === 'low' || !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches });
+    this.life = new TownLife({ builder: this.builder, quality, walkers: this.walkers, rigged: this.rigged, crowd: this.crowd, walkNetwork: this.walkNetwork, layout: this.layout, planet: this.route.planet, city: this.route.city, ui: this.ui, door: this.journeyTown?.door, prefetch: { pack: this.furniturePack, doors: this.doors } });
     this.ui.hidden = false;
     document.body.dataset.mode = 'town';
 
@@ -636,7 +614,7 @@ export default class TownMode {
 
   /** Front doors of every building you can go into (interior/doors.js). */
   findDoors() {
-    return findTownDoors(this.layout, this.footprints, { enterable: ENTERABLE, hasInteriors: !!this.furniture });
+    return findTownDoors(this.layout, this.footprints, { enterable: ENTERABLE, hasInteriors: isOn('lazyInterior') || this.furniturePack.ready });
   }
 
   nearestDoor(x, z, reach = 2.4) {
@@ -676,13 +654,15 @@ export default class TownMode {
       this.pixel?.setActive(false);
       await this.ctx.world.ready;
       if (!ticket.alive) return;
+      const pack = await this.furniturePack.start('enter'); // already there if a door was near
+      if (!ticket.alive) return;
+      if (!pack) throw new Error('The furniture pack could not be loaded');
       // A room this build cannot read is quarantined (world/savedRecords.js), never replaced by an empty one
       const session = openInteriorSession(this.ctx.world.state, this.route.planet, door, floor);
       this.interiorRecord = session.record;
       this.interiorArgs = {
         building: door.b,
-        pack: this.furniture,
-        atlas: this.atlas,
+        pack,
         character: this.character,
         modern: this.layout.modern,
         seed: seedFor(this.layout.seed, door.b.id, 'interior-v1'),
@@ -1506,6 +1486,7 @@ export default class TownMode {
     const cpuStart = performance.now();
     if (this.interior) {
       // Inside: only the room runs and renders; the town waits outside
+      this.life.update(dt, { walker: null });
       this.updateInterior(dt, t);
       this.updateAvatar(dt);
       this.footsteps('wood');
@@ -1548,7 +1529,8 @@ export default class TownMode {
       this.updatePrompt();
     }
     if (this.view === 'walk') this.footsteps(this.layout.modern ? 'road' : 'grass');
-    this.journeyTown?.update(t, { pos: this.view === 'diorama' ? null : this.view === 'drive' && this.drive ? this.drive.car : this.player, view: this.view, camera: this.renderCamera });
+    this.life.update(dt, { walker: this.view === 'walk' && !this.transfer ? this.player : null, camera: this.renderCamera });
+    this.journeyTown?.update(t, { pos: this.view === 'diorama' ? null : this.view === 'drive' && this.drive ? this.drive.car : this.player, view: this.view, camera: this.renderCamera, night: this.night });
     this.updateGauges();
     const obstacles = []; // Traffic only brakes for other vehicles.
     if (this.drive) obstacles.push(this.drive.car);
@@ -1733,6 +1715,7 @@ export default class TownMode {
   exit() {
     this.transitions.cancel(); // a fade still running must not touch what is disposed below
     this.journeyTown?.dispose();
+    this.life?.dispose();
     this.closePlanner();
     this.saveInterior();
     this.ctx.world.state.set('playerLocation', null);

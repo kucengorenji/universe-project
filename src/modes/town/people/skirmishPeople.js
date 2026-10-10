@@ -123,6 +123,7 @@ export class SkirmishPeople {
   constructor(pack, scene, { count, shadows, seed = 1 }) {
     Object.assign(this, { pack, scene, count, shadows, seed, timer: 0 });
     this.pool = [];
+    this.identities = new Map(); // walker index -> look seed of a named person; the pool slot never decides who they are
   }
   assign(walkers, people, cam, reach = Infinity) {
     const distance = i => Math.hypot(people[i].x - cam.x, people[i].z - cam.z);
@@ -134,7 +135,7 @@ export class SkirmishPeople {
     this.pool = this.pool.filter(p => held.has(p.index));
     const near = walkers.filter(w => !held.has(w.i) && distance(w.i) < reach).sort((a, b) => distance(a.i) - distance(b.i));
     for (const w of near.slice(0, this.count - this.pool.length)) {
-      const p = makeTownPerson(this.pack, { seed: this.seed * 131 + w.i, shadows: this.shadows });
+      const p = makeTownPerson(this.pack, { seed: this.identities.get(w.i) ?? this.seed * 131 + w.i, shadows: this.shadows });
       p.index = w.i;
       p.root.scale.setScalar(people[w.i].height);
       p.root.rotation.y = people[w.i].yaw;

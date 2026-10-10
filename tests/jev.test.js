@@ -66,3 +66,20 @@ test('NPC asks again when Jev is unsure, and name check blocks only likely-rude 
   assert.equal(verdict({ kasar: { noul: 0.05 } }), 'boleh tampil');
   assert.match(verdict({ kasar: { type: 'noul' } }), /periksa manual/);
 });
+
+test('rank-ideas scores from Jev probabilities and sorts best first', async () => {
+  const { rank, level, score } = await import('../tools/jev/rank-ideas.mjs');
+  assert.equal(level({ choice: 'sedang', probabilities: { rendah: 0.5, tinggi: 0.5 } }, { rendah: 0, sedang: 0.5, tinggi: 1 }), 0.5);
+  assert.equal(level({ choice: 'tinggi' }, { rendah: 0, sedang: 0.5, tinggi: 1 }), 1);
+  assert.equal(score({ profit: { choice: 'ya' }, kelayakan: { choice: 'tinggi' }, kesulitan: { choice: 'rendah' } }), 100);
+  const ask = async ({ state }) => {
+    const good = state.includes('Bagus');
+    return {
+      kesulitan: { choice: good ? 'rendah' : 'tinggi', confidence: 0.8 },
+      kelayakan: { choice: good ? 'tinggi' : 'rendah', confidence: 0.8 },
+      profit: { choice: good ? 'ya' : 'tidak', confidence: 0.8 }
+    };
+  };
+  const rows = await rank([{ ide: 'Jelek' }, { ide: 'Bagus' }], ask);
+  assert.deepEqual(rows.map(r => [r.rank, r.ide, r.skor]), [[1, 'Bagus', 100], [2, 'Jelek', 0]]);
+});

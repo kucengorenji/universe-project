@@ -50,3 +50,21 @@ Untuk setiap nama kota, satu request menanyakan tiga hal sekaligus: `kasar` (nou
 probabilitas), `tema` (choice), dan `kualitas` (score dari 4 level). Nama dengan probabilitas kasar di atas
 70% ditolak. Bentuk jawaban `noul` dan `score` belum dipastikan dari dokumentasi resmi; kalau kolomnya berisi
 JSON mentah, kirim isinya supaya parser-nya bisa disesuaikan.
+
+## Ranking ide bisnis AI (hasil ke Google Sheets)
+
+```sh
+node --env-file=.env tools/jev/rank-ideas.mjs tools/jev/ai-ideas/ideas.csv
+```
+
+`ai-ideas/ideas.csv` berisi 25 ide bisnis AI hasil riset web (Oktober 2026), masing-masing dengan data harga
+atau pasar dan sumbernya. Untuk setiap ide, satu panggilan Jev menjawab tiga pertanyaan: `kesulitan`
+(rendah/sedang/tinggi), `kelayakan` untuk profil di `PROFILE`, dan `profitable` (tidak/mungkin/ya).
+Skor 0–100 = 45% profit + 35% kelayakan + 20% kemudahan, memakai probabilitas Jev kalau tersedia.
+
+Hasilnya `ai-ideas/ideas.ranked.csv`, urut dari skor tertinggi. Buka di Google Sheets lewat
+File > Import > Upload. Angka ditulis sebagai bilangan bulat supaya tidak bermasalah dengan locale Indonesia.
+Ubah `PROFILE` di `rank-ideas.mjs` supaya penilaian kelayakan sesuai kondisi kamu.
+
+Data harga dan pendapatan di `ideas.csv` sebagian besar berasal dari blog vendor dan belum diverifikasi.
+Jev menilai berdasarkan teks itu, jadi ranking-nya adalah penyaringan awal, bukan studi kelayakan.

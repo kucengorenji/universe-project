@@ -47,6 +47,7 @@ npm run build    # build produksi ke dist/
 | [TOWN_REFINEMENT_2026_09_29.md](TOWN_REFINEMENT_2026_09_29.md) | Log implementasi 29 September | Log bertanggal; tidak diedit ulang |
 | [TOWN_PLAN_V3.md](TOWN_PLAN_V3.md) | Tata kota blok (dokumen menulis layout v4; kode sekarang `TOWN_LAYOUT_VERSION = 5`, lihat TOWN_COMPACT_ASSETS_QA): template dan blok dibelah ala Neighbourhood, parameter kepadatan, versi save | Aktif; perbarui saat generator kota berubah |
 | [WATABOU_WORLD_BUILDING_NOTES.md](WATABOU_WORLD_BUILDING_NOTES.md) | Riset generator Watabou dan audit awal | Riset |
+| [JEV_USE_CASES.md](JEV_USE_CASES.md) | Contoh use case Jev + Claude, setup OpenRouter, langkah dan prompt | Usulan; belum ada integrasi di kode |
 | [`../README.md`](../README.md) | Changelog Update 1–9 | Riwayat; beberapa angka sudah basi (lihat review §2.4) |
 | [`../plan.md`](../plan.md), [`../TILES_ROADMAP.md`](../TILES_ROADMAP.md) | Rencana 14 September dan upgrade tile | Historis; jangan dipakai sebagai acuan |
 

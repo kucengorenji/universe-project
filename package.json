@@ -16,7 +16,8 @@
     "db:migrate:remote": "wrangler d1 migrations apply aethergate --remote",
     "db:seed:local": "node tools/backend/seed-local.mjs",
     "dashboard:dev": "npm --prefix dashboard run dev",
-    "dashboard:build": "npm --prefix dashboard run build"
+    "dashboard:build": "npm --prefix dashboard run build",
+    "seo:indexnow": "node tools/seo-indexnow.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

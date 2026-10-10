@@ -11,3 +11,4 @@ __pycache__/
 *.pyc
 # Generated deliverables (art sprint packs, zips) stay outside git
 output/
+*.tagged.csv

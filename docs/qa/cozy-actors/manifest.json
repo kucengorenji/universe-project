@@ -1,0 +1,96 @@
+{
+  "revision": 2,
+  "blender": "5.1.2",
+  "baselineDirectory": "/var/folders/68/78fl9_0j18s2bkfy4rnz01j80000gq/T/globe-cozy-actors-knz2gixy",
+  "units": "metres",
+  "up": "+Y",
+  "front": "+Z",
+  "pivot": "ground centre; wheels centred on X axle",
+  "vehicleTriangles": {
+    "vb_sedan": [
+      3752,
+      1900,
+      704
+    ],
+    "vb_hatch": [
+      3776,
+      1912,
+      704
+    ],
+    "vb_suv": [
+      3610,
+      1827,
+      672
+    ],
+    "vb_van": [
+      3972,
+      2024,
+      708
+    ],
+    "vb_pickup": [
+      4184,
+      2140,
+      880
+    ],
+    "vb_bus": [
+      6496,
+      3432,
+      1384
+    ],
+    "vb_sport": [
+      3688,
+      1916,
+      720
+    ],
+    "vb_cart": [
+      1404,
+      780,
+      572
+    ],
+    "vb_wagon": [
+      1404,
+      780,
+      572
+    ],
+    "vb_caravan": [
+      2288,
+      1312,
+      640
+    ],
+    "vh_horse": [
+      3564,
+      1320,
+      1112
+    ],
+    "vw_road": [
+      364,
+      220,
+      20
+    ],
+    "vw_truck": [
+      364,
+      220,
+      20
+    ],
+    "vw_sport": [
+      364,
+      220,
+      20
+    ],
+    "vw_wood": [
+      364,
+      220,
+      20
+    ]
+  },
+  "merge": {
+    "originalRoots": 107,
+    "replacementRoots": 15,
+    "preservedRoots": 92,
+    "finalRoots": 107,
+    "untouchedPayloadsVerified": 92
+  },
+  "files": {
+    "town": 5867392
+  }
+}

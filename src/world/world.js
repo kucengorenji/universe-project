@@ -36,21 +36,46 @@ export class World {
     this.mapGenerator = new MapGenerator(this.hexasphere);
     this.cache = new Map();
     this.applied = null;
-    this.listeners = new Set(); // called with the world after regenerateHome()
+    this.listeners = new Set();
+    this.mapSaveError = null;
     this.fresh = false; // true when this boot generated the home world
 
     const saved = this.mapGenerator.loadFromStorage();
     if (saved) {
       if (saved.subdivision && saved.subdivision !== subdivision) this.setSubdivision(saved.subdivision);
       this.homeMap = saved;
+      if (this.mapGenerator.lastSaveError) this.mapSaveError = this.mapGenerator.lastSaveError; // an upgrade of the stored map failed to write
     } else {
       this.homeMap = this.mapGenerator.generate(null, { planetType: 'terran' });
-      this.mapGenerator.saveToStorage(this.homeMap);
+      this.saveHomeMap();
       this.applied = this.homeMap;
       this.fresh = true;
     }
     this.system = generateSystem(this.homeMap.seed);
     this.openState();
+  }
+
+  /** Listen for 'world' (a new home world replaced this one) and 'storage' (saving started or stopped failing). */
+  subscribe(fn) {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+
+  emit(event) {
+    for (const fn of this.listeners) fn(event, this);
+  }
+
+  /**
+   * The home map is what identifies this world on the next visit, so a failed write
+   * is kept in `mapSaveError` (the UI shows it) rather than dropped: without it a reload
+   * would generate a different world.
+   */
+  saveHomeMap() {
+    const ok = this.mapGenerator.saveToStorage(this.homeMap);
+    const before = this.mapSaveError;
+    this.mapSaveError = ok ? null : (this.mapGenerator.lastSaveError || new Error('The world map could not be saved'));
+    if (!!before !== !!this.mapSaveError) this.emit('storage');
+    return ok;
   }
 
   openState() {
@@ -157,11 +182,11 @@ export class World {
     this.setSubdivision(level);
     this.homeMap = this.mapGenerator.generate(seed, { ...options, planetType: 'terran' });
     this.applied = this.homeMap;
-    this.mapGenerator.saveToStorage(this.homeMap);
+    this.saveHomeMap();
     this.system = generateSystem(this.homeMap.seed);
     this.cache.clear();
     this.openState();
-    this.listeners.forEach((fn) => fn(this));
+    this.emit('world');
     return this.homeMap;
   }
 }

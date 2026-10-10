@@ -9,6 +9,9 @@ import { ASSETS } from './assetManifest.js';
 import { buildMountainGeometry } from './mountainBuilder.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../world/planetTypes.js';
 import { createSpaceBackdrop } from './spaceBackdrop.js';
+import { cozyRouteMaterial } from './cozyPaths.js';
+import { JOURNEY_PALETTE } from '../art/palette.js';
+import { FloatBuffer } from './floatBuffer.js';
 import { t } from '../i18n/index.js';
 
 // Cartoon (Civ VI-like) terrain palette (lives with the planet types, shared with the space baker)
@@ -290,8 +293,8 @@ export class PlanetRenderer {
     this.camTween = null;
     this.onFocusChange = null;
     // Screen area covered by UI (focus card): left side on desktop, bottom sheet on phones
-    this.inset = { left: 0, bottom: 0 };
-    this.insetTarget = { left: 0, bottom: 0 };
+    this.inset = { left: 0, bottom: 0, right: 0, top: 0 };
+    this.insetTarget = { left: 0, bottom: 0, right: 0, top: 0 };
 
     this.autoRotate = false;
     this.animTime = 0;
@@ -930,7 +933,7 @@ export class PlanetRenderer {
       this.buildSettlements(mapData, props);
       this.buildFarms(mapData, props);
       this.flushProps(props);
-      this.buildMovers(mapData);
+      if (this.options.decorativeMovers !== false) this.buildMovers(mapData);
       this.applyRouteVisibility();
       if (this.focus) this.setHighlight(this.focus.spec, this.highlightTiles(this.focus.spec));
       if (povWas) this.enterPov(this.moversOf(povWas.mode)[Math.max(0, povWas.index)] || null);
@@ -1132,8 +1135,8 @@ export class PlanetRenderer {
 
   buildTerrain(tiles) {
     const relief = this.terrainMode !== 'flat';
-    const land = { pos: [], col: [], nrm: [] };
-    const water = { pos: [], col: [], nrm: [] };
+    const land = { pos: new FloatBuffer(), col: new FloatBuffer(), nrm: new FloatBuffer() };
+    const water = { pos: new FloatBuffer(), col: new FloatBuffer(), nrm: new FloatBuffer() };
     const landLines = [];
     const waterLines = [];
     this.col = {
@@ -1184,9 +1187,9 @@ export class PlanetRenderer {
     const waterColorAt = (p, tile, sLand) => this.waterColor(p, tile, sLand);
 
     const push = (buf, p, n, c) => {
-      buf.pos.push(p.x, p.y, p.z);
-      buf.nrm.push(n.x, n.y, n.z);
-      buf.col.push(c.r, c.g, c.b);
+      buf.pos.add3(p.x, p.y, p.z);
+      buf.nrm.add3(n.x, n.y, n.z);
+      buf.col.add3(c.r, c.g, c.b);
     };
     const skirtColor = new THREE.Color(this.look.skirt?.[0] ?? 0x9b7a52);
     const skirtDark = new THREE.Color(this.look.skirt?.[1] ?? 0x7a5c3c);
@@ -1319,9 +1322,12 @@ export class PlanetRenderer {
 
     const makeGeo = (buf) => {
       const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(buf.pos, 3));
-      g.setAttribute('normal', new THREE.Float32BufferAttribute(buf.nrm, 3));
-      g.setAttribute('color', new THREE.Float32BufferAttribute(buf.col, 3));
+      g.setAttribute('position', new THREE.BufferAttribute(buf.pos.finish(), 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(buf.nrm.finish(), 3));
+      g.setAttribute('color', new THREE.BufferAttribute(buf.col.finish(), 3));
+      // Let go of the growth buffers: closures made below (animated materials) share this scope, and anything
+      // the scope still names stays alive as long as they do (that kept ~180 MiB of vertex data on the heap).
+      buf.pos = buf.nrm = buf.col = null;
       return g;
     };
 
@@ -1631,8 +1637,8 @@ export class PlanetRenderer {
         this.corridor.add(p.clone().normalize(), (s * 0.08) / this.radius, { kind: 'road', tan, style });
       });
     }
-    this.addMerged(roads.fantasy, createToonMaterial({ color: 0xc49a5c, polygonOffset: true, polygonOffsetFactor: -3 }), this.groundRouteGroup);
-    this.addMerged(roads.modern, createToonMaterial({ color: 0x5d6066, polygonOffset: true, polygonOffsetFactor: -3 }), this.groundRouteGroup);
+    this.addMerged(roads.fantasy, cozyRouteMaterial(createToonMaterial, false, s), this.groundRouteGroup);
+    this.addMerged(roads.modern, cozyRouteMaterial(createToonMaterial, true, s), this.groundRouteGroup);
 
     const laneMat = new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 }, uDash: { value: 1 / (s * 0.45) }, uColor: { value: new THREE.Color(0xffffff) } },
@@ -2363,13 +2369,15 @@ export class PlanetRenderer {
     }
   }
 
-  makeLabelSprite(city) {
+  /** `home`: the hometown of the First Journey gets a gold house badge and outline on its banner. */
+  makeLabelSprite(city, home = false) {
     const style = LABEL_STYLE[city.owner] || LABEL_STYLE.neutral;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const font = '500 34px "Barlow Condensed", "Archivo Narrow", sans-serif';
     ctx.font = font;
-    const w = Math.ceil(ctx.measureText(city.name).width) + 28;
+    const badge = home ? 40 : 0;
+    const w = Math.ceil(ctx.measureText(city.name).width) + 28 + badge;
     canvas.width = w;
     canvas.height = 48;
     ctx.fillStyle = style.bg;
@@ -2377,7 +2385,21 @@ export class PlanetRenderer {
     ctx.font = font;
     ctx.fillStyle = style.fg;
     ctx.textBaseline = 'middle';
-    ctx.fillText(city.name, 14, 25);
+    ctx.fillText(city.name, 14 + badge, 25);
+    if (home) {
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = JOURNEY_PALETTE.outline;
+      ctx.fillStyle = JOURNEY_PALETTE.target;
+      ctx.beginPath();
+      ctx.moveTo(8, 25); ctx.lineTo(20, 10); ctx.lineTo(32, 25); ctx.lineTo(32, 39); ctx.lineTo(8, 39);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = JOURNEY_PALETTE.target;
+      ctx.strokeRect(2, 2, w - 4, 44);
+    }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -2398,16 +2420,35 @@ export class PlanetRenderer {
     return sprite;
   }
 
+  /** Mark one city's banner as the First Journey's hometown (or clear it with null). */
+  setJourneyCity(index) {
+    this.journeyCity = index;
+    for (const entry of this.labels) {
+      const wanted = entry.city.index === index;
+      if (!!entry.home === wanted) continue;
+      const fresh = this.makeLabelSprite(entry.city, wanted);
+      fresh.position.copy(entry.sprite.position);
+      fresh.visible = entry.sprite.visible;
+      this.mapGroup.remove(entry.sprite);
+      entry.sprite.material.map?.dispose();
+      entry.sprite.material.dispose();
+      this.mapGroup.add(fresh);
+      entry.sprite = fresh;
+      entry.home = wanted;
+    }
+  }
+
   buildLabels(mapData) {
     const tileMap = this.hexasphere.tileMap;
     for (const city of mapData.cities || []) {
       const tile = tileMap.get(city.tileId);
       if (!tile) continue;
       const dir = tile.center.clone().normalize();
-      const label = this.makeLabelSprite(city);
+      const home = city.index === this.journeyCity;
+      const label = this.makeLabelSprite(city, home);
       label.position.copy(dir).multiplyScalar(this.landR + this.tileRadius * (city.type === 'capital' ? 2.4 : 1.7));
       this.mapGroup.add(label);
-      this.labels.push({ sprite: label, normal: dir, city });
+      this.labels.push({ sprite: label, normal: dir, city, home });
     }
   }
 
@@ -2699,6 +2740,12 @@ export class PlanetRenderer {
     this.pressAt = null;
     if (this.driving) return;
     if (!press || Math.hypot(e.clientX - press.x, e.clientY - press.y) > 5) return;
+    if (this.options.onSelect) {
+      this.pendingPointer = e;
+      this.processPointer();
+      this.options.onSelect({ tile: this.hoveredTile, city: this.pickLabel(e.clientX, e.clientY), event: e });
+      return;
+    }
     // Clicking a vehicle rides along with it; otherwise the click inspects a tile
     const mover = this.pickMover(e.clientX, e.clientY);
     if (mover) {
@@ -2876,14 +2923,14 @@ export class PlanetRenderer {
   }
 
   /** Keep the focused spot centred in the part of the screen the UI leaves free. */
-  setInset({ left = 0, bottom = 0 } = {}) {
-    this.insetTarget = { left, bottom };
+  setInset({ left = 0, bottom = 0, right = 0, top = 0 } = {}) {
+    this.insetTarget = { left, bottom, right, top };
   }
 
   applyInset(dt) {
     const k = 1 - Math.exp(-dt * 6);
     let changed = false;
-    for (const side of ['left', 'bottom']) {
+    for (const side of ['left', 'bottom', 'right', 'top']) {
       const diff = this.insetTarget[side] - this.inset[side];
       if (diff === 0) continue;
       this.inset[side] = Math.abs(diff) < 0.5 ? this.insetTarget[side] : this.inset[side] + diff * k;
@@ -2892,8 +2939,8 @@ export class PlanetRenderer {
     if (!changed) return;
     const w = this.container.clientWidth || window.innerWidth;
     const h = this.container.clientHeight || window.innerHeight;
-    if (this.inset.left < 0.5 && this.inset.bottom < 0.5) this.camera.clearViewOffset();
-    else this.camera.setViewOffset(w, h, -this.inset.left / 2, this.inset.bottom / 2, w, h);
+    if (Object.values(this.inset).every(value => value < 0.5)) this.camera.clearViewOffset();
+    else this.camera.setViewOffset(w, h, (this.inset.right - this.inset.left) / 2, (this.inset.bottom - this.inset.top) / 2, w, h);
   }
 
   setControlsUp(up) {

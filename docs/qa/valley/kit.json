@@ -1,0 +1,194 @@
+{
+  "triangles": {
+    "tool_hoe": {
+      "tool_hoe_body": 144,
+      "total": 144
+    },
+    "tool_can": {
+      "tool_can_body": 288,
+      "total": 288
+    },
+    "seed_bag": {
+      "seed_bag_body": 180,
+      "total": 180
+    },
+    "bucket": {
+      "bucket_body": 364,
+      "total": 364
+    },
+    "milk_pail": {
+      "milk_pail_body": 364,
+      "total": 364
+    },
+    "hay_bale": {
+      "hay_bale_body": 280,
+      "total": 280
+    },
+    "wheelbarrow": {
+      "wheelbarrow_body": 564,
+      "total": 564
+    },
+    "log": {
+      "log_body": 32,
+      "total": 32
+    },
+    "apple": {
+      "apple_body": 116,
+      "total": 116
+    },
+    "stone_small": {
+      "stone_small_body": 80,
+      "total": 80
+    },
+    "tree_oak": {
+      "tree_oak_canopy": 1920,
+      "tree_oak_trunk": 72,
+      "total": 1992
+    },
+    "tree_oak_far": {
+      "tree_oak_far_canopy": 480,
+      "tree_oak_far_trunk": 72,
+      "total": 552
+    },
+    "tree_apple": {
+      "tree_apple_canopy": 2560,
+      "tree_apple_trunk": 72,
+      "total": 2632
+    },
+    "tree_apple_far": {
+      "tree_apple_far_canopy": 400,
+      "tree_apple_far_trunk": 72,
+      "total": 472
+    },
+    "tree_sakura": {
+      "tree_sakura_canopy": 1920,
+      "tree_sakura_trunk": 72,
+      "total": 1992
+    },
+    "tree_sakura_far": {
+      "tree_sakura_far_canopy": 480,
+      "tree_sakura_far_trunk": 72,
+      "total": 552
+    },
+    "tree_pine": {
+      "tree_pine_canopy": 1600,
+      "tree_pine_trunk": 28,
+      "total": 1628
+    },
+    "tree_pine_far": {
+      "tree_pine_far_canopy": 400,
+      "tree_pine_far_trunk": 28,
+      "total": 428
+    },
+    "bush": {
+      "bush_canopy": 1280,
+      "total": 1280
+    },
+    "bush_flower": {
+      "bush_flower_canopy": 1460,
+      "total": 1460
+    },
+    "house_player": {
+      "house_player_body": 6756,
+      "house_player_glow": 72,
+      "total": 6828
+    },
+    "house_villager_a": {
+      "house_villager_a_body": 3256,
+      "house_villager_a_glow": 60,
+      "total": 3316
+    },
+    "house_villager_b": {
+      "house_villager_b_body": 2952,
+      "house_villager_b_glow": 48,
+      "total": 3000
+    },
+    "shop": {
+      "shop_body": 3276,
+      "shop_glow": 48,
+      "total": 3324
+    },
+    "barn": {
+      "barn_body": 2588,
+      "barn_glow": 24,
+      "total": 2612
+    },
+    "coop": {
+      "coop_body": 1432,
+      "total": 1432
+    },
+    "crop_sprout": {
+      "crop_sprout_canopy": 160,
+      "total": 160
+    },
+    "crop_leafy": {
+      "crop_leafy_canopy": 400,
+      "total": 400
+    },
+    "crop_ripe": {
+      "crop_ripe_canopy": 560,
+      "total": 560
+    },
+    "shipping_bin": {
+      "shipping_bin_body": 112,
+      "total": 112
+    },
+    "well": {
+      "well_body": 344,
+      "total": 344
+    },
+    "woodpile": {
+      "woodpile_body": 336,
+      "total": 336
+    },
+    "crate": {
+      "crate_body": 164,
+      "total": 164
+    },
+    "barrel": {
+      "barrel_body": 132,
+      "total": 132
+    },
+    "signpost": {
+      "signpost_body": 132,
+      "total": 132
+    },
+    "mailbox": {
+      "mailbox_body": 100,
+      "total": 100
+    },
+    "bench": {
+      "bench_body": 396,
+      "total": 396
+    },
+    "bridge_6": {
+      "bridge_6_body": 2376,
+      "total": 2376
+    },
+    "bridge_9": {
+      "bridge_9_body": 3168,
+      "total": 3168
+    },
+    "bridge_12": {
+      "bridge_12_body": 3960,
+      "total": 3960
+    },
+    "fence": {
+      "fence_body": 264,
+      "total": 264
+    },
+    "rock_a": {
+      "rock_a_body": 80,
+      "total": 80
+    },
+    "rock_b": {
+      "rock_b_body": 80,
+      "total": 80
+    },
+    "stepping_stone": {
+      "stepping_stone_body": 32,
+      "total": 32
+    }
+  },
+  "bytes": 3228892
+}

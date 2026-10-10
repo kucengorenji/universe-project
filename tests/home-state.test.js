@@ -99,7 +99,7 @@ test('home routes roundtrip identities and reject malformed or unsafe IDs withou
   assert.deepEqual(parseRoute(formatRoute(route)), route);
   for (const hash of ['#/home/1/2/%2Fsecret', '#/home/1/2/%00bad', '#/home/1/2/%', '#/home/1/2/../extra', '#/home/1/x/id']) assert.equal(parseRoute(hash), null);
   assert.deepEqual(parseRoute('#/town/1/2'), { mode: 'town', planet: 1, city: 2 });
-  const world = { planet: () => ({ landable: true }), mapFor: () => ({ cities: [{}, {}, {}] }), state: { get: key => key === `home:1:2:${route.home}` ? { id: route.home } : null } };
+  const world = { planet: () => ({ landable: true }), mapFor: () => ({ cities: [{}, {}, {}] }), state: { get: key => key === `home:1:2:${route.home}` ? { id: route.home, schemaVersion: 1 } : null } };
   assert.deepEqual(Director.prototype.sanitize.call({ world }, route), route);
   assert.deepEqual(Director.prototype.sanitize.call({ world }, { ...route, home: '../bad' }), { mode: 'town', planet: 1, city: 2 });
   assert.deepEqual(Director.prototype.sanitize.call({ world }, { ...route, home: 'missing_home' }), { mode: 'town', planet: 1, city: 2 });

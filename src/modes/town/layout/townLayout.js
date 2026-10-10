@@ -15,7 +15,7 @@ import { planHedgerows } from './fieldEdges.js';
 import { isVillage, planVillage } from './villagePlan.js';
 import { planBlocks } from './blockPlan.js';
 import { pavementWidth } from '../scale.js';
-import { TOWN_LAYOUT_VERSION } from '../../../world/townGeneration.js';
+import { TOWN_LAYOUT_VERSION } from '../../../world/versions.js';
 
 // Town layout: a city and its surroundings, cut out of the planet's hex map
 // and unrolled onto a flat, metre-scale disc (a tabletop diorama). Pure data:

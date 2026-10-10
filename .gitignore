@@ -7,3 +7,7 @@ dist/
 .firebase/
 .dev.vars
 .wrangler/
+__pycache__/
+*.pyc
+# Generated deliverables (art sprint packs, zips) stay outside git
+output/

@@ -1,0 +1,738 @@
+{
+  "galleries": [
+    {
+      "kind": "vehicles",
+      "lod": 0,
+      "angle": "front",
+      "assets": [
+        {
+          "type": "sedan",
+          "lod": 0,
+          "triangles": 5208
+        },
+        {
+          "type": "hatch",
+          "lod": 0,
+          "triangles": 5384
+        },
+        {
+          "type": "suv",
+          "lod": 0,
+          "triangles": 5090
+        },
+        {
+          "type": "van",
+          "lod": 0,
+          "triangles": 5584
+        },
+        {
+          "type": "pickup",
+          "lod": 0,
+          "triangles": 5640
+        },
+        {
+          "type": "sport",
+          "lod": 0,
+          "triangles": 5180
+        },
+        {
+          "type": "taxi",
+          "lod": 0,
+          "triangles": 5264
+        },
+        {
+          "type": "police",
+          "lod": 0,
+          "triangles": 5268
+        },
+        {
+          "type": "bus",
+          "lod": 0,
+          "triangles": 8128
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "carts",
+      "lod": 0,
+      "angle": "front",
+      "assets": [
+        {
+          "type": "cart",
+          "lod": 0,
+          "triangles": 5396
+        },
+        {
+          "type": "wagon",
+          "lod": 0,
+          "triangles": 9256
+        },
+        {
+          "type": "caravan",
+          "lod": 0,
+          "triangles": 10008
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "people",
+      "lod": 0,
+      "angle": "front",
+      "assets": [
+        {
+          "pose": "idle",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "walk",
+          "triangles": 58940,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "run",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "jump",
+          "triangles": 58710,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sit",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sleep",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "people",
+      "lod": 0,
+      "angle": "back",
+      "assets": [
+        {
+          "pose": "idle",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "walk",
+          "triangles": 58940,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "run",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "jump",
+          "triangles": 58710,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sit",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sleep",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "people",
+      "lod": 0,
+      "angle": "side",
+      "assets": [
+        {
+          "pose": "idle",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "walk",
+          "triangles": 58940,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "run",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "jump",
+          "triangles": 58710,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sit",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sleep",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "vehicles",
+      "lod": 1,
+      "angle": "front",
+      "assets": [
+        {
+          "type": "sedan",
+          "lod": 1,
+          "triangles": 2780
+        },
+        {
+          "type": "hatch",
+          "lod": 1,
+          "triangles": 2912
+        },
+        {
+          "type": "suv",
+          "lod": 1,
+          "triangles": 2731
+        },
+        {
+          "type": "van",
+          "lod": 1,
+          "triangles": 3060
+        },
+        {
+          "type": "pickup",
+          "lod": 1,
+          "triangles": 3020
+        },
+        {
+          "type": "sport",
+          "lod": 1,
+          "triangles": 2832
+        },
+        {
+          "type": "taxi",
+          "lod": 1,
+          "triangles": 2804
+        },
+        {
+          "type": "police",
+          "lod": 1,
+          "triangles": 2840
+        },
+        {
+          "type": "bus",
+          "lod": 1,
+          "triangles": 4384
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "vehicles",
+      "lod": 2,
+      "angle": "front",
+      "assets": [
+        {
+          "type": "sedan",
+          "lod": 2,
+          "triangles": 784
+        },
+        {
+          "type": "hatch",
+          "lod": 2,
+          "triangles": 904
+        },
+        {
+          "type": "suv",
+          "lod": 2,
+          "triangles": 776
+        },
+        {
+          "type": "van",
+          "lod": 2,
+          "triangles": 944
+        },
+        {
+          "type": "pickup",
+          "lod": 2,
+          "triangles": 960
+        },
+        {
+          "type": "sport",
+          "lod": 2,
+          "triangles": 836
+        },
+        {
+          "type": "taxi",
+          "lod": 2,
+          "triangles": 808
+        },
+        {
+          "type": "police",
+          "lod": 2,
+          "triangles": 844
+        },
+        {
+          "type": "bus",
+          "lod": 2,
+          "triangles": 1476
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "carts",
+      "lod": 2,
+      "angle": "front",
+      "assets": [
+        {
+          "type": "cart",
+          "lod": 2,
+          "triangles": 1584
+        },
+        {
+          "type": "wagon",
+          "lod": 2,
+          "triangles": 2560
+        },
+        {
+          "type": "caravan",
+          "lod": 2,
+          "triangles": 2592
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "people",
+      "lod": 0,
+      "angle": "front",
+      "assets": [
+        {
+          "pose": "idle",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "walk",
+          "triangles": 58940,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "run",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "jump",
+          "triangles": 58710,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sit",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sleep",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        }
+      ],
+      "error": null
+    }
+  ],
+  "scenarios": [
+    {
+      "planet": 2,
+      "city": 1,
+      "view": "walk",
+      "modern": true,
+      "night": false,
+      "buildings": 37,
+      "motion": {
+        "distance": 2.0310914633411707,
+        "error": null
+      },
+      "profile": {
+        "seed": 427,
+        "planet": 2,
+        "city": 1,
+        "modern": true,
+        "view": "walk",
+        "night": 0,
+        "buildings": 37,
+        "trees": 691,
+        "frames": 60,
+        "viewport": {
+          "width": 1440,
+          "height": 1000
+        },
+        "pixelRatio": 1,
+        "devicePixelRatio": 1,
+        "drawingBuffer": {
+          "width": 1440,
+          "height": 1000
+        },
+        "camera": {
+          "position": [
+            -13.34,
+            4.31,
+            -10.74
+          ],
+          "quaternion": [
+            0,
+            0.99,
+            0.12,
+            0
+          ],
+          "fov": 55
+        },
+        "fps": 59.99,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.9,
+          "p99": 18.6
+        },
+        "cpuMs": {
+          "p50": 3,
+          "p95": 4.4
+        },
+        "drawCalls": 230.98,
+        "triangles": 1673292.83,
+        "memory": {
+          "geometries": 231,
+          "textures": 66
+        },
+        "grass": 15778,
+        "forest": 3056,
+        "fleet": {
+          "vehicles": [
+            4,
+            18,
+            0
+          ],
+          "instances": [
+            23,
+            103,
+            0
+          ],
+          "shadowVehicles": 10,
+          "submitted": 126
+        },
+        "budget": {
+          "lod": 1,
+          "shadow": 1,
+          "vegetation": 1
+        },
+        "error": null
+      }
+    },
+    {
+      "planet": 2,
+      "city": 1,
+      "view": "drive",
+      "modern": true,
+      "night": false,
+      "buildings": 37,
+      "motion": {
+        "distance": 4.8084360491374865,
+        "error": null
+      }
+    },
+    {
+      "planet": 2,
+      "city": 0,
+      "view": "walk",
+      "modern": false,
+      "night": false,
+      "buildings": 189,
+      "motion": {
+        "distance": 2.031089276519074,
+        "error": null
+      },
+      "profile": {
+        "seed": 427,
+        "planet": 2,
+        "city": 0,
+        "modern": false,
+        "view": "walk",
+        "night": 0,
+        "buildings": 189,
+        "trees": 4106,
+        "frames": 60,
+        "viewport": {
+          "width": 1440,
+          "height": 1000
+        },
+        "pixelRatio": 1,
+        "devicePixelRatio": 1,
+        "drawingBuffer": {
+          "width": 1440,
+          "height": 1000
+        },
+        "camera": {
+          "position": [
+            -7.07,
+            10.65,
+            -16.6
+          ],
+          "quaternion": [
+            0,
+            0.99,
+            0.12,
+            0
+          ],
+          "fov": 55
+        },
+        "fps": 59.95,
+        "frameMs": {
+          "p50": 16.6,
+          "p95": 17.4,
+          "p99": 17.6
+        },
+        "cpuMs": {
+          "p50": 3.8,
+          "p95": 4.4
+        },
+        "drawCalls": 473,
+        "triangles": 2084217,
+        "memory": {
+          "geometries": 390,
+          "textures": 62
+        },
+        "grass": 11579,
+        "forest": 4888,
+        "fleet": {
+          "vehicles": [
+            0,
+            7,
+            2
+          ],
+          "instances": [
+            0,
+            38,
+            13
+          ],
+          "shadowVehicles": 1,
+          "submitted": 51
+        },
+        "budget": {
+          "lod": 1,
+          "shadow": 1,
+          "vegetation": 1
+        },
+        "error": null
+      }
+    },
+    {
+      "planet": 2,
+      "city": 0,
+      "view": "drive",
+      "modern": false,
+      "night": false,
+      "buildings": 189,
+      "motion": {
+        "distance": 1.5408088781158307,
+        "error": null
+      }
+    }
+  ],
+  "errors": [],
+  "overlap": [
+    {
+      "type": "pickup",
+      "closestDistance": 0.002861816175878681,
+      "carDistance": 10.367300483698589,
+      "npcDisplacement": 0,
+      "error": null
+    },
+    {
+      "type": "cart",
+      "closestDistance": 0.00804213622379393,
+      "carDistance": 3.32808509566011,
+      "npcDisplacement": 0,
+      "error": null
+    }
+  ],
+  "additional": [
+    {
+      "planet": 2,
+      "city": 1,
+      "view": "walk",
+      "modern": true,
+      "night": true,
+      "buildings": 37
+    },
+    {
+      "view": "interior",
+      "avatar": true,
+      "resident": true,
+      "error": null
+    },
+    {
+      "planet": 2,
+      "city": 0,
+      "view": "walk",
+      "modern": false,
+      "night": true,
+      "buildings": 189
+    },
+    {
+      "view": "interior",
+      "avatar": true,
+      "resident": true,
+      "error": null
+    }
+  ],
+  "skirmish": {
+    "soldiers": 14,
+    "weapons": true,
+    "error": null
+  },
+  "finalAnimation": [
+    {
+      "kind": "people",
+      "lod": 0,
+      "angle": "front",
+      "assets": [
+        {
+          "pose": "idle",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "walk",
+          "triangles": 58940,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "run",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "jump",
+          "triangles": 58710,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sit",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sleep",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "people",
+      "lod": 0,
+      "angle": "side",
+      "assets": [
+        {
+          "pose": "idle",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "walk",
+          "triangles": 58940,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "run",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "jump",
+          "triangles": 58710,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sit",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sleep",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        }
+      ],
+      "error": null
+    },
+    {
+      "kind": "people",
+      "lod": 0,
+      "angle": "back",
+      "assets": [
+        {
+          "pose": "idle",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "walk",
+          "triangles": 58940,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "run",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "jump",
+          "triangles": 58710,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sit",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        },
+        {
+          "pose": "sleep",
+          "triangles": 56556,
+          "rig": "skirmish-v5"
+        }
+      ],
+      "error": null
+    }
+  ],
+  "jump": {
+    "peak": 0.7700128800000005,
+    "landed": true,
+    "error": null
+  },
+  "finalAnimationErrors": [],
+  "trafficEntry": {
+    "view": "drive",
+    "checklistEvent": true,
+    "panic": false,
+    "error": null
+  },
+  "trafficEntryErrors": []
+}

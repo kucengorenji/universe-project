@@ -1,0 +1,109 @@
+{
+  "studio": "globe-universe",
+  "created_date": "2026-10-10",
+  "root": "/Users/mikelrisyad/Developer/globe-studio",
+  "branch": "feat/skirmish-vc",
+  "checkout": "git worktree (studio)",
+  "workspace_id": "w4",
+  "workspace_label": "Globe Studio",
+  "max_active_product_agents": 3,
+  "controller": "globe-lead",
+  "handover_status": "accepted-by-lead",
+  "phase": "phase-2-M1",
+  "subscription_verification": {
+    "claude": "claude.ai subscription verified",
+    "codex": "ChatGPT login verified"
+  },
+  "roles": {
+    "lead": {
+      "name": "globe-lead",
+      "kind": "claude",
+      "tab_id": "w4:t1",
+      "pane_id": "w4:p1",
+      "desired_model": "claude-opus-5-5",
+      "desired_effort": "medium",
+      "observed_model": "claude-opus-5-5",
+      "observed_effort": "medium",
+      "verification": "verified-session-header",
+      "task": "M1-L1",
+      "dispatch_status": "in-progress",
+      "readiness": "working",
+      "artifact": "PROGRESS_MATRIX.md, GAME_CHECKLIST.md, ROADMAP.md, CHECKPOINT.md"
+    },
+    "engineering": {
+      "name": "globe-engineer",
+      "kind": "claude",
+      "tab_id": "w4:t2",
+      "pane_id": "w4:p2",
+      "desired_model": "claude-sonnet-5-5",
+      "desired_effort": "high",
+      "observed_model": "claude-sonnet-5-5",
+      "observed_effort": "high",
+      "verification": "verified-session-header",
+      "task": "M1-E1",
+      "dispatch_status": "prompt-accepted",
+      "readiness": "working",
+      "artifact": null
+    },
+    "design_art": {
+      "name": "globe-artist",
+      "kind": "codex",
+      "tab_id": "w4:t3",
+      "pane_id": "w4:p3",
+      "desired_model": "gpt-6.1-sol",
+      "desired_effort": "high",
+      "observed_model": "gpt-6.1-sol",
+      "observed_effort": "high",
+      "verification": "verified-session-header",
+      "task": "M1-A1",
+      "dispatch_status": "prompt-accepted",
+      "readiness": "working",
+      "quota_note": "Codex 5h limit 40% left at ~01:36, resets 02:25 (observed in pane)",
+      "artifact": null
+    },
+    "qa": {
+      "name": "globe-qa",
+      "kind": "agy",
+      "tab_id": "w4:t4",
+      "pane_id": "w4:p4",
+      "desired_model": "gemini-3.8-flash-high",
+      "observed_model": "Gemini 3.8 Flash · high (pane footer)",
+      "verification": "observed-pane-footer",
+      "mode": "accept-edits (pre-existing session, renamed by lead)",
+      "task": "M1-Q1",
+      "dispatch_status": "prompt-accepted",
+      "readiness": "working"
+    }
+  },
+  "runtime_shell": {
+    "note": "w4:p4 now hosts globe-qa (AGY)"
+  },
+  "limitations": [
+    "No push/deploy",
+    "No paid services",
+    "Main checkout belongs to another session"
+  ],
+  "checkpoint_status": "checkpoint-1-accepted-option-B",
+  "last_updated_by": "globe-lead 2026-10-10",
+  "working_tree_snapshot": {
+    "observed_at": "2026-10-10 ~01:36",
+    "head": "f95bbbd (2026-10-08)",
+    "porcelain_entries": 95,
+    "tracked_modified": "42 files, +524/-280",
+    "external_activity": "output/universe-art-sprint/ (untracked, created 01:16 before studio bootstrap) is being written by a process outside the studio (.delivery.lock, images/ at 01:35). Not owned by studio; lead did not modify or roll back. Audit treats it as changing external state."
+  },
+  "lead_drafts": [],
+  "notes": [
+    "Engineer blocked once on cd+git metadata; bootstrap cancelled via Esc; lead redirected to Read/Grep/git -C without new approvals; no new task.",
+    "Lead stopped its own 40-min file watcher per user instruction; used bounded <=45s herdr waits.",
+    "Lead restart of worker sessions into the worktree was denied by the auto-mode classifier; workers stay in original sessions (cwd main checkout) and are instructed to use absolute worktree paths only."
+  ],
+  "main_checkout_note": "/Users/mikelrisyad/Developer/globe is on claude/pensive-hypatia-bvwgyu (other session); studio must not touch it",
+  "backup_branch": "backup/skirmish-vc-5033bd3",
+  "milestones": {
+    "M0": "done 968939c 36e7fa1 57860e2 0beb9c9; npm test 202/202; build pass",
+    "M1": "in-progress",
+    "M2": "planned",
+    "M3": "planned"
+  }
+}

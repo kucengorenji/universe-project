@@ -1,6 +1,25 @@
 # Globe Universe — status implementasi
 
-Diperbarui 29 September 2026. Ini adalah catatan implementasi aktual untuk [world building](WORLD_BUILDING_ROADMAP.md) dan [aset/art/audio](ASSET_ART_AUDIO_PLAN.md), bukan daftar fitur yang seluruhnya sudah selesai.
+Diperbarui 9 Oktober 2026 untuk Trade Game. Checkpoint September di bawah tetap historis. Ini adalah catatan implementasi aktual untuk [world building](WORLD_BUILDING_ROADMAP.md) dan [aset/art/audio](ASSET_ART_AUDIO_PLAN.md), bukan daftar fitur yang seluruhnya sudah selesai.
+
+## Revisi 10 Oktober — status per produk (studio Globe Universe)
+
+Sumber: [checkpoint studio](studio/globe-universe/CHECKPOINT.md) dan [progress matrix](studio/globe-universe/PROGRESS_MATRIX.md). Verifikasi segar 10 Oktober (Node 22.23.1): `npm test` **202/202 lolos** dan `npm run build` lolos pada commit `0beb9c9`. Belum ada runtime browser segar atau playtest manusia untuk produk mana pun.
+
+| Produk | Status | Bukti terbaru |
+|---|---|---|
+| Universe (space/planet/town/interior/home) | Terhubung di Director; tujuan pemain terarah belum ada; slice end-to-end menjadi milestone M2 studio | Review source 10 Okt; QA town-polish/cozy-actors 8 Okt |
+| Trade Game v1 | Mode terpisah dari CTA planet; belum playtest manusia | [TRADE_GAME_RUNTIME](TRADE_GAME_RUNTIME.md), QA browser 9 Okt (15/15) |
+| Valley/Farm | Prototype `farm.html` V0–V5; belum terintegrasi; port G1–G6 belum dimulai | [FARM_PLAN](FARM_PLAN.md), `docs/qa/valley/` 9–10 Okt |
+| Skirmish | M-A–M-D selesai, M-E berjalan; Town memakai rig/aset v5 Skirmish | [SKIRMISH_PLAN](SKIRMISH_PLAN.md); belum ada QA browser |
+
+Koreksi atas catatan lama: layout town sekarang `TOWN_LAYOUT_VERSION = 5`. Layout lama **tidak dimigrasi tetapi di-pin** per kota yang punya interior/home (`world/townGeneration.js`), dengan hash emas v1–v4 di `tests/town-compact-generation.test.js`. Angka test 15/30/197 di bawah adalah snapshot historis.
+
+## Revisi 9 Oktober — Trade Game
+
+CTA planet membuka campaign ekonomi terpisah. V1 Terran/desktop mencakup enam barang, sembilan fasilitas, karavan/kapal, manifest balik dan reserve, gudang/depot, ekspansi kota, lima milestone, kontrak/event, recovery, background session, save/export/import dan lease multi-tab. HUD ID/EN serta private renderer mempertahankan kota dan terrain eksplorasi. Nilai ekonomi dan batas v1 dijelaskan di [TRADE_GAME_RUNTIME.md](TRADE_GAME_RUNTIME.md); [plan yang disetujui](TRADE_GAME_IMPLEMENTATION_PLAN.md) menjadi acuan desain.
+
+Pengujian repo dan build produksi lolos; jumlah pemeriksaan terbaru dicatat di [Trade Game Runtime](TRADE_GAME_RUNTIME.md). Playthrough deterministik mencapai seluruh milestone, tiga kota stabil, keenam barang dan arus kas positif tanpa grant buatan dalam 1.480 detik simulasi. Runtime Chrome memeriksa alur UI, port/laut, reload, multi-tab dan enam pergantian scene dengan geometry/texture/listener stabil. Hasil mesin terstruktur tersimpan di [QA report](qa/trade-game/report.json). Ini belum deployment atau penilaian fun lewat playtest manusia.
 
 **Checkpoint 26 September: kira-kira 25% dari cakupan gabungan.** Estimasi ini mempertimbangkan deliverable yang sudah terhubung ke game; bukan persentase LOC atau jumlah checkbox. Sistem penduduk, POI, ekonomi dan event masih besar. Validasi visual/performa yang belum dilakukan tidak dihitung sebagai selesai.
 

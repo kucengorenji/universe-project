@@ -3,6 +3,9 @@ import { mulberry32 } from '../../../math/random.js';
 import { pavementWidth } from '../scale.js';
 import { createToonMaterial } from '../../../render/assetLibrary.js';
 import { partitionSprites, SpatialSprites, SPRITE_DENSITY_FADE } from './spatialSprites.js';
+import { MAX_TIP_OFFSET } from './grassContact.js';
+
+const PUSHERS = 6; // shader slots; grassContact.js fills them (4 of them on the Low tier)
 
 // Ground cover: tens of thousands of little sprites (grass tufts, flowers,
 // ferns, reeds, pebbles, mushrooms...) from one painted atlas, drawn as
@@ -244,7 +247,7 @@ export class GroundCover {
     this.builder = builder;
     const L = builder.L;
     this.atlas = paintAtlas(L.seed);
-    this.uniforms = { uTime: builder.uniforms.uTime, uAtlas: { value: this.atlas }, uFadeNear: { value: 60 }, uFadeFar: { value: 160 }, uDensity: { value: 1 } };
+    this.uniforms = { uTime: builder.uniforms.uTime, uAtlas: { value: this.atlas }, uFadeNear: { value: 60 }, uFadeFar: { value: 160 }, uDensity: { value: 1 }, uPush: { value: Array.from({ length: PUSHERS }, () => new THREE.Vector4()) } };
     const items = this.scatter(L, count);
     const base = crossedQuads();
     const material = this.material();
@@ -270,7 +273,7 @@ export class GroundCover {
         tiles[i] = it.tile;
         phases[i] = it.phase;
         ranks[i] = (i + 1) / cell.length;
-        windMargin = Math.max(windMargin, it.w * 0.14);
+        windMargin = Math.max(windMargin, it.w * 0.14 + MAX_TIP_OFFSET); // wind sway plus the lean of a trodden blade
       });
       geo.setAttribute('aTile', new THREE.InstancedBufferAttribute(tiles, 1));
       geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phases, 1));
@@ -308,6 +311,7 @@ export class GroundCover {
           uniform float uFadeNear;
           uniform float uFadeFar;
           uniform float uDensity;
+          uniform vec4 uPush[${PUSHERS}];
           varying vec2 vAtlasUv;`
         )
         .replace(
@@ -325,6 +329,28 @@ export class GroundCover {
           // Wind: the tops sway, the bases stay put
           float sway = sin(uTime * 1.6 + aPhase) * 0.1 + sin(uTime * 2.9 + aPhase * 1.7) * 0.04;
           transformed.x += sway * uv.y * uv.y * fade;
+          // Contact: blades near a foot lean away from it, root fixed (render/grassContact.js).
+          // uPush = (x, z, radius, strength); an unused slot has strength 0.
+          vec2 lean = vec2(0.0);
+          for (int i = 0; i < ${PUSHERS}; i++) {
+            vec4 p = uPush[i];
+            if (p.w <= 0.0) continue;
+            vec2 away = origin.xz - p.xy;
+            float d = length(away);
+            float f = 1.0 - d / p.z;
+            if (f <= 0.0) continue;
+            f = f * f * (3.0 - 2.0 * f) * p.w;
+            lean += (d > 1e-5 ? away / d : vec2(1.0, 0.0)) * f;
+          }
+          float leanLen = length(lean);
+          if (leanLen > 1.0) lean /= leanLen;
+          #ifdef USE_INSTANCING
+            vec3 pushWorld = vec3(lean.x, 0.0, lean.y) * (${MAX_TIP_OFFSET.toFixed(2)} * uv.y * uv.y * fade);
+            vec3 axisX = instanceMatrix[0].xyz;
+            vec3 axisZ = instanceMatrix[2].xyz;
+            transformed.x += dot(pushWorld, axisX) / dot(axisX, axisX);
+            transformed.z += dot(pushWorld, axisZ) / dot(axisZ, axisZ);
+          #endif
           vec2 tileXY = vec2(mod(aTile, 4.0), floor(aTile / 4.0));
           vAtlasUv = vec2((tileXY.x + uv.x) / 4.0, 1.0 - (tileXY.y + 1.0 - uv.y) / 4.0);`
         );
@@ -337,7 +363,7 @@ export class GroundCover {
           if (diffuseColor.a < 0.35) discard;`
         );
     };
-    m.customProgramCacheKey = () => 'ground-cover-spatial-v2';
+    m.customProgramCacheKey = () => 'ground-cover-spatial-v3';
     this.mat = m;
     return m;
   }
@@ -504,6 +530,12 @@ export class GroundCover {
       }
     }
     return items;
+  }
+
+  /** Proof 1: copy the player's contact into the shader; null puts every blade back at rest. */
+  setContact(contact) {
+    if (contact) contact.writeTo(this.uniforms.uPush.value);
+    else for (const v of this.uniforms.uPush.value) v.set(0, 0, 0, 0);
   }
 
   /** Per frame: how far the cover reaches (further when the camera is up high). */

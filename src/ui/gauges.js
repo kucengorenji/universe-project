@@ -1,6 +1,9 @@
 // Street HUD gauges shared by the modes that drive: a rotating town minimap
 // and a speedometer with a fake gearbox readout.
 
+import { JOURNEY_PALETTE } from '../art/palette.js';
+import { minimapPin } from '../modes/town/ui/waypointMath.js';
+
 /** Town minimap: a pre-painted plan of the town, turned so the view points up. */
 export class Minimap {
   /**
@@ -19,6 +22,7 @@ export class Minimap {
     this.north = this.el.querySelector('.minimap__label');
     this.ctx = this.canvas.getContext('2d');
     this.doors = doors;
+    this.pin = null; // { x, z }: the home door of the First Journey
     this.size = 0;
     this.plan = this.paint(layout, groundAt, waterY);
   }
@@ -80,6 +84,11 @@ export class Minimap {
     this.el.hidden = !on;
   }
 
+  /** Mark one place with the house pin (or clear it with null). */
+  setPin(point) {
+    this.pin = point ? { x: point.x, z: point.z } : null;
+  }
+
   /**
    * pos      { x, z } centre (player or car)
    * facing   yaw of the player/car (forward = (sin, cos))
@@ -88,7 +97,7 @@ export class Minimap {
    * radius   metres from the centre to the rim
    */
   draw(pos, facing, view, cars, radius, { doors = true } = {}) {
-    const css = this.el.clientWidth;
+    const css = this.canvas.clientWidth;
     if (!css) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const S = Math.round(css * dpr);
@@ -103,11 +112,15 @@ export class Minimap {
     const fz = view.z / len;
     const rx = -fz;
     const rz = fx;
+    const inView = p => {
+      const x = p.x - pos.x, z = p.z - pos.z;
+      return Math.abs(rx * x + rz * z) < radius && Math.abs(fx * x + fz * z) < radius;
+    };
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, S, S);
     g.save();
     g.beginPath();
-    g.arc(h, h, h, 0, Math.PI * 2);
+    g.rect(0, 0, S, S);
     g.clip();
     g.fillStyle = '#8f9678';
     g.fillRect(0, 0, S, S);
@@ -117,11 +130,40 @@ export class Minimap {
     // Doors you can open, and the traffic
     g.fillStyle = '#fbb833';
     const dr = 2.2 / Math.max(0.4, k / dpr);
-    if (doors) for (const d of this.doors) if (Math.abs(d.x - pos.x) < radius && Math.abs(d.z - pos.z) < radius) g.fillRect(d.x - dr, d.z - dr, dr * 2, dr * 2);
+    if (doors) for (const d of this.doors) if (inView(d)) g.fillRect(d.x - dr, d.z - dr, dr * 2, dr * 2);
     g.fillStyle = '#fa4d43';
     const cr = 3 / Math.max(0.4, k / dpr);
-    for (const c of cars) if (Math.abs(c.x - pos.x) < radius && Math.abs(c.z - pos.z) < radius) g.fillRect(c.x - cr, c.z - cr, cr * 2, cr * 2);
+    for (const c of cars) if (inView(c)) g.fillRect(c.x - cr, c.z - cr, cr * 2, cr * 2);
     g.setTransform(1, 0, 0, 1, 0, 0);
+    // The home pin: upright whatever way the map turns; at the rim, with a chevron, when the door is out of range
+    if (this.pin) {
+      const p = minimapPin({ d: { x: this.pin.x - pos.x, z: this.pin.z - pos.z }, view, radius, rim: 0.74 });
+      const px = h + p.x * h, py = h + p.y * h, u = 8 * dpr;
+      g.lineWidth = 2 * dpr;
+      g.lineJoin = 'round';
+      g.strokeStyle = JOURNEY_PALETTE.outline;
+      g.fillStyle = JOURNEY_PALETTE.target;
+      g.beginPath();
+      g.moveTo(px - u, py);
+      g.lineTo(px, py - u);
+      g.lineTo(px + u, py);
+      g.lineTo(px + u, py + u * 0.9);
+      g.lineTo(px - u, py + u * 0.9);
+      g.closePath();
+      g.fill();
+      g.stroke();
+      if (!p.inside) {
+        g.save();
+        g.translate(px, py);
+        g.rotate(p.angle);
+        g.beginPath();
+        g.moveTo(u * 1.2, -u * 0.55);
+        g.lineTo(u * 1.85, 0);
+        g.lineTo(u * 1.2, u * 0.55);
+        g.stroke();
+        g.restore();
+      }
+    }
     // The player: an arrow turned by facing relative to the view
     const px = Math.sin(facing);
     const pz = Math.cos(facing);
@@ -143,7 +185,7 @@ export class Minimap {
     g.restore();
     // North (-Z) marker on the rim
     const na = Math.atan2(-rz, -fz); // screen angle of world -Z
-    const nr = css / 2 - 11;
+    const nr = (css / 2 - 12) / Math.max(Math.abs(Math.sin(na)), Math.abs(Math.cos(na)));
     this.north.style.transform = `translate(${Math.sin(na) * nr}px, ${-Math.cos(na) * nr}px)`;
   }
 

@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mulberry32 } from '../../../math/random.js';
 import { appearanceFor } from './peopleAppearance.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 // Stylised people, drawn as instanced body parts (4 draw calls for the whole
-// crowd, however many walkers there are). Each person is a few boxes posed per
+// crowd, however many walkers there are). Distant silhouettes share the near humanoids' proportions;
 // frame: legs and arms swing with the walk cycle, the body bobs.
 //
 // The player avatar is person #0 of the same crowd, unless a rigged model is
@@ -13,19 +14,22 @@ import { appearanceFor } from './peopleAppearance.js';
 const PART = {
   // name: [geometry builder, pivot (x, y, z) in the body frame]
   head: () => {
-    const g = mergeGeometries([
-      new THREE.BoxGeometry(0.26, 0.28, 0.26).translate(0, 0.14, 0).toNonIndexed(),
-      new THREE.BoxGeometry(0.29, 0.1, 0.29).translate(0, 0.27, -0.01).toNonIndexed() // hair / cap
-    ]);
+    const parts = [
+      new THREE.SphereGeometry(.15, 10, 6).scale(.9, 1.12, .85).translate(0, .16, 0).toNonIndexed(),
+      new THREE.SphereGeometry(.156, 10, 4, 0, Math.PI * 2, 0, Math.PI * .47).scale(.94, 1.15, .9).translate(0, .16, -.008).toNonIndexed()
+    ];
+    parts.forEach((part, i) => part.setAttribute('aHair', new THREE.BufferAttribute(new Float32Array(part.attributes.position.count).fill(i), 1)));
+    const g = mergeGeometries(parts);
+    parts.forEach(part => part.dispose());
     return g;
   },
   torso: () =>
     mergeGeometries([
-      new THREE.BoxGeometry(0.44, 0.52, 0.26).translate(0, 0.26, 0).toNonIndexed(),
-      new THREE.BoxGeometry(0.4, 0.16, 0.24).translate(0, -0.06, 0).toNonIndexed()
+      new RoundedBoxGeometry(.44, .52, .26, 1, .045).translate(0, .26, 0),
+      new RoundedBoxGeometry(.40, .16, .24, 1, .03).translate(0, -.06, 0)
     ]),
-  arm: () => new THREE.BoxGeometry(0.11, 0.58, 0.12).translate(0, -0.27, 0).toNonIndexed(),
-  leg: () => new THREE.BoxGeometry(0.15, 0.82, 0.16).translate(0, -0.41, 0).toNonIndexed()
+  arm: () => new RoundedBoxGeometry(.11, .58, .12, 1, .035).translate(0, -.27, 0),
+  leg: () => new RoundedBoxGeometry(.15, .82, .16, 1, .04).translate(0, -.41, -.02)
 };
 
 const _m = new THREE.Matrix4();
@@ -43,16 +47,25 @@ export class Crowd {
     this.group = new THREE.Group();
     const mat = new THREE.MeshToonMaterial({ color: 0xffffff });
     this.material = mat;
-    const make = (geo, n) => {
-      geo.computeVertexNormals();
-      const m = new THREE.InstancedMesh(geo, mat, n);
+    const make = (geo, n, material = mat) => {
+      const m = new THREE.InstancedMesh(geo, material, n);
       m.castShadow = shadows;
       m.frustumCulled = false; // people move: bounds would go stale
       m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       this.group.add(m);
       return m;
     };
-    this.head = make(PART.head(), count);
+    this.headMaterial = mat.clone();
+    this.headMaterial.onBeforeCompile = shader => {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float aHair;\nattribute vec3 aHairColor;')
+        .replace('#include <color_vertex>', '#include <color_vertex>\nvColor.rgb = mix(vColor.rgb, aHairColor, aHair);');
+    };
+    this.headMaterial.customProgramCacheKey = () => 'cozy-crowd-hair';
+    const headGeometry = PART.head();
+    this.hairColors = new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3);
+    headGeometry.setAttribute('aHairColor', this.hairColors);
+    this.head = make(headGeometry, count, this.headMaterial);
     this.torso = make(PART.torso(), count);
     this.arms = make(PART.arm(), count * 2);
     this.legs = make(PART.leg(), count * 2);
@@ -61,6 +74,7 @@ export class Crowd {
       rng(); rng(); rng(); // retain the established motion/height random stream
       const appearance = appearanceFor(seed*131+i);
       const skin = appearance.skin;
+      _c.set(appearance.hair).toArray(this.hairColors.array, i * 3);
       const shirt = appearance.top;
       const pants = appearance.legs;
       const height = 0.92 + rng() * 0.16;
@@ -73,6 +87,7 @@ export class Crowd {
       this.people.push({ x: 0, y: 0, z: 0, yaw: 0, phase: rng() * 10, speed: 0, height, visible: true, jump: 0 });
     }
     [this.head, this.torso, this.arms, this.legs].forEach((m) => (m.instanceColor.needsUpdate = true));
+    this.hairColors.needsUpdate = true;
   }
 
   /** Recolour person i (the player wears the faction colour). */
@@ -115,12 +130,12 @@ export class Crowd {
         mesh.setMatrixAt(idx, _m.premultiply(body));
       };
       const lean = Math.min(0.14, p.speed * 0.024);
-      part(this.torso, i, 0, 0.94, 0, lean);
+      part(this.torso, i, 0, .94, 0, lean);
       part(this.head, i, 0, 1.47, lean * 0.4);
-      part(this.arms, i * 2, -0.285, 1.42, 0, swing);
-      part(this.arms, i * 2 + 1, 0.285, 1.42, 0, -swing);
-      part(this.legs, i * 2, -0.1, 0.86, 0, -swing * 1.1);
-      part(this.legs, i * 2 + 1, 0.1, 0.86, 0, swing * 1.1);
+      part(this.arms, i * 2, -.285, 1.42, 0, swing);
+      part(this.arms, i * 2 + 1, .285, 1.42, 0, -swing);
+      part(this.legs, i * 2, -.1, .86, 0, -swing * 1.1);
+      part(this.legs, i * 2 + 1, .1, .86, 0, swing * 1.1);
     }
     [this.head, this.torso, this.arms, this.legs].forEach((m) => (m.instanceMatrix.needsUpdate = true));
   }
@@ -131,6 +146,7 @@ export class Crowd {
       m.dispose();
     });
     this.material.dispose();
+    this.headMaterial.dispose();
   }
 }
 

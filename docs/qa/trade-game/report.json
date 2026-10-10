@@ -1,0 +1,142 @@
+{
+  "checks": [
+    {
+      "name": "normal CTA starts isolated three-town campaign",
+      "pass": true
+    },
+    {
+      "name": "Bakery placed through a real globe click",
+      "pass": true,
+      "tile": 313
+    },
+    {
+      "name": "UI-created route produces, delivers, settles sales, and unlocks progress",
+      "pass": true
+    },
+    {
+      "name": "exploration map is identical and economy continues outside TradeMode",
+      "pass": true,
+      "before": 127,
+      "after": 132
+    },
+    {
+      "name": "economy persists through original TownMode and SpaceMode without changing exploration IDs or terrain",
+      "pass": true
+    },
+    {
+      "name": "desktop HUD remains inside 1280×720",
+      "pass": true,
+      "layout": [
+        {
+          "selector": ".trade-topbar",
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 72,
+          "inside": true
+        },
+        {
+          "selector": ".trade-inspector",
+          "x": 954,
+          "y": 86,
+          "width": 310,
+          "height": 552,
+          "inside": true
+        },
+        {
+          "selector": ".trade-dock",
+          "x": 0,
+          "y": 648,
+          "width": 1280,
+          "height": 72,
+          "inside": true
+        },
+        {
+          "selector": ".trade-objective",
+          "x": 92,
+          "y": 92,
+          "width": 215,
+          "height": 191.578125,
+          "inside": true
+        }
+      ]
+    },
+    {
+      "name": "reload restores exact money, clock, and in-transit cargo without offline progress",
+      "pass": true
+    },
+    {
+      "name": "full strategy reaches three stable towns, six goods, final milestone and sandbox in app service",
+      "pass": true,
+      "simulationSeconds": 1480
+    },
+    {
+      "name": "coastal globe click, costly-build confirmation, port completion and UI-created sea route",
+      "pass": true
+    },
+    {
+      "name": "B opens build without muting; Escape menu freezes economy",
+      "pass": true
+    },
+    {
+      "name": "second tab is read-only and safely takes ownership after writer releases",
+      "pass": true
+    },
+    {
+      "name": "six repeated entries keep one HUD and bounded geometry, textures, session listeners",
+      "pass": true,
+      "lifecycle": [
+        {
+          "roots": 1,
+          "listeners": 1,
+          "geometry": 85,
+          "textures": 20
+        },
+        {
+          "roots": 1,
+          "listeners": 1,
+          "geometry": 85,
+          "textures": 20
+        },
+        {
+          "roots": 1,
+          "listeners": 1,
+          "geometry": 85,
+          "textures": 20
+        },
+        {
+          "roots": 1,
+          "listeners": 1,
+          "geometry": 85,
+          "textures": 20
+        },
+        {
+          "roots": 1,
+          "listeners": 1,
+          "geometry": 85,
+          "textures": 20
+        },
+        {
+          "roots": 1,
+          "listeners": 1,
+          "geometry": 85,
+          "textures": 20
+        }
+      ]
+    },
+    {
+      "name": "quota failure shows unsaved status and recovers after a successful save",
+      "pass": true
+    },
+    {
+      "name": "native export download succeeds and malformed imports leave the active campaign unchanged",
+      "pass": true
+    },
+    {
+      "name": "English HUD updates controls and context panel with no translation keys exposed",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "engineError": null
+}

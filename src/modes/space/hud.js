@@ -118,7 +118,7 @@ export class SpaceHud {
     ];
     if (p.ring) rows.push([t('space.fact.ring'), t('space.fact.ring.yes')]);
     const land = p.landable
-      ? `<button type="button" class="pill" data-act="land" data-index="${p.index}"><span class="arrow-down" aria-hidden="true"></span>${t('space.land')}</button>`
+      ? `<button type="button" class="pill pill--landing" data-act="land" data-index="${p.index}"><span class="arrow-down" aria-hidden="true"></span>${t('space.land')}</button>`
       : '';
     const fly = orbiting
       ? ''

@@ -1,0 +1,17 @@
+{
+  "animals": {
+    "chicken": {
+      "triangles": 1174,
+      "bones": 9
+    },
+    "cow": {
+      "triangles": 1692,
+      "bones": 9
+    },
+    "dog": {
+      "triangles": 1348,
+      "bones": 9
+    }
+  },
+  "bytes": 130296
+}

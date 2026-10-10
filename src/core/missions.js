@@ -1,5 +1,7 @@
 import { t } from '../i18n/index.js';
 import { MISSIONS } from './missionList.js';
+import { ScopedProgress } from '../world/scopedProgress.js';
+import { showNotice } from '../ui/notice.js';
 
 // Mission log: checklists that span every mode. Modes report what the player
 // did (emit('sit'), emit('drive_m', 12.5), emit('land', 3)); a checklist item
@@ -11,31 +13,43 @@ const KEY = 'planet_globe_missions';
 export { MISSIONS };
 
 export class Missions {
-  constructor(root, audio = null) {
+  /** Progress belongs to the world: it is stored per `world.worldId` and follows the world when it is replaced. */
+  constructor(root, audio = null, world = null) {
     this.root = root;
     this.sound = audio;
+    this.world = world;
+    this.store = new ScopedProgress(KEY);
     this.state = this.load();
     this.listeners = new Set();
     this.buildUi();
+    world?.subscribe?.((event) => { if (event === 'world') this.switchWorld(); });
   }
 
+  get worldId() { return this.world?.worldId ?? 'default'; }
+
+  /** True while the last write to browser storage failed (the pause menu says so). */
+  get saveError() { return this.store.error; }
+
   load() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
-      // Drop checklist items that no longer exist
-      const known = new Set(MISSIONS.flatMap((m) => m.items.map((it) => `${m.id}.${it.id}`)));
-      return Object.fromEntries(Object.entries(saved).filter(([k]) => known.has(k)));
-    } catch {
-      return {};
-    }
+    const saved = this.store.load(this.worldId, {});
+    // Drop checklist items that no longer exist
+    const known = new Set(MISSIONS.flatMap((m) => m.items.map((it) => `${m.id}.${it.id}`)));
+    return Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {}).filter(([k]) => known.has(k)));
   }
 
   save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(this.state));
-    } catch {
-      /* optional */
-    }
+    return this.store.save(this.worldId, this.state);
+  }
+
+  /** A new world replaced the old one: show its own checklist. */
+  switchWorld() {
+    this.state = this.load();
+    this.render();
+  }
+
+  /** Number of finished checklist items in the current world. */
+  doneCount() {
+    return Object.values(this.state).filter((st) => st?.done).length;
   }
 
   itemState(m, it) {
@@ -61,7 +75,7 @@ export class Missions {
         } else st.done = true;
         changed = true;
         if (st.done) {
-          this.toast(this.label(m, it), this.title(m));
+          this.toast(this.label(m, it), this.title(m), event);
           this.listeners.forEach((fn) => fn('item', `${m.id}.${it.id}`));
         }
       }
@@ -107,7 +121,6 @@ export class Missions {
         <header class="mission-log__head"><h2>${t('missions.title')}</h2><button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="toggle" aria-label="${t('missions.close')}"><span></span><span></span></button></header>
         <div class="mission-log__body" data-list></div>
       </aside>
-      <div class="mission-toast" hidden role="status"></div>
       <div class="mission-party" hidden>
         <canvas class="mission-party__confetti"></canvas>
         <section class="mission-party__card" role="dialog" aria-modal="true" aria-labelledby="partyTitle">
@@ -123,7 +136,6 @@ export class Missions {
       list: r.querySelector('[data-list]'),
       count: r.querySelector('[data-count]'),
       toggle: r.querySelector('.mission-toggle'),
-      toast: r.querySelector('.mission-toast'),
       party: r.querySelector('.mission-party'),
       confetti: r.querySelector('.mission-party__confetti')
     };
@@ -172,16 +184,12 @@ export class Missions {
     this.el.count.textContent = `${done}/${MISSIONS.length}`;
   }
 
-  toast(label, mission) {
-    const el = this.el.toast;
-    el.innerHTML = `<span class="mission__check is-on" aria-hidden="true"></span><span><small>${mission}</small>${label}</span>`;
-    el.hidden = false;
-    el.classList.remove('is-out');
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => {
-      el.classList.add('is-out');
-      setTimeout(() => (el.hidden = true), 400);
-    }, 2600);
+  /**
+   * A checklist item ticked. The sound and listeners always fire; the message goes to the shared notice
+   * slot unless `suppressToast(event)` says the First Journey already toasts that same action.
+   */
+  toast(label, mission, event) {
+    if (!this.suppressToast?.(event)) showNotice({ kind: 'mission', title: mission, message: label, ms: 2600 });
     this.sound?.sfx('tick');
     this.listeners.forEach((fn) => fn('tick'));
   }

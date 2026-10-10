@@ -1,10 +1,8 @@
 import { seedFor } from './identity.js';
+import { TOWN_LAYOUT_VERSION } from './versions.js';
 import { t } from '../i18n/index.js';
 
-// 3: practical street widths, hedgerows on field edges, flowers in drifts.
-// 4: towns and cities planned by bisecting blocks (layout/blockPlan.js, docs/TOWN_PLAN_V3.md).
-// 5: half-area settlements and a smaller canonical woodland/tree budget.
-export const TOWN_LAYOUT_VERSION = 5;
+export { TOWN_LAYOUT_VERSION };
 
 const keyOf = (planet, townSeed) => `town-layout:${planet}:${townSeed}`;
 

@@ -1,0 +1,394 @@
+{
+  "timestamp": "2026-10-10T02:31:45.932Z",
+  "date": "2026-10-10",
+  "timezone": "WIB (UTC+7)",
+  "commit": "9ec11fd",
+  "url": "http://localhost:5235",
+  "browser": "154.0.8037.98",
+  "screenshot": "damar-greeting.png",
+  "lastError": null,
+  "proofs": {
+    "bytes": {
+      "preset": "auto",
+      "tier": "high",
+      "page": {
+        "count": 43,
+        "transfer": 34184378,
+        "encoded": 34173680,
+        "decoded": 35399804,
+        "byKind": {
+          "other": {
+            "count": 8,
+            "transfer": 2234,
+            "encoded": 2036,
+            "decoded": 4185
+          },
+          "script": {
+            "count": 17,
+            "transfer": 534910,
+            "encoded": 529810,
+            "decoded": 1701563
+          },
+          "style": {
+            "count": 1,
+            "transfer": 12423,
+            "encoded": 12123,
+            "decoded": 64345
+          },
+          "model": {
+            "count": 11,
+            "transfer": 24437476,
+            "encoded": 24434176,
+            "decoded": 24434176
+          },
+          "texture": {
+            "count": 6,
+            "transfer": 9197335,
+            "encoded": 9195535,
+            "decoded": 9195535
+          }
+        },
+        "largest": [
+          {
+            "file": "soldier_v5_f.glb",
+            "kind": "model",
+            "transfer": 6039376,
+            "encoded": 6039076,
+            "decoded": 6039076
+          },
+          {
+            "file": "soldier_v5_m.glb",
+            "kind": "model",
+            "transfer": 5971900,
+            "encoded": 5971600,
+            "decoded": 5971600
+          },
+          {
+            "file": "town.glb",
+            "kind": "model",
+            "transfer": 5867692,
+            "encoded": 5867392,
+            "decoded": 5867392
+          },
+          {
+            "file": "environment.glb",
+            "kind": "model",
+            "transfer": 3355832,
+            "encoded": 3355532,
+            "decoded": 3355532
+          },
+          {
+            "file": "soldier_v5_m_cloth.png",
+            "kind": "texture",
+            "transfer": 2843308,
+            "encoded": 2843008,
+            "decoded": 2843008
+          },
+          {
+            "file": "soldier_v5_f_cloth.png",
+            "kind": "texture",
+            "transfer": 2810500,
+            "encoded": 2810200,
+            "decoded": 2810200
+          },
+          {
+            "file": "skirmish_surfaces_256.png",
+            "kind": "texture",
+            "transfer": 1521378,
+            "encoded": 1521078,
+            "decoded": 1521078
+          },
+          {
+            "file": "scenery.glb",
+            "kind": "model",
+            "transfer": 1245192,
+            "encoded": 1244892,
+            "decoded": 1244892
+          },
+          {
+            "file": "soldier_v5_m_head.png",
+            "kind": "texture",
+            "transfer": 990059,
+            "encoded": 989759,
+            "decoded": 989759
+          },
+          {
+            "file": "soldier_v5_f_head.png",
+            "kind": "texture",
+            "transfer": 923934,
+            "encoded": 923634,
+            "decoded": 923634
+          },
+          {
+            "file": "furniture.glb",
+            "kind": "model",
+            "transfer": 801928,
+            "encoded": 801628,
+            "decoded": 801628
+          },
+          {
+            "file": "three-JlU1_9Rf.js",
+            "kind": "script",
+            "transfer": 172072,
+            "encoded": 171772,
+            "decoded": 667246
+          }
+        ],
+        "transferMiB": 32.6,
+        "decodedMiB": 33.76
+      },
+      "routes": [
+        {
+          "mode": "space",
+          "at": 263,
+          "count": 11,
+          "transfer": 488778,
+          "encoded": 486879,
+          "decoded": 627899,
+          "byKind": {
+            "script": {
+              "count": 5,
+              "transfer": 75789,
+              "encoded": 74289,
+              "decoded": 215309
+            },
+            "other": {
+              "count": 5,
+              "transfer": 1101,
+              "encoded": 1002,
+              "decoded": 1002
+            },
+            "model": {
+              "count": 1,
+              "transfer": 411888,
+              "encoded": 411588,
+              "decoded": 411588
+            }
+          },
+          "largest": [
+            {
+              "file": "space.glb",
+              "kind": "model",
+              "transfer": 411888,
+              "encoded": 411588,
+              "decoded": 411588
+            },
+            {
+              "file": "planetBake.worker-BPeOg1_G.js",
+              "kind": "script",
+              "transfer": 54927,
+              "encoded": 54627,
+              "decoded": 162585
+            },
+            {
+              "file": "SpaceMode-BjzOysh5.js",
+              "kind": "script",
+              "transfer": 13765,
+              "encoded": 13465,
+              "decoded": 38771
+            },
+            {
+              "file": "journeyTargets-BmjLlKd_.js",
+              "kind": "script",
+              "transfer": 3102,
+              "encoded": 2802,
+              "decoded": 6629
+            },
+            {
+              "file": "assetManifest-j7-bllBd.js",
+              "kind": "script",
+              "transfer": 2362,
+              "encoded": 2062,
+              "decoded": 4860
+            },
+            {
+              "file": "spaceBackdrop-D-D5YNz9.js",
+              "kind": "script",
+              "transfer": 1633,
+              "encoded": 1333,
+              "decoded": 2464
+            }
+          ],
+          "transferMiB": 0.47,
+          "decodedMiB": 0.6
+        },
+        {
+          "mode": "town",
+          "at": 3743,
+          "count": 23,
+          "transfer": 33406906,
+          "encoded": 33400507,
+          "decoded": 33703817,
+          "byKind": {
+            "script": {
+              "count": 6,
+              "transfer": 183683,
+              "encoded": 181883,
+              "decoded": 485193
+            },
+            "model": {
+              "count": 10,
+              "transfer": 24025588,
+              "encoded": 24022588,
+              "decoded": 24022588
+            },
+            "texture": {
+              "count": 6,
+              "transfer": 9197335,
+              "encoded": 9195535,
+              "decoded": 9195535
+            },
+            "other": {
+              "count": 1,
+              "transfer": 300,
+              "encoded": 501,
+              "decoded": 501
+            }
+          },
+          "largest": [
+            {
+              "file": "soldier_v5_f.glb",
+              "kind": "model",
+              "transfer": 6039376,
+              "encoded": 6039076,
+              "decoded": 6039076
+            },
+            {
+              "file": "soldier_v5_m.glb",
+              "kind": "model",
+              "transfer": 5971900,
+              "encoded": 5971600,
+              "decoded": 5971600
+            },
+            {
+              "file": "town.glb",
+              "kind": "model",
+              "transfer": 5867692,
+              "encoded": 5867392,
+              "decoded": 5867392
+            },
+            {
+              "file": "environment.glb",
+              "kind": "model",
+              "transfer": 3355832,
+              "encoded": 3355532,
+              "decoded": 3355532
+            },
+            {
+              "file": "soldier_v5_m_cloth.png",
+              "kind": "texture",
+              "transfer": 2843308,
+              "encoded": 2843008,
+              "decoded": 2843008
+            },
+            {
+              "file": "soldier_v5_f_cloth.png",
+              "kind": "texture",
+              "transfer": 2810500,
+              "encoded": 2810200,
+              "decoded": 2810200
+            }
+          ],
+          "transferMiB": 31.86,
+          "decodedMiB": 32.14
+        }
+      ]
+    },
+    "night": {
+      "enabled": true,
+      "night": 0,
+      "hemiIntensity": 1.15,
+      "ambient": 0.22,
+      "hemi": "#8ba9d3",
+      "moon": "#f2f4ff",
+      "sunIntensity": 2.5
+    },
+    "beacon": {
+      "visible": true,
+      "badge": false,
+      "arrow": true,
+      "night": 0,
+      "arcs": "#e9dcc0",
+      "pulse": 0.9511613061396571,
+      "calls": 3,
+      "active": true,
+      "door": {
+        "x": -24.8220847255799,
+        "z": -15.913477901323793,
+        "outYaw": -0.36034262833335134,
+        "buildingId": "town:56874305:building:f_house_tall:-2470:-2120:3603"
+      }
+    },
+    "grass": {
+      "enabled": true,
+      "active": 1,
+      "peakActive": 2,
+      "contacts": 1,
+      "stamps": 1,
+      "slots": 6,
+      "live": {
+        "x": -67.21371241347728,
+        "z": -119.87914317466667,
+        "strength": 1,
+        "radius": 0.55
+      }
+    },
+    "greet": {
+      "enabled": true,
+      "actorId": "damar:1:0:u673sx",
+      "name": "Damar",
+      "seed": 1824394497,
+      "walkerIndex": 1,
+      "anchorEdge": 923,
+      "state": "talk",
+      "greetings": 1,
+      "hold": true,
+      "bubble": true,
+      "distance": 2.211812339303464,
+      "lastGreetAt": 0.3332999999999998,
+      "clock": 1.5666000000000015,
+      "position": {
+        "x": -67.24258215488292,
+        "y": 2.737380966252097,
+        "z": -122.09076709439765
+      },
+      "events": [
+        {
+          "eventId": "lw.actor.state.enter",
+          "instanceId": "damar:1:0:u673sx:1",
+          "actorId": "damar:1:0:u673sx",
+          "interactionId": "damar:1:0:u673sx#1",
+          "worldTime": 0.05000000000000071,
+          "phase": "stop"
+        },
+        {
+          "eventId": "lw.actor.greet",
+          "instanceId": "damar:1:0:u673sx:2",
+          "actorId": "damar:1:0:u673sx",
+          "interactionId": "damar:1:0:u673sx#1",
+          "worldTime": 0.3332999999999998,
+          "phase": "greet",
+          "position": {
+            "x": -67.24258215488292,
+            "z": -122.09076709439765
+          }
+        },
+        {
+          "eventId": "lw.actor.talk.start",
+          "instanceId": "damar:1:0:u673sx:3",
+          "actorId": "damar:1:0:u673sx",
+          "interactionId": "damar:1:0:u673sx#1",
+          "worldTime": 0.3332999999999998,
+          "phase": "start"
+        }
+      ]
+    },
+    "lazy": {
+      "enabled": true,
+      "state": "ready",
+      "reason": "near-door",
+      "loadedMs": 144.30000001192093,
+      "error": null
+    }
+  }
+}

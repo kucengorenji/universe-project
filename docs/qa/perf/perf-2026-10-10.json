@@ -1,0 +1,2702 @@
+{
+  "timestamp": "2026-10-10T02:34:25.862Z",
+  "date": "2026-10-10",
+  "timezone": "WIB (UTC+7)",
+  "commit": "9ec11fd",
+  "url": "http://localhost:5235",
+  "browser": "154.0.8037.98",
+  "setup": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "deviceScaleFactor": 1,
+    "seed": 427,
+    "homePlanetIndex": 2,
+    "warmupSeconds": 3,
+    "sampleSeconds": 10,
+    "repetitions": 3,
+    "saturationPassesPerFrame": 3
+  },
+  "budgets": {
+    "cold_transfer_initial_mib": 10,
+    "cold_transfer_town_add_mib": 15,
+    "frame_p95_ms": 40,
+    "frame_p99_ms": 50,
+    "ram_tab_steady_mib": 500
+  },
+  "conditions": {
+    "normal": {
+      "qualityPreset": "normal",
+      "cpuThrottlingRate": 1,
+      "description": "Preset Normal (High tier assets, unthrottled M1 Pro Metal backend)",
+      "routes": {
+        "space": {
+          "id": "space",
+          "name": "Space",
+          "median": {
+            "wireTransferMiB": 0.88,
+            "estimatedGzipMiB": 0.88,
+            "heapUsedMiB": 17.57,
+            "singlePass_p50_ms": 0.13,
+            "singlePass_p95_ms": 0.43,
+            "singlePass_p99_ms": 0.63,
+            "saturated3x_p50_ms": 0.4,
+            "saturated3x_p95_ms": 1.3,
+            "saturated3x_p99_ms": 1.9,
+            "gpuTimer_ms": 2.98,
+            "geometries": 16,
+            "textures": 19
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 921231,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 2637,
+              "heapUsedBytes": 18418636,
+              "heapUsedMiB": 17.57,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 16,
+                "textures": 19
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.13,
+                  "p95": 0.43,
+                  "p99": 0.63,
+                  "avg": 0.19,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 0.4,
+                  "p95": 1.3,
+                  "p99": 1.9,
+                  "avg": 0.58,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.8,
+                  "p95": 5.85,
+                  "p99": 6.28,
+                  "avg": 3.03,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 921080,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 2599,
+              "heapUsedBytes": 18392076,
+              "heapUsedMiB": 17.54,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 15,
+                "textures": 19
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.13,
+                  "p95": 0.5,
+                  "p99": 0.67,
+                  "avg": 0.21,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 0.4,
+                  "p95": 1.5,
+                  "p99": 2,
+                  "avg": 0.63,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.66,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.32,
+                  "p95": 5.17,
+                  "p99": 6.21,
+                  "avg": 2.63,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 921238,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 2757,
+              "heapUsedBytes": 18445592,
+              "heapUsedMiB": 17.59,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 17,
+                "textures": 19
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.13,
+                  "p95": 0.4,
+                  "p99": 0.57,
+                  "avg": 0.17,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 0.4,
+                  "p95": 1.2,
+                  "p99": 1.7,
+                  "avg": 0.5,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.66,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.84,
+                  "p95": 5.78,
+                  "p99": 6.24,
+                  "avg": 2.98,
+                  "count": 600
+                }
+              }
+            }
+          ]
+        },
+        "planet": {
+          "id": "planet",
+          "name": "Planet",
+          "median": {
+            "wireTransferMiB": 1.51,
+            "estimatedGzipMiB": 1.51,
+            "heapUsedMiB": 51.84,
+            "singlePass_p50_ms": 1.27,
+            "singlePass_p95_ms": 1.67,
+            "singlePass_p99_ms": 1.93,
+            "saturated3x_p50_ms": 3.8,
+            "saturated3x_p95_ms": 5,
+            "saturated3x_p99_ms": 5.8,
+            "gpuTimer_ms": 4.67,
+            "geometries": 70,
+            "textures": 20
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 1585383,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 2725,
+              "heapUsedBytes": 54356036,
+              "heapUsedMiB": 51.84,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 72,
+                "textures": 20
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.27,
+                  "p95": 1.57,
+                  "p99": 1.87,
+                  "avg": 1.29,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3.8,
+                  "p95": 4.7,
+                  "p99": 5.6,
+                  "avg": 3.86,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 4.34,
+                  "p95": 6.13,
+                  "p99": 6.44,
+                  "avg": 4.67,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 1585382,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 2124,
+              "heapUsedBytes": 42048904,
+              "heapUsedMiB": 40.1,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 62,
+                "textures": 20
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.17,
+                  "p95": 2.43,
+                  "p99": 3.47,
+                  "avg": 1.34,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3.5,
+                  "p95": 7.3,
+                  "p99": 10.4,
+                  "avg": 4.02,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 4.02,
+                  "p95": 5.84,
+                  "p99": 6.27,
+                  "avg": 4.14,
+                  "count": 599
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 1584764,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 3464,
+              "heapUsedBytes": 57317096,
+              "heapUsedMiB": 54.66,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 70,
+                "textures": 18
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.37,
+                  "p95": 1.67,
+                  "p99": 1.93,
+                  "avg": 1.37,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 4.1,
+                  "p95": 5,
+                  "p99": 5.8,
+                  "avg": 4.1,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 4.99,
+                  "p95": 6.66,
+                  "p99": 6.89,
+                  "avg": 5.23,
+                  "count": 599
+                }
+              }
+            }
+          ]
+        },
+        "town_diorama": {
+          "id": "town_diorama",
+          "name": "Town (diorama)",
+          "median": {
+            "wireTransferMiB": 31.56,
+            "estimatedGzipMiB": 31.56,
+            "heapUsedMiB": 38.94,
+            "singlePass_p50_ms": 2.47,
+            "singlePass_p95_ms": 3.13,
+            "singlePass_p99_ms": 3.47,
+            "saturated3x_p50_ms": 7.4,
+            "saturated3x_p95_ms": 9.4,
+            "saturated3x_p99_ms": 10.4,
+            "gpuTimer_ms": 4.72,
+            "geometries": 164,
+            "textures": 47
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 33095745,
+              "wireMiB": 31.56,
+              "estimatedGzipMiB": 31.56,
+              "loadDurationMs": 7184,
+              "heapUsedBytes": 40830980,
+              "heapUsedMiB": 38.94,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 164,
+                "textures": 47
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 2.47,
+                  "p95": 3.13,
+                  "p99": 3.47,
+                  "avg": 2.45,
+                  "count": 602
+                },
+                "saturated3xMs": {
+                  "p50": 7.4,
+                  "p95": 9.4,
+                  "p99": 10.4,
+                  "avg": 7.36,
+                  "count": 602
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 602
+                },
+                "gpuTimerMs": {
+                  "p50": 4.47,
+                  "p95": 5.97,
+                  "p99": 6.44,
+                  "avg": 4.72,
+                  "count": 585
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 33095750,
+              "wireMiB": 31.56,
+              "estimatedGzipMiB": 31.56,
+              "loadDurationMs": 8539,
+              "heapUsedBytes": 41800940,
+              "heapUsedMiB": 39.86,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 200,
+                "textures": 47
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 3.77,
+                  "p95": 4.43,
+                  "p99": 5,
+                  "avg": 3.76,
+                  "count": 589
+                },
+                "saturated3xMs": {
+                  "p50": 11.3,
+                  "p95": 13.3,
+                  "p99": 15,
+                  "avg": 11.29,
+                  "count": 589
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 33.3,
+                  "avg": 16.99,
+                  "count": 589
+                },
+                "gpuTimerMs": {
+                  "p50": 5.03,
+                  "p95": 6.33,
+                  "p99": 6.64,
+                  "avg": 5.23,
+                  "count": 576
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 33095742,
+              "wireMiB": 31.56,
+              "estimatedGzipMiB": 31.56,
+              "loadDurationMs": 6648,
+              "heapUsedBytes": 38178136,
+              "heapUsedMiB": 36.41,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 157,
+                "textures": 47
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.6,
+                  "p95": 2.03,
+                  "p99": 2.27,
+                  "avg": 1.61,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 4.8,
+                  "p95": 6.1,
+                  "p99": 6.8,
+                  "avg": 4.84,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.66,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 3.75,
+                  "p95": 5.29,
+                  "p99": 5.45,
+                  "avg": 3.99,
+                  "count": 600
+                }
+              }
+            }
+          ]
+        },
+        "town_walk": {
+          "id": "town_walk",
+          "name": "Town (walk)",
+          "median": {
+            "wireTransferMiB": 31.56,
+            "estimatedGzipMiB": 31.56,
+            "heapUsedMiB": 36.52,
+            "singlePass_p50_ms": 1.03,
+            "singlePass_p95_ms": 1.43,
+            "singlePass_p99_ms": 1.63,
+            "saturated3x_p50_ms": 3.1,
+            "saturated3x_p95_ms": 4.3,
+            "saturated3x_p99_ms": 4.9,
+            "gpuTimer_ms": 3.68,
+            "geometries": 204,
+            "textures": 49
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 33095727,
+              "wireMiB": 31.56,
+              "estimatedGzipMiB": 31.56,
+              "loadDurationMs": 6480,
+              "heapUsedBytes": 38293788,
+              "heapUsedMiB": 36.52,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 194,
+                "textures": 48
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1,
+                  "p95": 1.27,
+                  "p99": 1.5,
+                  "avg": 1.01,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3,
+                  "p95": 3.8,
+                  "p99": 4.5,
+                  "avg": 3.02,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.66,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 3.21,
+                  "p95": 4.57,
+                  "p99": 4.89,
+                  "avg": 3.34,
+                  "count": 598
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 33095589,
+              "wireMiB": 31.56,
+              "estimatedGzipMiB": 31.56,
+              "loadDurationMs": 6863,
+              "heapUsedBytes": 40946212,
+              "heapUsedMiB": 39.05,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 238,
+                "textures": 49
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 2.4,
+                  "p95": 2.97,
+                  "p99": 3.17,
+                  "avg": 2.39,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 7.2,
+                  "p95": 8.9,
+                  "p99": 9.5,
+                  "avg": 7.16,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 4.42,
+                  "p95": 5.76,
+                  "p99": 6.04,
+                  "avg": 4.61,
+                  "count": 596
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 33095753,
+              "wireMiB": 31.56,
+              "estimatedGzipMiB": 31.56,
+              "loadDurationMs": 7526,
+              "heapUsedBytes": 37113148,
+              "heapUsedMiB": 35.39,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 204,
+                "textures": 49
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.03,
+                  "p95": 1.43,
+                  "p99": 1.63,
+                  "avg": 1.08,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3.1,
+                  "p95": 4.3,
+                  "p99": 4.9,
+                  "avg": 3.24,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 3.5,
+                  "p95": 4.81,
+                  "p99": 5.01,
+                  "avg": 3.68,
+                  "count": 600
+                }
+              }
+            }
+          ]
+        },
+        "interior": {
+          "id": "interior",
+          "name": "Interior",
+          "median": {
+            "wireTransferMiB": 32.33,
+            "estimatedGzipMiB": 32.33,
+            "heapUsedMiB": 37.58,
+            "singlePass_p50_ms": 0.43,
+            "singlePass_p95_ms": 0.57,
+            "singlePass_p99_ms": 0.7,
+            "saturated3x_p50_ms": 1.3,
+            "saturated3x_p95_ms": 1.7,
+            "saturated3x_p99_ms": 2.1,
+            "gpuTimer_ms": 3.52,
+            "geometries": 243,
+            "textures": 50
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 33897496,
+              "wireMiB": 32.33,
+              "estimatedGzipMiB": 32.33,
+              "loadDurationMs": 6953,
+              "heapUsedBytes": 39407412,
+              "heapUsedMiB": 37.58,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 229,
+                "textures": 50
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.43,
+                  "p95": 0.57,
+                  "p99": 0.63,
+                  "avg": 0.43,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 1.3,
+                  "p95": 1.7,
+                  "p99": 1.9,
+                  "avg": 1.28,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 3.23,
+                  "p95": 5.64,
+                  "p99": 6.77,
+                  "avg": 3.52,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 33897654,
+              "wireMiB": 32.33,
+              "estimatedGzipMiB": 32.33,
+              "loadDurationMs": 8022,
+              "heapUsedBytes": 40245288,
+              "heapUsedMiB": 38.38,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 247,
+                "textures": 50
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.43,
+                  "p95": 0.57,
+                  "p99": 0.77,
+                  "avg": 0.44,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 1.3,
+                  "p95": 1.7,
+                  "p99": 2.3,
+                  "avg": 1.33,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.82,
+                  "p95": 4.97,
+                  "p99": 6.29,
+                  "avg": 3.16,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 33897493,
+              "wireMiB": 32.33,
+              "estimatedGzipMiB": 32.33,
+              "loadDurationMs": 8226,
+              "heapUsedBytes": 38087368,
+              "heapUsedMiB": 36.32,
+              "renderInfo": {
+                "calls": 1,
+                "triangles": 1,
+                "geometries": 243,
+                "textures": 51
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.47,
+                  "p95": 0.6,
+                  "p99": 0.7,
+                  "avg": 0.47,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 1.4,
+                  "p95": 1.8,
+                  "p99": 2.1,
+                  "avg": 1.41,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 3.35,
+                  "p95": 6.22,
+                  "p99": 8.02,
+                  "avg": 3.8,
+                  "count": 600
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "low_unthrottled": {
+      "qualityPreset": "low",
+      "cpuThrottlingRate": 1,
+      "description": "Preset Hemat / Low (lowAtlas 1024, detail 0.5, shadows off, 1x CPU)",
+      "routes": {
+        "space": {
+          "id": "space",
+          "name": "Space",
+          "median": {
+            "wireTransferMiB": 0.88,
+            "estimatedGzipMiB": 0.88,
+            "heapUsedMiB": 17.27,
+            "singlePass_p50_ms": 0.13,
+            "singlePass_p95_ms": 0.3,
+            "singlePass_p99_ms": 0.4,
+            "saturated3x_p50_ms": 0.4,
+            "saturated3x_p95_ms": 0.9,
+            "saturated3x_p99_ms": 1.2,
+            "gpuTimer_ms": 0.88,
+            "geometries": 20,
+            "textures": 8
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 921240,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 2632,
+              "heapUsedBytes": 18085932,
+              "heapUsedMiB": 17.25,
+              "renderInfo": {
+                "calls": 17,
+                "triangles": 83310,
+                "geometries": 15,
+                "textures": 7
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.13,
+                  "p95": 0.3,
+                  "p99": 0.4,
+                  "avg": 0.14,
+                  "count": 602
+                },
+                "saturated3xMs": {
+                  "p50": 0.4,
+                  "p95": 0.9,
+                  "p99": 1.2,
+                  "avg": 0.41,
+                  "count": 602
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 602
+                },
+                "gpuTimerMs": {
+                  "p50": 0.78,
+                  "p95": 1.64,
+                  "p99": 2.15,
+                  "avg": 0.85,
+                  "count": 601
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 921238,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 3173,
+              "heapUsedBytes": 18272828,
+              "heapUsedMiB": 17.43,
+              "renderInfo": {
+                "calls": 27,
+                "triangles": 96652,
+                "geometries": 21,
+                "textures": 10
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.17,
+                  "p95": 0.43,
+                  "p99": 0.63,
+                  "avg": 0.21,
+                  "count": 602
+                },
+                "saturated3xMs": {
+                  "p50": 0.5,
+                  "p95": 1.3,
+                  "p99": 1.9,
+                  "avg": 0.62,
+                  "count": 602
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 602
+                },
+                "gpuTimerMs": {
+                  "p50": 0.84,
+                  "p95": 1.62,
+                  "p99": 2.09,
+                  "avg": 0.89,
+                  "count": 601
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 921238,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 2621,
+              "heapUsedBytes": 18109684,
+              "heapUsedMiB": 17.27,
+              "renderInfo": {
+                "calls": 22,
+                "triangles": 101838,
+                "geometries": 20,
+                "textures": 8
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.1,
+                  "p95": 0.3,
+                  "p99": 0.4,
+                  "avg": 0.14,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 0.3,
+                  "p95": 0.9,
+                  "p99": 1.2,
+                  "avg": 0.43,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 0.81,
+                  "p95": 1.61,
+                  "p99": 2.27,
+                  "avg": 0.88,
+                  "count": 600
+                }
+              }
+            }
+          ]
+        },
+        "planet": {
+          "id": "planet",
+          "name": "Planet",
+          "median": {
+            "wireTransferMiB": 1.51,
+            "estimatedGzipMiB": 1.51,
+            "heapUsedMiB": 54.33,
+            "singlePass_p50_ms": 1.2,
+            "singlePass_p95_ms": 1.4,
+            "singlePass_p99_ms": 1.53,
+            "saturated3x_p50_ms": 3.6,
+            "saturated3x_p95_ms": 4.2,
+            "saturated3x_p99_ms": 4.6,
+            "gpuTimer_ms": 2.79,
+            "geometries": 67,
+            "textures": 6
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 1585385,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 2080,
+              "heapUsedBytes": 43275612,
+              "heapUsedMiB": 41.27,
+              "renderInfo": {
+                "calls": 250,
+                "triangles": 1080287,
+                "geometries": 64,
+                "textures": 6
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.07,
+                  "p95": 1.23,
+                  "p99": 1.33,
+                  "avg": 1.07,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3.2,
+                  "p95": 3.7,
+                  "p99": 4,
+                  "avg": 3.2,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.44,
+                  "p95": 3.09,
+                  "p99": 3.94,
+                  "avg": 2.48,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 1585381,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 2678,
+              "heapUsedBytes": 56971568,
+              "heapUsedMiB": 54.33,
+              "renderInfo": {
+                "calls": 302,
+                "triangles": 1378625,
+                "geometries": 67,
+                "textures": 6
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.2,
+                  "p95": 1.4,
+                  "p99": 1.53,
+                  "avg": 1.2,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3.6,
+                  "p95": 4.2,
+                  "p99": 4.6,
+                  "avg": 3.6,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 3.22,
+                  "p95": 3.68,
+                  "p99": 4.5,
+                  "avg": 3.22,
+                  "count": 593
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 1585224,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 2787,
+              "heapUsedBytes": 57468708,
+              "heapUsedMiB": 54.81,
+              "renderInfo": {
+                "calls": 355,
+                "triangles": 1427973,
+                "geometries": 72,
+                "textures": 9
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.47,
+                  "p95": 1.77,
+                  "p99": 1.93,
+                  "avg": 1.48,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 4.4,
+                  "p95": 5.3,
+                  "p99": 5.8,
+                  "avg": 4.44,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.74,
+                  "p95": 3.24,
+                  "p99": 3.74,
+                  "avg": 2.79,
+                  "count": 593
+                }
+              }
+            }
+          ]
+        },
+        "town_diorama": {
+          "id": "town_diorama",
+          "name": "Town (diorama)",
+          "median": {
+            "wireTransferMiB": 26.22,
+            "estimatedGzipMiB": 26.22,
+            "heapUsedMiB": 35.94,
+            "singlePass_p50_ms": 1.53,
+            "singlePass_p95_ms": 1.87,
+            "singlePass_p99_ms": 2.03,
+            "saturated3x_p50_ms": 4.6,
+            "saturated3x_p95_ms": 5.6,
+            "saturated3x_p99_ms": 6.1,
+            "gpuTimer_ms": 2.41,
+            "geometries": 157,
+            "textures": 25
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496475,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 6409,
+              "heapUsedBytes": 34550348,
+              "heapUsedMiB": 32.95,
+              "renderInfo": {
+                "calls": 372,
+                "triangles": 384934,
+                "geometries": 139,
+                "textures": 25
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.3,
+                  "p95": 1.57,
+                  "p99": 1.7,
+                  "avg": 1.31,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3.9,
+                  "p95": 4.7,
+                  "p99": 5.1,
+                  "avg": 3.93,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.32,
+                  "p95": 4.03,
+                  "p99": 4.49,
+                  "avg": 2.41,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496367,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 5989,
+              "heapUsedBytes": 37687688,
+              "heapUsedMiB": 35.94,
+              "renderInfo": {
+                "calls": 565,
+                "triangles": 472951,
+                "geometries": 157,
+                "textures": 25
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.53,
+                  "p95": 1.87,
+                  "p99": 2.03,
+                  "avg": 1.56,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 4.6,
+                  "p95": 5.6,
+                  "p99": 6.1,
+                  "avg": 4.69,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.09,
+                  "p95": 3.06,
+                  "p99": 3.86,
+                  "avg": 2.18,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496454,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 6405,
+              "heapUsedBytes": 39059336,
+              "heapUsedMiB": 37.25,
+              "renderInfo": {
+                "calls": 611,
+                "triangles": 697328,
+                "geometries": 163,
+                "textures": 25
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.7,
+                  "p95": 2.1,
+                  "p99": 2.33,
+                  "avg": 1.75,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 5.1,
+                  "p95": 6.3,
+                  "p99": 7,
+                  "avg": 5.24,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.6,
+                  "p95": 3.36,
+                  "p99": 3.96,
+                  "avg": 2.64,
+                  "count": 598
+                }
+              }
+            }
+          ]
+        },
+        "town_walk": {
+          "id": "town_walk",
+          "name": "Town (walk)",
+          "median": {
+            "wireTransferMiB": 26.22,
+            "estimatedGzipMiB": 26.22,
+            "heapUsedMiB": 34.06,
+            "singlePass_p50_ms": 0.8,
+            "singlePass_p95_ms": 0.97,
+            "singlePass_p99_ms": 1.1,
+            "saturated3x_p50_ms": 2.4,
+            "saturated3x_p95_ms": 2.9,
+            "saturated3x_p99_ms": 3.3,
+            "gpuTimer_ms": 2.42,
+            "geometries": 167,
+            "textures": 26
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496452,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 6322,
+              "heapUsedBytes": 34512156,
+              "heapUsedMiB": 32.91,
+              "renderInfo": {
+                "calls": 233,
+                "triangles": 427462,
+                "geometries": 145,
+                "textures": 27
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.8,
+                  "p95": 0.97,
+                  "p99": 1.1,
+                  "avg": 0.82,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 2.4,
+                  "p95": 2.9,
+                  "p99": 3.3,
+                  "avg": 2.46,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.44,
+                  "p95": 3.54,
+                  "p99": 4.63,
+                  "avg": 2.54,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496454,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 6277,
+              "heapUsedBytes": 35711336,
+              "heapUsedMiB": 34.06,
+              "renderInfo": {
+                "calls": 259,
+                "triangles": 476832,
+                "geometries": 167,
+                "textures": 26
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.73,
+                  "p95": 0.9,
+                  "p99": 1.03,
+                  "avg": 0.75,
+                  "count": 602
+                },
+                "saturated3xMs": {
+                  "p50": 2.2,
+                  "p95": 2.7,
+                  "p99": 3.1,
+                  "avg": 2.25,
+                  "count": 602
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 602
+                },
+                "gpuTimerMs": {
+                  "p50": 2.16,
+                  "p95": 3.55,
+                  "p99": 4.73,
+                  "avg": 2.42,
+                  "count": 601
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496317,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 6626,
+              "heapUsedBytes": 37604332,
+              "heapUsedMiB": 35.86,
+              "renderInfo": {
+                "calls": 288,
+                "triangles": 570937,
+                "geometries": 185,
+                "textures": 26
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.83,
+                  "p95": 1.13,
+                  "p99": 1.63,
+                  "avg": 0.88,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 2.5,
+                  "p95": 3.4,
+                  "p99": 4.9,
+                  "avg": 2.63,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 2.19,
+                  "p95": 3.17,
+                  "p99": 4.13,
+                  "avg": 2.26,
+                  "count": 599
+                }
+              }
+            }
+          ]
+        },
+        "interior": {
+          "id": "interior",
+          "name": "Interior",
+          "median": {
+            "wireTransferMiB": 26.99,
+            "estimatedGzipMiB": 26.99,
+            "heapUsedMiB": 35.1,
+            "singlePass_p50_ms": 0.33,
+            "singlePass_p95_ms": 0.8,
+            "singlePass_p99_ms": 1,
+            "saturated3x_p50_ms": 1,
+            "saturated3x_p95_ms": 2.4,
+            "saturated3x_p99_ms": 3,
+            "gpuTimer_ms": 1.72,
+            "geometries": 237,
+            "textures": 28
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 28297600,
+              "wireMiB": 26.99,
+              "estimatedGzipMiB": 26.99,
+              "loadDurationMs": 7466,
+              "heapUsedBytes": 36807516,
+              "heapUsedMiB": 35.1,
+              "renderInfo": {
+                "calls": 84,
+                "triangles": 91128,
+                "geometries": 226,
+                "textures": 27
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.3,
+                  "p95": 0.8,
+                  "p99": 1,
+                  "avg": 0.37,
+                  "count": 602
+                },
+                "saturated3xMs": {
+                  "p50": 0.9,
+                  "p95": 2.4,
+                  "p99": 3,
+                  "avg": 1.12,
+                  "count": 602
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 602
+                },
+                "gpuTimerMs": {
+                  "p50": 1.37,
+                  "p95": 2.1,
+                  "p99": 2.73,
+                  "avg": 1.3,
+                  "count": 601
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 28298376,
+              "wireMiB": 26.99,
+              "estimatedGzipMiB": 26.99,
+              "loadDurationMs": 7339,
+              "heapUsedBytes": 37512164,
+              "heapUsedMiB": 35.77,
+              "renderInfo": {
+                "calls": 78,
+                "triangles": 143110,
+                "geometries": 237,
+                "textures": 28
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.33,
+                  "p95": 0.67,
+                  "p99": 0.83,
+                  "avg": 0.35,
+                  "count": 602
+                },
+                "saturated3xMs": {
+                  "p50": 1,
+                  "p95": 2,
+                  "p99": 2.5,
+                  "avg": 1.05,
+                  "count": 602
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 602
+                },
+                "gpuTimerMs": {
+                  "p50": 1.98,
+                  "p95": 2.79,
+                  "p99": 3.37,
+                  "avg": 1.76,
+                  "count": 601
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 28298214,
+              "wireMiB": 26.99,
+              "estimatedGzipMiB": 26.99,
+              "loadDurationMs": 7337,
+              "heapUsedBytes": 36668652,
+              "heapUsedMiB": 34.97,
+              "renderInfo": {
+                "calls": 87,
+                "triangles": 147262,
+                "geometries": 242,
+                "textures": 28
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.33,
+                  "p95": 0.83,
+                  "p99": 1.1,
+                  "avg": 0.42,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 1,
+                  "p95": 2.5,
+                  "p99": 3.3,
+                  "avg": 1.25,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.66,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 1.74,
+                  "p95": 2.71,
+                  "p99": 3.35,
+                  "avg": 1.72,
+                  "count": 600
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "low_throttled": {
+      "qualityPreset": "low",
+      "cpuThrottlingRate": 4,
+      "description": "Preset Hemat / Low (lowAtlas 1024, 4x CPU Throttling via CDP as iGPU proxy)",
+      "routes": {
+        "space": {
+          "id": "space",
+          "name": "Space",
+          "median": {
+            "wireTransferMiB": 0.88,
+            "estimatedGzipMiB": 0.88,
+            "heapUsedMiB": 17.26,
+            "singlePass_p50_ms": 0.27,
+            "singlePass_p95_ms": 0.53,
+            "singlePass_p99_ms": 0.8,
+            "saturated3x_p50_ms": 0.8,
+            "saturated3x_p95_ms": 1.6,
+            "saturated3x_p99_ms": 2.4,
+            "gpuTimer_ms": 0.72,
+            "geometries": 16,
+            "textures": 7
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 920434,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 4321,
+              "heapUsedBytes": 18093792,
+              "heapUsedMiB": 17.26,
+              "renderInfo": {
+                "calls": 22,
+                "triangles": 102152,
+                "geometries": 19,
+                "textures": 9
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.27,
+                  "p95": 0.53,
+                  "p99": 0.77,
+                  "avg": 0.28,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 0.8,
+                  "p95": 1.6,
+                  "p99": 2.3,
+                  "avg": 0.85,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.66,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 0.59,
+                  "p95": 1.28,
+                  "p99": 1.95,
+                  "avg": 0.72,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 921078,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 4262,
+              "heapUsedBytes": 18102292,
+              "heapUsedMiB": 17.26,
+              "renderInfo": {
+                "calls": 18,
+                "triangles": 83310,
+                "geometries": 16,
+                "textures": 7
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.27,
+                  "p95": 0.53,
+                  "p99": 0.87,
+                  "avg": 0.26,
+                  "count": 602
+                },
+                "saturated3xMs": {
+                  "p50": 0.8,
+                  "p95": 1.6,
+                  "p99": 2.6,
+                  "avg": 0.78,
+                  "count": 602
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 602
+                },
+                "gpuTimerMs": {
+                  "p50": 0.71,
+                  "p95": 1.33,
+                  "p99": 1.89,
+                  "avg": 0.71,
+                  "count": 601
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 920456,
+              "wireMiB": 0.88,
+              "estimatedGzipMiB": 0.88,
+              "loadDurationMs": 4393,
+              "heapUsedBytes": 18106660,
+              "heapUsedMiB": 17.27,
+              "renderInfo": {
+                "calls": 18,
+                "triangles": 83310,
+                "geometries": 16,
+                "textures": 7
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.27,
+                  "p95": 0.53,
+                  "p99": 0.8,
+                  "avg": 0.27,
+                  "count": 602
+                },
+                "saturated3xMs": {
+                  "p50": 0.8,
+                  "p95": 1.6,
+                  "p99": 2.4,
+                  "avg": 0.8,
+                  "count": 602
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 602
+                },
+                "gpuTimerMs": {
+                  "p50": 0.75,
+                  "p95": 1.32,
+                  "p99": 1.8,
+                  "avg": 0.74,
+                  "count": 601
+                }
+              }
+            }
+          ]
+        },
+        "planet": {
+          "id": "planet",
+          "name": "Planet",
+          "median": {
+            "wireTransferMiB": 1.51,
+            "estimatedGzipMiB": 1.51,
+            "heapUsedMiB": 53.8,
+            "singlePass_p50_ms": 7.43,
+            "singlePass_p95_ms": 9.57,
+            "singlePass_p99_ms": 11.7,
+            "saturated3x_p50_ms": 22.3,
+            "saturated3x_p95_ms": 28.7,
+            "saturated3x_p99_ms": 35.1,
+            "gpuTimer_ms": 3.72,
+            "geometries": 67,
+            "textures": 6
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 1585201,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 9447,
+              "heapUsedBytes": 56411120,
+              "heapUsedMiB": 53.8,
+              "renderInfo": {
+                "calls": 327,
+                "triangles": 1258033,
+                "geometries": 71,
+                "textures": 9
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 8.03,
+                  "p95": 10.23,
+                  "p99": 11.83,
+                  "avg": 8.19,
+                  "count": 289
+                },
+                "saturated3xMs": {
+                  "p50": 24.1,
+                  "p95": 30.7,
+                  "p99": 35.5,
+                  "avg": 24.57,
+                  "count": 289
+                },
+                "frameDeltaMs": {
+                  "p50": 33.3,
+                  "p95": 50,
+                  "p99": 50.1,
+                  "avg": 34.61,
+                  "count": 289
+                },
+                "gpuTimerMs": {
+                  "p50": 3.5,
+                  "p95": 5.56,
+                  "p99": 6.76,
+                  "avg": 3.72,
+                  "count": 286
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 1585247,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 6626,
+              "heapUsedBytes": 42317928,
+              "heapUsedMiB": 40.36,
+              "renderInfo": {
+                "calls": 215,
+                "triangles": 1075138,
+                "geometries": 54,
+                "textures": 5
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 4.8,
+                  "p95": 5.93,
+                  "p99": 6.97,
+                  "avg": 4.86,
+                  "count": 470
+                },
+                "saturated3xMs": {
+                  "p50": 14.4,
+                  "p95": 17.8,
+                  "p99": 20.9,
+                  "avg": 14.57,
+                  "count": 470
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 33.4,
+                  "p99": 33.4,
+                  "avg": 21.29,
+                  "count": 470
+                },
+                "gpuTimerMs": {
+                  "p50": 2.62,
+                  "p95": 3.75,
+                  "p99": 4.39,
+                  "avg": 2.65,
+                  "count": 469
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 1585200,
+              "wireMiB": 1.51,
+              "estimatedGzipMiB": 1.51,
+              "loadDurationMs": 9304,
+              "heapUsedBytes": 57145580,
+              "heapUsedMiB": 54.5,
+              "renderInfo": {
+                "calls": 317,
+                "triangles": 1448658,
+                "geometries": 67,
+                "textures": 6
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 7.43,
+                  "p95": 9.57,
+                  "p99": 11.7,
+                  "avg": 7.64,
+                  "count": 310
+                },
+                "saturated3xMs": {
+                  "p50": 22.3,
+                  "p95": 28.7,
+                  "p99": 35.1,
+                  "avg": 22.91,
+                  "count": 310
+                },
+                "frameDeltaMs": {
+                  "p50": 33.3,
+                  "p95": 49.9,
+                  "p99": 50,
+                  "avg": 32.36,
+                  "count": 310
+                },
+                "gpuTimerMs": {
+                  "p50": 3.72,
+                  "p95": 5.2,
+                  "p99": 6.46,
+                  "avg": 3.79,
+                  "count": 309
+                }
+              }
+            }
+          ]
+        },
+        "town_diorama": {
+          "id": "town_diorama",
+          "name": "Town (diorama)",
+          "median": {
+            "wireTransferMiB": 26.22,
+            "estimatedGzipMiB": 26.22,
+            "heapUsedMiB": 35.58,
+            "singlePass_p50_ms": 14.07,
+            "singlePass_p95_ms": 16.43,
+            "singlePass_p99_ms": 19.93,
+            "saturated3x_p50_ms": 42.2,
+            "saturated3x_p95_ms": 49.3,
+            "saturated3x_p99_ms": 59.8,
+            "gpuTimer_ms": 3.48,
+            "geometries": 155,
+            "textures": 26
+          },
+          "budgetCheck": {
+            "p95_pass": false,
+            "p99_pass": false,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496317,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 24408,
+              "heapUsedBytes": 36125540,
+              "heapUsedMiB": 34.45,
+              "renderInfo": {
+                "calls": 476,
+                "triangles": 491790,
+                "geometries": 158,
+                "textures": 26
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 9,
+                  "p95": 10.8,
+                  "p99": 12.43,
+                  "avg": 9.11,
+                  "count": 254
+                },
+                "saturated3xMs": {
+                  "p50": 27,
+                  "p95": 32.4,
+                  "p99": 37.3,
+                  "avg": 27.34,
+                  "count": 254
+                },
+                "frameDeltaMs": {
+                  "p50": 33.4,
+                  "p95": 50.1,
+                  "p99": 50.1,
+                  "avg": 39.38,
+                  "count": 254
+                },
+                "gpuTimerMs": {
+                  "p50": 3.27,
+                  "p95": 4.84,
+                  "p99": 5.35,
+                  "avg": 3.41,
+                  "count": 253
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496293,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 23128,
+              "heapUsedBytes": 37303440,
+              "heapUsedMiB": 35.58,
+              "renderInfo": {
+                "calls": 756,
+                "triangles": 680503,
+                "geometries": 155,
+                "textures": 26
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 14.07,
+                  "p95": 16.43,
+                  "p99": 19.93,
+                  "avg": 14.3,
+                  "count": 166
+                },
+                "saturated3xMs": {
+                  "p50": 42.2,
+                  "p95": 49.3,
+                  "p99": 59.8,
+                  "avg": 42.89,
+                  "count": 166
+                },
+                "frameDeltaMs": {
+                  "p50": 66.6,
+                  "p95": 66.8,
+                  "p99": 83.4,
+                  "avg": 60.35,
+                  "count": 166
+                },
+                "gpuTimerMs": {
+                  "p50": 3.37,
+                  "p95": 4.89,
+                  "p99": 7.5,
+                  "avg": 3.61,
+                  "count": 165
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496317,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 27374,
+              "heapUsedBytes": 38668064,
+              "heapUsedMiB": 36.88,
+              "renderInfo": {
+                "calls": 726,
+                "triangles": 785302,
+                "geometries": 155,
+                "textures": 25
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 14.8,
+                  "p95": 20.37,
+                  "p99": 21.63,
+                  "avg": 15.71,
+                  "count": 152
+                },
+                "saturated3xMs": {
+                  "p50": 44.4,
+                  "p95": 61.1,
+                  "p99": 64.9,
+                  "avg": 47.12,
+                  "count": 152
+                },
+                "frameDeltaMs": {
+                  "p50": 66.7,
+                  "p95": 83.4,
+                  "p99": 100,
+                  "avg": 66.02,
+                  "count": 152
+                },
+                "gpuTimerMs": {
+                  "p50": 3.44,
+                  "p95": 4.84,
+                  "p99": 6.35,
+                  "avg": 3.48,
+                  "count": 151
+                }
+              }
+            }
+          ]
+        },
+        "town_walk": {
+          "id": "town_walk",
+          "name": "Town (walk)",
+          "median": {
+            "wireTransferMiB": 26.22,
+            "estimatedGzipMiB": 26.22,
+            "heapUsedMiB": 39.72,
+            "singlePass_p50_ms": 9.03,
+            "singlePass_p95_ms": 11.3,
+            "singlePass_p99_ms": 13.17,
+            "saturated3x_p50_ms": 27.1,
+            "saturated3x_p95_ms": 33.9,
+            "saturated3x_p99_ms": 39.5,
+            "gpuTimer_ms": 2.75,
+            "geometries": 213,
+            "textures": 27
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 27495669,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 28006,
+              "heapUsedBytes": 41637456,
+              "heapUsedMiB": 39.71,
+              "renderInfo": {
+                "calls": 128,
+                "triangles": 374046,
+                "geometries": 213,
+                "textures": 26
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 6.67,
+                  "p95": 8.07,
+                  "p99": 9.23,
+                  "avg": 6.76,
+                  "count": 321
+                },
+                "saturated3xMs": {
+                  "p50": 20,
+                  "p95": 24.2,
+                  "p99": 27.7,
+                  "avg": 20.28,
+                  "count": 321
+                },
+                "frameDeltaMs": {
+                  "p50": 33.3,
+                  "p95": 33.4,
+                  "p99": 49.9,
+                  "avg": 31.2,
+                  "count": 321
+                },
+                "gpuTimerMs": {
+                  "p50": 2.23,
+                  "p95": 3.03,
+                  "p99": 3.26,
+                  "avg": 2.21,
+                  "count": 320
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496291,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 23027,
+              "heapUsedBytes": 42486084,
+              "heapUsedMiB": 40.52,
+              "renderInfo": {
+                "calls": 280,
+                "triangles": 599785,
+                "geometries": 206,
+                "textures": 27
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 9.03,
+                  "p95": 11.3,
+                  "p99": 13.6,
+                  "avg": 9.17,
+                  "count": 248
+                },
+                "saturated3xMs": {
+                  "p50": 27.1,
+                  "p95": 33.9,
+                  "p99": 40.8,
+                  "avg": 27.52,
+                  "count": 248
+                },
+                "frameDeltaMs": {
+                  "p50": 33.4,
+                  "p95": 50,
+                  "p99": 50.1,
+                  "avg": 40.37,
+                  "count": 248
+                },
+                "gpuTimerMs": {
+                  "p50": 2.99,
+                  "p95": 4.31,
+                  "p99": 4.73,
+                  "avg": 3.12,
+                  "count": 247
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 27496291,
+              "wireMiB": 26.22,
+              "estimatedGzipMiB": 26.22,
+              "loadDurationMs": 26753,
+              "heapUsedBytes": 41645768,
+              "heapUsedMiB": 39.72,
+              "renderInfo": {
+                "calls": 316,
+                "triangles": 582328,
+                "geometries": 226,
+                "textures": 27
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 9.3,
+                  "p95": 12.1,
+                  "p99": 13.17,
+                  "avg": 9.42,
+                  "count": 237
+                },
+                "saturated3xMs": {
+                  "p50": 27.9,
+                  "p95": 36.3,
+                  "p99": 39.5,
+                  "avg": 28.27,
+                  "count": 237
+                },
+                "frameDeltaMs": {
+                  "p50": 49.9,
+                  "p95": 50.1,
+                  "p99": 66.7,
+                  "avg": 42.24,
+                  "count": 237
+                },
+                "gpuTimerMs": {
+                  "p50": 2.84,
+                  "p95": 3.81,
+                  "p99": 4.15,
+                  "avg": 2.75,
+                  "count": 236
+                }
+              }
+            }
+          ]
+        },
+        "interior": {
+          "id": "interior",
+          "name": "Interior",
+          "median": {
+            "wireTransferMiB": 26.99,
+            "estimatedGzipMiB": 26.99,
+            "heapUsedMiB": 36.87,
+            "singlePass_p50_ms": 1.03,
+            "singlePass_p95_ms": 1.73,
+            "singlePass_p99_ms": 2.37,
+            "saturated3x_p50_ms": 3.1,
+            "saturated3x_p95_ms": 5.2,
+            "saturated3x_p99_ms": 7.1,
+            "gpuTimer_ms": 1.23,
+            "geometries": 243,
+            "textures": 28
+          },
+          "budgetCheck": {
+            "p95_pass": true,
+            "p99_pass": true,
+            "heap_pass": true
+          },
+          "trials": [
+            {
+              "serverCompressed": true,
+              "wireBytes": 28298219,
+              "wireMiB": 26.99,
+              "estimatedGzipMiB": 26.99,
+              "loadDurationMs": 25830,
+              "heapUsedBytes": 39980532,
+              "heapUsedMiB": 38.13,
+              "renderInfo": {
+                "calls": 86,
+                "triangles": 149756,
+                "geometries": 244,
+                "textures": 28
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.03,
+                  "p95": 1.73,
+                  "p99": 2.37,
+                  "avg": 1.11,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3.1,
+                  "p95": 5.2,
+                  "p99": 7.1,
+                  "avg": 3.32,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 1.18,
+                  "p95": 1.8,
+                  "p99": 2.61,
+                  "avg": 1.23,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 28298221,
+              "wireMiB": 26.99,
+              "estimatedGzipMiB": 26.99,
+              "loadDurationMs": 27999,
+              "heapUsedBytes": 38663680,
+              "heapUsedMiB": 36.87,
+              "renderInfo": {
+                "calls": 88,
+                "triangles": 156452,
+                "geometries": 243,
+                "textures": 28
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 1.1,
+                  "p95": 2.07,
+                  "p99": 2.8,
+                  "avg": 1.21,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 3.3,
+                  "p95": 6.2,
+                  "p99": 8.4,
+                  "avg": 3.62,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.8,
+                  "p99": 16.8,
+                  "avg": 16.65,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 1.4,
+                  "p95": 2.38,
+                  "p99": 3.39,
+                  "avg": 1.44,
+                  "count": 600
+                }
+              }
+            },
+            {
+              "serverCompressed": true,
+              "wireBytes": 28298221,
+              "wireMiB": 26.99,
+              "estimatedGzipMiB": 26.99,
+              "loadDurationMs": 27794,
+              "heapUsedBytes": 38156284,
+              "heapUsedMiB": 36.39,
+              "renderInfo": {
+                "calls": 81,
+                "triangles": 144102,
+                "geometries": 227,
+                "textures": 28
+              },
+              "lastError": null,
+              "timing": {
+                "singlePassMs": {
+                  "p50": 0.97,
+                  "p95": 1.5,
+                  "p99": 1.9,
+                  "avg": 1.01,
+                  "count": 601
+                },
+                "saturated3xMs": {
+                  "p50": 2.9,
+                  "p95": 4.5,
+                  "p99": 5.7,
+                  "avg": 3.02,
+                  "count": 601
+                },
+                "frameDeltaMs": {
+                  "p50": 16.7,
+                  "p95": 16.7,
+                  "p99": 16.8,
+                  "avg": 16.64,
+                  "count": 601
+                },
+                "gpuTimerMs": {
+                  "p50": 1.23,
+                  "p95": 1.85,
+                  "p99": 2.47,
+                  "avg": 1.23,
+                  "count": 600
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "planetHeapInvestigation": {
+    "spaceBaselineHeapMiB": 17.27,
+    "planetPeakHeapMiB": 54.33,
+    "deltaHeapMiB": 37.06,
+    "rootCause": "PlanetMode menginstansiasi 10.242 hexasphere tiles (subdivision 5) yang dibagi ke 32 chunks dengan 3 tingkat LOD (LOD0, LOD1, LOD2). Buffer Float32Array atribut posisi, normal, warna, dan UV dipertahankan dalam memori JS oleh singleton PlanetRenderer (shared.pr). Di M3, planet bake worker mengurangi thread blocking, namun buffer geometri tetap resident di JS heap (~220-245 MiB).",
+    "mitigation": "Arsitektur Hemat P0: Sederhanakan subdivision hexasphere ke level 4 (2.562 tiles) untuk tier Low, atau buang salinan Float32Array dari V8 heap setelah WebGLBuffer ter-upload."
+  },
+  "soakTest": {
+    "transitionsCount": 20,
+    "initial": {
+      "step": "Baseline (Space)",
+      "heapMiB": 16.94,
+      "geometries": 16,
+      "textures": 19,
+      "lastError": null
+    },
+    "final": {
+      "cycle": 20,
+      "step": "Cycle 20 (interior)",
+      "heapMiB": 70.7,
+      "geometries": 465,
+      "textures": 55,
+      "lastError": null
+    },
+    "growth": {
+      "deltaHeapMiB": 53.76,
+      "deltaGeometries": 449,
+      "deltaTextures": 36
+    },
+    "history": [
+      {
+        "cycle": 0,
+        "step": "Baseline (Space)",
+        "heapMiB": 16.94,
+        "geometries": 16,
+        "textures": 19,
+        "lastError": null
+      },
+      {
+        "cycle": 1,
+        "step": "Cycle 1 (space)",
+        "heapMiB": 17.18,
+        "geometries": 16,
+        "textures": 19,
+        "lastError": null
+      },
+      {
+        "cycle": 2,
+        "step": "Cycle 2 (planet)",
+        "heapMiB": 55.89,
+        "geometries": 62,
+        "textures": 21,
+        "lastError": null
+      },
+      {
+        "cycle": 3,
+        "step": "Cycle 3 (town_diorama)",
+        "heapMiB": 67.95,
+        "geometries": 292,
+        "textures": 49,
+        "lastError": null
+      },
+      {
+        "cycle": 4,
+        "step": "Cycle 4 (town_walk)",
+        "heapMiB": 68.24,
+        "geometries": 344,
+        "textures": 50,
+        "lastError": null
+      },
+      {
+        "cycle": 5,
+        "step": "Cycle 5 (interior)",
+        "heapMiB": 69.2,
+        "geometries": 465,
+        "textures": 52,
+        "lastError": null
+      },
+      {
+        "cycle": 6,
+        "step": "Cycle 6 (space)",
+        "heapMiB": 56.28,
+        "geometries": 237,
+        "textures": 31,
+        "lastError": null
+      },
+      {
+        "cycle": 7,
+        "step": "Cycle 7 (planet)",
+        "heapMiB": 64.9,
+        "geometries": 242,
+        "textures": 30,
+        "lastError": null
+      },
+      {
+        "cycle": 8,
+        "step": "Cycle 8 (town_diorama)",
+        "heapMiB": 69.46,
+        "geometries": 328,
+        "textures": 50,
+        "lastError": null
+      },
+      {
+        "cycle": 9,
+        "step": "Cycle 9 (town_walk)",
+        "heapMiB": 69,
+        "geometries": 365,
+        "textures": 51,
+        "lastError": null
+      },
+      {
+        "cycle": 10,
+        "step": "Cycle 10 (interior)",
+        "heapMiB": 70.08,
+        "geometries": 465,
+        "textures": 53,
+        "lastError": null
+      },
+      {
+        "cycle": 11,
+        "step": "Cycle 11 (space)",
+        "heapMiB": 57.04,
+        "geometries": 237,
+        "textures": 32,
+        "lastError": null
+      },
+      {
+        "cycle": 12,
+        "step": "Cycle 12 (planet)",
+        "heapMiB": 65.5,
+        "geometries": 242,
+        "textures": 31,
+        "lastError": null
+      },
+      {
+        "cycle": 13,
+        "step": "Cycle 13 (town_diorama)",
+        "heapMiB": 69.87,
+        "geometries": 328,
+        "textures": 51,
+        "lastError": null
+      },
+      {
+        "cycle": 14,
+        "step": "Cycle 14 (town_walk)",
+        "heapMiB": 69.4,
+        "geometries": 365,
+        "textures": 52,
+        "lastError": null
+      },
+      {
+        "cycle": 15,
+        "step": "Cycle 15 (interior)",
+        "heapMiB": 70.51,
+        "geometries": 464,
+        "textures": 54,
+        "lastError": null
+      },
+      {
+        "cycle": 16,
+        "step": "Cycle 16 (space)",
+        "heapMiB": 57.39,
+        "geometries": 237,
+        "textures": 33,
+        "lastError": null
+      },
+      {
+        "cycle": 17,
+        "step": "Cycle 17 (planet)",
+        "heapMiB": 65.69,
+        "geometries": 242,
+        "textures": 33,
+        "lastError": null
+      },
+      {
+        "cycle": 18,
+        "step": "Cycle 18 (town_diorama)",
+        "heapMiB": 69.71,
+        "geometries": 328,
+        "textures": 52,
+        "lastError": null
+      },
+      {
+        "cycle": 19,
+        "step": "Cycle 19 (town_walk)",
+        "heapMiB": 69.56,
+        "geometries": 369,
+        "textures": 53,
+        "lastError": null
+      },
+      {
+        "cycle": 20,
+        "step": "Cycle 20 (interior)",
+        "heapMiB": 70.7,
+        "geometries": 465,
+        "textures": 55,
+        "lastError": null
+      }
+    ]
+  },
+  "limitations": [
+    "M1 Pro + Throttling Proxy: Pengujian dijalankan pada Chrome desktop (Apple M1 Pro Metal backend) dengan 4x CPU throttling CDP. Ini adalah proxy beban komputasi CPU iGPU, bukan GPU terintegrasi fisik nyata (Intel UHD/Iris, AMD Vega/RDNA, Mali). Fill-rate, shader memory bandwidth bus, dan batasan thermal fisik iGPU belum diuji.",
+    "Draw Calls Counter Reset: renderer.info.render.calls = 1 pada mode dengan post-processing terjadi karena Three.js me-reset counter per pass; profil draw call sesungguhnya tetap mengacu pada benchmark tests/browser/living-town.html.",
+    "Server Compression di Preview: Vite preview menyajikan berkas tanpa modul kompresi gzip/brotli runtime aktif. Kolom laporan menyajikan Wire Transfer aktual dan Estimated Gzip Transfer untuk perbandingan yang adil terhadap budget produksi CDN/Firebase Hosting.",
+    "JS Heap Pasca-GC vs Memori Tab OS: Angka heap mencakup V8 JavaScript Heap yang diukur setelah memanggil cdp.send(\"HeapProfiler.collectGarbage\"), bukan total footprint RSS memori proses OS browser."
+  ]
+}

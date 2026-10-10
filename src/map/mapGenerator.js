@@ -1,7 +1,9 @@
 import { createNoise3D } from '../math/simplex3d.js';
 import { mulberry32 } from '../math/random.js';
+import { resourcePlan } from '../trade/resources.js';
+import { PLANET_MAP_VERSION } from '../world/versions.js';
 
-export const STORAGE_KEY = 'planet_globe_map_v5';
+export const STORAGE_KEY = `planet_globe_map_v${PLANET_MAP_VERSION}`;
 
 export const BIOMES = {
   OCEAN_DEEP: 'ocean_deep',
@@ -251,7 +253,7 @@ export class MapGenerator {
     const seaRoutes = this.buildSeaRoutes(cities);
     const airRoutes = this.buildAirRoutes(cities);
 
-    return {
+    const result = {
       seed: finalSeed,
       planetType: opts.planetType,
       timestamp: Date.now(),
@@ -281,6 +283,8 @@ export class MapGenerator {
         road: t.road
       }))
     };
+    result.resourcePlan = resourcePlan(result);
+    return result;
   }
 
   /** Connected components of mountain tiles = one merged mountain range each. */
@@ -718,9 +722,11 @@ export class MapGenerator {
   saveToStorage(mapData) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(packMapData(mapData)));
+      this.lastSaveError = null;
       return true;
     } catch (err) {
       console.warn('Could not save map to localStorage:', err);
+      this.lastSaveError = err;
       return false;
     }
   }
@@ -737,6 +743,10 @@ export class MapGenerator {
         data.tilesData.length > 0 &&
         data.subdivision
       ) {
+        if (!data.resourcePlan) {
+          data.resourcePlan = resourcePlan(data);
+          this.saveToStorage(data);
+        }
         return data;
       }
       return null;

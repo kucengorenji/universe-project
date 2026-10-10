@@ -67,7 +67,7 @@ test('door approaches clear measured porches and saved rooms pin their original 
 });
 
 test('authored walk/run clips retain moving bones and a shared contact phase',async()=>{
- const bytes=readFileSync(new URL('../public/models/character.glb',import.meta.url));
+ const bytes=readFileSync(new URL('../tools/blender/legacy/character.glb',import.meta.url));
  const gltf=await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.length),'');
  const source=gltf.animations.find(a=>a.name==='walk').tracks.map(t=>Array.from(t.values));
  const clips=locomotionClips(gltf),root=gltf.scene,mixer=new THREE.AnimationMixer(root),actions={};

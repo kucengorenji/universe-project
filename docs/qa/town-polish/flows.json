@@ -1,0 +1,52 @@
+{
+  "flows": [
+    "Space landing button enters planet",
+    "Planet city landing button enters town",
+    "Flight landing click enters city",
+    "Flight keyboard L still lands"
+  ],
+  "errors": [],
+  "mobile": {
+    "map": {
+      "x": 242,
+      "y": 630,
+      "width": 132,
+      "height": 132
+    },
+    "view": {
+      "x": 201.609375,
+      "y": 66.1875,
+      "width": 176.390625,
+      "height": 40
+    },
+    "mission": {
+      "x": 16,
+      "y": 782,
+      "width": 84.671875,
+      "height": 40
+    },
+    "borderRadius": "0px",
+    "overflow": false
+  },
+  "flight": {
+    "cityBelow": 1,
+    "visible": true,
+    "altitude": 0.2,
+    "ceiling": 3.4000000000000004
+  },
+  "cart": {
+    "type": "wagon",
+    "distance": 0.8506196750928485,
+    "horseMotion": [
+      [
+        4.482479095458984,
+        1
+      ],
+      [
+        4.812479019165039,
+        1
+      ]
+    ],
+    "lastError": null
+  }
+}

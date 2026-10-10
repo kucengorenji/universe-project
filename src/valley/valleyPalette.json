@@ -1,0 +1,296 @@
+{
+  "_doc": "Valley palette (docs/FARM_PLAN.md §2.2). One source for farm.html and tools/blender/valley/build_valley_kit.py. Broad surfaces stay <= 45% saturation, accents 55-75%.",
+  "surface": {
+    "grass": "#8fb35a",
+    "grassLight": "#a9c66a",
+    "grassDark": "#6f9a4c",
+    "grassTip": "#c4d97c",
+    "meadow": "#9cbc5e",
+    "dirt": "#c8a67c",
+    "dirtLight": "#dcc39c",
+    "dirtDark": "#a68a69",
+    "field": "#8c6b4d",
+    "fieldDark": "#6b4f39",
+    "bank": "#b9a274",
+    "hill": "#7ea456",
+    "hillFar": "#93b6a0",
+    "water": "#5fb3c4",
+    "waterDeep": "#3d8ea8",
+    "foam": "#e9f4ea"
+  },
+  "kit": {
+    "plaster": "#f1e3c6",
+    "plasterShade": "#dcc7a2",
+    "timber": "#8a5a3a",
+    "wood": "#b07a4c",
+    "woodLight": "#d4a26c",
+    "woodDark": "#6e4630",
+    "thatch": "#d8b275",
+    "thatchDark": "#a07c4c",
+    "roofRed": "#c8634a",
+    "stone": "#b8b0a0",
+    "stoneDark": "#8f8879",
+    "window": "#4f6f86",
+    "windowLit": "#ffd98a",
+    "trunk": "#8b5e3c",
+    "trunkDark": "#6b4630",
+    "leaf": "#5f9e45",
+    "leafLight": "#9cc75a",
+    "leafDark": "#3f7a3c",
+    "bush": "#5a9a4a",
+    "rock": "#a9a596",
+    "rockDark": "#7d7a6e",
+    "flowerRed": "#e8645a",
+    "flowerYellow": "#f4cf4f",
+    "flowerWhite": "#f7f1e3",
+    "flowerPink": "#ef9bb6",
+    "skin": "#f6cfa8",
+    "hair": "#7a4a2e",
+    "shirt": "#e9e2cf",
+    "overall": "#4f78b8",
+    "cap": "#3f6aa8",
+    "boot": "#7a4f33",
+    "roofBlue": "#6f8fb5",
+    "roofBlueDark": "#4f6c92",
+    "roofGreen": "#7f9f5c",
+    "roofGreenDark": "#5d7a42",
+    "roofRedDark": "#9c4636",
+    "plasterBlue": "#e3e8df",
+    "plasterPink": "#f3dcc8",
+    "barn": "#b0583f",
+    "barnDark": "#86402f",
+    "barnTrim": "#f3ead6",
+    "pine": "#4a875a",
+    "pineLight": "#79ab6a",
+    "pineDark": "#2f6449",
+    "apple": "#d8473c",
+    "blossom": "#f3b6c8",
+    "blossomLight": "#fcdde6",
+    "blossomDark": "#d98aa5",
+    "crop": "#6fae4a",
+    "cropLight": "#9fd06a",
+    "turnip": "#f1e6e4",
+    "turnipTop": "#c86b96",
+    "metal": "#8a8f94",
+    "awningWhite": "#f7f1e3",
+    "hay": "#e2c070",
+    "chickenWhite": "#fbf6ec",
+    "chickenShade": "#e9dfcf",
+    "comb": "#e0453a",
+    "beak": "#f2b134",
+    "cowWhite": "#f6f1e8",
+    "cowSpot": "#3b332f",
+    "cowPink": "#f2a9a3",
+    "horn": "#efe2c6",
+    "hoof": "#4a3a30",
+    "dogTan": "#d99a55",
+    "dogCream": "#f4e2c4",
+    "dogDark": "#8a5a36",
+    "eye": "#2b211c",
+    "snow": "#dbe3ee",
+    "roofOrange": "#d27238",
+    "roofOrangeDark": "#a4502a",
+    "plank": "#c99150",
+    "plankDark": "#97672f",
+    "gableCream": "#f2e4c4",
+    "burlap": "#e3d4b0",
+    "rope": "#b08a52",
+    "steel": "#a9adb1"
+  },
+  "times": {
+    "pagi": {
+      "label": "Pagi",
+      "sun": "#ffe2b8",
+      "sunIntensity": 2.6,
+      "sunAzimuth": 115,
+      "sunElevation": 24,
+      "sky": "#bfe0f0",
+      "horizon": "#fbe6c8",
+      "hemiSky": "#cfe6ff",
+      "hemiGround": "#9b8a6a",
+      "hemiIntensity": 1.3,
+      "fog": "#e9e3cc",
+      "fogNear": 70,
+      "fogFar": 190,
+      "exposure": 1.0,
+      "night": 0
+    },
+    "siang": {
+      "label": "Siang",
+      "sun": "#fff6e4",
+      "sunIntensity": 2.9,
+      "sunAzimuth": 160,
+      "sunElevation": 55,
+      "sky": "#8ccbeb",
+      "horizon": "#dff0f2",
+      "hemiSky": "#d6ecff",
+      "hemiGround": "#8f8a62",
+      "hemiIntensity": 1.35,
+      "fog": "#d8ebe8",
+      "fogNear": 80,
+      "fogFar": 210,
+      "exposure": 1.0,
+      "night": 0
+    },
+    "sore": {
+      "label": "Sore",
+      "sun": "#ffc996",
+      "sunIntensity": 2.35,
+      "sunAzimuth": 250,
+      "sunElevation": 16,
+      "sky": "#9fb8d8",
+      "horizon": "#ffc68f",
+      "hemiSky": "#aeb9ec",
+      "hemiGround": "#7d6a62",
+      "hemiIntensity": 1.2,
+      "fog": "#ecd0b4",
+      "fogNear": 60,
+      "fogFar": 180,
+      "exposure": 1.0,
+      "night": 0.15
+    },
+    "malam": {
+      "label": "Malam",
+      "sun": "#a9c4ff",
+      "sunIntensity": 1.05,
+      "sunAzimuth": 210,
+      "sunElevation": 40,
+      "sky": "#24365e",
+      "horizon": "#465b86",
+      "hemiSky": "#5a74b0",
+      "hemiGround": "#2d2f45",
+      "hemiIntensity": 0.9,
+      "fog": "#2e3f63",
+      "fogNear": 45,
+      "fogFar": 160,
+      "exposure": 1.0,
+      "night": 1
+    }
+  },
+  "seasons": {
+    "semi": {
+      "label": "Semi",
+      "surface": {
+        "grass": "#9cc463",
+        "grassLight": "#b6d677",
+        "grassDark": "#7aa858",
+        "hill": "#8ab866",
+        "hillFar": "#a3c4ae"
+      },
+      "foliage": {
+        "color": "#a6d66e",
+        "mix": 0.3
+      },
+      "blossom": 1,
+      "flowers": {
+        "share": 1,
+        "colors": [
+          "#ef9bb6",
+          "#f7f1e3",
+          "#f4cf4f",
+          "#e8645a"
+        ]
+      },
+      "snow": 0,
+      "grassHeight": 1,
+      "particles": "petal",
+      "sky": {
+        "tint": "#ffffff",
+        "mix": 0
+      }
+    },
+    "panas": {
+      "label": "Panas",
+      "surface": {
+        "grass": "#86b04f",
+        "grassLight": "#a0c25d",
+        "grassDark": "#5f9443",
+        "hill": "#76a24e",
+        "hillFar": "#8eb39a"
+      },
+      "foliage": {
+        "color": "#4f9a3c",
+        "mix": 0.15
+      },
+      "blossom": 0,
+      "flowers": {
+        "share": 0.7,
+        "colors": [
+          "#e8645a",
+          "#f4cf4f",
+          "#f7f1e3"
+        ]
+      },
+      "snow": 0,
+      "grassHeight": 1.12,
+      "particles": "firefly",
+      "sky": {
+        "tint": "#e6f6ff",
+        "mix": 0.08
+      }
+    },
+    "gugur": {
+      "label": "Gugur",
+      "surface": {
+        "grass": "#a9a85a",
+        "grassLight": "#c2b56a",
+        "grassDark": "#8a8a4a",
+        "hill": "#a39050",
+        "hillFar": "#b7a68a"
+      },
+      "foliage": {
+        "color": "#e38a3c",
+        "mix": 0.78
+      },
+      "blossom": 0,
+      "flowers": {
+        "share": 0.3,
+        "colors": [
+          "#f4cf4f",
+          "#e8813a",
+          "#c8634a"
+        ]
+      },
+      "snow": 0,
+      "grassHeight": 0.85,
+      "particles": "autumnLeaf",
+      "sky": {
+        "tint": "#ffd9a8",
+        "mix": 0.12
+      }
+    },
+    "dingin": {
+      "label": "Dingin",
+      "surface": {
+        "grass": "#cfd8df",
+        "grassLight": "#dde4ea",
+        "grassDark": "#b6c2cc",
+        "hill": "#d7dfe6",
+        "hillFar": "#c8d2dc",
+        "dirt": "#d2c5b4",
+        "dirtLight": "#e6dccd",
+        "dirtDark": "#b3a491",
+        "bank": "#d8d3c8",
+        "meadow": "#d9e0e6"
+      },
+      "foliage": {
+        "color": "#6f8a73",
+        "mix": 0.45
+      },
+      "blossom": 0,
+      "flowers": {
+        "share": 0,
+        "colors": [
+          "#f7f1e3"
+        ]
+      },
+      "snow": 1,
+      "grassHeight": 0.45,
+      "particles": "snow",
+      "sky": {
+        "tint": "#dfe8f5",
+        "mix": 0.25
+      }
+    }
+  }
+}

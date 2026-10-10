@@ -1,0 +1,320 @@
+{
+  "errors": [],
+  "scenes": [
+    {
+      "planet": 2,
+      "city": 1,
+      "view": "walk",
+      "modern": true,
+      "night": false,
+      "buildings": 37,
+      "state": {
+        "npcCount": 12,
+        "logicalCount": 13,
+        "standInsInScene": false,
+        "walkDuration": 1.3333333730697632,
+        "walkSpeed": 1.02,
+        "motion": 2.4144523546512495,
+        "lastError": null,
+        "horseBatches": []
+      },
+      "profile": {
+        "seed": 427,
+        "planet": 2,
+        "city": 1,
+        "modern": true,
+        "view": "walk",
+        "night": 0,
+        "buildings": 37,
+        "trees": 691,
+        "frames": 60,
+        "viewport": {
+          "width": 1440,
+          "height": 1000
+        },
+        "pixelRatio": 1,
+        "devicePixelRatio": 1,
+        "drawingBuffer": {
+          "width": 1440,
+          "height": 1000
+        },
+        "camera": {
+          "position": [
+            -13.34,
+            4.31,
+            -10.36
+          ],
+          "quaternion": [
+            0,
+            0.99,
+            0.12,
+            0
+          ],
+          "fov": 55
+        },
+        "fps": 59.71,
+        "frameMs": {
+          "p50": 16.9,
+          "p95": 21.9,
+          "p99": 22.3
+        },
+        "cpuMs": {
+          "p50": 3.6,
+          "p95": 6.6
+        },
+        "drawCalls": 196.53,
+        "triangles": 791125.87,
+        "memory": {
+          "geometries": 190,
+          "textures": 49
+        },
+        "grass": 15778,
+        "forest": 3056,
+        "fleet": {
+          "vehicles": [
+            5,
+            17,
+            0
+          ],
+          "instances": [
+            31,
+            99,
+            0
+          ],
+          "shadowVehicles": 9,
+          "submitted": 130
+        },
+        "budget": {
+          "lod": 1,
+          "shadow": 1,
+          "vegetation": 1
+        },
+        "error": null
+      }
+    },
+    {
+      "planet": 2,
+      "city": 0,
+      "view": "walk",
+      "modern": false,
+      "night": false,
+      "buildings": 189,
+      "state": {
+        "npcCount": 12,
+        "logicalCount": 13,
+        "standInsInScene": false,
+        "walkDuration": 1.3333333730697632,
+        "walkSpeed": 1.02,
+        "motion": 2.414683918149141,
+        "lastError": null,
+        "horseBatches": [
+          {
+            "count": 0,
+            "parts": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "motion": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "count": 2,
+            "parts": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "motion": [
+              47.258514404296875,
+              1,
+              47.58851623535156,
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "count": 11,
+            "parts": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "motion": [
+              -0.16500000655651093,
+              0,
+              0.16500000655651093,
+              0,
+              47.258514404296875,
+              1
+            ]
+          },
+          {
+            "count": 2,
+            "parts": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "motion": [
+              0,
+              0,
+              47.42351531982422,
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "count": 2,
+            "parts": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "motion": [
+              -0.16500000655651093,
+              0,
+              0.16500000655651093,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "count": 0,
+            "parts": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "motion": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "profile": {
+        "seed": 427,
+        "planet": 2,
+        "city": 0,
+        "modern": false,
+        "view": "walk",
+        "night": 0,
+        "buildings": 189,
+        "trees": 4106,
+        "frames": 60,
+        "viewport": {
+          "width": 1440,
+          "height": 1000
+        },
+        "pixelRatio": 1,
+        "devicePixelRatio": 1,
+        "drawingBuffer": {
+          "width": 1440,
+          "height": 1000
+        },
+        "camera": {
+          "position": [
+            -7.07,
+            10.66,
+            -16.22
+          ],
+          "quaternion": [
+            0,
+            0.99,
+            0.12,
+            0
+          ],
+          "fov": 55
+        },
+        "fps": 60.05,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.6,
+          "p99": 18
+        },
+        "cpuMs": {
+          "p50": 2.9,
+          "p95": 3.5
+        },
+        "drawCalls": 446,
+        "triangles": 1606181,
+        "memory": {
+          "geometries": 347,
+          "textures": 49
+        },
+        "grass": 11579,
+        "forest": 4888,
+        "fleet": {
+          "vehicles": [
+            1,
+            9,
+            1
+          ],
+          "instances": [
+            8,
+            52,
+            7
+          ],
+          "shadowVehicles": 3,
+          "submitted": 67
+        },
+        "budget": {
+          "lod": 1,
+          "shadow": 1,
+          "vegetation": 1
+        },
+        "error": null
+      }
+    }
+  ]
+}

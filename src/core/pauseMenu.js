@@ -1,4 +1,5 @@
 import { t, getLocale, setLocale, LOCALES } from '../i18n/index.js';
+import { saveStatus } from '../world/saveStatus.js';
 
 // Pause menu: stops the world and gathers the settings in one place.
 //   Graphics   quality preset, post effects
@@ -13,6 +14,7 @@ const POST = ['auto', 'on', 'off'];
 const CONTROLS = [
   ['space', [['W / S', 'thrust'], ['A / D', 'turn'], ['Q / E', 'strafe'], ['R / F', 'climb'], ['Shift', 'boost'], ['L', 'land'], ['key.click', 'autopilot'], ['M', 'map']]],
   ['planet', [['key.drag', 'rotate'], ['key.clickCity', 'viewCity'], ['key.fly', 'fly'], ['O', 'orbit']]],
+  ['trade', [['B', 'build'], ['R', 'route'], ['key.space', 'pause'], ['1 / 2 / 4', 'speed'], ['F', 'focus'], ['Esc', 'cancel']]],
   ['town', [['1 2 3', 'views'], ['WASD', 'move'], ['Shift', 'run'], ['key.space', 'jump'], ['E', 'enter'], ['Esc', 'exit']]],
   ['general', [['J', 'missions'], ['P', 'pause'], ['B', 'mute']]]
 ];
@@ -86,7 +88,7 @@ export class PauseMenu {
     window.addEventListener(
       'keydown',
       (e) => {
-        if (e.target.matches?.('input[type="text"], textarea')) return;
+        if (!this.open && e.target.closest?.('input, textarea, select, dialog')) return;
         const k = e.key.toLowerCase();
         if (this.open) {
           if (k === 'escape' || k === 'p') this.close();
@@ -97,11 +99,14 @@ export class PauseMenu {
         if (k === 'p' && !e.repeat) {
           e.stopImmediatePropagation();
           this.show();
-        } else if (k === 'b' && !e.repeat) this.audio.toggleMute();
+        } else if (k === 'b' && !e.repeat && document.body.dataset.mode !== 'trade') this.audio.toggleMute();
       },
       { capture: true }
     );
     this.audio.listeners.add(() => this.sync());
+    // A write can fail at any moment, long after the last click: look again now and then
+    this.world?.subscribe?.(() => this.syncAlert());
+    setInterval(() => this.syncAlert(), 2000);
     this.engine.quality.listeners.add(() => this.sync());
     this.sync();
   }
@@ -112,7 +117,11 @@ export class PauseMenu {
     const act = b.dataset.act;
     if (b.dataset.locale) {
       // Text is built once at load, so a language change restarts the page (the route stays in the hash)
-      if (setLocale(b.dataset.locale)) location.reload();
+      if (setLocale(b.dataset.locale)) {
+        const url = new URL(location.href);
+        if (url.searchParams.has('lang')) { url.searchParams.set('lang', b.dataset.locale); history.replaceState(null, '', url); }
+        location.reload();
+      }
       return;
     }
     const seg = b.closest('[data-seg]')?.dataset.seg;
@@ -140,11 +149,21 @@ export class PauseMenu {
     this.sync();
   }
 
+  status() {
+    return saveStatus({ world: this.world, missions: this.missions, tips: this.tips });
+  }
+
+  /** The menu button shows a red dot while saving is failing, so the player need not open the menu to find out. */
+  syncAlert() {
+    const failing = this.status().level === 'error';
+    this.el.toggle.classList.toggle('has-alert', failing);
+    this.el.toggle.title = failing ? t('pause.save.alert') : t('pause.openTitle');
+  }
+
   sync() {
-    const state = this.world?.state;
-    this.root.querySelector('[data-save-status]').textContent = state?.error
-      ? t('pause.save.error')
-      : t('pause.save.ok');
+    const status = this.status();
+    this.root.querySelector('[data-save-status]').textContent = t(status.key, status.params);
+    this.syncAlert();
     const q = this.engine.quality.preset;
     const p = this.engine.post.pref;
     this.root.querySelectorAll('[data-seg="quality"] [data-val]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.val === q)));
@@ -163,11 +182,13 @@ export class PauseMenu {
   show() {
     if (this.open) return;
     this.open = true;
+    document.body.dataset.overlay = 'pause';
     this.el.overlay.hidden = false;
     this.el.reset.textContent = t('pause.missions.reset');
     delete this.el.reset.dataset.armed;
     this.el.tips.textContent = t('pause.tips.show');
     this.engine.paused = true;
+    this.engine.trade?.setAppPaused(true);
     this.world?.clock.pause(true);
     this.audio.setPaused(true);
     this.sync();
@@ -178,8 +199,10 @@ export class PauseMenu {
   close() {
     if (!this.open) return;
     this.open = false;
+    if (document.body.dataset.overlay === 'pause') delete document.body.dataset.overlay;
     this.el.overlay.hidden = true;
     this.engine.paused = false;
+    this.engine.trade?.setAppPaused(false);
     this.world?.clock.pause(false);
     this.audio.setPaused(false);
   }

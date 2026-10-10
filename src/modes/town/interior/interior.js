@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mulberry32 } from '../../../math/random.js';
 import { Colliders } from '../navigation/colliders.js';
 import { makePerson, animatePerson, disposePerson } from '../people/peopleRig.js';
+import { makeTownPerson, animateTownPerson, disposeTownPerson } from '../people/skirmishPeople.js';
 import { generateInteriorLayout, measureFurnitureBounds } from './interiorLayout.js';
 import { seedFor } from '../../../world/identity.js';
 import { assignInteractionIds, captureInterior, restoreInterior } from '../../../world/interiorState.js';
@@ -591,7 +592,8 @@ export class Interior {
     if (!spot) return;
     const outfits = this.modern ? ['casual_f', 'business', 'casual_m', 'elder'] : ['townsfolk_f', 'peasant', 'elder'];
     const rng=this.blueprint?mulberry32(this.residentSeed):this.rng;
-    const p = makePerson(gltf, outfits[Math.floor(rng() * outfits.length)], { shadows, appearanceSeed: Math.floor(rng()*1000000) });
+    const outfit = outfits[Math.floor(rng() * outfits.length)], seed = Math.floor(rng() * 1000000);
+    const p = gltf.vc ? makeTownPerson(gltf, { shadows, seed }) : makePerson(gltf, outfit, { shadows, appearanceSeed: seed });
     if (!p) return;
     p.root.position.set(spot.x, 0, spot.z);
     p.root.rotation.y = spot.yaw;
@@ -704,7 +706,7 @@ export class Interior {
         it.light.intensity = 2.8 + Math.sin(t * 13) * 0.5 + Math.sin(t * 7.3) * 0.3;
       }
     }
-    if (this.resident) animatePerson(this.resident.p, dt, 0, { pose: this.resident.pose });
+    if (this.resident) (this.resident.p.townPerson ? animateTownPerson : animatePerson)(this.resident.p, dt, 0, { pose: this.resident.pose });
     // Hold the item in front of the player
     if (this.holding && player) {
       const h = this.holding;
@@ -715,7 +717,10 @@ export class Interior {
 
   dispose() {
     this.disposables.forEach((d) => d.dispose?.());
-    disposePerson(this.resident?.p);
+    // three keeps a light's shadow map alive until the light itself is disposed (the key light owns a 2048² one)
+    this.scene.traverse((o) => { if (o.isLight) o.dispose(); });
+    if (this.resident?.p.townPerson) disposeTownPerson(this.resident.p);
+    else disposePerson(this.resident?.p);
   }
 }
 

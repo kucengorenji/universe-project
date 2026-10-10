@@ -33,7 +33,8 @@ test('the environment pack has every model the builder maps, in three LODs', () 
 });
 
 test('the NPC merges into one rigidly skinned mesh and walks with opposed legs', async () => {
-  const template = buildTemplate(await parse('models/npc.glb'));
+  const bytes = readFileSync(new URL('../tools/blender/legacy/npc.glb', import.meta.url)); // no longer shipped: only this test and the shared template read it
+  const template = buildTemplate(await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length), ''));
   assert.ok(template, 'pivots found');
   const meshes = [];
   template.root.traverse((o) => o.isMesh && meshes.push(o));

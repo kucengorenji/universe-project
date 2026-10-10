@@ -1,0 +1,516 @@
+{
+  "timestamp": "2026-10-10T02:29:38.310Z",
+  "date": "2026-10-10",
+  "timezone": "WIB (UTC+7)",
+  "url": "http://localhost:5235",
+  "browser": "154.0.8037.98",
+  "git": {
+    "commit": "9ec11fd",
+    "build": "production preview dist (qa-m2 snapshot)"
+  },
+  "steps": [
+    {
+      "stepId": 1,
+      "name": "Bootstrap in Space (Stage J1)",
+      "screenshot": "01-space.png",
+      "mode": "space",
+      "view": null,
+      "stage": "j1",
+      "rank": 0,
+      "done": false,
+      "away": false,
+      "home": null,
+      "trace": null,
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 1,
+        "total": 6,
+        "line": [
+          "journey.j1",
+          {
+            "planet": "Ququ Prime"
+          }
+        ],
+        "hint": [
+          "journey.j1.hint"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 2,
+      "name": "Arrive at Home Planet (Stage J2)",
+      "screenshot": "02-planet.png",
+      "mode": "planet",
+      "view": null,
+      "stage": "j2",
+      "rank": 1,
+      "done": false,
+      "away": false,
+      "home": null,
+      "trace": null,
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 2,
+        "total": 6,
+        "line": [
+          "journey.j2",
+          {
+            "city": "New Babylon"
+          }
+        ],
+        "hint": [
+          "journey.j2.hint"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 3,
+      "name": "Land in Hometown Diorama (Stage J3)",
+      "screenshot": "03-town-diorama.png",
+      "mode": "town",
+      "view": "diorama",
+      "stage": "j3",
+      "rank": 2,
+      "done": false,
+      "away": false,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": null,
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 3,
+        "total": 6,
+        "line": [
+          "journey.j3"
+        ],
+        "distance": null,
+        "hint": [
+          "journey.j3.diorama"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 4,
+      "name": "Approach Starter House Door (Stage J4)",
+      "screenshot": "04-walk-door.png",
+      "mode": "town",
+      "view": "walk",
+      "stage": "j4",
+      "rank": 3,
+      "done": false,
+      "away": false,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": null,
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 4,
+        "total": 6,
+        "line": [
+          "journey.j4"
+        ],
+        "distance": 0,
+        "hint": [
+          "journey.j4.hint"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": "04b",
+      "name": "Starter House Door at Night (World Clock)",
+      "screenshot": "04b-walk-door-night.png",
+      "mode": "town",
+      "view": "walk",
+      "stage": "j4",
+      "rank": 3,
+      "done": false,
+      "away": false,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": null,
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 4,
+        "total": 6,
+        "line": [
+          "journey.j4"
+        ],
+        "distance": 0,
+        "hint": [
+          "journey.j4.hint"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 5,
+      "name": "Inside Starter House (Stage J5)",
+      "screenshot": "05-interior.png",
+      "mode": "town",
+      "view": "interior",
+      "stage": "j5",
+      "rank": 4,
+      "done": false,
+      "away": false,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": null,
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 5,
+        "total": 6,
+        "line": [
+          "journey.j5"
+        ],
+        "hint": [
+          "journey.j5.hint"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 6,
+      "name": "Turn on Light in House (Stage J6)",
+      "screenshot": "06-light-on.png",
+      "mode": "town",
+      "view": "interior",
+      "stage": "j6",
+      "rank": 5,
+      "done": false,
+      "away": false,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": {
+        "kind": "light",
+        "id": "light::-1.350:3.661:0",
+        "expected": {
+          "on": true
+        },
+        "floor": 0,
+        "session": "sna3t0psi5v"
+      },
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 6,
+        "total": 6,
+        "line": [
+          "journey.j6"
+        ],
+        "distance": null,
+        "hint": [
+          "journey.j6.leave"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 7,
+      "name": "Return to Space (Away flag noted)",
+      "screenshot": "07-space-away.png",
+      "mode": "space",
+      "view": null,
+      "stage": "j6",
+      "rank": 5,
+      "done": false,
+      "away": true,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": {
+        "kind": "light",
+        "id": "light::-1.350:3.661:0",
+        "expected": {
+          "on": true
+        },
+        "floor": 0,
+        "session": "sna3t0psi5v"
+      },
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 6,
+        "total": 6,
+        "line": [
+          "journey.j6"
+        ],
+        "distance": null,
+        "hint": [
+          "journey.j6.return",
+          {
+            "city": "New Babylon",
+            "planet": "Ququ Prime"
+          }
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 8,
+      "name": "After Reload in Space (State Persisted)",
+      "screenshot": "08-reload-space.png",
+      "mode": "space",
+      "view": null,
+      "stage": "j6",
+      "rank": 5,
+      "done": false,
+      "away": true,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": {
+        "kind": "light",
+        "id": "light::-1.350:3.661:0",
+        "expected": {
+          "on": true
+        },
+        "floor": 0,
+        "session": "sna3t0psi5v"
+      },
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 6,
+        "total": 6,
+        "line": [
+          "journey.j6"
+        ],
+        "distance": null,
+        "hint": [
+          "journey.j6.return",
+          {
+            "city": "New Babylon",
+            "planet": "Ququ Prime"
+          }
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 9,
+      "name": "Return to Hometown Diorama",
+      "screenshot": "09-town-return.png",
+      "mode": "town",
+      "view": "diorama",
+      "stage": "j6",
+      "rank": 5,
+      "done": false,
+      "away": true,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": {
+        "kind": "light",
+        "id": "light::-1.350:3.661:0",
+        "expected": {
+          "on": true
+        },
+        "floor": 0,
+        "session": "sna3t0psi5v"
+      },
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 6,
+        "total": 6,
+        "line": [
+          "journey.j6"
+        ],
+        "distance": null,
+        "hint": [
+          "journey.j6.door"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": 10,
+      "name": "Trace Restored - Journey Complete (Stage Done)",
+      "screenshot": "10-interior-restored-done.png",
+      "mode": "town",
+      "view": "interior",
+      "stage": "done",
+      "rank": 6,
+      "done": true,
+      "away": false,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": {
+        "kind": "light",
+        "id": "light::-1.350:3.661:0",
+        "expected": {
+          "on": true
+        },
+        "floor": 0,
+        "session": "sna3t0psi5v"
+      },
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": null,
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    }
+  ],
+  "summary": {
+    "totalSteps": 10,
+    "passedSteps": 11,
+    "allPassed": true,
+    "finalStage": "done",
+    "done": true,
+    "pageErrorsCount": 0,
+    "consoleErrorsCount": 0
+  },
+  "limitations": [
+    "Pergerakan Pemain Fisik vs Mode API: Penjelajahan walk dan pendekatan ke pintu rumah menggunakan kombinasi direct API (mode.placePlayer, mode.enterBuilding) dan mode view setters (mode.setView(\"walk\")) daripada simulasi input fisik keyboard/mouse terus-menerus.",
+    "Audio Headless: Sfx dan fanfare selebrasi diverifikasi terpanggil tanpa melempar runtime exception; fidelitas suara fisik tidak diuji.",
+    "Lingkungan Server: Uji dijalankan pada server preview produksi Vite port 5234 (dist build mandiri tanpa HMR)."
+  ]
+}

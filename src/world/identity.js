@@ -9,4 +9,5 @@ export function buildingId(townSeed, building) {
   return `town:${townSeed}:building:${building.asset}:${Math.round(building.x * 100)}:${Math.round(building.z * 100)}:${Math.round(building.yaw * 10000)}`;
 }
 
-export const GENERATOR_VERSIONS = Object.freeze({ planet: 5, town: 3, interior: 2, identity: 1 });
+// Versions live in versions.js; kept here because the world manifest imports them from identity.
+export { GENERATOR_VERSIONS } from './versions.js';

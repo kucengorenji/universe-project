@@ -1,0 +1,337 @@
+{
+  "verifiedAt": "2026-10-08T13:27:44.777Z",
+  "unitSuite": {
+    "pass": 162,
+    "fail": 0
+  },
+  "targetedSuite": {
+    "pass": 12,
+    "fail": 0
+  },
+  "paint": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "fantasy near junction",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "fantasy near main paving",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "fantasy near earth lane",
+        "pass": true,
+        "rgb": [
+          255,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "fantasy near garden path",
+        "pass": true,
+        "rgb": [
+          255,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "fantasy near plaza",
+        "pass": true,
+        "rgb": [
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "name": "fantasy near lot",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "near grass remains unpaved",
+        "pass": true
+      },
+      {
+        "name": "near river clears overlapping street",
+        "pass": true
+      },
+      {
+        "name": "fantasy far junction",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "fantasy far main paving",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "fantasy far earth lane",
+        "pass": true,
+        "rgb": [
+          255,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "fantasy far garden path",
+        "pass": true,
+        "rgb": [
+          255,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "fantasy far plaza",
+        "pass": true,
+        "rgb": [
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "name": "fantasy far lot",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "far grass remains unpaved",
+        "pass": true
+      },
+      {
+        "name": "far river clears overlapping street",
+        "pass": true
+      },
+      {
+        "name": "modern near junction",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "modern near main paving",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "modern near earth lane",
+        "pass": true,
+        "rgb": [
+          255,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "modern near garden path",
+        "pass": true,
+        "rgb": [
+          255,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "modern near plaza",
+        "pass": true,
+        "rgb": [
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "name": "modern near lot",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "near grass remains unpaved",
+        "pass": true
+      },
+      {
+        "name": "near river clears overlapping street",
+        "pass": true
+      },
+      {
+        "name": "modern far junction",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "modern far main paving",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "modern far earth lane",
+        "pass": true,
+        "rgb": [
+          255,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "modern far garden path",
+        "pass": true,
+        "rgb": [
+          255,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "modern far plaza",
+        "pass": true,
+        "rgb": [
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "name": "modern far lot",
+        "pass": true,
+        "rgb": [
+          0,
+          255,
+          0
+        ]
+      },
+      {
+        "name": "far grass remains unpaved",
+        "pass": true
+      },
+      {
+        "name": "far river clears overlapping street",
+        "pass": true
+      },
+      {
+        "name": "surface master is deterministic",
+        "pass": true
+      },
+      {
+        "name": "1024 square atlas with four metre repeats",
+        "pass": true
+      },
+      {
+        "name": "tone atlas uses linear data and mipmaps",
+        "pass": true
+      }
+    ],
+    "results": [
+      {
+        "modern": false,
+        "near": 1024,
+        "far": 1024
+      },
+      {
+        "modern": true,
+        "near": 1024,
+        "far": 1024
+      }
+    ]
+  },
+  "runtime": {
+    "browser": "Chrome DevTools, desktop 1440x900, DPR 2",
+    "worldSeed": 603616,
+    "modernCity": 1,
+    "fantasyCity": 0,
+    "bridgeCity": 2,
+    "bridgeTriangles": 2732,
+    "bridgeHeight": 1.7827070189606988,
+    "globeRoadBatches": [
+      {
+        "style": "fantasy",
+        "vertices": 4194,
+        "triangles": 4176
+      },
+      {
+        "style": "modern",
+        "vertices": 4520,
+        "triangles": 4500
+      }
+    ],
+    "shaderFailures": 0,
+    "styleSwitch": {
+      "layoutIdentity": true,
+      "colliderIdentity": true,
+      "routeCoordinatesUnchanged": true,
+      "bridgeSurfaceUnchanged": true
+    }
+  },
+  "budget": {
+    "atlasSize": [
+      1024,
+      1024
+    ],
+    "tileSize": [
+      512,
+      512
+    ],
+    "spanMetres": 4,
+    "additionalTextureMiBWithMipmaps": 5.333,
+    "additionalRoadGeometry": 0,
+    "globeRoadDrawCalls": 2,
+    "townRoadMarkingBatchRemoved": true
+  },
+  "limits": {
+    "performance": "NOT_RUN: dedicated FPS/GPU benchmark",
+    "safariMobile": "NOT_RUN",
+    "glb": "N/A: runtime canvas textures and material patches; existing meshes retained",
+    "rigLodColliderAuthoring": "N/A: static path surfaces use existing terrain and analytical bridges"
+  }
+}

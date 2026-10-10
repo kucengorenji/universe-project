@@ -91,7 +91,13 @@ export function loadNpcPack(url) {
   return new GLTFLoader().loadAsync(url).then(buildTemplate);
 }
 
-export function buildTemplate(gltf) {
+/**
+ * measureLegs: take the leg lengths from the pivots instead of the townsfolk's (LEGS), for packs
+ * with other proportions (the valley's semi-chibi actors), so the standing foot stays planted.
+ * vertexShade: multiply each vertex by the pack's authored COLOR_0 (painted occlusion and
+ * highlights baked in Blender) on top of the slot colour.
+ */
+export function buildTemplate(gltf, { measureLegs = false, vertexShade = false } = {}) {
   const source = gltf.scene.getObjectByName(BONES[0]);
   if (!source) return null;
   gltf.scene.updateMatrixWorld(true);
@@ -148,11 +154,14 @@ export function buildTemplate(gltf) {
   const parts = [];
   let authoredCrown = false;
   source.traverse((o) => o.isMesh && /^hair_.*_crown$/.test(o.name) && (authoredCrown = true));
-  const tag = (geo, bone, slot, shade, piece, color = null, expr = 0) => {
+  const tag = (geo, bone, slot, shade, piece, color = null, expr = 0, painted = null) => {
     const n = geo.attributes.position.count;
     const c = color || new THREE.Color(shade, shade, shade);
     const colors = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) c.toArray(colors, i * 3);
+    for (let i = 0; i < n; i++) {
+      c.toArray(colors, i * 3);
+      if (painted) for (let k = 0; k < 3; k++) colors[i * 3 + k] *= painted.getComponent(i, k);
+    }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.setAttribute('aSlot', new THREE.BufferAttribute(new Float32Array(n).fill(slot), 1));
     geo.setAttribute('aPiece', new THREE.BufferAttribute(new Float32Array(n).fill(piece), 1));
@@ -191,7 +200,8 @@ export function buildTemplate(gltf) {
     const em = /^expr_([a-z]+)_([a-z]+)/.exec(mesh.name);
     const fi = em ? FEATURES.indexOf(em[1]) : -1;
     const expr = fi >= 0 && EXPR[em[1]].includes(em[2]) ? (fi + 1) * 8 + EXPR[em[1]].indexOf(em[2]) : 0;
-    tag(geo, bone, slot, shade, PIECE.find(([re]) => re.test(mesh.name))?.[1] ?? 0, slot ? null : mesh.material.color, expr);
+    tag(geo, bone, slot, shade, PIECE.find(([re]) => re.test(mesh.name))?.[1] ?? 0, slot ? null : mesh.material.color, expr,
+      vertexShade ? mesh.geometry.attributes.color ?? null : null);
     if (!authoredCrown && /^head_H/.test(mesh.name)) {
       // Crown: over the top and down the back of the skull, clear of the brow
       geo.computeBoundingBox();
@@ -217,13 +227,21 @@ export function buildTemplate(gltf) {
   root.add(bones[0], mesh);
   root.updateMatrixWorld(true);
   mesh.bind(new THREE.Skeleton(bones));
-  return { root, triangles: geometry.index.count / 3 };
+  return { root, triangles: geometry.index.count / 3, legs: measureLegs ? measureLegsOf(pivot) : null };
+}
+
+/** Leg lengths from the bind pose (root at the soles): see LEGS. */
+function measureLegsOf(pivot) {
+  const hip = pivot('hip_L'), knee = pivot('knee_L'), ankle = pivot('ankle_L'), toe = pivot('toe_L');
+  const thigh = hip.distanceTo(knee), shin = knee.distanceTo(ankle), ankleH = ankle.y;
+  const ball = Math.max(0.02, toe.z - ankle.z);
+  return { thigh, shin, ankleH, heel: ball * 0.64, ball, hipH: thigh + shin + ankleH };
 }
 
 /** Per-person material: palette slots and hidden pieces in uniforms, one shared program. */
-function npcMaterial() {
+function npcMaterial(gradientMap = getToonGradient(), pixels = true) {
   const uniforms = { uPalette: { value: Array.from({ length: 7 }, () => new THREE.Color()) }, uHide: { value: new THREE.Vector4() }, uTie: { value: 0 }, uExpr: { value: new THREE.Vector3() } };
-  const m = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getToonGradient() });
+  const m = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap });
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
@@ -249,11 +267,11 @@ function npcMaterial() {
     // or darker. They stick to the cloth as it moves and fade out before they could shimmer.
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vBind;\nvarying float vDepth;')
-      .replace('#include <color_fragment>', `#include <color_fragment>
+      .replace('#include <color_fragment>', pixels ? `#include <color_fragment>
         float px = fract(sin(dot(floor(vBind * 45.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
-        diffuseColor.rgb *= 1.0 + (px - 0.5) * 0.13 * (1.0 - smoothstep(5.0, 16.0, vDepth));`);
+        diffuseColor.rgb *= 1.0 + (px - 0.5) * 0.13 * (1.0 - smoothstep(5.0, 16.0, vDepth));` : '#include <color_fragment>');
   };
-  m.customProgramCacheKey = () => 'npc-v1-pixels';
+  m.customProgramCacheKey = () => (pixels ? 'npc-v1-pixels' : 'npc-v1-flat');
   m.userData.uniforms = uniforms;
   return m;
 }
@@ -305,10 +323,10 @@ export function setFace(person, name) {
 }
 
 /** One NPC from the template: a skinned clone with its own material and pose state. */
-export function makeNpc(template, { shadows = true } = {}) {
+export function makeNpc(template, { shadows = true, gradientMap, pixels = true } = {}) {
   const root = cloneSkinned(template.root);
   const mesh = root.getObjectByName('npc');
-  const material = npcMaterial();
+  const material = npcMaterial(gradientMap, pixels);
   mesh.material = material;
   mesh.castShadow = shadows;
   mesh.frustumCulled = false; // posed bones move the geometry past its bind bounds
@@ -322,7 +340,7 @@ export function makeNpc(template, { shadows = true } = {}) {
     elbow: new THREE.Quaternion().setFromEuler(new THREE.Euler(le.x, -le.y, -le.z))
   };
   return {
-    root, mesh, material, bones, armDown, phase: 0, speed: 0, cup: false, index: -1, time: 0, mood: 'neutral',
+    root, mesh, material, bones, armDown, legs: template.legs || LEGS, phase: 0, speed: 0, cup: false, index: -1, time: 0, mood: 'neutral',
     style: { stride: 1, arm: 1, bounce: 1, lean: 0, sway: 1, seed: 0 },
     look: { yaw: 0, pitch: 0, toYaw: 0, toPitch: 0, next: 1 },
     face: { blink: 2, closed: 0, glance: 0, current: '' },
@@ -347,7 +365,7 @@ const wrap = (x) => x - Math.floor(x);
 
 // Leg lengths of the model (m): hip to knee, knee to ankle, ankle to sole, heel and ball
 // of the foot from the ankle. Used to keep the standing foot on the ground.
-const THIGH = 0.4, SHIN = 0.4, ANKLE_H = 0.105, HEEL = 0.082, BALL = 0.128, HIP_H = 0.905;
+const LEGS = { thigh: 0.4, shin: 0.4, ankleH: 0.105, heel: 0.082, ball: 0.128, hipH: 0.905 };
 
 /** Share of the gait cycle a foot is on the ground: half when walking, about a third running. */
 const stanceShare = (run) => 0.5 - 0.15 * run;
@@ -373,20 +391,20 @@ function gait(phi, A, run) {
 }
 
 /** Height from the hip joint down to the lowest point of the sole (heel or ball). */
-function legDrop(hip, knee, foot) {
+function legDrop(hip, knee, foot, L = LEGS) {
   const a2 = hip + knee;
-  const ankle = THIGH * Math.cos(hip) + SHIN * Math.cos(a2);
-  const heel = ANKLE_H * Math.cos(foot) - HEEL * Math.sin(foot);
-  const ball = ANKLE_H * Math.cos(foot) + BALL * Math.sin(foot);
+  const ankle = L.thigh * Math.cos(hip) + L.shin * Math.cos(a2);
+  const heel = L.ankleH * Math.cos(foot) - L.heel * Math.sin(foot);
+  const ball = L.ankleH * Math.cos(foot) + L.ball * Math.sin(foot);
   return ankle + Math.max(heel, ball);
 }
 
 /** How far the ankle is ahead of the hip (m). */
-function legReach(hip, knee) {
-  return -(THIGH * Math.sin(hip) + SHIN * Math.sin(hip + knee));
+function legReach(hip, knee, L = LEGS) {
+  return -(L.thigh * Math.sin(hip) + L.shin * Math.sin(hip + knee));
 }
 
-function poseLeg(B, side, g, extra) {
+function poseLeg(B, side, g, extra, L) {
   const hip = g.hip + extra.hip;
   const knee = g.knee + extra.knee;
   const foot = g.foot + extra.foot;
@@ -395,7 +413,7 @@ function poseLeg(B, side, g, extra) {
   pose(B[`ankle_${side}`], null, foot - hip - knee, 0, -extra.hipZ);
   // The toes stay on the ground while the heel peels off
   pose(B[`toe_${side}`], null, -Math.max(0, foot) * 0.9);
-  return legDrop(hip, knee, foot);
+  return legDrop(hip, knee, foot, L);
 }
 
 /** Where the eyes wander: a new target every few seconds, eased toward. */
@@ -461,7 +479,8 @@ export function animateNpc(p, dt, speed, { panic = false, pose: hold = null, jum
   const vs = v / scale; // speed in the model's own metres
   // Longer steps the faster you go; the stride is measured from the legs themselves
   const A = THREE.MathUtils.lerp(THREE.MathUtils.clamp(0.16 + 0.22 * vs, 0.16, 0.5), THREE.MathUtils.clamp(0.5 + 0.04 * vs, 0.5, 0.72), run) * st.stride * walk;
-  const reach = (g) => legReach(g.hip, g.knee);
+  const legs = p.legs || LEGS;
+  const reach = (g) => legReach(g.hip, g.knee, legs);
   // The planted foot must sweep back exactly as fast as the body moves on: the stride (per
   // cycle) is the rate at which the foot's reach changes over the flat-footed middle of stance
   const sf = stanceShare(run);
@@ -485,12 +504,12 @@ export function animateNpc(p, dt, speed, { panic = false, pose: hold = null, jum
   });
   const gL = gait(ph, A, run);
   const gR = gait(wrap(ph + 0.5), A, run);
-  const dropL = poseLeg(B, 'L', gL, extra(1));
-  const dropR = poseLeg(B, 'R', gR, extra(-1));
+  const dropL = poseLeg(B, 'L', gL, extra(1), legs);
+  const dropR = poseLeg(B, 'R', gR, extra(-1), legs);
 
   // Pelvis: as low as the standing leg lets it be (so that foot is on the ground), plus a
   // hop between steps when running; sways over the standing leg, rolls and turns with the stride
-  const ground = air > 0.02 ? 0 : Math.max(dropL, dropR) - HIP_H;
+  const ground = air > 0.02 ? 0 : Math.max(dropL, dropR) - legs.hipH;
   // Running: between one foot's toe-off and the other's heel strike both are off the ground
   let flight = 0;
   if (!gL.stance && !gR.stance && sf < 0.5) {

@@ -53,6 +53,7 @@ export class WorldStateStore {
     try {
       if (!this.storage && !this.indexedDB) throw new Error(t('store.unavailable'));
       this.storage?.setItem(this.key, JSON.stringify(this.pending));
+      if (!this.indexedDB) this.error = null; // the journal is the only store: a write that went through is saved
     }
     catch (error) { this.error = error; }
     this.serial = this.serial.then(() => this.ready).then(() => this.commit()).catch(error => { this.error = error; });

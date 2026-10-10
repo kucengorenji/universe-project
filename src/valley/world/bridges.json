@@ -1,0 +1,22 @@
+{
+  "_doc": "Bridge prefabs (docs/FARM_PLAN.md \u00a76 rule 2), read by tools/blender/valley/build_valley_kit.py and src/valley/world/valleyGround.js so the modelled deck and the walkable deck are the same curve: y(t) = abutment + lift (planks flush with the abutment at both ends) + arch * sin(pi t), t = 0..1 along the span.",
+  "lengths": [
+    6,
+    9,
+    12
+  ],
+  "width": 2.4,
+  "lift": 0.04,
+  "arch": {
+    "6": 0.25,
+    "9": 0.35,
+    "12": 0.45
+  },
+  "abutment": {
+    "length": 2.6,
+    "width": 3.6,
+    "margin": 2.2
+  },
+  "bank": 1.4,
+  "maxSkewDeg": 10
+}

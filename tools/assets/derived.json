@@ -1,0 +1,66 @@
+{
+  "generator": "tools/assets/derive_lowres.mjs",
+  "method": "box filter, rounded mean of each factor x factor block, per channel",
+  "derived": [
+    {
+      "output": "textures/skirmish_surfaces_256.png",
+      "source": "textures/skirmish_surfaces.png",
+      "factor": 2,
+      "why": "the town shrinks every painted layer from 512 to 256 at run time; this is that result, computed once",
+      "width": 256,
+      "height": 5632,
+      "sourceSha256": "992206c6568f6ad52650c5d207227df2651a2c7a33ad9ed67b553f5a660e4ee2",
+      "bytes": 1521078,
+      "fileSha256": "42bbea96d0628d50c8886d48597975d213e669ce94469e45f7b3beaa93d90fe5",
+      "pixelsSha256": "9f9be3c1d3b133d83749759e4b0592c5165c1a21d418bef1178c0335c077c120"
+    },
+    {
+      "output": "textures/soldier_v5_m_cloth_1024.png",
+      "source": "textures/soldier_v5_m_cloth.png",
+      "factor": 2,
+      "why": "Low tier: 1024 character atlas",
+      "width": 1024,
+      "height": 1024,
+      "sourceSha256": "5be760d259a878242c6fe4e642b007b111b222c233302cfa6eb5462aa905b3f3",
+      "bytes": 756540,
+      "fileSha256": "beba64144f462744a627a310aec357939ff214e454b9cd3a6d6c051cf8a62500",
+      "pixelsSha256": "25e966e5db1c0ed60e811c32c34a059028883f543865483e20ce2ceeba8ae6d5"
+    },
+    {
+      "output": "textures/soldier_v5_f_cloth_1024.png",
+      "source": "textures/soldier_v5_f_cloth.png",
+      "factor": 2,
+      "why": "Low tier: 1024 character atlas",
+      "width": 1024,
+      "height": 1024,
+      "sourceSha256": "9f9157d7a917b1f0edb76d9d74d449e87ab154e12199706fc39d804971a46069",
+      "bytes": 751558,
+      "fileSha256": "74a19145c350ed77a3829fe7f24618b03a7e3c8842c792101eb73ee13422265a",
+      "pixelsSha256": "8d38083b2ddfe432c404effbf89aa951b1cc7419dfafc06d6c0e76b85b51b5d0"
+    },
+    {
+      "output": "textures/soldier_v5_m_head_1024.png",
+      "source": "textures/soldier_v5_m_head.png",
+      "factor": 2,
+      "why": "Low tier: 1024 face atlas",
+      "width": 1024,
+      "height": 1024,
+      "sourceSha256": "241c599b31ed01360115292f015b6c55e2196d436dcbc6d70abaa059357b6ff3",
+      "bytes": 237494,
+      "fileSha256": "6903828c3583ebdad34638da644588403ddcd9a0b21710f7c677ef3b2ff797d7",
+      "pixelsSha256": "0c6818c3ec44ee976ae5666bf5827e66c25aa0049d479e89da1ae1b3eb0efaad"
+    },
+    {
+      "output": "textures/soldier_v5_f_head_1024.png",
+      "source": "textures/soldier_v5_f_head.png",
+      "factor": 2,
+      "why": "Low tier: 1024 face atlas",
+      "width": 1024,
+      "height": 1024,
+      "sourceSha256": "fa00dfd33e1d8c4cc72c1a2487882858821064b20dff04063f39ce61d4da4bbe",
+      "bytes": 221740,
+      "fileSha256": "91bb1ce2c707e8e63f6df452318812d2aa9599350581dfa304e9c5576cbcd372",
+      "pixelsSha256": "c4e1ba828fb9bb679f398d0c11743fe69b882711bac273b89ea6fa432a0a090a"
+    }
+  ]
+}

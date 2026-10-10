@@ -6,5 +6,6 @@ import home from './home.js';
 import world from './world.js';
 import skirmish from './skirmish.js';
 import net from './net.js';
+import trade from './trade.js';
 
-export default { ...core, ...planet, ...space, ...town, ...home, ...world, ...skirmish, ...net };
+export default { ...core, ...planet, ...space, ...town, ...home, ...world, ...skirmish, ...net, ...trade };

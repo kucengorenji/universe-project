@@ -48,13 +48,20 @@ export function missionSummary(json) {
   return { missionsDone, missionItems: { done, total } };
 }
 
-/** @returns {{ snapshot: import('../../shared/api.ts').Snapshot, meta: import('../../shared/api.ts').WorldMeta, hash: string }} */
 export function buildSnapshot({ storage, worldId, seed, subdivision, records, progress, now = Date.now() }) {
   const values = {};
   for (const key of SYNC_KEYS) {
     const v = storage.getItem(key);
     if (v != null) values[key] = v;
   }
+  const scopedMissionsKey = `planet_globe_missions:${worldId}`;
+  const scopedMissionsVal = storage.getItem(scopedMissionsKey);
+  if (scopedMissionsVal != null) values[scopedMissionsKey] = scopedMissionsVal;
+
+  const scopedTipsKey = `planet_globe_tips:${worldId}`;
+  const scopedTipsVal = storage.getItem(scopedTipsKey);
+  if (scopedTipsVal != null) values[scopedTipsKey] = scopedTipsVal;
+
   const prog = progress.get(worldId);
   values[KEYS.progress] = JSON.stringify({ [worldId]: prog });
   const entities = sortedEntries(Object.fromEntries(records));
@@ -65,7 +72,7 @@ export function buildSnapshot({ storage, worldId, seed, subdivision, records, pr
     townsVisited: prog.towns.length,
     playtimeSec: prog.playtime,
     homes: Object.keys(entities).filter((k) => k.startsWith('home:')).length,
-    ...missionSummary(values.planet_globe_missions)
+    ...missionSummary(scopedMissionsVal || values.planet_globe_missions)
   };
   return { snapshot, meta, hash: contentHash(snapshot) };
 }
@@ -92,7 +99,9 @@ export async function applySnapshot(snapshot, { storage, indexedDB, rev = 0, now
   }
   const { worldId } = snapshot;
   if (indexedDB) await putEntities(indexedDB, worldId, snapshot.entities);
-  for (const key of SYNC_KEYS) if (typeof snapshot.storage[key] === 'string') storage.setItem(key, snapshot.storage[key]);
+  for (const key of Object.keys(snapshot.storage || {})) {
+    if (typeof snapshot.storage[key] === 'string') storage.setItem(key, snapshot.storage[key]);
+  }
   const incoming = readJson({ getItem: () => snapshot.storage[KEYS.progress] }, 'x', {})[worldId];
   if (incoming) writeJson(storage, KEYS.progress, { ...readJson(storage, KEYS.progress, {}), [worldId]: incoming });
   // Without IndexedDB the journal is the store; with it, a stale journal would replay over the restore.

@@ -1,0 +1,107 @@
+{
+  "seed": 123456,
+  "time": 1480,
+  "cash": 668.54,
+  "milestones": {
+    "production": 45,
+    "trade": 46,
+    "network": 91,
+    "city": 445,
+    "kingdom": 1480
+  },
+  "cashFlow": 59.39,
+  "cities": [
+    {
+      "name": "Hearth",
+      "service": 1,
+      "stable": 1480,
+      "stock": {
+        "wheat": 1,
+        "bread": 5,
+        "wood": 17,
+        "stone": 38,
+        "ore": 37,
+        "tools": 7
+      }
+    },
+    {
+      "name": "Haven 2",
+      "service": 1,
+      "stable": 641,
+      "stock": {
+        "wheat": 36,
+        "bread": 0,
+        "wood": 3,
+        "stone": 6,
+        "ore": 0,
+        "tools": 0
+      }
+    },
+    {
+      "name": "Haven 3",
+      "service": 1,
+      "stable": 371,
+      "stock": {
+        "wheat": 28,
+        "bread": 0,
+        "wood": 1,
+        "stone": 6,
+        "ore": 0,
+        "tools": 0
+      }
+    }
+  ],
+  "facilities": [
+    {
+      "kind": "farm",
+      "level": 3
+    },
+    {
+      "kind": "bakery",
+      "level": 3
+    },
+    {
+      "kind": "logging",
+      "level": 1
+    },
+    {
+      "kind": "quarry",
+      "level": 1
+    },
+    {
+      "kind": "depot",
+      "level": 1
+    },
+    {
+      "kind": "farm",
+      "level": 1
+    },
+    {
+      "kind": "mine",
+      "level": 1
+    },
+    {
+      "kind": "farm",
+      "level": 1
+    },
+    {
+      "kind": "warehouse",
+      "level": 1
+    },
+    {
+      "kind": "workshop",
+      "level": 1
+    }
+  ],
+  "produced": {
+    "wheat": 492,
+    "bread": 250,
+    "wood": 90,
+    "stone": 90,
+    "ore": 32,
+    "tools": 1
+  },
+  "tickAverageMs": 0.009360991891892136,
+  "tickP95Ms": 0.02241699999999014,
+  "actions": 39
+}

@@ -1,0 +1,213 @@
+{
+  "date": "2026-10-09",
+  "scope": "current WIP checkout; static manifest inventory and isolated production build; no new runtime benchmark",
+  "units": "bytes; MiB=1048576 bytes",
+  "asset_inventory": [
+    {
+      "key": "planetPack",
+      "path": "models/assets.glb",
+      "bytes_on_disk": 292372
+    },
+    {
+      "key": "planetPackLod0",
+      "path": "models/assets_lod0.glb",
+      "bytes_on_disk": 338924
+    },
+    {
+      "key": "townPack",
+      "path": "models/town.glb",
+      "bytes_on_disk": 5867392
+    },
+    {
+      "key": "sceneryPack",
+      "path": "models/scenery.glb",
+      "bytes_on_disk": 1244892
+    },
+    {
+      "key": "environmentPack",
+      "path": "models/environment.glb",
+      "bytes_on_disk": 3355532
+    },
+    {
+      "key": "npcPack",
+      "path": "models/npc.glb",
+      "bytes_on_disk": 227016
+    },
+    {
+      "key": "characterPack",
+      "path": "models/character.glb",
+      "bytes_on_disk": 1379572
+    },
+    {
+      "key": "furniturePack",
+      "path": "models/furniture.glb",
+      "bytes_on_disk": 801628
+    },
+    {
+      "key": "homePack",
+      "path": "models/home_cozy.glb",
+      "bytes_on_disk": 3791532
+    },
+    {
+      "key": "spacePack",
+      "path": "models/space.glb",
+      "bytes_on_disk": 411588
+    },
+    {
+      "key": "soldierPack",
+      "path": "models/soldier_v5_m.glb",
+      "bytes_on_disk": 5971600
+    },
+    {
+      "key": "soldierAtlas",
+      "path": "textures/soldier_v5_m_cloth.png",
+      "bytes_on_disk": 2843008,
+      "width": 2048,
+      "height": 2048,
+      "rgba8_base_level_estimate_bytes": 16777216
+    },
+    {
+      "key": "soldierHead",
+      "path": "textures/soldier_v5_m_head.png",
+      "bytes_on_disk": 989759,
+      "width": 2048,
+      "height": 2048,
+      "rgba8_base_level_estimate_bytes": 16777216
+    },
+    {
+      "key": "soldierPackF",
+      "path": "models/soldier_v5_f.glb",
+      "bytes_on_disk": 6039076
+    },
+    {
+      "key": "soldierAtlasF",
+      "path": "textures/soldier_v5_f_cloth.png",
+      "bytes_on_disk": 2810200,
+      "width": 2048,
+      "height": 2048,
+      "rgba8_base_level_estimate_bytes": 16777216
+    },
+    {
+      "key": "soldierHeadF",
+      "path": "textures/soldier_v5_f_head.png",
+      "bytes_on_disk": 923634,
+      "width": 2048,
+      "height": 2048,
+      "rgba8_base_level_estimate_bytes": 16777216
+    },
+    {
+      "key": "townWalk",
+      "path": "models/town_walk_m.glb",
+      "bytes_on_disk": 55376
+    },
+    {
+      "key": "townWalkF",
+      "path": "models/town_walk_f.glb",
+      "bytes_on_disk": 55796
+    },
+    {
+      "key": "soldierPortraits",
+      "path": "textures/soldier_portraits.png",
+      "bytes_on_disk": 978317,
+      "width": 1152,
+      "height": 1152,
+      "rgba8_base_level_estimate_bytes": 5308416
+    },
+    {
+      "key": "envPack",
+      "path": "models/skirmish_env.glb",
+      "bytes_on_disk": 6723768
+    },
+    {
+      "key": "envSurfaces",
+      "path": "textures/skirmish_surfaces.png",
+      "bytes_on_disk": 6004882,
+      "width": 512,
+      "height": 11264,
+      "rgba8_base_level_estimate_bytes": 23068672
+    },
+    {
+      "key": "militaryPack",
+      "path": "models/military.glb",
+      "bytes_on_disk": 206888
+    },
+    {
+      "key": "interiorAtlas",
+      "path": "textures/interior_atlas.jpg",
+      "bytes_on_disk": 375272
+    },
+    {
+      "key": "townSurfaces",
+      "path": "textures/town_surfaces.png",
+      "bytes_on_disk": 107856,
+      "width": 512,
+      "height": 512,
+      "rgba8_base_level_estimate_bytes": 1048576
+    },
+    {
+      "key": "valleyKit",
+      "path": "models/valley_kit.glb",
+      "bytes_on_disk": 3190396
+    },
+    {
+      "key": "valleyActors",
+      "path": "models/valley_actors.glb",
+      "bytes_on_disk": 637916
+    },
+    {
+      "key": "valleyAnimals",
+      "path": "models/valley_animals.glb",
+      "bytes_on_disk": 130296
+    }
+  ],
+  "manifest_total_bytes": 55754488,
+  "town_prepare_dependency_keys": [
+    "planetPack",
+    "planetPackLod0",
+    "townPack",
+    "furniturePack",
+    "interiorAtlas",
+    "sceneryPack",
+    "townSurfaces",
+    "environmentPack",
+    "envSurfaces",
+    "soldierPack",
+    "soldierAtlas",
+    "soldierHead",
+    "soldierPackF",
+    "soldierAtlasF",
+    "soldierHeadF",
+    "townWalk",
+    "townWalkF"
+  ],
+  "town_prepare_dependency_total_bytes": 38077199,
+  "town_total_caveat": "Files identifiable from packs() and loadTownPeople(), excludes URLs embedded inside GLBs and other dependent loads; actual transfers vary with cache and HTTP compression. Not a complete network trace.",
+  "bundles": [
+    {
+      "file": "three-5BBm4OLv.js",
+      "bytes_minified": 667246,
+      "bytes_gzip_estimate": 170389
+    },
+    {
+      "file": "TownMode-BbUT7tbe.js",
+      "bytes_minified": 328009,
+      "bytes_gzip_estimate": 118666
+    },
+    {
+      "file": "game-CzbVlR8e.js",
+      "bytes_minified": 177062,
+      "bytes_gzip_estimate": 49366
+    },
+    {
+      "file": "planetBake.worker-BOiBhGxs.js",
+      "bytes_minified": 154535,
+      "bytes_gzip_estimate": 52466
+    }
+  ],
+  "build": {
+    "command": "npm run build -- --outDir /tmp/globe-webgame-performance-20261009 --emptyOutDir",
+    "passed": true
+  },
+  "runtime_cpu_gpu_ram_vram_power": "not measured in this audit",
+  "gzip_estimate_method": "Python gzip.compress(data, compresslevel=9, mtime=0); not observed HTTP transfer"
+}

@@ -3,6 +3,7 @@ import { orthographicLodScale } from '../render/pixelConfig.js';
 import { Car, VEHICLE_TYPES } from './vehicle.js';
 import { trafficPose, advanceTraffic } from '../navigation/trafficRoute.js';
 import { assemble, vehicleGeometry as wrap } from './vehicleKit.js';
+import { attachHorseMotion, horseGait } from './horseMotion.js';
 
 // Every vehicle in town: parked cars and carts, traffic running the streets,
 // and the one the player drives. Each is assembled from the kit (body,
@@ -96,7 +97,8 @@ export class Fleet {
             inst.count = 0;
             inst.visible = false;
             inst.name = `fleet:${asset}:lod${level}:${cast ? 'shadow' : 'plain'}`;
-            const band = { inst, paint, count: 0 };
+            const motion = asset === 'vh_horse' ? attachHorseMotion(inst) : null;
+            const band = { inst, paint, motion, count: 0 };
             bands[cast ? 1 : 0] = band;
             bucket.bands.push(band);
             this.meshes.push({ inst });
@@ -130,7 +132,7 @@ export class Fleet {
     const c = v.car;
     _q.setFromEuler(_e.set(-c.pitch, c.yaw, c.roll, 'YXZ'));
     _base.compose(_v.set(c.x, c.y + c.bob, c.z), _q, _s.set(1, 1, 1));
-    const moving = Math.abs(c.forwardSpeed ?? 0) > 0.2 || (v.mode === 'traffic' && v.speed > 0.2);
+    const speed = v.mode === 'traffic' ? v.speed : c.forwardSpeed ?? 0;
     for (const s of v.slots) {
       if (s.wheel) {
         const w = s.wheel;
@@ -141,9 +143,8 @@ export class Fleet {
         _local.multiply(_rot.makeScale(w.w, w.r, w.r));
         _m.multiplyMatrices(_base, _local);
       } else if (s.horse) {
-        // A trot: the horse bobs as it walks
-        const bob = moving ? Math.abs(Math.sin(v.dist * 1.9 + s.horse.x * 2)) * 0.07 : 0;
-        _local.makeTranslation(s.horse.x, bob, s.horse.z);
+        s.motion = horseGait(v.dist, speed, s.horse.x);
+        _local.makeTranslation(s.horse.x, 0, s.horse.z);
         _m.multiplyMatrices(_base, _local);
       } else if (s.local) _m.multiplyMatrices(_base, s.local);
       else _m.copy(_base);
@@ -175,11 +176,12 @@ export class Fleet {
         const i = band.count++;
         band.inst.setMatrixAt(i, s.matrix);
         band.paint.array.set(s.paint, i * 3);
+        if (band.motion) band.motion.array.set(s.motion || [0, 0], i * 2);
         s.inst = band.inst;
         s.i = i;
       }
       for (const band of bucket.bands) {
-        const { inst, count, paint } = band;
+        const { inst, count, paint, motion } = band;
         inst.count = count;
         inst.visible = count > 0;
         if (!count) continue;
@@ -189,6 +191,11 @@ export class Fleet {
         paint.clearUpdateRanges();
         paint.addUpdateRange(0, count * 3);
         paint.needsUpdate = true;
+        if (motion) {
+          motion.clearUpdateRanges();
+          motion.addUpdateRange(0, count * 2);
+          motion.needsUpdate = true;
+        }
         // Traffic moves between streets; a bound left at its spawn point would cull it.
         inst.computeBoundingSphere();
       }

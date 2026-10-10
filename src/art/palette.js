@@ -81,6 +81,22 @@ export const ROOM_SCHEMES = {
 /** Backdrop behind the cut-away room, and the plinth the room stands on. */
 export const ROOM_STAGE = { day: '#7c7f8c', night: '#1b2130', plinth: '#8a5533', plinthTop: '#f2b766' };
 
+/** Cozy outdoor paths: RGB mask channels select earth, stone and terracotta. */
+export const PATH_PALETTE = {
+  earth: { fill: '#dfbd83', edge: '#c7a56c', mask: '#f00' },
+  stone: { fill: '#d9d2b9', edge: '#bbb59c', mask: '#0f0' },
+  brick: { fill: '#dca68a', edge: '#c68d73', mask: '#00f' },
+  border: '#e9dcc0',
+  verge: '#b7bd84',
+  bridge: { deck: '#c8b99a', walk: '#ede0c4', side: '#ddcfb0', beam: '#b3a388', pier: '#bbab8e', rail: '#a79a7e' }
+};
+
+export function streetPathStyle(kind) {
+  if (kind === 'road' || kind === 'lane') return PATH_PALETTE.earth;
+  if (kind === 'residential' || kind === 'ring') return PATH_PALETTE.brick;
+  return PATH_PALETTE.stone;
+}
+
 /** Tokens for the 2D town plan (Watabou-style map) and future 3D migrations. */
 export const MAP_COLORS = {
   meadow: '#a9c48b',
@@ -110,3 +126,32 @@ export const MAP_COLORS = {
   asphalt: '#6c6e72',
   label: '#1c2320'
 };
+
+/**
+ * Wayfinding for the First Journey (beacon, locator, minimap pin, objective bar). Aliases of
+ * tokens above, so no new hex values: the gold needs a dark outline and is never small text.
+ */
+export const JOURNEY_PALETTE = Object.freeze({
+  target: ROOM_SCHEMES.house[0].trim, // warm gold: beacon face, locator outline
+  paper: ROOM_SCHEMES.house[1].wall, // plaque and label surface
+  ink: MAP_COLORS.label, // text and icon detail
+  outline: MAP_COLORS.outline, // 2 px stroke that separates it from any background
+  edge: PATH_PALETTE.border, // thin rim, beacon base
+  quiet: MAP_COLORS.roadEdge, // secondary status
+  success: MAP_COLORS.tree, // check mark after a save
+  error: ROOM_SCHEMES.tavern[1].wainscot // error icon (always with words)
+});
+
+/**
+ * Warm night (LIVING_WORLD_BOOK Proof 3). The night stays the cool blue fill the town already has;
+ * it only gets a little of the house paper colour mixed in (softer, less saturated shadows and
+ * moonlight) and a floor under the ambient light, so the way to the starter house and its
+ * door stay readable. Aliases again: no new hex.
+ */
+export const WARM_NIGHT = Object.freeze({
+  tint: ROOM_SCHEMES.house[1].wall, // paper: mixed into the night fill and the moonlight
+  fillMix: 0.14, // how much of it reaches the hemisphere fill at full night
+  moonMix: 0.1, // and the moonlight
+  hemiBoost: 0.1, // extra fill intensity at full night
+  ambientFloor: 0.16 // the ambient light never drops below this at night
+});

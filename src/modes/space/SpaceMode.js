@@ -8,6 +8,7 @@ import { Ship, SHIPS, proceduralShipGeometry } from './ship.js';
 import { SpaceTraffic } from './traffic.js';
 import { SpaceHud } from './hud.js';
 import { t } from '../../i18n/index.js';
+import { journeyTargets, markRows, planetText } from '../../ui/journeyTargets.js';
 
 // Star-system mode. The ship flies freely (WASD) or by autopilot (click a
 // planet); from orbit it can land, which hands the exact camera view over to
@@ -96,6 +97,8 @@ export default class SpaceMode {
     });
     this.ui.hidden = false;
     document.body.dataset.mode = 'space';
+    this.stopJourney = this.ctx.journey?.subscribe(() => this.markJourney());
+    this.markJourney();
     this.bindInput();
 
     const a = this.arrival;
@@ -694,7 +697,17 @@ export default class SpaceMode {
     this.camera.updateProjectionMatrix();
   }
 
+  /** The home planet carries the First Journey's house badge, in the list and on its label, while it is the target. */
+  markJourney() {
+    const journey = this.ctx.journey;
+    if (!journey) return;
+    const { planet } = journeyTargets(journey);
+    const rows = [...this.ui.querySelectorAll('.planet-row, .space-label[data-planet]')];
+    markRows(rows, (el) => Number(el.dataset.planet), planet, planetText(journey));
+  }
+
   exit() {
+    this.stopJourney?.();
     this.unbindInput();
     this.hud.dispose();
     this.ui.hidden = true;

@@ -10,7 +10,8 @@ import { Tips } from './core/tips.js';
 import { PauseMenu } from './core/pauseMenu.js';
 import { createJourney } from './core/journey.js';
 import { ObjectiveHud } from './ui/objectiveHud.js';
-import { proofMetrics } from './core/proofMetrics.js';
+import { proofMetrics, registerProof } from './core/proofMetrics.js';
+import { resourceBytes } from './core/resourceBytes.js';
 import { experiments } from './core/experiments.js';
 import './core/firebase.js';
 import { applyDom } from './i18n/index.js';
@@ -37,6 +38,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const objectiveHud = new ObjectiveHud(document.getElementById('journeyUi'), { journey, world, audio, openMenu: () => engine.pauseMenu.show() });
   director.start();
   // Read-only QA handle for the First Journey: stage, starter house id, door position, save status (journey.debug())
+  registerProof('bytes', () => ({ preset: engine.quality.preset, tier: engine.quality.tier, ...resourceBytes() }));
   const qa = Object.freeze({ journey: () => journey.debug(), objective: () => journey.objective(), proofs: proofMetrics, experiments });
   if (import.meta.env.DEV) window.__globe = { engine, world, director, missions, audio, trade, journey, objectiveHud, qa, three: await import('three') }; // dev-only debug/visual QA handle
   else if (new URLSearchParams(location.search).has('qa')) window.__globeQA = qa; // ?qa=1 on a built page: the read-only part only

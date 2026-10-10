@@ -1,6 +1,7 @@
 import { parseRoute, formatRoute, isSafeHomeId } from './router.js';
 import { isSupportedHomeRecord } from '../world/savedRecords.js';
 import { flashToast } from '../ui/toast.js';
+import { markRoute } from './resourceBytes.js';
 import { t } from '../i18n/index.js';
 
 // Each mode is its own chunk: only the code (and assets) of the mode on screen
@@ -141,6 +142,7 @@ export class Director {
 
   async switchTo(route) {
     const { engine, overlay } = this;
+    markRoute(route.mode); // QA: bytes fetched from here until the next route belong to this one
     const { modPromise, prepPromise } = this.load(route);
 
     // 1. The old mode flies toward the new one, then the cover goes up on its last frame

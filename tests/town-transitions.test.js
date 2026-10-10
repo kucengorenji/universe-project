@@ -60,7 +60,7 @@ function fakeTown(overrides = {}) {
   };
   const town = {
     transitions: new TransitionGuard(), transition: TownMode.prototype.transition,
-    furniturePack: { start: async () => ({}) }, transfer: null, interior: null, tween: {}, orbit: { enabled: true }, pixel: { setActive: () => log.push('pixel') },
+    furniturePack: { start: async () => ({}) }, character: { loadFemale: async () => {} }, transfer: null, interior: null, tween: {}, orbit: { enabled: true }, pixel: { setActive: () => log.push('pixel') },
     hud: { setPrompt: () => log.push('prompt') }, route: { planet: 1, city: 0 },
     showHomeMessage() {}, saveInterior: () => log.push('save'),
     ctx: {

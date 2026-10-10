@@ -9,7 +9,9 @@ export const EXPERIMENTS = Object.freeze({
   grass: 'grass bends where the player walks (Proof 1)',
   greet: 'a named townsperson greets the player (Proof 2)',
   night: 'warm night palette and a readable home marker (Proof 3)',
-  lazyInterior: 'furniture and interior atlas load when a door is near, not on entering town'
+  lazyInterior: 'furniture loads when a door is near, not on entering town',
+  lazyBodies: "the women's body and its atlases load just after the town is on screen (Hemat bytes)",
+  lowAtlas: 'the Low tier uses the 1024 character atlases'
 });
 
 const KEY = 'planet_globe_experiments';

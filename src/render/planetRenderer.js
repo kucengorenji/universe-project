@@ -11,6 +11,7 @@ import { PLANET_TYPES, TERRAN_PALETTE } from '../world/planetTypes.js';
 import { createSpaceBackdrop } from './spaceBackdrop.js';
 import { cozyRouteMaterial } from './cozyPaths.js';
 import { JOURNEY_PALETTE } from '../art/palette.js';
+import { FloatBuffer } from './floatBuffer.js';
 import { t } from '../i18n/index.js';
 
 // Cartoon (Civ VI-like) terrain palette (lives with the planet types, shared with the space baker)
@@ -1134,8 +1135,8 @@ export class PlanetRenderer {
 
   buildTerrain(tiles) {
     const relief = this.terrainMode !== 'flat';
-    const land = { pos: [], col: [], nrm: [] };
-    const water = { pos: [], col: [], nrm: [] };
+    const land = { pos: new FloatBuffer(), col: new FloatBuffer(), nrm: new FloatBuffer() };
+    const water = { pos: new FloatBuffer(), col: new FloatBuffer(), nrm: new FloatBuffer() };
     const landLines = [];
     const waterLines = [];
     this.col = {
@@ -1186,9 +1187,9 @@ export class PlanetRenderer {
     const waterColorAt = (p, tile, sLand) => this.waterColor(p, tile, sLand);
 
     const push = (buf, p, n, c) => {
-      buf.pos.push(p.x, p.y, p.z);
-      buf.nrm.push(n.x, n.y, n.z);
-      buf.col.push(c.r, c.g, c.b);
+      buf.pos.add3(p.x, p.y, p.z);
+      buf.nrm.add3(n.x, n.y, n.z);
+      buf.col.add3(c.r, c.g, c.b);
     };
     const skirtColor = new THREE.Color(this.look.skirt?.[0] ?? 0x9b7a52);
     const skirtDark = new THREE.Color(this.look.skirt?.[1] ?? 0x7a5c3c);
@@ -1321,9 +1322,12 @@ export class PlanetRenderer {
 
     const makeGeo = (buf) => {
       const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(buf.pos, 3));
-      g.setAttribute('normal', new THREE.Float32BufferAttribute(buf.nrm, 3));
-      g.setAttribute('color', new THREE.Float32BufferAttribute(buf.col, 3));
+      g.setAttribute('position', new THREE.BufferAttribute(buf.pos.finish(), 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(buf.nrm.finish(), 3));
+      g.setAttribute('color', new THREE.BufferAttribute(buf.col.finish(), 3));
+      // Let go of the growth buffers: closures made below (animated materials) share this scope, and anything
+      // the scope still names stays alive as long as they do (that kept ~180 MiB of vertex data on the heap).
+      buf.pos = buf.nrm = buf.col = null;
       return g;
     };
 

@@ -25,7 +25,7 @@ import { TransitionGuard, openInteriorSession, storeInterior } from './interior/
 import { findTownDoors, nearestDoor as closestDoor } from './interior/doors.js';
 import { TownJourney } from './journeyTown.js';
 import { TownLife } from './townLife.js';
-import { loadTownPacks, createFurniturePack } from './townPacks.js';
+import { loadTownPacks, createFurniturePack, usesLowAtlases } from './townPacks.js';
 import { isOn } from '../../core/experiments.js';
 import { applyAuthoredHomes } from './authoredHomes.js';
 import { createHomeGroup, disposeHomeGroup, loadHomePack } from '../home/homeBuilder.js';
@@ -52,8 +52,8 @@ const _lightRot = new THREE.Matrix4();
 const _lightInv = new THREE.Matrix4();
 
 export default class TownMode {
-  static prepare() {
-    return loadTownPacks();
+  static prepare(ctx) {
+    return loadTownPacks({ low: usesLowAtlases(ctx.engine.quality), deferFemale: isOn('lazyBodies') });
   }
 
   constructor(ctx, route, arrival) {
@@ -76,9 +76,8 @@ export default class TownMode {
     const city = map.cities[this.route.city];
     this.planet = planet;
     this.city = city;
-    const { base, lod0, townPack, townPeople, sceneryPack, surfaceAtlas, environmentPack, paintedSurfaces } = await loadTownPacks();
-    this.character = townPeople;
-    this.townPeople = townPeople;
+    const { base, lod0, townPack, townPeople, sceneryPack, surfaceAtlas, environmentPack, paintedSurfaces } = await loadTownPacks({ low: usesLowAtlases(engine.quality), deferFemale: isOn('lazyBodies') });
+    this.character = townPeople; // the people's bodies: { m, f (loads after arrival), loadFemale() }
     this.furniturePack = createFurniturePack(); // the furniture loads when a door is near or the player goes in
     if (!isOn('lazyInterior')) await this.furniturePack.start('boot');
     const planetPack = {};
@@ -241,6 +240,7 @@ export default class TownMode {
   }
 
   arrived() {
+    this.character.loadFemale?.().catch((error) => console.warn("The women's body could not be loaded:", error)); // the town is on screen: now the rest of the people
     if (this.arrivedByRoad) return;
     if (this.pixelActive) {
       this.tween = null;
@@ -497,7 +497,7 @@ export default class TownMode {
 
   /** The skirmish v5 hero, in the town faction colour. */
   setupAvatar(outfit, shadows) {
-    const person = makeTownPerson(this.townPeople, { player: true, shadows, top: outfit === 'explorer_red' ? 0xc8453b : 0x027b49 });
+    const person = makeTownPerson(this.character, { player: true, shadows, top: outfit === 'explorer_red' ? 0xc8453b : 0x027b49 });
     person.root.visible = false;
     this.scene.add(person.root);
     this.avatar = person;
@@ -613,13 +613,9 @@ export default class TownMode {
   // ------------------------------------------------------------------ buildings
 
   /** Front doors of every building you can go into (interior/doors.js). */
-  findDoors() {
-    return findTownDoors(this.layout, this.footprints, { enterable: ENTERABLE, hasInteriors: isOn('lazyInterior') || this.furniturePack.ready });
-  }
+  findDoors() { return findTownDoors(this.layout, this.footprints, { enterable: ENTERABLE, hasInteriors: isOn('lazyInterior') || this.furniturePack.ready }); }
 
-  nearestDoor(x, z, reach = 2.4) {
-    return closestDoor(this.doors, x, z, reach);
-  }
+  nearestDoor(x, z, reach = 2.4) { return closestDoor(this.doors, x, z, reach); }
 
   /** One fade-and-change at a time (TransitionGuard). A failure is recorded for QA and the cover is lifted. */
   transition(task) {
@@ -655,6 +651,7 @@ export default class TownMode {
       await this.ctx.world.ready;
       if (!ticket.alive) return;
       const pack = await this.furniturePack.start('enter'); // already there if a door was near
+      await this.character.loadFemale?.().catch(() => null); // the people inside may need the women's body
       if (!ticket.alive) return;
       if (!pack) throw new Error('The furniture pack could not be loaded');
       // A room this build cannot read is quarantined (world/savedRecords.js), never replaced by an empty one

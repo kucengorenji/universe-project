@@ -42,6 +42,9 @@ export async function loadSoldierTemplates(sources) {
   return { ...Object.fromEntries(entries), vc: true };
 }
 
+/** One body: [glb, cloth atlas, head atlas] -> template. */
+export const loadSoldierTemplate = (urls) => loadTemplate(...urls);
+
 async function loadTemplate(url, clothUrl, headUrl) {
   const loader = new THREE.TextureLoader();
   const [gltf, cloth, head] = await Promise.all([new GLTFLoader().loadAsync(url), loader.loadAsync(clothUrl), loader.loadAsync(headUrl)]);

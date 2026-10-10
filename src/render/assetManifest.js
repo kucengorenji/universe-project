@@ -21,6 +21,11 @@ export const ASSET_FILES = {
   soldierHeadF: 'textures/soldier_v5_f_head.png', // the women's head atlas
   townWalk: 'models/town_walk_m.glb', // UAL Walk_Loop retargeted to the unchanged skirmish rig
   townWalkF: 'models/town_walk_f.glb', // same authored walk, fitted to the women's rig
+  soldierAtlasLow: 'textures/soldier_v5_m_cloth_1024.png', // Low tier: the same cloth atlas at 1024 (tools/assets/derive_lowres.mjs)
+  soldierHeadLow: 'textures/soldier_v5_m_head_1024.png', // Low tier: the same face atlas at 1024
+  soldierAtlasFLow: 'textures/soldier_v5_f_cloth_1024.png', // Low tier, the women's body
+  soldierHeadFLow: 'textures/soldier_v5_f_head_1024.png',
+  envSurfacesTown: 'textures/skirmish_surfaces_256.png', // the town's painted tiles, already at the 256 it shrinks them to (derived, pixel-identical)
   soldierPortraits: 'textures/soldier_portraits.png', // the nine heroes' painted portraits, 3 x 3 in roster order
   envPack: 'models/skirmish_env.glb', // skirmish environment kit: village houses, trees, hedges, cover (surface ids + baked occlusion)
   envSurfaces: 'textures/skirmish_surfaces.png', // skirmish painted surface tiles, 512² each, stacked (texture array)

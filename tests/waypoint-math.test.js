@@ -51,3 +51,17 @@ test('the minimap pin turns with the map, stays upright, and clamps to the rim w
   near(Math.hypot(far.x, far.y), 0.86); near(far.x, 0);
   assert.ok(far.angle < 0, 'the angle still points at the target');
 });
+
+import { clearOfPanel } from '../src/modes/town/ui/waypointMath.js';
+
+test('the home badge drops below the objective bar instead of hiding under it', () => {
+  const panel = { left: 420, top: 76, right: 860, bottom: 150 };
+  // anchored at y = 110: a 120 x 32 badge would span y 78..110, inside the panel
+  assert.equal(clearOfPanel({ x: 640, y: 110, width: 120, height: 32, panel }), 150 + 8 + 32, 'its top is 8 px under the bar');
+  assert.equal(clearOfPanel({ x: 640, y: 400, width: 120, height: 32, panel }), 400, 'elsewhere it stays on its door');
+  assert.equal(clearOfPanel({ x: 100, y: 110, width: 120, height: 32, panel }), 110, 'beside the bar it stays');
+  assert.equal(clearOfPanel({ x: 380, y: 110, width: 120, height: 32, panel }), 150 + 8 + 32, 'a badge that only grazes the bar is moved too');
+  assert.equal(clearOfPanel({ x: 640, y: 110, width: 120, height: 32, panel: null }), 110, 'no bar, no change');
+  const moved = clearOfPanel({ x: 640, y: 110, width: 120, height: 32, panel });
+  assert.ok(moved - 32 >= panel.bottom + 8 - 1e-9);
+});

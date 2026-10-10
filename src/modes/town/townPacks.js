@@ -6,29 +6,41 @@ import { loadTownPaintedSurfaces } from './render/paintedStyle.js';
 import { loadTownPeople } from './people/skirmishPeople.js';
 import { FURNITURE_PACK } from './interior/interior.js';
 import { optionalPack } from './render/packLoading.js';
+import { PAINTED_SURFACE_MEANS } from './render/paintedMeans.js';
+import { isOn } from '../../core/experiments.js';
 
 // What entering a town fetches. Anything that is only needed inside a building (the furniture)
 // is not in this list: it loads when a door is near, or when the player goes in.
 
-/**
- * Manifest keys that loading a town fetches (the packs below plus loadTownPeople()). tests/asset-usage.test.js
- * checks this list against the source, so a pack added to the entry path cannot slip in unnoticed.
- */
-export const TOWN_ENTRY_ASSET_KEYS = Object.freeze([
-  'planetPack', 'planetPackLod0', 'townPack', 'sceneryPack', 'environmentPack', 'townSurfaces', 'envSurfaces',
-  'soldierPack', 'soldierAtlas', 'soldierHead', 'soldierPackF', 'soldierAtlasF', 'soldierHeadF', 'townWalk', 'townWalkF'
-]);
+const COMMON = ['planetPack', 'planetPackLod0', 'townPack', 'sceneryPack', 'environmentPack', 'townSurfaces', 'envSurfacesTown', 'soldierPack', 'townWalk'];
+const FEMALE = ['soldierPackF', 'townWalkF'];
+const ATLAS = { normal: ['soldierAtlas', 'soldierHead'], low: ['soldierAtlasLow', 'soldierHeadLow'] };
+const ATLAS_F = { normal: ['soldierAtlasF', 'soldierHeadF'], low: ['soldierAtlasFLow', 'soldierHeadFLow'] };
 
-export const loadTownPacks = () =>
+/**
+ * Manifest keys that entering a town fetches, and the ones it fetches right after it is on screen (the women's
+ * body). Low uses the 1024 atlases. tests/asset-usage.test.js checks these lists against the source, so a pack
+ * added to the entry path cannot slip in unnoticed, and prices them in bytes per tier.
+ */
+export function townAssetKeys({ low = false, deferFemale = true } = {}) {
+  const tier = low ? 'low' : 'normal';
+  const female = [...FEMALE, ...ATLAS_F[tier]];
+  return { entry: [...COMMON, ...ATLAS[tier], ...(deferFemale ? [] : female)], deferred: deferFemale ? female : [] };
+}
+
+/** The Low tier ships the 1024 character atlases (everything else looks the same on every tier). */
+export const usesLowAtlases = (quality) => quality?.preset === 'low' && isOn('lowAtlas');
+
+export const loadTownPacks = ({ low = false, deferFemale = false } = {}) =>
   Promise.all([
     optionalPack(loadAssetPack(ASSETS.planetPack), 'planet pack'), // only a last-resort fallback for town models
     loadAssetPack(ASSETS.planetPackLod0).catch(() => null),
     loadAssetPack(ASSETS.townPack).catch(() => null),
-    loadTownPeople(),
+    loadTownPeople({ low, deferFemale }),
     loadTexturedPack(ASSETS.sceneryPack).catch(() => null),
     loadTownSurfaces(ASSETS.townSurfaces).catch(() => null),
     loadTexturedPack(ASSETS.environmentPack, { mergeShades: true }).catch(() => null),
-    loadTownPaintedSurfaces(ASSETS.envSurfaces).catch(() => null)
+    loadTownPaintedSurfaces(ASSETS.envSurfacesTown, { means: PAINTED_SURFACE_MEANS }).catch(() => null)
   ]).then(([base, lod0, townPack, townPeople, sceneryPack, surfaceAtlas, environmentPack, paintedSurfaces]) =>
     ({ base, lod0, townPack, townPeople, sceneryPack, surfaceAtlas, environmentPack, paintedSurfaces }));
 

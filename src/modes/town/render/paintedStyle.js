@@ -12,10 +12,13 @@ export const TOWN_PAINT_SURFACES = Object.freeze(SURFACE_NAMES.map(name => name 
 const cache = new Map();
 
 /** Share the actual painted Skirmish tiles, at a smaller town texture budget. */
-export function loadTownPaintedSurfaces(url, { size = 256 } = {}) {
+export function loadTownPaintedSurfaces(url, { size = 256, means = null } = {}) {
   const key = `${url}:${size}`;
   if (!cache.has(key)) {
     const pending = loadSurfaces(url).then(source => {
+      // A file that is already `size` wide (derived once by tools/assets/derive_lowres.mjs) is used as it is,
+      // with the tile means of the full-size original so the shading divisor does not move.
+      if (means && source.image.width === size) source.userData.means = means.map(([r, g, b]) => new THREE.Vector3(r, g, b));
       const target = compactTownPaintedSurfaces(source, size);
       if (target !== source) source.dispose();
       return target;

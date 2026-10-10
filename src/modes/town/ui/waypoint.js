@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { JOURNEY_PALETTE } from '../../../art/palette.js';
 import { t } from '../../../i18n/index.js';
-import { onScreen, edgeAnchor } from './waypointMath.js';
+import { onScreen, edgeAnchor, clearOfPanel } from './waypointMath.js';
 
 // The home marker in the town: a small painted plaque (roof and body silhouette) hanging
 // over the starter door with two arcs on the ground, a labelled badge on screen, and an
@@ -101,10 +101,12 @@ export class TownWaypoint {
     if (now - this.avoidAt < 200) return;
     this.avoidAt = now;
     this.avoid = [];
+    this.panel = null;
     for (const el of document.querySelectorAll(AVOID.join(','))) {
       if (el.closest('[hidden]') || el.hidden) continue;
       const r = el.getBoundingClientRect();
       if (r.width && r.height) this.avoid.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+      if (el.classList.contains('journey-hud') && r.width && r.height) this.panel = this.avoid.at(-1);
     }
   }
 
@@ -135,7 +137,10 @@ export class TownWaypoint {
     this.pin.hidden = !on;
     this.arrow.hidden = on;
     if (on) {
-      const x = (ndc.x * 0.5 + 0.5) * width, y = (-ndc.y * 0.5 + 0.5) * height;
+      this.sampleAvoid(performance.now());
+      const x = (ndc.x * 0.5 + 0.5) * width;
+      // the badge never sits under the objective bar: it drops below it (the objective is on screen, the door is the badge's job)
+      const y = clearOfPanel({ x, y: (-ndc.y * 0.5 + 0.5) * height, width: 120, height: 32, panel: this.panel });
       this.pin.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
       return;
     }

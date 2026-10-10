@@ -61,3 +61,15 @@ export function minimapPin({ d, view, radius, rim = 0.86 }) {
   if (r <= rim) return { x, y, inside: true, angle: Math.atan2(y, x) };
   return { x: (x / r) * rim, y: (y / r) * rim, inside: false, angle: Math.atan2(y, x) };
 }
+
+/**
+ * Where a label whose anchor is `y` (its bottom edge) should sit so it does not lie under `panel`
+ * (the objective bar). The label is `width` x `height`, centred on `x`. If it would overlap the panel it moves
+ * down until its top is `gap` px under the panel; otherwise it stays. Returns the new y.
+ */
+export function clearOfPanel({ x, y, width, height, panel, gap = 8 }) {
+  if (!panel) return y;
+  const box = { left: x - width / 2, right: x + width / 2, top: y - height, bottom: y };
+  const overlaps = box.right > panel.left && box.left < panel.right && box.bottom > panel.top && box.top < panel.bottom;
+  return overlaps ? panel.bottom + gap + height : y;
+}

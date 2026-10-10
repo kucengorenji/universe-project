@@ -2,22 +2,38 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import WALK from './townWalk.json' with { type: 'json' };
 import { ASSETS } from '../../../render/assetManifest.js';
-import { loadSoldierTemplates, makeSoldier, disposeSoldier, setLod } from '../../../skirmish/units/vcSoldiers.js';
+import { loadSoldierTemplate, makeSoldier, disposeSoldier, setLod } from '../../../skirmish/units/vcSoldiers.js';
 import HERO_LOOKS from '../../../skirmish/units/heroLooks.json' with { type: 'json' };
 import { appearanceFor } from './peopleAppearance.js';
 import { seedFor } from '../../../world/identity.js';
 
 let templates;
-export const loadTownPeople = () => (templates ||= loadSoldierTemplates({
-  m: [ASSETS.soldierPack, ASSETS.soldierAtlas, ASSETS.soldierHead],
-  f: [ASSETS.soldierPackF, ASSETS.soldierAtlasF, ASSETS.soldierHeadF]
-}).then(async pack => {
-  await Promise.all(['m', 'f'].map(async sex => {
-    const motion = await new GLTFLoader().loadAsync(sex === 'm' ? ASSETS.townWalk : ASSETS.townWalkF);
-    installTownWalk(pack[sex], motion.animations, sex);
-  }));
-  return pack;
-}).catch(error => { templates = null; throw error; }));
+const bodyUrls = (low) => ({
+  m: [ASSETS.soldierPack, low ? ASSETS.soldierAtlasLow : ASSETS.soldierAtlas, low ? ASSETS.soldierHeadLow : ASSETS.soldierHead],
+  f: [ASSETS.soldierPackF, low ? ASSETS.soldierAtlasFLow : ASSETS.soldierAtlasF, low ? ASSETS.soldierHeadFLow : ASSETS.soldierHeadF]
+});
+
+async function loadTownBody(sex, urls) {
+  const [template, motion] = await Promise.all([loadSoldierTemplate(urls), new GLTFLoader().loadAsync(sex === 'm' ? ASSETS.townWalk : ASSETS.townWalkF)]);
+  installTownWalk(template, motion.animations, sex);
+  return template;
+}
+
+/**
+ * The townsfolk's bodies: { m, f, vc, low, loadFemale() }. The men's body is ready when this resolves; the women's is
+ * loaded by `loadFemale()` (a body, two atlases and a walk clip, ~9.8 MB) so the town can appear first. With
+ * `deferFemale` false both are loaded before it resolves. `low` selects the 1024 atlases (Low tier); the choice of the first
+ * caller stands for the page. People whose look is female are simply not shown until `pack.f` exists.
+ */
+export const loadTownPeople = ({ low = false, deferFemale = false } = {}) => {
+  templates ||= (async () => {
+    const urls = bodyUrls(low);
+    const pack = { m: await loadTownBody('m', urls.m), f: null, vc: true, low };
+    pack.loadFemale = () => (pack.femaleLoad ||= loadTownBody('f', urls.f).then(f => (pack.f = f)).catch(error => { pack.femaleLoad = null; throw error; }));
+    return pack;
+  })().catch(error => { templates = null; throw error; });
+  return templates.then(pack => (deferFemale ? pack : pack.loadFemale().then(() => pack)));
+};
 
 /** Town owns its templates; the skirmish jog and combat animation packs stay intact. */
 export function installTownWalk(template, clips, sex = 'm') {
@@ -28,9 +44,15 @@ export function installTownWalk(template, clips, sex = 'm') {
 }
 const looks = Object.values(HERO_LOOKS).filter(look => !look.helmet);
 
-/** The actual skirmish v5 body, hair and painted face, without a weapon or combat kit. */
+const lookFor = (seed, player = false) => (player ? HERO_LOOKS.arlen : looks[seedFor(seed, 'town-look') % looks.length]);
+
+/** Does the person made from this seed need the women's body? (the pool waits for it instead of picking someone else) */
+export const needsFemaleBody = (seed) => lookFor(seed).sex === 'f';
+
+/** The actual skirmish v5 body, hair and painted face, without a weapon or combat kit. null while the body it needs is still loading. */
 export function makeTownPerson(pack, { seed = 1, shadows = true, player = false, top } = {}) {
-  const look = player ? HERO_LOOKS.arlen : looks[seedFor(seed, 'town-look') % looks.length];
+  const look = lookFor(seed, player);
+  if (!pack[look.sex || 'm']) return null;
   const palette = appearanceFor(seed);
   const p = makeSoldier(pack, null, { civilian: true, look, shadows, colours: {
     tunic: top ?? palette.top, pants: palette.legs, boots: palette.shoes, hair: palette.hair,
@@ -134,8 +156,10 @@ export class SkirmishPeople {
     }
     this.pool = this.pool.filter(p => held.has(p.index));
     const near = walkers.filter(w => !held.has(w.i) && distance(w.i) < reach).sort((a, b) => distance(a.i) - distance(b.i));
-    for (const w of near.slice(0, this.count - this.pool.length)) {
-      const p = makeTownPerson(this.pack, { seed: this.identities.get(w.i) ?? this.seed * 131 + w.i, shadows: this.shadows });
+    const seedOf = w => this.identities.get(w.i) ?? this.seed * 131 + w.i;
+    // a person who needs the women's body waits until it has loaded: nobody else takes their place
+    for (const w of near.filter(w => this.pack.f || !needsFemaleBody(seedOf(w))).slice(0, this.count - this.pool.length)) {
+      const p = makeTownPerson(this.pack, { seed: seedOf(w), shadows: this.shadows });
       p.index = w.i;
       p.root.scale.setScalar(people[w.i].height);
       p.root.rotation.y = people[w.i].yaw;

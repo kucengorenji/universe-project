@@ -99,8 +99,9 @@ export async function applySnapshot(snapshot, { storage, indexedDB, rev = 0, now
   }
   const { worldId } = snapshot;
   if (indexedDB) await putEntities(indexedDB, worldId, snapshot.entities);
-  for (const key of Object.keys(snapshot.storage || {})) {
-    if (typeof snapshot.storage[key] === 'string') storage.setItem(key, snapshot.storage[key]);
+  for (const [key, val] of Object.entries(snapshot.storage || {})) {
+    if (key === KEYS.progress || key === KEYS.sync) continue;
+    if (typeof val === 'string') storage.setItem(key, val);
   }
   const incoming = readJson({ getItem: () => snapshot.storage[KEYS.progress] }, 'x', {})[worldId];
   if (incoming) writeJson(storage, KEYS.progress, { ...readJson(storage, KEYS.progress, {}), [worldId]: incoming });

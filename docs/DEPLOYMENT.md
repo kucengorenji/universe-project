@@ -81,6 +81,19 @@ dan `INSPECT_SECRET`, dan daftarkan domain di Firebase Auth. Langkah lengkap ada
 - Progres tersimpan di localStorage per origin. Save lokal atau save dari domain
   `pages.dev` tidak otomatis pindah ke custom domain, kecuali lewat cloud save
   (masuk dengan Google, lalu *Lanjutkan di perangkat ini* dari dashboard).
+- `public/404.html` membuat Pages menjawab path yang tidak ada dengan HTTP 404
+  (tanpa file itu Pages menganggap situs SPA dan mengembalikan landing dengan 200).
+  Routing game memakai hash di bawah `/play/`, jadi deep link tidak terpengaruh.
+
+## Mesin pencari
+
+- `public/robots.txt` mengizinkan semua halaman kecuali `/api/` dan menunjuk ke
+  `public/sitemap.xml` (landing dan `/play/`; `skirmish` dan `farm` sengaja tidak
+  dicantumkan karena tidak ditautkan dari landing).
+- Google: verifikasi domain sekali di Search Console (record DNS TXT; OAuth Wrangler
+  tidak punya izin DNS), lalu submit `sitemap.xml`.
+- Bing/DuckDuckGo/Yahoo: setelah deploy production, `npm run seo:indexnow`. Kunci
+  IndexNow di `public/<key>.txt` memang publik.
 
 ## Verifikasi
 

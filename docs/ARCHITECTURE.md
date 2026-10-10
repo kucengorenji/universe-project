@@ -24,14 +24,17 @@ src/
   modes/planet/      PlanetMode (membungkus planetRenderer + menuController)
   trade/             catalog, resource/scenario, graph, simulation, session, entry CTA
   modes/trade/       TradeMode, overlay 3D dan HUD/CSS terisolasi
-  modes/town/        TownMode.js, scale.js (konstanta skala), dan subfolder:
+  modes/town/        TownMode.js (orkestrator tipis, 392 baris), scale.js (konstanta skala), modul pendamping
+                     (townPacks, townLife, journeyTown, authoredHomes) dan subfolder:
+    controllers/     kelompok metode TownMode per tanggung jawab: townViews, townInterior, townVehicles, townInput,
+                     townEnvironment, townHomes, townStyle, townPlanner (+ mixin.js, shared.js); lihat §7.4
     layout/          data murni: townLayout, townPlan, wards, neighbourhoodPlan, vegetation, townGreenery,
                      streetJunctions, streetLightPlan, roofPlan
     navigation/      walkNetwork, pedestrianRoutes, trafficRoute, colliders
     render/          townBuilder, groundPaint, groundCover, farTrees, roadMarkings, streetLighting, sky
     people/          crowd, peopleRig, peopleAppearance, peopleMotion, personLifecycle
     vehicles/        vehicle, vehicleKit, fleet
-    interior/        interior, interiorLayout
+    interior/        interior, interiorLayout, roomShell, interiorSession (guard transisi, record ruangan), doors (portal)
     planner/         townPlanner (UI tata kota 2D), townMapRenderer (peta gaya Watabou)
     ui/              hud
   ui/                menuController (planet), gauges (minimap, speedometer), cityNavigation
@@ -150,6 +153,32 @@ Aturannya: kualitas grafis hanya boleh mengubah presentasi. Layout, ID, graph ja
 
 Urutan ini menyebabkan tiga gaya aset tampil dalam satu scene. Detailnya ada di [ART_DIRECTION.md](ART_DIRECTION.md).
 
+### 7.4 Peta modul town: TownMode dan controller
+
+`TownMode` dulu satu file 1.743 baris. Sekarang ia hanya mengorkestrasi (membangun scene di `enter()`, menjalankan satu frame di `update()`, membongkar di `exit()`, serta kontrak mode untuk Director: `prepare`, `arrived`, `render`, `resize`, `depart`). Pekerjaannya dikelompokkan menurut tanggung jawab di `modes/town/controllers/`. Setiap controller adalah **kelompok metode** (satu `class` yang hanya dipakai sebagai wadah) yang dicampurkan ke prototipe `TownMode` oleh `mixin()` (`controllers/mixin.js`; nama ganda ditolak). Artinya controller bekerja pada state instance town yang sama (`this.view`, `this.player`, `this.interior`, `this.builder`, ...), sehingga API yang dipakai Director, journey, tes, dan skrip QA (`window.__globe.director.mode.setView(...)`, `.enterBuilding(...)`, `.view`, `.tween`, dan seterusnya) tidak berubah.
+
+| Berkas | Tanggung jawab tunggal | Baris |
+|---|---|---:|
+| `TownMode.js` | Orkestrator: `prepare`, konstruktor, `enter`, `arrived`, `update`, `render`, `resize`, `depart`, `exit` | 392 |
+| `controllers/townViews.js` | View kamera (diorama, jalan kaki, menyetir), pindah antar view, avatar pemain, ke mana kamera boleh pergi | 247 |
+| `controllers/townInterior.js` | Masuk bangunan: pintu, transisi berpagar tiket (`TransitionGuard`), ruangan saat di dalam, tangga, tidur, mengingat lokasi | 304 |
+| `controllers/townVehicles.js` | Mobil dan kereta: armada lalu lintas, tiba/pergi lewat jalan, naik/turun, menyetir, gauge | 364 |
+| `controllers/townInput.js` | Keyboard/mouse/sentuh: pengikatan kontrol, berjalan, prompt interaksi, langkah kaki | 202 |
+| `controllers/townEnvironment.js` | Matahari, langit, kabut, bayangan, rentang kedalaman, sampel kualitas adaptif | 114 |
+| `controllers/townHomes.js` | Rumah rancangan pemain di dalam kota, tombol Bangun Rumah, memilih rumah | 99 |
+| `controllers/townStyle.js` | Dua tampilan kota (normal dan pixel) dan kamera diorama pixel | 58 |
+| `controllers/townPlanner.js` | Overlay perencana kota 2D | 38 |
+| `controllers/shared.js` | Konstanta dan objek sementara yang dipakai bersama (FOV jalan, `ease`, vektor kerja) | 13 |
+| `townPacks.js` | Apa yang dimuat saat masuk kota per tier, furnitur lazy (`LazyPack`), `townAssetKeys` | 99 |
+| `townLife.js` | Proof dunia hidup: rumput tersibak, Damar menyapa, prefetch furnitur | 103 |
+| `journeyTown.js` | Jembatan Town ↔ Perjalanan Pertama: rumah awal, jarak ke pintu, marker | 84 |
+| `authoredHomes.js` | Menerapkan rumah rancangan ke layout | 31 |
+| `interior/interiorSession.js`, `interior/doors.js` | Guard transisi dan record ruangan; portal pintu (tanpa three.js) | 69 / 56 |
+
+Aturan yang dijaga `tests/town-structure.test.js`: `TownMode.js` ≤ 900 baris, tiap controller < 400 baris dengan komentar tanggung jawab di baris pertama dan satu kelas, anggota publik yang dipakai pihak lain tetap ada di prototipe, dan tidak ada modul di `src/` yang memakai nama yang belum di-import atau dideklarasikan (penting karena metode tersebar di beberapa file: import yang terlupa baru gagal saat jalur kode itu pertama kali jalan). Menambah metode baru: taruh di controller yang tanggung jawabnya sesuai; bila sebuah controller mendekati 400 baris, pecah menurut tanggung jawab, bukan menurut ukuran.
+
+Batas yang diketahui: state masih milik instance town, bukan milik controller. Langkah berikutnya yang lebih bersih adalah mengubah controller menjadi objek dengan state eksplisit (mulai dari input dan environment yang paling sedikit menyentuh state lain), tetapi itu mengubah bentuk API yang dipakai skrip QA dan perlu dikerjakan bersama mereka.
+
 ## 8. Material dan loader
 
 - **Loader v1** `render/assetLibrary.js`: node `_LOD0/1/2` di-bake menjadi geometry non-indexed dengan warna material sebagai vertex color, flat normal, atribut `emissive`, `paint`, dan koordinat `surface`. Dipakai `assets*.glb`, `town.glb`, `furniture.glb`, `space.glb`.
@@ -199,7 +228,7 @@ Markup ada di `index.html`, gaya di `src/style.css` (arah "The1": permukaan conc
 | ~~Import sirkular `townBuilder` ↔ `farTrees`~~ | Selesai: konstanta di `modes/town/scale.js` | — |
 | ~~Data mengimpor modul render~~ | Selesai: `layout/streetLightPlan.js` dipisah dari `render/streetLighting.js` | — |
 | ~~URL aset tersebar~~ | Selesai: `render/assetManifest.js` + test | — |
-| File sangat besar | `planetRenderer.js` 3.105, `TownMode.js` 1.286, `townBuilder.js` 1.097, `style.css` 2.505 baris | Sulit direview, konflik merge, onboarding lambat. |
+| File sangat besar | `planetRenderer.js` 3.208, `style.css` 3.020, `townBuilder.js`     1463 baris (10 Oktober 2026). `TownMode.js` dipecah dari 1.743 menjadi 392 baris plus controller (§7.4). | Sulit direview, konflik merge, onboarding lambat. |
 | Warna hard-coded | 601 literal warna (454 unik) di 28 file JS, 337 di `modes/town/` | Palet baru mulai terpusat di `art/palette.js` (atap, peta 2D); sisanya dimigrasi bertahap (ART_DIRECTION AD-1). |
 | Dua loader aset | v1 (flat, vertex color) dan v2 (glTF bertekstur) berjalan bersamaan | Dua model shading dalam satu scene. |
 | Misi global | `planet_globe_missions` tidak dipisah per dunia | Tercatat sebagai sisa WB-01. |

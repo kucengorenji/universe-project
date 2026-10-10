@@ -3,9 +3,9 @@
 Panduan praktis memakai **Jev** (model keputusan dari TypeSafe) bersama **Claude Code**, dengan contoh yang
 diterapkan ke Aethergate / Globe Universe. Rujukan: *Jev Use Cases Guide* (RoboNuggets, 19 use case).
 
-> Status: dokumen usulan. Belum ada integrasi Jev di kode game, API, atau dashboard. Potongan kode di bawah
-> adalah contoh yang belum diuji terhadap API Jev; cek format terbaru di `docs.typesafe.ai` dan halaman model
-> `typesafe/jev-1.13` di OpenRouter sebelum dipakai.
+> Status: dokumen usulan. Belum ada integrasi Jev di kode game, API, atau dashboard. Yang sudah ada hanya
+> helper dan satu contoh skrip di `tools/jev/`. Endpoint Decisions OpenRouter masih alpha; cek referensinya
+> di openrouter.ai kalau request mulai ditolak.
 
 ---
 
@@ -64,53 +64,28 @@ Setiap prompt di panduan ini diakhiri satu baris:
 Connect to Jev via openrouter.ai if you don't have it yet.
 ```
 
-Baris itu cukup: Claude akan membuat helper pemanggil Jev sendiri. Kalau ingin konsisten di seluruh repo,
-minta sekali saja:
+Baris itu cukup: Claude akan membuat helper pemanggil Jev sendiri.
 
-```
-Buat helper kecil `callJev({ question, options, input })` yang memanggil model typesafe/jev-1.13 lewat
-OpenRouter dengan OPENROUTER_API_KEY dari env. Jawaban harus dibatasi ke `options` (pakai JSON schema enum),
-kembalikan { choice, confidence } kalau Jev menyediakan tingkat keyakinan. Tambahkan test dengan fetch yang
-di-mock. Cek docs.typesafe.ai dulu untuk format request yang benar.
-```
+Helper ini sudah ada di repo: [`tools/jev/callJev.mjs`](../tools/jev/callJev.mjs), dengan contoh triage feedback
+di [`tools/jev/triage-feedback.mjs`](../tools/jev/triage-feedback.mjs) (cara jalan: [`tools/jev/README.md`](../tools/jev/README.md)).
 
-Gambaran bentuk helper-nya (contoh, sesuaikan dengan dokumentasi resmi):
+Jev **tidak** bisa dipanggil lewat `/api/v1/chat/completions` (ditolak dengan HTTP 400). Ia memakai endpoint
+Decisions OpenRouter, `POST https://openrouter.ai/api/alpha/decisions`, yang masih alpha:
 
 ```js
-// tools/jev/callJev.mjs (contoh)
-export async function callJev({ question, options, input }) {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'typesafe/jev-1.13',
-      messages: [
-        { role: 'system', content: question },
-        { role: 'user', content: input }
-      ],
-      // Batasi jawaban ke daftar pilihan supaya Jev tidak mengarang kategori.
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'decision',
-          strict: true,
-          schema: {
-            type: 'object',
-            properties: { choice: { type: 'string', enum: options } },
-            required: ['choice'],
-            additionalProperties: false
-          }
-        }
-      }
-    })
-  });
-  if (!res.ok) throw new Error(`Jev ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  return JSON.parse(data.choices[0].message.content);
+// Body: konten di `state`, pertanyaan bertipe di `questions` (kuncinya bebas, jawaban kembali di kunci yang sama).
+{
+  model: 'typesafe/jev-1.13',
+  state: 'FPS turun ke 15 kalau zoom ke kota besar di HP saya.',
+  questions: {
+    decision: {
+      type: 'choice',               // juga ada 'noul' (ya/tidak) dan 'score' (skala)
+      instructions: 'Pilih satu kategori untuk feedback pemain ini.',
+      criteria: { bug: 'Sesuatu rusak.', performa: 'Lag atau FPS rendah.', lainnya: 'Tidak cocok.' }
+    }
+  }
 }
+// Jawaban: data.answers.decision -> { type: 'choice', choice, confidence, probabilities }
 ```
 
 ### Empat kebiasaan yang membuat setiap prompt lebih bagus

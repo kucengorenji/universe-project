@@ -3,10 +3,18 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { callJev } from './callJev.mjs';
 
-export const CATEGORIES = ['bug', 'performa', 'saran', 'pertanyaan', 'spam', 'lainnya'];
-export const QUESTION = 'Kamu menyortir feedback pemain game web 3D Aethergate. Pilih satu kategori untuk pesan ini: '
-  + 'bug (sesuatu rusak atau salah), performa (lag, FPS rendah, loading lama), saran (ide fitur atau perubahan), '
-  + 'pertanyaan (pemain bertanya cara melakukan sesuatu), spam (iklan atau tidak berhubungan), lainnya (tidak cocok dengan semua di atas).';
+export const OPTIONS = {
+  bug: 'Sesuatu di game rusak, hilang, atau berperilaku salah.',
+  performa: 'Lag, FPS rendah, loading lama, atau perangkat jadi panas.',
+  saran: 'Ide fitur baru atau usulan perubahan.',
+  pertanyaan: 'Pemain bertanya cara melakukan sesuatu.',
+  spam: 'Iklan, penipuan, atau tidak berhubungan dengan game.',
+  lainnya: 'Tidak cocok dengan kategori lain, misalnya pujian atau komentar umum.'
+};
+export const CATEGORIES = Object.keys(OPTIONS);
+export const QUESTION = 'Kamu menyortir feedback pemain game web 3D Aethergate. Pilih satu kategori untuk pesan ini.';
+// Below this confidence a person checks the tag; tune it with a labelled set (docs/JEV_USE_CASES.md, use case 7).
+export const REVIEW_BELOW = 0.6;
 
 /** Minimal CSV reader: header row, double-quoted fields may hold commas and "" escapes. */
 export function parseCsv(text) {
@@ -39,8 +47,8 @@ export async function triage(rows, jev = callJev) {
   const out = [];
   for (const row of rows) {
     try {
-      const { choice } = await jev({ question: QUESTION, options: CATEGORIES, input: row.pesan });
-      out.push({ ...row, kategori: choice });
+      const { choice, confidence } = await jev({ question: QUESTION, options: OPTIONS, input: row.pesan });
+      out.push({ ...row, kategori: choice, yakin: confidence, cek_manual: confidence != null && confidence < REVIEW_BELOW });
     } catch (err) {
       out.push({ ...row, kategori: '', error: err.message });
     }
@@ -55,8 +63,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const started = Date.now();
   const tagged = await triage(parseCsv(readFileSync(input, 'utf8')));
   const output = input.replace(/\.csv$/, '') + '.tagged.csv';
-  writeFileSync(output, ['id,kategori,pesan', ...tagged.map(r => [r.id, r.kategori, r.pesan].map(csvField).join(','))].join('\n') + '\n');
-  console.table(tagged.map(r => ({ id: r.id, kategori: r.kategori || `ERROR: ${r.error}`, pesan: r.pesan.slice(0, 60) })));
+  const pct = v => v == null ? '' : `${Math.round(v * 100)}%`;
+  writeFileSync(output, ['id,kategori,yakin,cek_manual,pesan', ...tagged.map(r => [r.id, r.kategori, pct(r.yakin), r.cek_manual ? 'ya' : '', r.pesan].map(csvField).join(','))].join('\n') + '\n');
+  console.table(tagged.map(r => r.error
+    ? { id: r.id, kategori: 'ERROR', yakin: '', cek: '', pesan: r.error.slice(0, 120) }
+    : { id: r.id, kategori: r.kategori, yakin: pct(r.yakin), cek: r.cek_manual ? 'ya' : '', pesan: r.pesan.slice(0, 60) }));
   const counts = Object.fromEntries(CATEGORIES.map(c => [c, tagged.filter(r => r.kategori === c).length]));
   console.log(counts, `${tagged.length} pesan dalam ${((Date.now() - started) / 1000).toFixed(1)} s → ${output}`);
   if (tagged.some(r => r.error)) process.exitCode = 1;

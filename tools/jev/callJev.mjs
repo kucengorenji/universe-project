@@ -1,38 +1,32 @@
-// Calls Jev (TypeSafe's decision model) through OpenRouter. Jev only picks: the answer is
-// constrained to `options` with a JSON schema enum, so it can never invent a category.
-// The request shape follows OpenRouter's structured outputs; check docs.typesafe.ai if Jev rejects it.
+// Calls Jev (TypeSafe's decision model) through OpenRouter's Decisions endpoint. Jev rejects
+// chat/completions; it takes the content as `state` plus named typed questions, and answers each
+// question under the same key. The endpoint is alpha and may change shape.
 export const JEV_MODEL = 'typesafe/jev-1.13';
+export const JEV_URL = 'https://openrouter.ai/api/alpha/decisions';
 
+/**
+ * Asks one choice question. `options` maps each allowed label to a short description of when it applies.
+ * Returns { choice, confidence, probabilities } as Jev reports them.
+ */
 export async function callJev({ question, options, input, apiKey = process.env.OPENROUTER_API_KEY, fetchImpl = fetch }) {
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set (put it in .env, see tools/jev/README.md)');
-  if (!Array.isArray(options) || options.length < 2) throw new Error('options needs at least two answers');
-  const res = await fetchImpl('https://openrouter.ai/api/v1/chat/completions', {
+  const labels = Object.keys(options ?? {});
+  if (labels.length < 2) throw new Error('options needs at least two labels');
+  const res = await fetchImpl(JEV_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: JEV_MODEL,
-      messages: [
-        { role: 'system', content: question },
-        { role: 'user', content: input }
-      ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'decision',
-          strict: true,
-          schema: {
-            type: 'object',
-            properties: { choice: { type: 'string', enum: options } },
-            required: ['choice'],
-            additionalProperties: false
-          }
-        }
-      }
+      state: input,
+      questions: { decision: { type: 'choice', instructions: question, criteria: options } }
     })
   });
   if (!res.ok) throw new Error(`Jev ${res.status}: ${await res.text()}`);
   const data = await res.json();
-  const { choice } = JSON.parse(data.choices[0].message.content);
-  if (!options.includes(choice)) throw new Error(`Jev answered "${choice}", which is not one of the options`);
-  return { choice };
+  const answer = data?.answers?.decision;
+  if (!answer || typeof answer.choice !== 'string') {
+    throw new Error(`Unexpected Jev response: ${JSON.stringify(data).slice(0, 400)}`);
+  }
+  if (!labels.includes(answer.choice)) throw new Error(`Jev answered "${answer.choice}", which is not one of the options`);
+  return { choice: answer.choice, confidence: answer.confidence ?? null, probabilities: answer.probabilities ?? null };
 }

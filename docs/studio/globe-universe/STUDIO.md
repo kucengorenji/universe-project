@@ -73,6 +73,6 @@ Checkout utama `/Users/mikelrisyad/Developer/globe` dipakai sesi lain (branch `c
 | ID | Tujuan | Selesai bila |
 |---|---|---|
 | **M0** Repo rapi + baseline | Pecah commit besar per produk; baseline segar | **Selesai 10 Okt**: commit `968939c` Town, `36e7fa1` Trade, `57860e2` Valley, `0beb9c9` Docs; tiap snapshot build lolos; `npm test` 202/202 (Node 22.23.1). Backup `backup/skirmish-vc-5033bd3`. |
-| **M1** Fondasi aman | Save/versi, identitas dunia, jalur gagal, smoke lintas route, registry docs | Test baru untuk G-03/G-04/G-06 lulus; smoke semua route 0 error (`engine.lastError` + page error); `npm test` + build lulus; docs K1–K14 direkonsiliasi; QA AGY lulus; lead commit |
+| **M1** Fondasi aman (**selesai 10 Okt**: d787415, 2e21fed, 5cc57ea; 244 test; smoke 9/9) | Save/versi, identitas dunia, jalur gagal, smoke lintas route, registry docs | Test baru untuk G-03/G-04/G-06 lulus; smoke semua route 0 error (`engine.lastError` + page error); `npm test` + build lulus; docs K1–K14 direkonsiliasi; QA AGY lulus; lead commit |
 | **M2** Slice Universe end-to-end | Satu tujuan pemain Space → Planet → Town → rumah → perubahan persisten → reload → kembali; onboarding/wayfinding; pemecahan TownMode yang disentuh slice; baseline perf Hemat | Skrip e2e slice lulus; playtest pengguna; tabel perf per rute; lead commit |
 | **M3** Dunia hidup + Hemat | Implementasi bertahap art book (hasil kajian artist + sprint) dan profil Hemat | Ditentukan setelah M2 dan art sprint selesai |

@@ -178,6 +178,10 @@ Tujuan file: `src/i18n/locales/en/core.js`; aturan replace/add sama seperti ID. 
 'save.quarantined': 'This room data cannot be read yet. A copy was saved separately, and the room opens fresh.',
 ```
 
+### Placeholder dan pemakaian
+
+`{planet}`/`{city}` = display name tujuan asal, bukan route yang sedang dipilih; `{item}` = label barang terlokalisasi melalui `interior.item.*`; `{step}`/`{total}` = angka tahap 1–6/6; `{distance}` = angka meter bulat, diformat i18n; `{n}` = jumlah salinan quarantine yang penyimpanannya sudah dikonfirmasi. Placeholder tidak diisi dengan string HTML atau data debug. Helpers memakai label tombol existing; engineering memilih key berdasarkan konteks, tidak menggabungkan semua bantuan menjadi satu paragraf.
+
 ### Pemakaian dan kasus gagal
 
 | Status | Copy / perilaku final | Gate dan prioritas |
@@ -302,3 +306,5 @@ Engineering: pindahkan copy sesuai replace/add, bind placeholder dan state/conte
 Source yang dibaca terarah: i18n ID/EN core/town/home dan index, `tips.js`, `missions.js`, `director.js`, `TownMode.js`, HUD Town/Space, `PlanetMode.js`, `gauges.js`, `HomeMode.js`, palette, `stateStore.js`, `savedRecords.js`, `saveStatus.js`, pause menu, world/worldClock. Source studio sedang berkembang; kontrak persist/hook perlu dicek lagi saat implementasi. Referensi sprite/art sprint berasal dari kajian ART_BOOK_GAP bertanggal, tidak ada generate/edit/lock sprint pada M2-A0.
 
 **Belum dilakukan:** perubahan i18n/source, test/build, browser e2e, capture/review screenshot M2, playtest pengguna, benchmark iGPU atau produksi aset. Copy dan ukuran/warna di sini adalah spesifikasi final M2-A0 untuk implementasi; visual acceptance baru diberikan setelah bukti QA tersedia. Satu output task ini: `M2_UX_SPEC.md`.
+
+**Verifikasi dokumen:** kedua fragmen dictionary dapat diparse; 63 key ID/EN cocok, tidak ada key duplikat atau placeholder berbeda; empat tautan lokal valid. Pemeriksaan ini hanya memvalidasi artefak spesifikasi, bukan test i18n proyek atau acceptance runtime.

@@ -59,3 +59,35 @@ Ketiga opsi diawali gerbang yang sama: **P0-1 rencana commit** (butuh izin Anda)
 5. Mandat baru untuk menjalankan test/build/server/browser QA, karena mandat sekarang hanya review.
 
 Studio berhenti di sini. Tidak ada implementasi atau agent tambahan sampai Anda memutuskan.
+
+---
+
+# Checkpoint fase 2 — status otomatis (diperbarui lead, 10 Okt 2026 ±07:50 WIB)
+
+Pengguna memilih Opsi B dan meminta lead bekerja otomatis sampai M3, lalu berhenti di checkpoint terdekat bila sumber daya habis.
+
+## Selesai dan ter-commit (branch `feat/skirmish-vc`, worktree `/Users/mikelrisyad/Developer/globe-studio`, belum di-push)
+
+| Milestone | Commit | Bukti |
+|---|---|---|
+| M0 repo rapi | `968939c` Town, `36e7fa1` Trade, `57860e2` Valley, `0beb9c9` Docs (menggantikan commit besar `5033bd3`; backup `backup/skirmish-vc-5033bd3`) | Tiap snapshot build lolos; 202/202 test |
+| M1 fondasi aman | `d787415` kode, `2e21fed` docs, `5cc57ea` smoke QA | 244/244 test, build lolos; smoke 9/9 route PASS, 0 error (docs/qa/smoke) |
+
+## Sedang berjalan (M2 "Perjalanan Pertama")
+
+- Spesifikasi: [M2_SLICE_SPEC.md](M2_SLICE_SPEC.md) (lead) dan [M2_UX_SPEC.md](M2_UX_SPEC.md) (artist, copy ID/EN + wayfinding).
+- Engineer: `journey.js`, `starterHome.js` sudah ada sebagai WIP belum ter-commit; HUD/waypoint/test belum selesai.
+- AGY: baseline perf `tools/qa/perf_routes.mjs` (berjalan).
+- Kajian art book: [ART_BOOK_GAP.md](ART_BOOK_GAP.md) selesai (AB-01…AB-09).
+
+## Hambatan nyata
+
+- **Mac tidur berulang** (baterai, lid kemungkinan tertutup): sejak ±04:45 tiap respons worker terputus "computer went to sleep", sehingga M2 hanya maju beberapa menit per jam. `caffeinate -i` tidak cukup saat lid tertutup/baterai. Untuk kerja otomatis yang lancar: colokkan charger dan biarkan lid terbuka.
+- Quota: Codex 5 jam 17% (pukul 04:40), Claude tidak terbaca lokal, AGY tidak tersedia. Bukan penghambat saat ini.
+
+## Keputusan sementara lead (bisa Anda ubah saat review)
+
+- Kartu intro sekali per perangkat; misi/tips per dunia.
+- Perubahan persisten slice = nyalakan lampu/taruh barang di rumah awal.
+- Clock tetap world clock existing; musim otomatis, tinggi fisik dewasa, rutinitas warga ditunda ke M3.
+- Arah karakter mengikuti art sprint (dewasa 4,5–5 kepala); swap rig hanya setelah proof M3.

@@ -61,7 +61,11 @@ export class ObjectiveHud {
     };
     this.onKey = (e) => {
       if (this.el.card.hidden) return;
-      if (e.key === 'Escape' || e.key === 'Enter') { this.closeCard(); e.preventDefault(); e.stopImmediatePropagation(); }
+      // the card owns the keyboard: Escape, Enter and Space close it, Tab stays on its one button, nothing reaches the game
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') this.closeCard();
+      else if (e.key === 'Tab') this.el.card.querySelector('[data-act="close"]').focus({ preventScroll: true });
+      e.preventDefault();
+      e.stopImmediatePropagation();
     };
     root.addEventListener('click', this.onClick);
     window.addEventListener('keydown', this.onKey, { capture: true });
@@ -132,6 +136,7 @@ export class ObjectiveHud {
     this.el.card.hidden = false;
     this.el.card.querySelector('[data-act="close"]').focus({ preventScroll: true });
     document.body.dataset.overlay = 'journey';
+    window.dispatchEvent(new Event('blur')); // a key held when the card opened must not keep walking the player
     this.audio?.fanfare?.();
   }
 

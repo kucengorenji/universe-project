@@ -18,33 +18,53 @@ export function onScreen({ ndc, behind, width, height, margin = 16, wasOn = fals
 
 /**
  * Where the edge arrow sits. `dir` points from the screen centre toward the target
- * (screen pixels, y down). The arrow rides the inset rectangle, then slides along that edge
- * until it clears every rectangle in `avoid` (minimap, prompt, buttons) by `gap` px.
- * The returned angle (radians, 0 = pointing right) is unchanged by the sliding.
+ * (screen pixels, y down). The arrow rides the inset rectangle at the point facing the target; when
+ * a rectangle in `avoid` (minimap, prompt, tip, control strip, notice, buttons) is in the way, it moves
+ * along the rectangle's edge to the nearest spot that clears every one of them by `gap` px. If the
+ * whole edge is blocked it keeps the spot with the least overlap. `size` is the arrow's rendered box,
+ * a number or { width, height }. The returned angle (radians, 0 = pointing right) never changes.
  */
 export function edgeAnchor({ width, height, inset = 24, dir, size = 44, avoid = [], gap = 12 }) {
+  const sw = typeof size === 'number' ? size : size.width, sh = typeof size === 'number' ? size : size.height;
   let { x: dx, y: dy } = dir;
   const len = Math.hypot(dx, dy);
   if (!len) { dx = 0; dy = 1; } else { dx /= len; dy /= len; }
-  const hw = width / 2 - inset - size / 2, hh = height / 2 - inset - size / 2;
+  const left = inset + sw / 2, right = width - inset - sw / 2, top = inset + sh / 2, bottom = height - inset - sh / 2;
+  const hw = (right - left) / 2, hh = (bottom - top) / 2;
   const k = Math.min(Math.abs(dx) > 1e-6 ? hw / Math.abs(dx) : Infinity, Math.abs(dy) > 1e-6 ? hh / Math.abs(dy) : Infinity);
-  let x = width / 2 + dx * k, y = height / 2 + dy * k;
-  const alongX = Math.abs(dy) >= Math.abs(dx) * (hh / hw); // on the top or bottom edge: slide sideways
-  const hits = (rect) => x + size / 2 + gap > rect.left && x - size / 2 - gap < rect.right && y + size / 2 + gap > rect.top && y - size / 2 - gap < rect.bottom;
-  for (let pass = 0; pass < 6; pass++) {
-    const rect = avoid.find(hits);
-    if (!rect) break;
-    if (alongX) {
-      const left = rect.left - size / 2 - gap, right = rect.right + size / 2 + gap;
-      x = Math.abs(x - left) < Math.abs(x - right) ? left : right;
-    } else {
-      const top = rect.top - size / 2 - gap, bottom = rect.bottom + size / 2 + gap;
-      y = Math.abs(y - top) < Math.abs(y - bottom) ? top : bottom;
+  const ideal = { x: width / 2 + dx * k, y: height / 2 + dy * k };
+  const angle = Math.atan2(dy, dx);
+  // how far the arrow, centred at (x, y), reaches into a rectangle once `gap` is added around it
+  const overlap = (x, y) => avoid.reduce((sum, r) => {
+    const ox = Math.min(x + sw / 2 + gap, r.right) - Math.max(x - sw / 2 - gap, r.left);
+    const oy = Math.min(y + sh / 2 + gap, r.bottom) - Math.max(y - sh / 2 - gap, r.top);
+    return ox > 0 && oy > 0 ? sum + ox * oy : sum;
+  }, 0);
+  if (!overlap(ideal.x, ideal.y)) return { ...ideal, angle };
+  // walk the inset rectangle both ways from the ideal spot and take the nearest free one
+  const w = right - left, h = bottom - top, perimeter = 2 * (w + h);
+  const at = (t) => {
+    t = ((t % perimeter) + perimeter) % perimeter;
+    if (t < w) return { x: left + t, y: top };
+    if (t < w + h) return { x: right, y: top + (t - w) };
+    if (t < 2 * w + h) return { x: right - (t - w - h), y: bottom };
+    return { x: left, y: bottom - (t - 2 * w - h) };
+  };
+  const onEdge = (x, y) => {
+    const d = [[Math.abs(y - top), x - left], [Math.abs(x - right), w + (y - top)], [Math.abs(y - bottom), w + h + (right - x)], [Math.abs(x - left), 2 * w + h + (bottom - y)]];
+    return d.reduce((best, c) => (c[0] < best[0] ? c : best))[1];
+  };
+  const t0 = onEdge(ideal.x, ideal.y), step = 4;
+  let least = { ...ideal, cost: overlap(ideal.x, ideal.y) };
+  for (let i = 1; i * step <= perimeter / 2; i++) {
+    for (const sign of [1, -1]) {
+      const p = at(t0 + sign * i * step);
+      const cost = overlap(p.x, p.y);
+      if (!cost) return { ...p, angle };
+      if (cost < least.cost) least = { ...p, cost };
     }
-    x = clamp(x, inset + size / 2, width - inset - size / 2);
-    y = clamp(y, inset + size / 2, height - inset - size / 2);
   }
-  return { x, y, angle: Math.atan2(dy, dx) };
+  return { x: least.x, y: least.y, angle };
 }
 
 /**

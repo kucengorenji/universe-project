@@ -70,7 +70,7 @@ export function verifyTrace(trace, snapshot) {
 
 /**
  * The objective line for the current stage and place, as i18n keys. Pure so the wording
- * rules are checkable. `view` = { mode, view, inHomeTown, distance, holding }.
+ * rules are checkable. `view` = { mode, view, inHomeTown, distance, holding, lights }.
  */
 export function describeObjective(status, view = {}, names = {}) {
   const { stage, away, verifying, homeUnavailable } = status;
@@ -83,7 +83,9 @@ export function describeObjective(status, view = {}, names = {}) {
     case 'j3': return { ...base, line: ['journey.j3'], distance,
       hint: homeUnavailable ? ['journey.home.unavailable'] : view.view === 'diorama' ? ['journey.j3.diorama'] : ['journey.j3.hint'] };
     case 'j4': return { ...base, line: ['journey.j4'], distance, hint: view.view === 'drive' ? ['journey.j4.drive'] : ['journey.j4.hint'] };
-    case 'j5': return { ...base, line: ['journey.j5'], hint: view.holding ? ['journey.j5.carry', { item: view.holding }] : ['journey.j5.hint'] };
+    // the hint names what this room really offers: a lamp that is off, lamps that are all on already, or no lamp at all
+    case 'j5': return { ...base, line: ['journey.j5'], hint: view.holding ? ['journey.j5.carry', { item: view.holding }]
+      : view.lights === 'on' ? ['journey.j5.lightsOn'] : view.lights === 'none' ? ['journey.j5.noLights'] : ['journey.j5.hint'] };
     case 'j6': {
       const hint = verifying ? ['journey.j6.verify'] : !away ? ['journey.j6.leave'] :
         view.inHomeTown ? ['journey.j6.door'] : ['journey.j6.return', { city: names.city ?? '', planet: names.planet ?? '' }];

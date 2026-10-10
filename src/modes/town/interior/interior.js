@@ -611,6 +611,12 @@ export class Interior {
     return emit && on ? 'light_on' : null;
   }
 
+  /** 'none' (no lamp in the room), 'off' (at least one can be switched on) or 'on' (every lamp is lit). */
+  lampState() {
+    if (!this.lamps.length) return 'none';
+    return this.lamps.some((l) => !l.on) ? 'off' : 'on';
+  }
+
   // -------------------------------------------------------------- interaction
 
   nearest(x, z) {

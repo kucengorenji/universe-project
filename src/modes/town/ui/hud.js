@@ -131,6 +131,7 @@ export class TownHud {
 
   setView(v) {
     this.view = v;
+    this.on.shown?.(v);
     const shown = v === 'interior' ? 'walk' : v;
     this.buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === shown)));
     this.hint.textContent = hint(v);
@@ -163,6 +164,7 @@ export class TownHud {
   setPrompt(text, key = 'E') {
     if (text === this.promptText) return;
     this.promptText = text;
+    this.on.prompt?.(Boolean(text));
     const el = this.root.querySelector('.interact-prompt');
     el.hidden = !text;
     if (text) {
@@ -174,6 +176,7 @@ export class TownHud {
   update() {}
 
   dispose() {
+    this.on.prompt?.(false);
     this.headerObserver.disconnect();
     this.quality.listeners.delete(this.onQuality);
     this.root.removeEventListener('click', this.onClick);

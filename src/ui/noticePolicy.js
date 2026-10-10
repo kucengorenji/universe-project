@@ -47,11 +47,15 @@ export class NoticeBoard {
     return 'queued';
   }
 
-  /** The persistent save state changed. Returns true when the message on screen had to go. */
+  /**
+   * The persistent save state changed. Returns true when the message on screen had to go. Only an error
+   * removes it: a stage toast is always followed by its own save, which is pending for a moment, and
+   * must not vanish because of that.
+   */
   setBlock(block) {
     this.block = block;
     this.queue = this.queue.filter((n) => !blocks(block, n.kind));
-    if (this.current && blocks(block, this.current.kind)) {
+    if (this.current && block === 'error') {
       this.current = null;
       return true;
     }

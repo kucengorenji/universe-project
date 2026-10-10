@@ -91,3 +91,9 @@ Pengguna memilih Opsi B dan meminta lead bekerja otomatis sampai M3, lalu berhen
 - Perubahan persisten slice = nyalakan lampu/taruh barang di rumah awal.
 - Clock tetap world clock existing; musim otomatis, tinggi fisik dewasa, rutinitas warga ditunda ke M3.
 - Arah karakter mengikuti art sprint (dewasa 4,5–5 kepala); swap rig hanya setelah proof M3.
+
+## Pembaruan 11:35 WIB
+
+- Selesai sejak 07:50: M2 (journey, e2e 10/10 di build produksi), M3 proof 1–3, Hemat (masuk Town 36,9→22,6 MB Normal / 19,7 MB Low; heap Planet 240→62 MiB), refactor TownMode 1.743→392 baris, perbaikan kebocoran texture. Commit sampai `428a789`; 340 test lolos, build lolos.
+- Sisa M3: R1–R6 perbaikan UI dari review artist (engineer), smoke + e2e ulang (AGY), commit M3.
+- Limit: Claude habis ±10:40–11:30; Codex 5 jam 97% sampai 13:08. Bila limit habis lagi, checkpoint ini dan TASKS.md "Status sekarang" adalah titik henti; semua kerja yang lolos test sudah ter-commit.

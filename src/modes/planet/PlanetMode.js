@@ -10,7 +10,7 @@ import { BIOMES } from '../../map/mapGenerator.js';
 import { t } from '../../i18n/index.js';
 import { mountTradeEntry } from '../../trade/entry.js';
 import { worldImpact } from '../../world/worldImpact.js';
-import { journeyTargets, markRows, cityText } from '../../ui/journeyTargets.js';
+import { journeyTargets, markRows, cityText, destinationSpot } from '../../ui/journeyTargets.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
 // created once and kept: leaving the planet suspends them (every per-planet
@@ -201,6 +201,7 @@ export default class PlanetMode {
   }
 
   focusChanged(spec) {
+    this.markDestination(spec);
     if (this.ctx.director.busy) return;
     const city = spec?.type === 'city' ? spec.index : null;
     this.ctx.director.replaceRoute({ mode: 'planet', planet: this.index, city });
@@ -444,7 +445,11 @@ export default class PlanetMode {
     return Promise.resolve({ cover: 'fade' });
   }
 
-  /** On the home planet the hometown's list row and banner carry the First Journey's house badge while it is the target. */
+  /**
+   * On the home planet the hometown's list row and banner carry the First Journey's house badge while it is the
+   * target, and a shortcut under the objective bar focuses that city (the same focus a list row gives), so it can be
+   * found even when the globe shows the other side.
+   */
   markJourney() {
     const journey = this.ctx.journey;
     if (!journey) return;
@@ -452,10 +457,58 @@ export default class PlanetMode {
     const city = onHome ? journeyTargets(journey).city : null;
     markRows(document.querySelectorAll('#cityList .city-row'), (el) => Number(el.dataset.focusCity), city, cityText(journey));
     this.pr.setJourneyCity(city);
+    this.showDestination(city);
+  }
+
+  showDestination(city) {
+    const info = city === null ? null : this.map.cities?.[city];
+    if (!info) {
+      this.destination?.remove();
+      this.destination = null;
+      document.body.classList.remove('has-destination');
+      clearInterval(this.destinationWatch);
+      return;
+    }
+    if (!this.destination) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'journey-dest';
+      button.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 12 12 4l9 8v8H3z" fill="var(--journey-target)" stroke="var(--journey-outline)" stroke-width="2" stroke-linejoin="round"/></svg><span><strong data-name></strong><small data-sub></small></span>';
+      button.addEventListener('click', () => this.pr.focusOn({ type: 'city', index: this.destinationCity }));
+      this.ui.appendChild(button);
+      this.destination = button;
+      this.destinationWatch = setInterval(() => this.placeDestination(), 250);
+    }
+    this.destinationCity = city;
+    this.destination.querySelector('[data-name]').textContent = info.name;
+    this.destination.querySelector('[data-sub]').textContent = t('journey.dest.sub');
+    this.destination.setAttribute('aria-label', t('journey.dest.aria', { city: info.name }));
+    document.body.classList.add('has-destination'); // the decorative seed number steps aside while the destination is offered
+    this.markDestination(this.pr.focus?.spec ?? null);
+    this.placeDestination();
+  }
+
+  /** Pressed while that city is the one the card shows; choosing another city leaves the shortcut as it is. */
+  markDestination(spec) {
+    this.destination?.setAttribute('aria-pressed', String(spec?.type === 'city' && spec.index === this.destinationCity));
+  }
+
+  placeDestination() {
+    if (!this.destination) return;
+    const rect = (sel) => { const el = document.querySelector(sel); const r = el && !el.closest('[hidden]') && !el.hidden ? el.getBoundingClientRect() : null; return r && r.width ? r : null; };
+    const card = rect('#infoCard');
+    const spot = destinationSpot({
+      objectiveBottom: rect('.journey-hud')?.bottom ?? null,
+      topbarBottom: rect('#planetUi .topbar')?.bottom ?? null,
+      card: card && card.width < window.innerWidth * 0.9 ? { right: card.right } : null // a bottom sheet spans the screen; a side panel does not
+    });
+    this.destination.style.left = `${spot.left}px`;
+    this.destination.style.top = `${spot.top}px`;
   }
 
   exit() {
     this.stopJourney?.();
+    this.showDestination(null);
     this.pr.setJourneyCity(null);
     this.unmountTradeEntry?.();
     if (this.flight) this.endFlight();

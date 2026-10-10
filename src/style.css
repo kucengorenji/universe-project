@@ -1689,7 +1689,9 @@ body[data-mode='town'] #canvas-container {
 .interact-prompt {
   position: fixed;
   left: 50%;
-  bottom: 84px;
+  bottom: 76px;
+  min-height: 44px;
+  max-width: min(320px, calc(100vw - 24px));
   z-index: 12;
   display: inline-flex;
   align-items: center;
@@ -2229,13 +2231,13 @@ body.is-flying .asset-status {
 .tip {
   position: fixed;
   left: 50%;
-  bottom: 140px;
+  bottom: 76px;
   z-index: 24;
   display: flex;
-  align-items: center;
-  gap: var(--space-15);
-  width: min(560px, calc(100vw - 32px));
-  padding: var(--space-15) var(--space-15) var(--space-15) var(--space-20);
+  align-items: flex-start;
+  gap: var(--space-10);
+  width: min(440px, calc(100vw - 24px));
+  padding: var(--space-10) var(--space-10) var(--space-10) var(--space-15);
   background: var(--color-concrete);
   border: var(--hairline);
   border-radius: 18px;
@@ -2247,31 +2249,48 @@ body.is-flying .asset-status {
   display: none;
 }
 
+/* the flight bar (space, globe) and the diorama strip sit at the bottom: keep 12 px above them */
+body[data-mode='space'] .tip,
+body[data-mode='planet'] .tip,
+body[data-mode='town']:not(:has(#townUi.is-street)) .tip {
+  bottom: 96px; /* the diorama's one-line control strip can wrap to two lines on narrow screens */
+}
+
 .tip.is-out {
   opacity: 0;
   transition: opacity 300ms ease;
 }
 
+.tip__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px var(--space-10);
+}
+
 .tip__keys {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 4px;
-  width: 96px;
-  flex: none;
 }
 
 .tip__body {
   flex: 1;
+  min-width: 0;
 }
 
 .tip__body strong {
-  display: block;
   font-size: var(--text-body-lg);
   font-weight: 500;
 }
 
+/* two lines of body at most: the card must not cover the avatar */
 .tip__body p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-family: var(--font-system);
   font-size: 13px;
   line-height: 1.4;
@@ -2719,7 +2738,7 @@ body[data-mode='town']:has(#townUi.is-street) .mission-toggle {
 }
 body[data-mode='town']:has(#townUi.is-street) .tip {
   background: rgba(17, 23, 29, .9); border: 1px solid rgba(255,255,255,.2); border-left: 3px solid #f2ce72;
-  border-radius: 4px; color: #f5f3ec; animation: none; bottom: 140px;
+  border-radius: 4px; color: #f5f3ec; animation: none;
 }
 body[data-mode='town']:has(#townUi.is-street) .tip__body p { color: #c4cbd0; }
 body[data-mode='town']:has(#townUi.is-street) .tip kbd { background: #f5f3ec; color: #171d23; border-radius: 3px; }
@@ -2738,7 +2757,6 @@ body[data-mode='town']:has(#townUi.is-street) .tip .menu-circle span { backgroun
   #townUi.is-street .topbar__right { margin-left: auto; }
   body[data-mode='town']:has(#townUi.is-street) .mission-toggle { left: 16px; bottom: 22px; }
   body[data-mode='town']:has(#townUi.is-street) .tip { top: 132px; bottom: auto; padding: 12px; gap: 10px; }
-  body[data-mode='town']:has(#townUi.is-street) .tip__keys { width: 54px; }
   body[data-mode='town']:has(#townUi.is-street) .tip__body p { font-size: 12px; }
   .flight-hud--planet { max-width: calc(100vw - 24px); bottom: 80px; gap: 8px; padding: 8px; flex-wrap: wrap; border-radius: 8px; }
   .flight-hud--planet .flight-hud__state { flex: 1; font-size: 14px; white-space: normal; }
@@ -2880,6 +2898,22 @@ body[data-mode='trade'] .journey-hud {
   display: none;
 }
 
+/* An overlay (title card, pause menu, finish card) is the one thing on screen: no prompt, tip, notice or hint strip behind it,
+   and nothing that looks usable. The finish card also takes the minimap, whose pin is a navigation cue. */
+body[data-overlay] .interact-prompt,
+body[data-overlay] .tip,
+body[data-overlay] .notice,
+body[data-overlay] .town-hud,
+body[data-overlay] .journey-dest {
+  display: none;
+}
+
+body[data-overlay='journey'] .minimap,
+body[data-overlay='journey'] .speedo,
+body[data-overlay='journey'] .joystick {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .journey-complete {
     animation: none;
@@ -2970,6 +3004,63 @@ body[data-mode='trade'] .journey-wayfinding {
   background: var(--journey-target);
   border: 2px solid var(--journey-outline);
   clip-path: polygon(50% 0, 100% 45%, 100% 100%, 0 100%, 0 45%);
+}
+
+/* Planet: a shortcut to the hometown while the journey asks for it. It only focuses the city (the card then offers Land). */
+.journey-dest {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(240px, calc(100vw - 48px));
+  min-height: 44px;
+  padding: 6px 12px 6px 10px;
+  border: 2px solid var(--journey-outline);
+  border-radius: 14px;
+  background: var(--journey-paper);
+  color: var(--journey-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.journey-dest span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.journey-dest strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: var(--text-body-lg);
+  line-height: 1.15;
+}
+
+.journey-dest small {
+  font-size: var(--text-caption);
+  color: var(--journey-quiet);
+}
+
+.journey-dest[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px var(--journey-target);
+}
+
+.journey-dest:focus-visible {
+  outline: 3px solid var(--journey-ink);
+  outline-offset: 2px;
+}
+
+body.has-destination .wall-type {
+  display: none;
+}
+
+body[data-overlay] .journey-dest {
+  display: none;
 }
 
 /* A named townsperson's greeting */

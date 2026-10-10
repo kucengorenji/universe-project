@@ -65,3 +65,62 @@ test('the home badge drops below the objective bar instead of hiding under it', 
   const moved = clearOfPanel({ x: 640, y: 110, width: 120, height: 32, panel });
   assert.ok(moved - 32 >= panel.bottom + 8 - 1e-9);
 });
+
+// R4: the arrow keeps clear of every piece of HUD, not only the minimap and the prompt
+const clears = (spot, size, rects, gap = 12) => rects.every((r) => !(spot.x + size.width / 2 + gap > r.left && spot.x - size.width / 2 - gap < r.right && spot.y + size.height / 2 + gap > r.top && spot.y - size.height / 2 - gap < r.bottom));
+const HUD_1280 = (w = 1280, h = 720) => [
+  { left: 0, top: 0, right: w, bottom: 80 }, // top bar
+  { left: 24, top: h - 260, right: 208, bottom: h - 76 }, // minimap
+  { left: w / 2 - 220, top: h - 156, right: w / 2 + 220, bottom: h - 76 }, // tip card
+  { left: w / 2 - 64, top: h - 126, right: w / 2 + 64, bottom: h - 76 }, // prompt
+  { left: w - 360, top: h - 56, right: w - 88, bottom: h - 25 }, // control strip
+  { left: w - 76, top: h - 68, right: w - 28, bottom: h - 20 } // menu button
+];
+
+test('the arrow never overlaps the control strip: the Damar frame (target to the lower right)', () => {
+  const size = { width: 56, height: 44 };
+  const avoid = HUD_1280();
+  for (const [w, h] of [[1280, 720], [800, 600]]) {
+    const rects = HUD_1280(w, h);
+    const spot = edgeAnchor({ width: w, height: h, dir: { x: 0.5, y: 0.3 }, size, avoid: rects });
+    assert.ok(clears(spot, size, rects), `${w}x${h}: ${JSON.stringify(spot)}`);
+    assert.ok(spot.x - size.width / 2 >= 24 - 1e-6 && spot.x + size.width / 2 <= w - 24 + 1e-6, 'inset kept');
+    assert.ok(spot.y - size.height / 2 >= 24 - 1e-6 && spot.y + size.height / 2 <= h - 24 + 1e-6, 'inset kept');
+    near(spot.angle, Math.atan2(0.3, 0.5));
+  }
+  assert.ok(avoid.length);
+});
+
+test('every direction clears every exclusion by 12 px and inset 24, at both screen sizes', () => {
+  const size = { width: 56, height: 44 };
+  for (const [w, h] of [[1280, 720], [800, 600]]) {
+    const rects = HUD_1280(w, h);
+    for (let a = 0; a < 360; a += 15) {
+      const dir = { x: Math.cos((a * Math.PI) / 180), y: Math.sin((a * Math.PI) / 180) };
+      const spot = edgeAnchor({ width: w, height: h, dir, size, avoid: rects });
+      assert.ok(clears(spot, size, rects), `${w}x${h} at ${a}°: ${JSON.stringify(spot)}`);
+      assert.ok(spot.x - size.width / 2 >= 24 - 1e-6 && spot.x + size.width / 2 <= w - 24 + 1e-6 && spot.y - size.height / 2 >= 24 - 1e-6 && spot.y + size.height / 2 <= h - 24 + 1e-6, `inset at ${a}°`);
+      near(spot.angle, Math.atan2(dir.y, dir.x), 1e-9);
+    }
+  }
+});
+
+test('the arrow uses its rendered size, not an assumed 44 px', () => {
+  const wide = { width: 120, height: 44 };
+  const spot = edgeAnchor({ width: W, height: H, dir: { x: 0, y: -1 }, size: wide });
+  near(spot.y, 24 + 22);
+  const strip = [{ left: W / 2 - 40, top: 0, right: W / 2 + 40, bottom: 80 }];
+  const moved = edgeAnchor({ width: W, height: H, dir: { x: 0, y: -1 }, size: wide, avoid: strip });
+  assert.ok(moved.x + wide.width / 2 + 12 <= strip[0].left + 1e-6 || moved.x - wide.width / 2 - 12 >= strip[0].right - 1e-6, 'the clearance counts the whole pill');
+});
+
+test('when the preferred edge is full the arrow moves to a free edge instead of clamping on top of the HUD', () => {
+  const full = [{ left: 0, top: 0, right: W, bottom: 120 }, { left: 0, top: H - 120, right: W, bottom: H }]; // top and bottom blocked
+  const size = { width: 44, height: 44 };
+  const spot = edgeAnchor({ width: W, height: H, dir: { x: 0, y: -1 }, size, avoid: full });
+  assert.ok(clears(spot, size, full), JSON.stringify(spot));
+  assert.ok(spot.x <= 24 + 22 + 1e-6 || spot.x >= W - 24 - 22 - 1e-6, 'it went to a side edge');
+  const walled = [{ left: -10, top: -10, right: W + 10, bottom: H + 10 }];
+  const last = edgeAnchor({ width: W, height: H, dir: { x: 1, y: 0 }, size, avoid: walled });
+  assert.ok(Number.isFinite(last.x) && Number.isFinite(last.y), 'no free edge at all still returns a spot');
+});

@@ -59,20 +59,20 @@ export class TownJourney {
   }
 
   /** A room opened: the outdoor marker goes quiet and the journey checks the saved room. */
-  opened(buildingId, floors) {
+  opened(buildingId, floors, lights) {
     this.waypoint?.update(0, { camera: null, active: false });
     this.minimap?.setPin(null);
-    this.journey.setView({ mode: 'interior', holding: undefined });
+    this.journey.setView({ mode: 'interior', holding: undefined, lights });
     this.journey.enterHome({ buildingId, floors });
   }
 
   closed() {
-    this.journey.setView({ mode: 'town', holding: undefined });
+    this.journey.setView({ mode: 'town', holding: undefined, lights: undefined });
   }
 
   /** The player used something in a room; `before`/`after` are interior snapshots around the action. */
-  used({ buildingId, floor, before, after, holding }) {
-    this.journey.setView({ holding: holding ? itemLabel(holding.asset) : undefined });
+  used({ buildingId, floor, before, after, holding, lights }) {
+    this.journey.setView({ holding: holding ? itemLabel(holding.asset) : undefined, lights });
     return this.journey.changed({ buildingId, floor, before, after });
   }
 

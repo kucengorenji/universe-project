@@ -5,7 +5,9 @@
 const env = import.meta.env || {};
 
 export const API_BASE = `${(env.VITE_API_BASE || '').replace(/\/$/, '')}/api`;
-export const DASHBOARD_URL = env.VITE_DASHBOARD_URL || 'https://dashboard.aethergate.cloud/';
+const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(globalThis.location?.hostname || '');
+// A game opened from localhost (npm run dev / api:dev) links to the local dashboard dev server.
+export const DASHBOARD_URL = env.VITE_DASHBOARD_URL || (LOCAL ? 'http://localhost:5174/' : 'https://dashboard.aethergate.cloud/');
 export const BUILD = env.VITE_BUILD || (env.DEV ? 'dev' : 'web');
 
 export const KEYS = Object.freeze({

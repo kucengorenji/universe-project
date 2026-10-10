@@ -10,6 +10,7 @@ import { buildMountainGeometry } from './mountainBuilder.js';
 import { PLANET_TYPES, TERRAN_PALETTE } from '../world/planetTypes.js';
 import { createSpaceBackdrop } from './spaceBackdrop.js';
 import { cozyRouteMaterial } from './cozyPaths.js';
+import { JOURNEY_PALETTE } from '../art/palette.js';
 import { t } from '../i18n/index.js';
 
 // Cartoon (Civ VI-like) terrain palette (lives with the planet types, shared with the space baker)
@@ -2364,13 +2365,15 @@ export class PlanetRenderer {
     }
   }
 
-  makeLabelSprite(city) {
+  /** `home`: the hometown of the First Journey gets a gold house badge and outline on its banner. */
+  makeLabelSprite(city, home = false) {
     const style = LABEL_STYLE[city.owner] || LABEL_STYLE.neutral;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const font = '500 34px "Barlow Condensed", "Archivo Narrow", sans-serif';
     ctx.font = font;
-    const w = Math.ceil(ctx.measureText(city.name).width) + 28;
+    const badge = home ? 40 : 0;
+    const w = Math.ceil(ctx.measureText(city.name).width) + 28 + badge;
     canvas.width = w;
     canvas.height = 48;
     ctx.fillStyle = style.bg;
@@ -2378,7 +2381,21 @@ export class PlanetRenderer {
     ctx.font = font;
     ctx.fillStyle = style.fg;
     ctx.textBaseline = 'middle';
-    ctx.fillText(city.name, 14, 25);
+    ctx.fillText(city.name, 14 + badge, 25);
+    if (home) {
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = JOURNEY_PALETTE.outline;
+      ctx.fillStyle = JOURNEY_PALETTE.target;
+      ctx.beginPath();
+      ctx.moveTo(8, 25); ctx.lineTo(20, 10); ctx.lineTo(32, 25); ctx.lineTo(32, 39); ctx.lineTo(8, 39);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = JOURNEY_PALETTE.target;
+      ctx.strokeRect(2, 2, w - 4, 44);
+    }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -2399,16 +2416,35 @@ export class PlanetRenderer {
     return sprite;
   }
 
+  /** Mark one city's banner as the First Journey's hometown (or clear it with null). */
+  setJourneyCity(index) {
+    this.journeyCity = index;
+    for (const entry of this.labels) {
+      const wanted = entry.city.index === index;
+      if (!!entry.home === wanted) continue;
+      const fresh = this.makeLabelSprite(entry.city, wanted);
+      fresh.position.copy(entry.sprite.position);
+      fresh.visible = entry.sprite.visible;
+      this.mapGroup.remove(entry.sprite);
+      entry.sprite.material.map?.dispose();
+      entry.sprite.material.dispose();
+      this.mapGroup.add(fresh);
+      entry.sprite = fresh;
+      entry.home = wanted;
+    }
+  }
+
   buildLabels(mapData) {
     const tileMap = this.hexasphere.tileMap;
     for (const city of mapData.cities || []) {
       const tile = tileMap.get(city.tileId);
       if (!tile) continue;
       const dir = tile.center.clone().normalize();
-      const label = this.makeLabelSprite(city);
+      const home = city.index === this.journeyCity;
+      const label = this.makeLabelSprite(city, home);
       label.position.copy(dir).multiplyScalar(this.landR + this.tileRadius * (city.type === 'capital' ? 2.4 : 1.7));
       this.mapGroup.add(label);
-      this.labels.push({ sprite: label, normal: dir, city });
+      this.labels.push({ sprite: label, normal: dir, city, home });
     }
   }
 

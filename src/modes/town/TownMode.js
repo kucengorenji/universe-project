@@ -21,12 +21,12 @@ import { Car, ChaseCamera } from './vehicles/vehicle.js';
 import { SkirmishPeople, loadTownPeople, makeTownPerson, animateTownPerson, disposeTownPerson } from './people/skirmishPeople.js';
 import { Interior, ENTERABLE, FURNITURE_PACK } from './interior/interior.js';
 import { buildingId, seedFor } from '../../world/identity.js';
-import { localToTown, townToLocal } from '../../world/buildingBlueprint.js';
 import { ensureHomeRecord, listTownHomes, townHomeContext } from '../../world/homeState.js';
 import { TransitionGuard, openInteriorSession, storeInterior } from './interior/interiorSession.js';
 import { findTownDoors, nearestDoor as closestDoor } from './interior/doors.js';
+import { TownJourney } from './journeyTown.js';
+import { applyAuthoredHomes } from './authoredHomes.js';
 import { optionalPack } from './render/packLoading.js';
-import { footprintBounds, pointInPolygon } from '../home/homeBlueprint.js';
 import { createHomeGroup, disposeHomeGroup, loadHomePack } from '../home/homeBuilder.js';
 import { loadTexturedPack } from '../../render/texturedAssetLibrary.js';
 import { loadTownSurfaces } from '../../render/townSurfaces.js';
@@ -249,6 +249,7 @@ export default class TownMode {
     this.setupHomeEntry();
     this.minimap = new Minimap(this.ui, { layout: this.layout, groundAt: (x, z) => this.builder.groundAt(x, z), waterY: WATER_Y, doors: this.doors });
     this.speedo = new Speedo(this.ui);
+    this.journeyTown = this.ctx.journey && new TownJourney({ journey: this.ctx.journey, planet: this.route.planet, city: this.route.city, scene: this.scene, ui: this.ui, layout: this.layout, doors: this.doors, walkNetwork: this.walkNetwork, groundAt: (x, z) => this.builder.groundAt(x, z), minimap: this.minimap, reducedMotion: quality.tier === 'low' || !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches });
     this.ui.hidden = false;
     document.body.dataset.mode = 'town';
 
@@ -326,29 +327,8 @@ export default class TownMode {
   }
 
   prepareAuthoredHomes() {
-    this.homes = listTownHomes(this.ctx.world.state, this.route.planet, this.route.city).filter(home => home.layoutSeed === this.layout.seed);
-    for (const home of this.homes) {
-      if (!home.applied) continue;
-      const b = this.layout.buildings.find(building => building.id === home.buildingId);
-      if (!b) continue;
-      const f = this.footprints[b.asset];
-      const ca = Math.cos(b.yaw), sa = Math.sin(b.yaw), sx = b.sx ?? 1, sz = b.sz ?? 1;
-      const cx = f ? (f.minX + f.maxX) / 2 * sx : 0, cz = f ? (f.minZ + f.maxZ) / 2 * sz : 0;
-      const x = b.x + ca * cx - sa * cz, z = b.z + sa * cx + ca * cz;
-      const hw = f ? (f.maxX - f.minX) / 2 * sx : b.w / 2, hd = f ? (f.maxZ - f.minZ) / 2 * sz : b.d / 2;
-      this.layout.colliders = this.layout.colliders.filter(c => !(c.type === 'box' && Math.hypot(c.x - x, c.z - z) < .25 && Math.abs(c.hw - hw) < .25 && Math.abs(c.hd - hd) < .25));
-      b.homeRecord = home;
-      b.homeBounds = footprintBounds(home.applied);
-      b.homeHeight = Math.max(...home.applied.floors.map(floor => floor.elevation + floor.height)) + (home.applied.roof?.rise || 0);
-      b.w = b.homeBounds.width;
-      b.d = b.homeBounds.depth;
-      const center = localToTown(home.origin, b.homeBounds.center);
-      b.homeCollider = { type: 'box', x: center.x, z: center.z, hw: b.w / 2 + .12, hd: b.d / 2 + .12, yaw: home.origin.yaw };
-      this.layout.colliders.push(b.homeCollider);
-    }
-    const removedTrees = this.layout.trees.filter(tree => this.homes.some(home => home.applied && pointInPolygon(townToLocal(home.origin, tree), home.applied.plot)));
-    this.layout.trees = this.layout.trees.filter(tree => !removedTrees.includes(tree));
-    this.layout.colliders = this.layout.colliders.filter(c => c.type !== 'circle' || !removedTrees.some(tree => Math.hypot(c.x - tree.x, c.z - tree.z) < .01));
+    const homes = listTownHomes(this.ctx.world.state, this.route.planet, this.route.city).filter(home => home.layoutSeed === this.layout.seed);
+    this.homes = applyAuthoredHomes(homes, this.layout, this.footprints);
   }
 
   addAuthoredHomes(quality) {
@@ -740,6 +720,7 @@ export default class TownMode {
       this.ui.classList.add('is-inside');
       this.saveInterior();
       this.saveInteriorLocation();
+      this.journeyTown?.opened(door.b.id, this.interiorRecord.floors);
       if (session.quarantined) this.showHomeMessage(tr('save.quarantined'));
       ticket.end();
       this.ctx.missions?.emit('enter_house');
@@ -759,6 +740,7 @@ export default class TownMode {
       if (this.avatar) this.scene.add(this.avatar.root);
       this.interior.dispose();
       this.interior = null;
+      this.journeyTown?.closed();
       this.ctx.world.state.set('playerLocation', null);
       this.pose = null;
       this.placePlayer(d.x + Math.sin(d.outYaw) * 0.6, d.z + Math.cos(d.outYaw) * 0.6);
@@ -798,8 +780,10 @@ export default class TownMode {
       p.z = back.z;
       return;
     }
+    const before = this.journeyTown && inside.snapshot();
     const r = inside.use(it, p);
     this.saveInterior();
+    this.journeyTown?.used({ buildingId: this.interiorDoor.b.id, floor: inside.floor, before, after: inside.snapshot(), holding: inside.holding });
     if (r.event) this.ctx.missions?.emit(r.event);
     if (r.action === 'exit') return this.exitBuilding();
     if (r.action === 'floor') return this.changeInteriorFloor(r.target);
@@ -1564,6 +1548,7 @@ export default class TownMode {
       this.updatePrompt();
     }
     if (this.view === 'walk') this.footsteps(this.layout.modern ? 'road' : 'grass');
+    this.journeyTown?.update(t, { pos: this.view === 'diorama' ? null : this.view === 'drive' && this.drive ? this.drive.car : this.player, view: this.view, camera: this.renderCamera });
     this.updateGauges();
     const obstacles = []; // Traffic only brakes for other vehicles.
     if (this.drive) obstacles.push(this.drive.car);
@@ -1747,6 +1732,7 @@ export default class TownMode {
 
   exit() {
     this.transitions.cancel(); // a fade still running must not touch what is disposed below
+    this.journeyTown?.dispose();
     this.closePlanner();
     this.saveInterior();
     this.ctx.world.state.set('playerLocation', null);

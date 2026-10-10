@@ -45,6 +45,18 @@ export function restoreQuarantined(state, id) {
   state.set(id, null);
 }
 
+/**
+ * Read a record this build owns (journey progress): the record when it is supported and passes
+ * `validate`, else null. Anything else is quarantined and `quarantined` says so; nothing is overwritten.
+ */
+export function loadVersionedRecord(state, key, { schemaVersion, validate = () => true }) {
+  const saved = state.get(key);
+  if (saved === null || saved === undefined) return { record: null, quarantined: null };
+  if (isPlain(saved) && saved.schemaVersion === schemaVersion && validate(saved)) return { record: saved, quarantined: null };
+  const reason = isPlain(saved) && saved.schemaVersion === schemaVersion ? 'malformed' : 'unknown-schema';
+  return { record: null, quarantined: quarantineRecord(state, key, saved, reason) };
+}
+
 export const newInteriorContainer = () => ({ schemaVersion: INTERIOR_SCHEMA_VERSION, layoutVersion: 2, floors: {} });
 
 /**

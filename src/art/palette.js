@@ -126,3 +126,18 @@ export const MAP_COLORS = {
   asphalt: '#6c6e72',
   label: '#1c2320'
 };
+
+/**
+ * Wayfinding for the First Journey (beacon, locator, minimap pin, objective bar). Aliases of
+ * tokens above, so no new hex values: the gold needs a dark outline and is never small text.
+ */
+export const JOURNEY_PALETTE = Object.freeze({
+  target: ROOM_SCHEMES.house[0].trim, // warm gold: beacon face, locator outline
+  paper: ROOM_SCHEMES.house[1].wall, // plaque and label surface
+  ink: MAP_COLORS.label, // text and icon detail
+  outline: MAP_COLORS.outline, // 2 px stroke that separates it from any background
+  edge: PATH_PALETTE.border, // thin rim, beacon base
+  quiet: MAP_COLORS.roadEdge, // secondary status
+  success: MAP_COLORS.tree, // check mark after a save
+  error: ROOM_SCHEMES.tavern[1].wainscot // error icon (always with words)
+});

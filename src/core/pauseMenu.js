@@ -178,6 +178,7 @@ export class PauseMenu {
   show() {
     if (this.open) return;
     this.open = true;
+    document.body.dataset.overlay = 'pause';
     this.el.overlay.hidden = false;
     this.el.reset.textContent = t('pause.missions.reset');
     delete this.el.reset.dataset.armed;
@@ -193,6 +194,7 @@ export class PauseMenu {
   close() {
     if (!this.open) return;
     this.open = false;
+    if (document.body.dataset.overlay === 'pause') delete document.body.dataset.overlay;
     this.el.overlay.hidden = true;
     this.engine.paused = false;
     this.engine.trade?.setAppPaused(false);

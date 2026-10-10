@@ -34,7 +34,7 @@ const openTradeSetupLazily = async (...args) => (await import('../trade/entry.js
  * `modes`, `notify` and `openTradeSetup` can be replaced (tests use fake modes).
  */
 export class Director {
-  constructor({ engine, world, overlay, missions, audio, tips, trade }, { modes = MODES, notify = flashToast, openTradeSetup = openTradeSetupLazily } = {}) {
+  constructor({ engine, world, overlay, missions, audio, tips, trade, journey = null }, { modes = MODES, notify = flashToast, openTradeSetup = openTradeSetupLazily } = {}) {
     this.engine = engine;
     this.world = world;
     this.overlay = overlay;
@@ -46,7 +46,7 @@ export class Director {
     this.route = null;
     this.busy = false;
     this.pending = null;
-    this.ctx = { engine, world, overlay, missions, audio, tips, trade, director: this };
+    this.ctx = { engine, world, overlay, missions, audio, tips, trade, journey, director: this };
     window.addEventListener('hashchange', () => {
       if (this.ignoreHash === location.hash) {
         this.ignoreHash = null;
@@ -182,6 +182,7 @@ export class Director {
     }
     this.mode = mode;
     engine.setMode(mode);
+    this.ctx.journey?.modeEntered(route);
     // Draw once behind the cover so the reveal starts on a finished frame
     await engine.afterFrame();
 

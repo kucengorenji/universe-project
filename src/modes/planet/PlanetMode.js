@@ -10,6 +10,7 @@ import { BIOMES } from '../../map/mapGenerator.js';
 import { t } from '../../i18n/index.js';
 import { mountTradeEntry } from '../../trade/entry.js';
 import { worldImpact } from '../../world/worldImpact.js';
+import { journeyTargets, markRows, cityText } from '../../ui/journeyTargets.js';
 
 // The globe view (the original app) as one mode. The renderer and its menu are
 // created once and kept: leaving the planet suspends them (every per-planet
@@ -121,6 +122,8 @@ export default class PlanetMode {
     pr.resume();
     pr.buildPlanet(this.map);
     this.state.menu.updateUI(this.map);
+    this.stopJourney = this.ctx.journey?.subscribe(() => this.markJourney());
+    this.markJourney();
     document.getElementById('planetName').textContent = this.planet.name;
     document.getElementById('planetType').textContent = typeOf(this.planet.type).label;
     this.ui.hidden = false;
@@ -220,6 +223,7 @@ export default class PlanetMode {
     this.pr.hexasphere = world.activate(this.map);
     this.pr.buildPlanet(this.map);
     this.state.menu.updateUI(this.map);
+    this.markJourney();
     document.getElementById('planetName').textContent = this.planet.name;
     director.replaceRoute({ mode: 'planet', planet: home, city: null });
     this.unmountTradeEntry?.();
@@ -440,7 +444,19 @@ export default class PlanetMode {
     return Promise.resolve({ cover: 'fade' });
   }
 
+  /** On the home planet the hometown's list row and banner carry the First Journey's house badge while it is the target. */
+  markJourney() {
+    const journey = this.ctx.journey;
+    if (!journey) return;
+    const onHome = this.index === journey.homePlanet;
+    const city = onHome ? journeyTargets(journey).city : null;
+    markRows(document.querySelectorAll('#cityList .city-row'), (el) => Number(el.dataset.focusCity), city, cityText(journey));
+    this.pr.setJourneyCity(city);
+  }
+
   exit() {
+    this.stopJourney?.();
+    this.pr.setJourneyCity(null);
     this.unmountTradeEntry?.();
     if (this.flight) this.endFlight();
     this.orbitBtn.removeEventListener('click', this.onOrbit);

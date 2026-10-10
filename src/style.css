@@ -2773,3 +2773,212 @@ body[data-mode='town']:has(#townUi.is-street) .tip .menu-circle span { backgroun
     display: none;
   }
 }
+
+/* ---- First Journey: objective bar, completion card, wayfinding ----
+   Colours come from JOURNEY_PALETTE (art/palette.js): ObjectiveHud sets them as --journey-* on :root. */
+.journey-hud {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  z-index: 12;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(440px, calc(100vw - 24px));
+  min-height: 44px;
+  padding: 12px;
+  border: 2px solid var(--journey-outline);
+  border-radius: 14px;
+  background: var(--journey-paper);
+  color: var(--journey-ink);
+  pointer-events: none;
+}
+
+.journey-hud__step {
+  font-size: var(--text-caption);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--journey-quiet);
+}
+
+.journey-hud__line {
+  font-family: var(--font-display);
+  font-size: var(--text-body-lg);
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journey-hud__hint {
+  margin-top: 2px;
+  font-size: var(--text-body);
+  line-height: 1.3;
+}
+
+.journey-hud__alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  margin-top: var(--space-10);
+  padding-top: var(--space-10);
+  border-top: 1px solid var(--journey-outline);
+  font-size: var(--text-body);
+}
+
+.journey-hud__alert[hidden] {
+  display: none;
+}
+
+.journey-hud__alert button {
+  flex: none;
+  pointer-events: auto;
+  min-height: 32px;
+}
+
+.journey-hud__alert[role='alert'] span::before {
+  content: '! ';
+  font-weight: 700;
+  color: var(--journey-error);
+}
+
+.journey-complete {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(7, 12, 25, 0.55);
+  animation: journey-fade 200ms ease-out;
+}
+
+.journey-complete[hidden] {
+  display: none;
+}
+
+.journey-complete__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-10);
+  width: min(420px, calc(100vw - 40px));
+  padding: var(--space-30);
+  border: 2px solid var(--journey-outline);
+  border-radius: 14px;
+  background: var(--journey-paper);
+  color: var(--journey-ink);
+}
+
+.journey-complete__card h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  line-height: 1.1;
+}
+
+.journey-complete__hint {
+  font-size: var(--text-body);
+  color: var(--color-iron-soft);
+}
+
+@keyframes journey-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Intro, pause menu and the trade game own the screen */
+body[data-overlay] .journey-hud,
+body[data-mode='trade'] .journey-hud {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-complete {
+    animation: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .journey-hud__line {
+    white-space: normal;
+  }
+}
+
+.journey-wayfinding {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+}
+
+.journey-pin,
+.journey-arrow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid var(--journey-outline);
+  background: var(--journey-paper);
+  color: var(--journey-ink);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  will-change: transform;
+}
+
+.journey-pin {
+  padding: 4px 10px 4px 6px;
+  border-radius: var(--radius-pill);
+}
+
+.journey-pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 10px;
+  margin-left: -1px;
+  background: var(--journey-outline);
+}
+
+.journey-arrow {
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+}
+
+.journey-pin[hidden],
+.journey-arrow[hidden] {
+  display: none;
+}
+
+body[data-overlay] .journey-wayfinding,
+body[data-mode='trade'] .journey-wayfinding {
+  display: none;
+}
+
+/* Planet and space: the home planet and hometown carry the same house badge */
+.planet-row.is-journey,
+.city-row.is-journey,
+.space-label.is-journey {
+  box-shadow: inset 0 0 0 2px var(--journey-target);
+}
+
+.planet-row.is-journey .planet-row__name::before,
+.city-row.is-journey .city-row__name::before,
+.space-label.is-journey .space-label__name::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  background: var(--journey-target);
+  border: 2px solid var(--journey-outline);
+  clip-path: polygon(50% 0, 100% 45%, 100% 100%, 0 100%, 0 45%);
+}

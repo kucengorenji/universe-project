@@ -49,7 +49,7 @@ test('the layout generator defaults to the current layout version', () => {
 });
 
 test('no module defines its own copy of a version that versions.js owns', () => {
-  const owned = /\b(TOWN_LAYOUT_VERSION|INTERIOR_SCHEMA_VERSION|HOME_SCHEMA_VERSION|PLANET_MAP_VERSION|GENERATOR_VERSIONS)\s*=[^=]/;
+  const owned = /\b(TOWN_LAYOUT_VERSION|INTERIOR_SCHEMA_VERSION|HOME_SCHEMA_VERSION|JOURNEY_SCHEMA_VERSION|PLANET_MAP_VERSION|GENERATOR_VERSIONS)\s*=[^=]/;
   const root = new URL('../src/', import.meta.url);
   const walk = dir => readdirSync(dir).flatMap(name => {
     const url = new URL(name, dir);

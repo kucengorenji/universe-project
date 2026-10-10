@@ -8,6 +8,8 @@ import { Missions } from './core/missions.js';
 import { Audio } from './core/audio.js';
 import { Tips } from './core/tips.js';
 import { PauseMenu } from './core/pauseMenu.js';
+import { createJourney } from './core/journey.js';
+import { ObjectiveHud } from './ui/objectiveHud.js';
 import './core/firebase.js';
 import { applyDom } from './i18n/index.js';
 import { TradeSession } from './trade/session.js';
@@ -29,6 +31,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   engine.pauseMenu = new PauseMenu(document.getElementById('pauseUi'), { engine, audio, missions, tips, world });
   const director = new Director({ engine, world, overlay, missions, audio, tips, trade });
   await world.ready;
+  const journey = (director.ctx.journey = createJourney(world)); // after world.ready: the saved record has to be loaded first
+  const objectiveHud = new ObjectiveHud(document.getElementById('journeyUi'), { journey, world, audio, openMenu: () => engine.pauseMenu.show() });
   director.start();
-  if (import.meta.env.DEV) window.__globe = { engine, world, director, missions, audio, trade, three: await import('three') }; // dev-only debug/visual QA handle
+  // Read-only QA handle for the First Journey: stage, starter house id, door position, save status (journey.debug())
+  const qa = Object.freeze({ journey: () => journey.debug(), objective: () => journey.objective() });
+  if (import.meta.env.DEV) window.__globe = { engine, world, director, missions, audio, trade, journey, objectiveHud, qa, three: await import('three') }; // dev-only debug/visual QA handle
+  else if (new URLSearchParams(location.search).has('qa')) window.__globeQA = qa; // ?qa=1 on a built page: the read-only part only
 });

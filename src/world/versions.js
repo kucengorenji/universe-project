@@ -17,6 +17,9 @@ export const INTERIOR_SCHEMA_VERSION = 2;
 // Authored home records (world/homeState.js).
 export const HOME_SCHEMA_VERSION = 1;
 
+// First Journey progress (core/journey.js), one record per world under the key 'journey'.
+export const JOURNEY_SCHEMA_VERSION = 1;
+
 // Home planet map as stored in localStorage (map/mapGenerator.js derives its key from this).
 export const PLANET_MAP_VERSION = 5;
 

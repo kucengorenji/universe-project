@@ -1,6 +1,9 @@
 // Street HUD gauges shared by the modes that drive: a rotating town minimap
 // and a speedometer with a fake gearbox readout.
 
+import { JOURNEY_PALETTE } from '../art/palette.js';
+import { minimapPin } from '../modes/town/ui/waypointMath.js';
+
 /** Town minimap: a pre-painted plan of the town, turned so the view points up. */
 export class Minimap {
   /**
@@ -19,6 +22,7 @@ export class Minimap {
     this.north = this.el.querySelector('.minimap__label');
     this.ctx = this.canvas.getContext('2d');
     this.doors = doors;
+    this.pin = null; // { x, z }: the home door of the First Journey
     this.size = 0;
     this.plan = this.paint(layout, groundAt, waterY);
   }
@@ -80,6 +84,11 @@ export class Minimap {
     this.el.hidden = !on;
   }
 
+  /** Mark one place with the house pin (or clear it with null). */
+  setPin(point) {
+    this.pin = point ? { x: point.x, z: point.z } : null;
+  }
+
   /**
    * pos      { x, z } centre (player or car)
    * facing   yaw of the player/car (forward = (sin, cos))
@@ -126,6 +135,35 @@ export class Minimap {
     const cr = 3 / Math.max(0.4, k / dpr);
     for (const c of cars) if (inView(c)) g.fillRect(c.x - cr, c.z - cr, cr * 2, cr * 2);
     g.setTransform(1, 0, 0, 1, 0, 0);
+    // The home pin: upright whatever way the map turns; at the rim, with a chevron, when the door is out of range
+    if (this.pin) {
+      const p = minimapPin({ d: { x: this.pin.x - pos.x, z: this.pin.z - pos.z }, view, radius, rim: 0.74 });
+      const px = h + p.x * h, py = h + p.y * h, u = 8 * dpr;
+      g.lineWidth = 2 * dpr;
+      g.lineJoin = 'round';
+      g.strokeStyle = JOURNEY_PALETTE.outline;
+      g.fillStyle = JOURNEY_PALETTE.target;
+      g.beginPath();
+      g.moveTo(px - u, py);
+      g.lineTo(px, py - u);
+      g.lineTo(px + u, py);
+      g.lineTo(px + u, py + u * 0.9);
+      g.lineTo(px - u, py + u * 0.9);
+      g.closePath();
+      g.fill();
+      g.stroke();
+      if (!p.inside) {
+        g.save();
+        g.translate(px, py);
+        g.rotate(p.angle);
+        g.beginPath();
+        g.moveTo(u * 1.2, -u * 0.55);
+        g.lineTo(u * 1.85, 0);
+        g.lineTo(u * 1.2, u * 0.55);
+        g.stroke();
+        g.restore();
+      }
+    }
     // The player: an arrow turned by facing relative to the view
     const px = Math.sin(facing);
     const pz = Math.cos(facing);

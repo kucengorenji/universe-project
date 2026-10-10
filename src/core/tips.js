@@ -6,6 +6,11 @@ import { ScopedProgress } from '../world/scopedProgress.js';
 // remembered; the pause menu can bring them back.
 
 const KEY = 'planet_globe_tips';
+// The title card is for the person at this browser, not for each world: seeing it once is enough.
+const INTRO_KEY = 'planet_globe_intro';
+const introSeen = () => { try { return globalThis.localStorage?.getItem(INTRO_KEY) === '1'; } catch { return false; } };
+const markIntroSeen = (seen) => { try { if (seen) globalThis.localStorage?.setItem(INTRO_KEY, '1'); else globalThis.localStorage?.removeItem(INTRO_KEY); } catch { /* optional */ } };
+const overlayOpen = (on) => { if (typeof document !== 'undefined') { if (on) document.body.dataset.overlay = 'intro'; else if (document.body.dataset.overlay === 'intro') delete document.body.dataset.overlay; } };
 
 const TIPS = {
   space: ['W', 'A', 'D', 'Shift'],
@@ -14,7 +19,8 @@ const TIPS = {
   walk: ['E'],
   drive: ['key.space', 'E'],
   interior: ['E', 'J'],
-  rover: ['W', 'R', 'F']
+  rover: ['W', 'R', 'F'],
+  home: ['key.click', 'key.drag']
 };
 
 export class Tips {
@@ -89,15 +95,18 @@ export class Tips {
 
   /** Title card on the first visit; resolves when the player starts. */
   intro() {
-    if (this.seen.has('intro')) return Promise.resolve();
+    if (this.seen.has('intro') || introSeen()) return Promise.resolve();
     this.el.intro.hidden = false;
+    overlayOpen(true);
     this.root.querySelector('[data-act="start"]').focus({ preventScroll: true });
     return new Promise((res) => (this.introDone = res));
   }
 
   closeIntro() {
     this.el.intro.hidden = true;
+    overlayOpen(false);
     this.seen.add('intro');
+    markIntroSeen(true);
     this.save();
     this.introDone?.();
     // The tip for where we are shows right after
@@ -146,6 +155,7 @@ export class Tips {
   /** Forget everything (pause menu): tips show again from the next place visited. */
   reset() {
     this.seen.clear();
+    markIntroSeen(false);
     this.save();
   }
 }

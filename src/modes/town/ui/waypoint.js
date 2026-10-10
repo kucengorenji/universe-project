@@ -12,7 +12,8 @@ import { onScreen, edgeAnchor, clearOfPanel } from './waypointMath.js';
 
 const HOUSE = [[-0.16, 0], [0.16, 0], [0.16, 0.17], [0, 0.34], [-0.16, 0.17]];
 const DOOR_TOP = 2.1; // metres; the plaque hangs 0.25 m above the door
-const AVOID = ['.minimap', '.speedo', '.interact-prompt', '.joystick', '.pause-toggle', '.journey-hud', '.topbar'];
+// everything the arrow must keep 12 px clear of: the bottom control strip, tip, notice, greeting, prompt and the rest of the HUD
+const AVOID = ['.minimap', '.speedo', '.interact-prompt', '.joystick', '.pause-toggle', '.mission-toggle', '.journey-hud', '.topbar', '.town-hud', '.town-card', '.pixel-zoom', '.tip', '#toastNotice', '.actor-bubble'];
 const ICON = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 12 12 4l9 8v8H3z" fill="var(--journey-target)" stroke="var(--journey-outline)" stroke-width="2" stroke-linejoin="round"/></svg>`;
 const CHEVRON = `<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M3 1l6 5-6 5" fill="none" stroke="var(--journey-outline)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -145,7 +146,8 @@ export class TownWaypoint {
       return;
     }
     this.sampleAvoid(performance.now());
-    const spot = edgeAnchor({ width, height, dir: { x: cam.x, y: -cam.y }, avoid: this.avoid });
+    const box = { width: this.arrow.offsetWidth || 44, height: this.arrow.offsetHeight || 44 }; // the rendered pill, not an assumed 44 px
+    const spot = edgeAnchor({ width, height, dir: { x: cam.x, y: -cam.y }, size: box, avoid: this.avoid });
     this.arrow.style.transform = `translate(${Math.round(spot.x)}px, ${Math.round(spot.y)}px) translate(-50%, -50%)`;
     this.chevron.style.transform = `rotate(${spot.angle}rad)`;
   }

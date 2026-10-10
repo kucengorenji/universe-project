@@ -26,6 +26,7 @@ import { Minimap, Speedo } from '../../ui/gauges.js';
 import { readTownStyle, PIXEL_YAW } from './render/pixelConfig.js';
 import { STREET_FOV, UP, ease } from './controllers/shared.js';
 import { mixin } from './controllers/mixin.js';
+import { contextKey } from '../../core/tipPolicy.js';
 import { StyleMethods } from './controllers/townStyle.js';
 import { HomeMethods } from './controllers/townHomes.js';
 import { ViewMethods } from './controllers/townViews.js';
@@ -208,7 +209,9 @@ export default class TownMode {
         style: (style) => this.setTownStyle(style),
         zoom: (level) => this.setPixelZoom(level),
         plan: () => this.openPlanner(),
-        interact: () => this.interact()
+        interact: () => this.interact(),
+        shown: (v) => this.ctx.tips?.setContext(contextKey('town', v)), // a tip belongs to the view it explains
+        prompt: (shown) => this.ctx.tips?.suppress('prompt', shown) // an action prompt takes the bottom centre; the tip waits
       }
     });
     this.setupHomeEntry();

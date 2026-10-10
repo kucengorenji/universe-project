@@ -35,10 +35,17 @@ export class Tips {
     this.context = null; // where the player is: tipPolicy.contextKey()
     this.reasons = new Set(); // why the card has to step aside right now ('prompt', 'overlay')
     world?.subscribe?.((event) => { if (event === 'world') this.switchWorld(); });
+    // a pause menu, the title card or the finish card owns the screen: no tip behind it
+    if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+      const sync = () => this.suppress('overlay', Boolean(document.body.dataset.overlay));
+      new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ['data-overlay'] });
+    }
     root.innerHTML = `
       <aside class="tip" hidden role="status" aria-live="polite">
-        <div class="tip__keys" data-keys></div>
-        <div class="tip__body"><strong data-title></strong><p data-text></p></div>
+        <div class="tip__body">
+          <div class="tip__head"><strong data-title></strong><span class="tip__keys" data-keys></span></div>
+          <p data-text></p>
+        </div>
         <button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="dismiss" aria-label="${t('tips.close')}"><span></span><span></span></button>
       </aside>
       <div class="intro" hidden>

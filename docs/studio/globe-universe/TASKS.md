@@ -1,6 +1,6 @@
 # Studio tasks
 
-## Status sekarang (10 Okt 2026, 10:00 WIB) — baca ini dulu
+## Status sekarang (10 Okt 2026, 11:35 WIB) — baca ini dulu
 
 **M0 Repo rapi** ✅ selesai
 - [x] Commit besar dipecah per produk (Town/Trade/Valley/Docs), backup `backup/skirmish-vc-5033bd3`
@@ -32,12 +32,15 @@
 - [x] Hemat bytes (commit `9ec11fd`): masuk Town 36,9 → **22,6 MB** Normal / **19,7 MB** Low (disk; estimasi gzip 11,9 / 9,3 MiB = di bawah budget 15 MiB), heap Planet 240 → **62 MiB**, pin rumah tak lagi tertutup panel; 333 test
 - [x] QA penutup M3 di build produksi `9ec11fd`: smoke **9/9 PASS** ✓; e2e ulang **done** + screenshot HUD/beacon/malam ✓; proof capture (Damar menyapa, rumput, malam, lazy) ✓; perf: Low + CPU 4× Town p95 16,4 / p99 19,9 ms (**✓ budget 40/50**, proxy M1 Pro), heap 35–55 MiB ✓, transfer Town tanpa kompresi 31,6 (Normal) / 26,2 MiB (Low) — angka terkompresi nyata belum diukur; soak 20× plateau, tetapi **texture +1 per putaran** (kebocoran kecil, perlu diperbaiki)
 - [x] Review visual artist (M3-A2): **belum lolos visual penuh** → 6 perbaikan kecil R1–R6 (tumpukan tip/prompt/toast, notifikasi menutup objective, **kota asal tak terlihat di Planet (J2)**, panah menutup strip kontrol, bukti aksi lampu via E, modal selesai)
-- [ ] Perbaikan kebocoran texture + R1–R6 (engineer M3-E4, berjalan)
+- [x] Kebocoran texture diperbaiki (shadow map lampu interior tak di-dispose); texture stabil di semua putaran; 340 test (commit `428a789`*)
+- [ ] R1–R6 perbaikan UI (sebagian R1/R2 sudah di `428a789`; sisanya engineer M3-E4, berjalan)
 - [x] Struktur rapi (commit `de7c37f`): TownMode 1.743 → **392 baris** + 7 controller (<400 baris), 339 test, test lama tidak diubah
 - [ ] Smoke + e2e ulang setelah refactor, commit M3
 
 **Butuh keputusan Anda saat review:** tinggi dewasa 1,65 m (usulan artist), budget Hemat rinci, intro sekali per perangkat (keputusan sementara lead).
-**Hambatan:** Mac sempat tidur berulang (04:45–08:00) → kerja terhenti; sekarang charger terpasang.
+**Hambatan:** Mac sempat tidur berulang (04:45–08:00). Limit Claude habis ±10:40–11:30 (lead + engineer berhenti). Codex 5 jam 97% (reset 13:08) → artist ditahan.
+
+\* `428a789` (11:25) **bukan dibuat lead/worker studio** — kemungkinan sesi lain atau Anda saat limit; isinya sah (fix texture, sebagian R1/R2, artefak QA) dan dibiarkan apa adanya.
 
 ---
 

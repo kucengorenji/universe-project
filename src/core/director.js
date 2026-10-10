@@ -1,6 +1,7 @@
 import { parseRoute, formatRoute, isSafeHomeId } from './router.js';
 import { isSupportedHomeRecord } from '../world/savedRecords.js';
 import { flashToast } from '../ui/toast.js';
+import { contextKey } from './tipPolicy.js';
 import { markRoute } from './resourceBytes.js';
 import { t } from '../i18n/index.js';
 
@@ -174,6 +175,7 @@ export class Director {
       engine.setMode(null);
       try { old.exit(); } catch (error) { console.error('Leaving the previous mode failed:', error); }
     }
+    this.ctx.tips?.setContext(contextKey(route.mode)); // the old place's tip leaves now; a town refines this to its view
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
     let mode = null;
     try {

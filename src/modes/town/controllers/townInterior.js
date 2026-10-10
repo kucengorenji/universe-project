@@ -97,7 +97,7 @@ export class InteriorMethods {
       this.ui.classList.add('is-inside');
       this.saveInterior();
       this.saveInteriorLocation();
-      this.journeyTown?.opened(door.b.id, this.interiorRecord.floors);
+      this.journeyTown?.opened(door.b.id, this.interiorRecord.floors, inside.lampState());
       if (session.quarantined) this.showHomeMessage(tr('save.quarantined'));
       ticket.end();
       this.ctx.missions?.emit('enter_house');
@@ -160,7 +160,7 @@ export class InteriorMethods {
     const before = this.journeyTown && inside.snapshot();
     const r = inside.use(it, p);
     this.saveInterior();
-    this.journeyTown?.used({ buildingId: this.interiorDoor.b.id, floor: inside.floor, before, after: inside.snapshot(), holding: inside.holding });
+    this.journeyTown?.used({ buildingId: this.interiorDoor.b.id, floor: inside.floor, before, after: inside.snapshot(), holding: inside.holding, lights: inside.lampState() });
     if (r.event) this.ctx.missions?.emit(r.event);
     if (r.action === 'exit') return this.exitBuilding();
     if (r.action === 'floor') return this.changeInteriorFloor(r.target);

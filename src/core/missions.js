@@ -1,5 +1,6 @@
 import { t } from '../i18n/index.js';
 import { ScopedProgress } from '../world/scopedProgress.js';
+import { showNotice } from '../ui/notice.js';
 
 // Mission log: checklists that span every mode. Modes report what the player
 // did (emit('sit'), emit('drive_m', 12.5), emit('land', 3)); a checklist item
@@ -111,7 +112,7 @@ export class Missions {
           st.done = st.n >= it.total;
         } else st.done = true;
         changed = true;
-        if (st.done) this.toast(this.label(m, it), this.title(m));
+        if (st.done) this.toast(this.label(m, it), this.title(m), event);
       }
       if (!wasDone && this.missionDone(m)) this.celebrate(m);
     }
@@ -152,7 +153,6 @@ export class Missions {
         <header class="mission-log__head"><h2>${t('missions.title')}</h2><button type="button" class="menu-circle menu-circle--close menu-circle--small" data-act="toggle" aria-label="${t('missions.close')}"><span></span><span></span></button></header>
         <div class="mission-log__body" data-list></div>
       </aside>
-      <div class="mission-toast" hidden role="status"></div>
       <div class="mission-party" hidden>
         <canvas class="mission-party__confetti"></canvas>
         <section class="mission-party__card" role="dialog" aria-modal="true" aria-labelledby="partyTitle">
@@ -168,7 +168,6 @@ export class Missions {
       list: r.querySelector('[data-list]'),
       count: r.querySelector('[data-count]'),
       toggle: r.querySelector('.mission-toggle'),
-      toast: r.querySelector('.mission-toast'),
       party: r.querySelector('.mission-party'),
       confetti: r.querySelector('.mission-party__confetti')
     };
@@ -217,16 +216,12 @@ export class Missions {
     this.el.count.textContent = `${done}/${MISSIONS.length}`;
   }
 
-  toast(label, mission) {
-    const el = this.el.toast;
-    el.innerHTML = `<span class="mission__check is-on" aria-hidden="true"></span><span><small>${mission}</small>${label}</span>`;
-    el.hidden = false;
-    el.classList.remove('is-out');
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => {
-      el.classList.add('is-out');
-      setTimeout(() => (el.hidden = true), 400);
-    }, 2600);
+  /**
+   * A checklist item ticked. The sound and listeners always fire; the message goes to the shared notice
+   * slot unless `suppressToast(event)` says the First Journey already toasts that same action.
+   */
+  toast(label, mission, event) {
+    if (!this.suppressToast?.(event)) showNotice({ kind: 'mission', title: mission, message: label, ms: 2600 });
     this.sound?.sfx('tick');
     this.listeners.forEach((fn) => fn('tick'));
   }

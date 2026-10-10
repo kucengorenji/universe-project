@@ -1,5 +1,47 @@
 # Studio tasks
 
+## Status sekarang (10 Okt 2026, 10:00 WIB) — baca ini dulu
+
+**M0 Repo rapi** ✅ selesai
+- [x] Commit besar dipecah per produk (Town/Trade/Valley/Docs), backup `backup/skirmish-vc-5033bd3`
+- [x] Baseline: build lolos, 202/202 test
+
+**M1 Fondasi aman** ✅ selesai — commit `d787415`, `2e21fed`, `5cc57ea`
+- [x] Kontrak versi save + karantina record tak dikenal (E1)
+- [x] Misi/tips per dunia, gagal simpan terlihat, konfirmasi regenerate (E2)
+- [x] Pemulihan mode gagal tanpa reload, transisi interior aman (E3)
+- [x] Smoke semua route 9/9 PASS, 0 error (Q1)
+- [x] Docs registry dikoreksi (hosting, route Home, indeks, status per produk)
+- [x] 244/244 test
+
+**M2 Slice "Perjalanan Pertama"** 🟡 kode selesai, QA belum — commit `9a970aa`, `6ec14aa`
+- [x] Spesifikasi slice (lead) + UX/copy ID-EN (artist)
+- [x] Journey J1–J6, rumah awal, HUD tujuan, beacon/panah/pin, sorot planet & kota asal
+- [x] 281/281 test, build lolos, probe browser engineer J1→selesai + reload tanpa error
+- [x] Baseline perf (build produksi, 6ec14aa): awal sampai Space 0,88 MiB, Planet 1,51 MiB (✓ budget 10); Town 36,95 MiB (✗ → diperbaiki M3-E2). Catatan run 2 dev server: **transfer cold Town ≈45 MiB** (budget 10+15) = gap terbesar; heap Planet ≈254 MiB (anomali, telusuri); frame 16,7 ms terkunci vsync → belum informatif; throttled walk/interior + soak belum tercatat. Perlu run ulang di build produksi (vite preview) + metode GPU-saturation
+- [x] E2E journey resmi: **10/10 langkah lolos** di build produksi, trace bertahan setelah reload (commit `ea7d8c3`)
+- [x] Screenshot diambil ulang dengan intro ditutup dan direview artist (lihat M3)
+- [ ] Playtest oleh Anda
+
+**M3 Dunia hidup + Hemat** 🟡 berjalan — commit `ff058fe` (proof 1–3 + lazy interior)
+- [x] Kajian art book (ART_BOOK_GAP) + draft LIVING_WORLD_BOOK (77/80 gambar sprint dikaji)
+- [x] Proof 1 rumput tersibak pemain
+- [x] Proof 2 warga bernama "Damar" menyapa
+- [x] Proof 3 malam hangat, rumah tetap terbaca
+- [x] Hemat quick wins: furniture/interior lazy, aset yatim tidak dimuat
+- [x] Hemat bytes (commit `9ec11fd`): masuk Town 36,9 → **22,6 MB** Normal / **19,7 MB** Low (disk; estimasi gzip 11,9 / 9,3 MiB = di bawah budget 15 MiB), heap Planet 240 → **62 MiB**, pin rumah tak lagi tertutup panel; 333 test
+- [x] QA penutup M3 di build produksi `9ec11fd`: smoke **9/9 PASS** ✓; e2e ulang **done** + screenshot HUD/beacon/malam ✓; proof capture (Damar menyapa, rumput, malam, lazy) ✓; perf: Low + CPU 4× Town p95 16,4 / p99 19,9 ms (**✓ budget 40/50**, proxy M1 Pro), heap 35–55 MiB ✓, transfer Town tanpa kompresi 31,6 (Normal) / 26,2 MiB (Low) — angka terkompresi nyata belum diukur; soak 20× plateau, tetapi **texture +1 per putaran** (kebocoran kecil, perlu diperbaiki)
+- [x] Review visual artist (M3-A2): **belum lolos visual penuh** → 6 perbaikan kecil R1–R6 (tumpukan tip/prompt/toast, notifikasi menutup objective, **kota asal tak terlihat di Planet (J2)**, panah menutup strip kontrol, bukti aksi lampu via E, modal selesai)
+- [ ] Perbaikan kebocoran texture + R1–R6 (engineer M3-E4, berjalan)
+- [x] Struktur rapi (commit `de7c37f`): TownMode 1.743 → **392 baris** + 7 controller (<400 baris), 339 test, test lama tidak diubah
+- [ ] Smoke + e2e ulang setelah refactor, commit M3
+
+**Butuh keputusan Anda saat review:** tinggi dewasa 1,65 m (usulan artist), budget Hemat rinci, intro sekali per perangkat (keputusan sementara lead).
+**Hambatan:** Mac sempat tidur berulang (04:45–08:00) → kerja terhenti; sekarang charger terpasang.
+
+---
+
+
 Board ditulis hanya oleh lead (globe-lead). Worktree kerja: `/Users/mikelrisyad/Developer/globe-studio`. Milestone dan aturan: [STUDIO.md](STUDIO.md) §Fase 2.
 
 ## Checkpoint 1 (review) — selesai

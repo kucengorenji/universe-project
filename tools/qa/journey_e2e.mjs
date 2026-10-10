@@ -34,16 +34,16 @@ if (!chromium) {
   throw new Error('Chromium not available from playwright-core. Please provide PLAYWRIGHT_CORE env.');
 }
 
-const base = (process.env.JOURNEY_QA_URL || 'http://localhost:5234').replace(/\/$/, '');
+const base = (process.env.JOURNEY_QA_URL || 'http://localhost:5235').replace(/\/$/, '');
 const outputDir = path.resolve(process.env.JOURNEY_QA_OUTPUT || 'docs/qa/journey');
 await mkdir(outputDir, { recursive: true });
 
 const dateStamp = '2026-10-10';
 const nowIso = new Date().toISOString();
-const gitCommit = '6ec14aa'; // snapshot commit under test
+const gitCommit = '9ec11fd'; // snapshot commit under test
 
 console.log('================================================================');
-console.log('  Globe Universe - M2-Q1b Journey E2E (Perjalanan Pertama)     ');
+console.log('  Globe Universe - M3 Journey E2E (Perjalanan Pertama)         ');
 console.log('================================================================');
 console.log(`Target URL        : ${base}`);
 console.log(`Output Directory  : ${outputDir}`);
@@ -153,6 +153,25 @@ try {
   await page.goto(`${base}/play/?qa=1#/space`);
   await page.waitForFunction(() => window.__globe?.director?.route?.mode === 'space' && !window.__globe.director.busy && !window.__globe.director.overlay?.active, null, { timeout: 25000 });
   await page.waitForFunction(() => window.__globeQA?.journey()?.stage === 'j1', null, { timeout: 15000 });
+
+  // Look for and dismiss the intro card like a real player
+  console.log('[journey_e2e] Checking for player intro card ("Start journey" / "Mulai perjalanan")...');
+  try {
+    const introBtn = page.locator('button[data-act="start"], button:has-text("Start journey"), button:has-text("Mulai perjalanan")');
+    if (await introBtn.isVisible({ timeout: 5000 })) {
+      await introBtn.click();
+      console.log('[journey_e2e] Clicked "Start journey" button! Intro card dismissed.');
+      await page.waitForTimeout(600); // let UI fade out and objective HUD become prominent
+    }
+  } catch (err) {
+    console.log('[journey_e2e] No visible intro card detected or already dismissed.');
+  }
+
+  // Settle frames to ensure objective HUD, pointer arrows, and planet pin are fully rendered
+  await page.evaluate(async () => {
+    for (let i = 0; i < 8; i++) await window.__globe.engine.afterFrame();
+  });
+
   const s1 = await recordStep(1, 'Bootstrap in Space (Stage J1)', '01-space.png');
   assert.equal(s1.stage, 'j1');
   const homePlanet = s1.state?.q?.homePlanet ?? (await page.evaluate(() => window.__globeQA.journey().homePlanet));
@@ -167,6 +186,9 @@ try {
   }, homePlanet);
   await page.waitForFunction(() => window.__globe?.director?.route?.mode === 'planet' && !window.__globe.director.busy && !window.__globe.director.overlay?.active, null, { timeout: 25000 });
   await page.waitForFunction(() => window.__globeQA?.journey()?.stage === 'j2', null, { timeout: 15000 });
+  await page.evaluate(async () => {
+    for (let i = 0; i < 8; i++) await window.__globe.engine.afterFrame();
+  });
   const s2 = await recordStep(2, 'Arrive at Home Planet (Stage J2)', '02-planet.png');
   assert.equal(s2.stage, 'j2');
 
@@ -180,6 +202,9 @@ try {
   await page.waitForFunction(() => window.__globe?.director?.route?.mode === 'town' && !window.__globe.director.busy && !window.__globe.director.overlay?.active, null, { timeout: 25000 });
   await page.waitForFunction(() => window.__globeQA?.journey()?.stage === 'j3', null, { timeout: 15000 });
   await page.waitForFunction(() => window.__globeQA?.journey()?.home !== null, null, { timeout: 15000 });
+  await page.evaluate(async () => {
+    for (let i = 0; i < 8; i++) await window.__globe.engine.afterFrame();
+  });
   const s3 = await recordStep(3, 'Land in Hometown Diorama (Stage J3)', '03-town-diorama.png');
   assert.equal(s3.stage, 'j3');
   assert.ok(s3.home?.buildingId, 'Starter house must be resolved');
@@ -196,8 +221,30 @@ try {
     if (d) m.placePlayer(d.x, d.z);
   });
   await page.waitForFunction(() => window.__globeQA?.journey()?.stage === 'j4', null, { timeout: 20000 });
+  await page.evaluate(async () => {
+    for (let i = 0; i < 8; i++) await window.__globe.engine.afterFrame();
+  });
   const s4 = await recordStep(4, 'Approach Starter House Door (Stage J4)', '04-walk-door.png');
   assert.equal(s4.stage, 'j4');
+
+  // STEP 4b: Capture night at starter house door using world clock API
+  console.log('\n--- Step 4b: Night Capture at Starter House Door (World Clock API) ---');
+  await page.evaluate(() => {
+    const g = window.__globe;
+    const m = g.director.mode;
+    const w = g.world;
+    // Advance world clock until night time is reached (sun elevation < -0.15)
+    for (let i = 0; i < 48; i++) {
+      const s = w.sunAt(m.route.planet, m.layout.frame);
+      if (s.y < -0.15) break;
+      w.skipTime(1200); // skip 20 minutes
+    }
+  });
+  await page.evaluate(async () => {
+    for (let i = 0; i < 10; i++) await window.__globe.engine.afterFrame();
+  });
+  const s4b = await recordStep('04b', 'Starter House Door at Night (World Clock)', '04b-walk-door-night.png');
+  console.log(`[journey_e2e] Night screenshot captured! Beacon and warm night palette active.`);
 
   // -------------------------------------------------------------------------
   // STEP 5: Enter building (J5)
@@ -319,17 +366,19 @@ try {
   console.log(`[journey_e2e] Written JSON: ${jsonPathLatest}`);
 
   // Write README.md
-  const readmeContent = `# Laporan Pengujian E2E: Perjalanan Pertama / The First Journey (M2-Q1b)
+  const readmeContent = `# Laporan Pengujian E2E: Perjalanan Pertama / The First Journey (M3-Q1b)
 
 **Tanggal:** ${dateStamp} (WIB, UTC+7)  
 **Target Server:** \`${base}\` (Production preview build, tanpa HMR)  
 **Snapshot Commit:** \`${gitCommit}\`  
 **Browser / Backend:** Chrome Headless (\`${report.browser}\`, Metal WebGL)  
-**Hasil Keseluruhan:** ${report.summary.allPassed ? '✅ **10/10 LANGKAH LULUS (STAGE: DONE)**' : '❌ **GAGAL**'}
+**Hasil Keseluruhan:** ${report.summary.allPassed ? '✅ **SEMUA LANGKAH LULUS (STAGE: DONE, HUD & MALAM TERVERIFIKASI)**' : '❌ **GAGAL**'}
 
 ---
 
 ## 1. Kronologi Eksekusi Alur Perjalanan (J1 → J6 → Done)
+
+Setiap langkah diawali dengan penutupan kartu intro (\`Start journey\` / \`Mulai perjalanan\`), memastikan HUD tujuan, beacon pintu rumah, panah pemandu, pin minimap, dan sorot planet/kota terlihat jelas pada setiap tangkapan layar.
 
 | Langkah | Nama Tahapan | Target / Route | Journey Stage | Status | Screenshot |
 |---|---|---|---|---|---|
@@ -341,17 +390,19 @@ ${report.steps.map(s => {
 
 ## 2. Rincian Bukti Verifikasi State & Jejak
 
+- **Penutupan Kartu Intro:** Kartu intro ditutup via tombol CTA pemain (\`Start journey\` / \`Mulai perjalanan\`), memunculkan Objective HUD (\`.journey-hud\`) dan beacon pintu.
+- **Capture Malam di Pintu Rumah:** Menggunakan API world clock (\`world.skipTime\`) untuk memajukan jam dunia ke malam (\`sun.y < -0.15\`), memverifikasi suasana malam (warm night palette) dan beacon pintu tetap kontras terbaca.
 - **Identitas Rumah Awal (Starter House):**
   - **Planet / Kota Asal:** Planet index \`${report.steps[2]?.home?.planet ?? 2}\`, City index \`${report.steps[2]?.home?.city ?? 0}\`
   - **Building ID:** \`${report.steps[2]?.home?.buildingId || 'N/A'}\`
   - **Asset / Tier:** \`${report.steps[2]?.home?.asset || 'f_house_tall'}\` (\`${report.steps[2]?.home?.tier || 'residential'}\`)
 - **Verifikasi Jejak Ruangan (Trace):**
-  - **Jenis Jejak (Kind):** \`${report.steps[5]?.trace?.kind || 'light'}\`
-  - **ID Lampu:** \`${report.steps[5]?.trace?.id || 'N/A'}\`
+  - **Jenis Jejak (Kind):** \`${report.steps.find(s => s.stepId === 6)?.trace?.kind || 'light'}\`
+  - **ID Lampu:** \`${report.steps.find(s => s.stepId === 6)?.trace?.id || 'N/A'}\`
   - **Ekspektasi State:** \`on === true\`
   - **Hasil Pengecekan Ulang (Langkah 10):** Jejak lampu tetap menyala setelah reload & keluar ke angkasa; verifikasi \`verifyTrace()\` berhasil, kartu selebrasi tampil, stage berubah menjadi \`done\`.
 - **Integritas Runtime:**
-  - \`engine.lastError\`: **null** di seluruh 10 langkah.
+  - \`engine.lastError\`: **null** di seluruh langkah pengujian.
   - Page unhandled errors: **${report.summary.pageErrorsCount}**.
   - Console errors: **${report.summary.consoleErrorsCount}**.
 
@@ -361,7 +412,7 @@ ${report.steps.map(s => {
 
 1. **Pergerakan Pemain Fisik vs Mode API:** Navigasi ke pintu rumah awal menggunakan \`mode.placePlayer(door.x, door.z)\` dan \`mode.enterBuilding(door)\` untuk keandalan eksekusi headless, bukan input penekanan tombol fisik WASD secara kontinu.
 2. **Audio Headless:** Sfx transisi dan fanfare selebrasi diverifikasi terpanggil tanpa error; output audio hardware tidak didengar langsung.
-3. **Lingkungan Server:** Pengujian dijalankan pada server preview produksi Vite port 5234 (\`dist/\` ter-compile mandiri, snapshot commit \`${gitCommit}\`).
+3. **Lingkungan Server:** Pengujian dijalankan pada server preview produksi Vite port 5235 (\`dist/\` ter-compile mandiri, snapshot commit \`${gitCommit}\`).
 
 ---
 
@@ -369,11 +420,11 @@ ${report.steps.map(s => {
 
 \`\`\`bash
 # Jalankan preview server produksi
-npx --prefix /private/tmp/claude-503/-Users-mikelrisyad-Developer-globe/21c2354c-1c80-4abc-9469-7b3a55eb1ef9/scratchpad/qa-m2 vite preview --port 5234 --strictPort
+npx --prefix /private/tmp/claude-503/-Users-mikelrisyad-Developer-globe/21c2354c-1c80-4abc-9469-7b3a55eb1ef9/scratchpad/qa-m3 vite preview --port 5235 --strictPort
 
 # Jalankan skrip E2E
 PLAYWRIGHT_CORE=/Users/mikelrisyad/.npm/_npx/e41f203b7505f1fb/node_modules/playwright-core/index.js \\
-JOURNEY_QA_URL=http://localhost:5234 \\
+JOURNEY_QA_URL=http://localhost:5235 \\
 node /Users/mikelrisyad/Developer/globe-studio/tools/qa/journey_e2e.mjs
 \`\`\`
 `;

@@ -1,5 +1,6 @@
 import { t } from '../i18n/index.js';
 import { ScopedProgress } from '../world/scopedProgress.js';
+import { TipPresence, tipMatches } from './tipPolicy.js';
 
 // Onboarding: a title card on the very first visit, then one short tip the
 // first time the player reaches each place or way of moving. Seen tips are
@@ -30,6 +31,9 @@ export class Tips {
     this.world = world;
     this.store = new ScopedProgress(KEY);
     this.seen = new Set(this.load());
+    this.presence = new TipPresence();
+    this.context = null; // where the player is: tipPolicy.contextKey()
+    this.reasons = new Set(); // why the card has to step aside right now ('prompt', 'overlay')
     world?.subscribe?.((event) => { if (event === 'world') this.switchWorld(); });
     root.innerHTML = `
       <aside class="tip" hidden role="status" aria-live="polite">
@@ -90,7 +94,7 @@ export class Tips {
 
   switchWorld() {
     this.seen = new Set(this.load());
-    this.current = null;
+    this.finish();
   }
 
   /** Title card on the first visit; resolves when the player starts. */
@@ -117,10 +121,11 @@ export class Tips {
     }
   }
 
-  /** Show a tip once. The newest place wins: a tip replaced within a moment comes back later. */
+  /** Show a tip once, only where it belongs. The newest place wins: a tip replaced within a moment comes back later. */
   show(id) {
     const keys = TIPS[id];
     if (!keys || this.seen.has(id) || this.current === id) return;
+    if (this.context && !tipMatches(id, this.context)) return; // not seen: the player already moved on
     if (!this.el.intro.hidden) {
       this.pending = id;
       return;
@@ -133,16 +138,52 @@ export class Tips {
     this.el.keys.innerHTML = keys.map((k) => `<kbd>${k.startsWith('key.') ? t(`controls.${k}`) : k}</kbd>`).join('');
     this.el.title.textContent = t(`tips.${id}.title`);
     this.el.text.textContent = t(`tips.${id}.text`);
-    this.el.tip.hidden = false;
     this.el.tip.classList.remove('is-out');
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.hide(), 11000);
+    this.presence.start(id, performance.now());
+    this.sync();
+    this.ticker ??= setInterval(() => this.sync(), 200);
   }
 
+  /**
+   * Where the player is now ('space', 'planet', 'town.walk', ...). A tip that belongs somewhere else
+   * leaves at once, with no fade and without waiting for its timer.
+   */
+  setContext(context) {
+    this.context = context;
+    this.sync();
+  }
+
+  /** An action prompt or an overlay needs the bottom of the screen: the tip steps aside and keeps its time. */
+  suppress(reason, on) {
+    if (on === this.reasons.has(reason)) return;
+    this.reasons[on ? 'add' : 'delete'](reason);
+    this.sync();
+  }
+
+  /** Apply TipPresence to the card. */
+  sync() {
+    if (!this.current) return;
+    const state = this.presence.step({ now: performance.now(), suppressed: this.reasons.size > 0, matches: !this.context || tipMatches(this.current, this.context) });
+    if (state.over) return this.finish();
+    this.el.tip.hidden = !state.visible;
+  }
+
+  finish() {
+    clearInterval(this.ticker);
+    this.ticker = null;
+    this.presence.clear();
+    this.el.tip.hidden = true;
+    this.current = null;
+  }
+
+  /** The close button: the card fades and the tip counts as seen. */
   hide() {
-    clearTimeout(this.timer);
     const el = this.el.tip;
-    if (el.hidden) return;
+    if (!this.current) return;
+    clearInterval(this.ticker);
+    this.ticker = null;
+    this.presence.clear();
+    if (el.hidden) { this.current = null; return; }
     el.classList.add('is-out');
     const was = this.current;
     setTimeout(() => {

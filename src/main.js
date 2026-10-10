@@ -10,6 +10,7 @@ import { Tips } from './core/tips.js';
 import { PauseMenu } from './core/pauseMenu.js';
 import { createJourney } from './core/journey.js';
 import { ObjectiveHud } from './ui/objectiveHud.js';
+import { missionToastSuppressed } from './ui/noticePolicy.js';
 import { proofMetrics, registerProof } from './core/proofMetrics.js';
 import { resourceBytes } from './core/resourceBytes.js';
 import { experiments } from './core/experiments.js';
@@ -35,6 +36,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const director = new Director({ engine, world, overlay, missions, audio, tips, trade });
   await world.ready;
   const journey = (director.ctx.journey = createJourney(world)); // after world.ready: the saved record has to be loaded first
+  missions.suppressToast = (event) => missionToastSuppressed({ event, journeyActive: Boolean(journey.objective()) }); // the journey toasts entering the home and the light itself
   const objectiveHud = new ObjectiveHud(document.getElementById('journeyUi'), { journey, world, audio, openMenu: () => engine.pauseMenu.show() });
   director.start();
   // Read-only QA handle for the First Journey: stage, starter house id, door position, save status (journey.debug())

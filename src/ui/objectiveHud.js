@@ -1,6 +1,7 @@
 import { t, formatNumber } from '../i18n/index.js';
 import { JOURNEY_PALETTE } from '../art/palette.js';
 import { flashToast } from './toast.js';
+import { setNoticeBlock, placeNotice } from './notice.js';
 
 // One line for the First Journey: what to do next, how far the door is, and the one
 // message about saving that matters right now. It only reads the journey; it never
@@ -21,13 +22,14 @@ export function pickAlert({ journey, world }) {
 }
 
 export class ObjectiveHud {
-  constructor(root, { journey, world = null, audio = null, openMenu = () => {}, notify = flashToast }) {
+  constructor(root, { journey, world = null, audio = null, openMenu = () => {}, notify = flashToast, block = setNoticeBlock }) {
     this.root = root;
     this.journey = journey;
     this.world = world;
     this.audio = audio;
     this.openMenu = openMenu;
     this.notify = notify;
+    this.block = block;
     this.lastAlert = null;
     this.noticeUntil = 0;
     for (const [name, value] of Object.entries(JOURNEY_PALETTE)) document.documentElement.style.setProperty(`--journey-${name}`, value);
@@ -66,7 +68,7 @@ export class ObjectiveHud {
     this.onResize = () => this.place();
     window.addEventListener('resize', this.onResize);
     this.unsubscribe = journey.subscribe((event) => {
-      if (event.type === 'toast') this.notify(t(event.key), event.key === 'journey.toast.j5' ? 4000 : 2800);
+      if (event.type === 'toast') this.notify(t(event.key), event.key === 'journey.toast.j5' ? 4000 : 2800, event.key === 'journey.toast.j5' ? 'saved' : 'stage');
       else if (event.type === 'complete') this.celebrate();
       this.render();
     });
@@ -88,6 +90,7 @@ export class ObjectiveHud {
     const objective = journey.objective();
     const hide = !objective || HIDDEN_IN.has(journey.view.mode);
     this.el.hud.hidden = hide;
+    this.block(hide ? 'none' : this.noticeBlock(journey));
     if (hide) return;
     this.place();
     const [lineKey, lineParams] = objective.line;
@@ -97,6 +100,13 @@ export class ObjectiveHud {
     const [hintKey, hintParams] = journey.status.save === 'pending' ? ['journey.save.pending'] : objective.hint;
     this.el.hint.textContent = t(hintKey, hintParams);
     this.renderAlert(pickAlert({ journey, world: this.world }));
+    placeNotice(); // the slot sits 8 px under whatever height the bar has now
+  }
+
+  /** A save problem on the bar silences the notice slot; a save still pending lets only the confirmation through. */
+  noticeBlock(journey) {
+    if (pickAlert({ journey, world: this.world })?.menu) return 'error';
+    return journey.status.save === 'pending' ? 'pending' : 'none';
   }
 
   renderAlert(alert) {

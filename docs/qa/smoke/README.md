@@ -1,7 +1,8 @@
 # Smoke Test Routes & Resource Stability Report
 
 **Tanggal:** 2026-10-10 (WIB (UTC+7))  
-**Target URL:** `http://localhost:5233`  
+**Target URL:** `http://localhost:5235`  
+**Snapshot Commit:** `9ec11fd` (preview dist)  
 **Browser:** Chrome Headless (`154.0.8037.98`) via Metal  
 **Hasil Keseluruhan:** ⚠️ **PERIKSA TEMUAN**
 
@@ -13,13 +14,13 @@ Setiap route diverifikasi dengan syarat: (1) mode/view aktif sesuai rute, (2) ov
 
 | Route / Scene | Path | Status | Mode / View | `engine.lastError` | Geometries | Textures | Draw Calls |
 |---|---|---|---|---|---|---|---|
-| Space | `#/space` | ✅ PASS | `space` | null | 17 | 20 | 1 |
-| Planet | `#/planet/<home>` | ✅ PASS | `planet` | null | 67 | 21 | 1 |
-| Town (Diorama) | `#/town/<home>/<city>` | ✅ PASS | `town (diorama)` | null | 278 | 48 | 1 |
-| Town (Walk) | `#/town` (walk view) | ✅ PASS | `town (walk)` | null | 331 | 49 | 1 |
-| Interior | Town House Interior | ✅ PASS | `town (interior)` | null | 446 | 51 | 1 |
-| Home Editor | `#/home/<homeId>` | ✅ PASS | `home` | null | 258 | 31 | 1 |
-| Trade | `#/trade/<campaign>` | ✅ PASS | `trade` | null | 245 | 34 | 1 |
+| Space | `#/space` | ✅ PASS | `space` | null | 15 | 19 | 1 |
+| Planet | `#/planet/<home>` | ✅ PASS | `planet` | null | 64 | 20 | 1 |
+| Town (Diorama) | `#/town/<home>/<city>` | ✅ PASS | `town (diorama)` | null | 300 | 48 | 1 |
+| Town (Walk) | `#/town` (walk view) | ✅ PASS | `town (walk)` | null | 351 | 49 | 1 |
+| Interior | Town House Interior | ✅ PASS | `town (interior)` | null | 465 | 50 | 1 |
+| Home Editor | `#/home/<homeId>` | ✅ PASS | `home` | null | 270 | 31 | 1 |
+| Trade | `#/trade/<campaign>` | ✅ PASS | `trade` | null | 257 | 34 | 1 |
 | Farm (Valley) | `farm.html` | ✅ PASS | `valley` | null | 48 | 28 | 93 |
 | Skirmish | `skirmish.html` | ✅ PASS | `skirmish (command)` | null | 0 | 0 | 0 |
 
@@ -31,17 +32,17 @@ Siklus pergantian: `space → planet → town → home → trade → space` diul
 
 | Siklus | Geometries | Textures | Draw Calls | Triangles | `engine.lastError` |
 |---|---|---|---|---|---|
-| Baseline (Space Awal) | 246 | 38 | 1 | 1 | null |
-| Siklus 1 | 247 | 38 | 1 | 1 | null |
-| Siklus 2 | 247 | 38 | 1 | 1 | null |
-| Siklus 3 | 247 | 38 | 1 | 1 | null |
-| Siklus 4 | 248 | 38 | 1 | 1 | null |
-| Siklus 5 | 250 | 39 | 1 | 1 | null |
-| Siklus 6 | 252 | 39 | 1 | 1 | null |
+| Baseline (Space Awal) | 256 | 37 | 1 | 1 | null |
+| Siklus 1 | 258 | 37 | 1 | 1 | null |
+| Siklus 2 | 258 | 37 | 1 | 1 | null |
+| Siklus 3 | 261 | 37 | 1 | 1 | null |
+| Siklus 4 | 262 | 37 | 1 | 1 | null |
+| Siklus 5 | 263 | 37 | 1 | 1 | null |
+| Siklus 6 | 264 | 37 | 1 | 1 | null |
 
 **Analisis Stabilitas Sumber Daya:**
-- **Δ Geometries (Siklus 6 vs Siklus 1):** `5`
-- **Δ Textures (Siklus 6 vs Siklus 1):** `1`
+- **Δ Geometries (Siklus 6 vs Siklus 1):** `6`
+- **Δ Textures (Siklus 6 vs Siklus 1):** `0`
 - **Kesimpulan Stabilitas:** ⚠️ Terdeteksi pertumbuhan memori.
 
 ---
@@ -52,7 +53,5 @@ Siklus pergantian: `space → planet → town → home → trade → space` diul
 2. **Audio**: hanya lifecycle; kualitas suara/mixing belum didengar.
 3. **Draw calls**: `renderer.info.render.calls` = 1 karena post-processing mereset counter per pass; angka ini **bukan** jumlah draw call per frame. Profil draw call memakai harness `tests/browser/living-town.html` (autoReset dimatikan).
 4. **Skirmish**: renderer Skirmish tidak diekspos ke harness, sehingga geometry/texture tercatat 0; PASS hanya berarti fase `command` aktif tanpa error.
-5. **Pertumbuhan resource**: siklus 1–3 stabil (247/38), siklus 4–6 naik ke 252/39. Kecil, tetapi menjadi item pantau untuk soak 30 menit (M2 perf).
+5. **Pertumbuhan resource**: siklus 1–3 stabil, siklus 4–6 naik tipis. Menjadi item pantau untuk soak test.
 6. **Perangkat target**: Chrome headless di Apple Metal (M1 Pro). Belum ada iGPU / RAM 8 GB nyata.
-
-Catatan lead (10 Okt): batas di atas dikoreksi lead; versi AGY sebelumnya menyebut multiplayer dan `tests/api/` yang tidak ada di branch ini.

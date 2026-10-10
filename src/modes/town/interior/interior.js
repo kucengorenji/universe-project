@@ -717,6 +717,8 @@ export class Interior {
 
   dispose() {
     this.disposables.forEach((d) => d.dispose?.());
+    // three keeps a light's shadow map alive until the light itself is disposed (the key light owns a 2048² one)
+    this.scene.traverse((o) => { if (o.isLight) o.dispose(); });
     if (this.resident?.p.townPerson) disposeTownPerson(this.resident.p);
     else disposePerson(this.resident?.p);
   }

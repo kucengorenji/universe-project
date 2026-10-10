@@ -1,8 +1,9 @@
 {
-  "timestamp": "2026-10-09T19:45:27.356Z",
+  "timestamp": "2026-10-10T02:26:22.961Z",
   "date": "2026-10-10",
   "timezone": "WIB (UTC+7)",
-  "url": "http://localhost:5233",
+  "commit": "9ec11fd",
+  "url": "http://localhost:5235",
   "browser": "154.0.8037.98",
   "routes": {
     "play_space": {
@@ -11,40 +12,40 @@
       "mode": "space",
       "view": null,
       "lastError": null,
-      "geometries": 17,
-      "textures": 20,
+      "geometries": 15,
+      "textures": 19,
       "calls": 1,
       "triangles": 1
     },
     "play_planet": {
-      "route": "#/planet/2",
+      "route": "#/planet/1",
       "pass": true,
       "mode": "planet",
       "view": null,
       "lastError": null,
-      "geometries": 67,
-      "textures": 21,
+      "geometries": 64,
+      "textures": 20,
       "calls": 1,
       "triangles": 1
     },
     "play_town_diorama": {
-      "route": "#/town/2/0 (diorama)",
+      "route": "#/town/1/0 (diorama)",
       "pass": true,
       "mode": "town",
       "view": "diorama",
       "lastError": null,
-      "geometries": 278,
+      "geometries": 300,
       "textures": 48,
       "calls": 1,
       "triangles": 1
     },
     "play_town_walk": {
-      "route": "#/town/2/0 (walk)",
+      "route": "#/town/1/0 (walk)",
       "pass": true,
       "mode": "town",
       "view": "walk",
       "lastError": null,
-      "geometries": 331,
+      "geometries": 351,
       "textures": 49,
       "calls": 1,
       "triangles": 1
@@ -55,29 +56,29 @@
       "mode": "town",
       "view": "interior",
       "lastError": null,
-      "geometries": 446,
-      "textures": 51,
+      "geometries": 465,
+      "textures": 50,
       "calls": 1,
       "triangles": 1
     },
     "play_home": {
-      "route": "#/home/2/0/town%3A16445609%3Abuilding%3Af_castle%3A6552%3A7940%3A-24615",
+      "route": "#/home/1/0/town%3A121502369%3Abuilding%3Af_castle%3A-7442%3A-8279%3A6574",
       "pass": true,
       "mode": "home",
       "view": "walk",
       "lastError": null,
-      "geometries": 258,
+      "geometries": 270,
       "textures": 31,
       "calls": 1,
       "triangles": 1
     },
     "play_trade": {
-      "route": "#/trade/2",
+      "route": "#/trade/1",
       "pass": true,
       "mode": "trade",
       "view": "custom",
       "lastError": null,
-      "geometries": 245,
+      "geometries": 257,
       "textures": 34,
       "calls": 1,
       "triangles": 1
@@ -111,8 +112,8 @@
       "mode": "space",
       "view": null,
       "lastError": null,
-      "geometries": 246,
-      "textures": 38,
+      "geometries": 256,
+      "textures": 37,
       "calls": 1,
       "triangles": 1
     },
@@ -122,8 +123,8 @@
         "mode": "space",
         "view": null,
         "lastError": null,
-        "geometries": 247,
-        "textures": 38,
+        "geometries": 258,
+        "textures": 37,
         "calls": 1,
         "triangles": 1
       },
@@ -132,8 +133,8 @@
         "mode": "space",
         "view": null,
         "lastError": null,
-        "geometries": 247,
-        "textures": 38,
+        "geometries": 258,
+        "textures": 37,
         "calls": 1,
         "triangles": 1
       },
@@ -142,8 +143,8 @@
         "mode": "space",
         "view": null,
         "lastError": null,
-        "geometries": 247,
-        "textures": 38,
+        "geometries": 261,
+        "textures": 37,
         "calls": 1,
         "triangles": 1
       },
@@ -152,8 +153,8 @@
         "mode": "space",
         "view": null,
         "lastError": null,
-        "geometries": 248,
-        "textures": 38,
+        "geometries": 262,
+        "textures": 37,
         "calls": 1,
         "triangles": 1
       },
@@ -162,8 +163,8 @@
         "mode": "space",
         "view": null,
         "lastError": null,
-        "geometries": 250,
-        "textures": 39,
+        "geometries": 263,
+        "textures": 37,
         "calls": 1,
         "triangles": 1
       },
@@ -172,25 +173,27 @@
         "mode": "space",
         "view": null,
         "lastError": null,
-        "geometries": 252,
-        "textures": 39,
+        "geometries": 264,
+        "textures": 37,
         "calls": 1,
         "triangles": 1
       }
     ],
     "growth": {
-      "geometryDelta": 5,
-      "textureDelta": 1,
+      "geometryDelta": 6,
+      "textureDelta": 0,
       "callsDelta": 0
     },
     "stable": false
   },
   "errors": [],
   "limitations": [
-    "Pointer lock fisik: Diuji via event sintetis dan direct mode API; pointer lock browser di headless tidak mengunci hardware mouse.",
-    "Audio decode / hardware playback: Driver WebAudio di lingkungan headless berjalan dalam mode software buffer tanpa speaker fisik.",
-    "Multiplayer / WebSocket sync: Backend live-ops dan turnamen online belum terintegrasi di mode explorasi lokal.",
-    "Spesifikasi mobile GPU low-end: Pengujian dilakukan pada Chrome desktop (Apple Metal backend); profil memori iGPU <8GB perlu QA terpisah."
+    "Pointer lock fisik: walk view memakai API mode internal (setView('walk')) dan input sintetis; requestPointerLock di headless tidak menguji kursor perangkat.",
+    "Audio: hanya lifecycle; kualitas suara/mixing belum didengar.",
+    "Draw calls: renderer.info.render.calls = 1 karena post-processing mereset counter per pass; angka ini bukan jumlah draw call per frame. Profil draw call memakai harness tests/browser/living-town.html (autoReset dimatikan).",
+    "Skirmish: renderer Skirmish tidak diekspos ke harness, sehingga geometry/texture tercatat 0; PASS hanya berarti fase command aktif tanpa error.",
+    "Pertumbuhan resource: siklus 1–3 stabil, siklus 4–6 naik tipis. Menjadi item pantau untuk soak test.",
+    "Perangkat target: Chrome headless di Apple Metal (M1 Pro). Belum ada iGPU / RAM 8 GB nyata."
   ],
   "summary": {
     "totalRoutesTested": 9,

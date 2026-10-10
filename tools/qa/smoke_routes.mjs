@@ -22,17 +22,19 @@ if (!chromium) {
   throw new Error('Chromium not available from playwright-core. Please provide PLAYWRIGHT_CORE env.');
 }
 
-const base = (process.env.SMOKE_QA_URL || process.env.GLOBE_QA_URL || 'http://localhost:5233').replace(/\/$/, '');
+const base = (process.env.SMOKE_QA_URL || process.env.GLOBE_QA_URL || 'http://localhost:5235').replace(/\/$/, '');
 const outputDir = path.resolve(process.env.SMOKE_QA_OUTPUT || 'docs/qa/smoke');
 await mkdir(outputDir, { recursive: true });
 
 // Date stamp local WIB (Asia/Jakarta, UTC+7)
 const dateStamp = '2026-10-10';
 const nowIso = new Date().toISOString();
+const gitCommit = '9ec11fd';
 
 console.log(`[smoke_routes] Connecting to ${base}...`);
 console.log(`[smoke_routes] Output directory: ${outputDir}`);
 console.log(`[smoke_routes] Date stamp: ${dateStamp} (WIB)`);
+console.log(`[smoke_routes] Commit: ${gitCommit}`);
 
 const browser = await chromium.launch({
   channel: 'chrome',
@@ -88,6 +90,7 @@ const report = {
   timestamp: nowIso,
   date: dateStamp,
   timezone: 'WIB (UTC+7)',
+  commit: gitCommit,
   url: base,
   browser: browser.version(),
   routes: {},
@@ -100,10 +103,12 @@ const report = {
   },
   errors: [],
   limitations: [
-    'Pointer lock fisik: Diuji via event sintetis dan direct mode API; pointer lock browser di headless tidak mengunci hardware mouse.',
-    'Audio decode / hardware playback: Driver WebAudio di lingkungan headless berjalan dalam mode software buffer tanpa speaker fisik.',
-    'Multiplayer / WebSocket sync: Backend live-ops dan turnamen online belum terintegrasi di mode explorasi lokal.',
-    'Spesifikasi mobile GPU low-end: Pengujian dilakukan pada Chrome desktop (Apple Metal backend); profil memori iGPU <8GB perlu QA terpisah.'
+    'Pointer lock fisik: walk view memakai API mode internal (setView(\'walk\')) dan input sintetis; requestPointerLock di headless tidak menguji kursor perangkat.',
+    'Audio: hanya lifecycle; kualitas suara/mixing belum didengar.',
+    'Draw calls: renderer.info.render.calls = 1 karena post-processing mereset counter per pass; angka ini bukan jumlah draw call per frame. Profil draw call memakai harness tests/browser/living-town.html (autoReset dimatikan).',
+    'Skirmish: renderer Skirmish tidak diekspos ke harness, sehingga geometry/texture tercatat 0; PASS hanya berarti fase command aktif tanpa error.',
+    'Pertumbuhan resource: siklus 1–3 stabil, siklus 4–6 naik tipis. Menjadi item pantau untuk soak test.',
+    'Perangkat target: Chrome headless di Apple Metal (M1 Pro). Belum ada iGPU / RAM 8 GB nyata.'
   ],
   summary: {
     totalRoutesTested: 0,
@@ -137,7 +142,7 @@ try {
     if (m.type() === 'error') pageErrors.push({ route: 'play', type: 'console', text: m.text() });
   });
 
-  await playPage.goto(`${base}/play/`);
+  await playPage.goto(`${base}/play/?qa=1`);
 
   // Wait specifically for scene ready:
   // 1. Director mode exists
@@ -285,16 +290,29 @@ try {
     const tm = g.director.mode;
     const idx = g.world.homeIndex;
     const b = tm.layout?.buildings?.[0] || { x: 0, z: 0, yaw: 0, w: 10, d: 10, asset: 'house_wood_1' };
-    const { ensureHomeRecord } = await import('/src/world/homeState.js');
-    const record = ensureHomeRecord(g.world.state, {
-      planet: idx,
-      city: 0,
-      townSeed: tm.townSeed || 123,
-      layoutSeed: tm.layout?.seed ?? 123,
-      layoutVersion: tm.layout?.layoutVersion ?? 2,
-      building: b,
-      plot: [{ x: -10, z: -10 }, { x: 10, z: -10 }, { x: 10, z: 10 }, { x: -10, z: 10 }]
-    });
+    const id = b.id || `home-${idx}-0-0`;
+    const key = `home:${idx}:0:${id}`;
+    let record = g.world.state.get ? g.world.state.get(key) : null;
+    if (!record) {
+      record = {
+        schemaVersion: 1,
+        id,
+        planet: idx,
+        city: 0,
+        townSeed: tm.townSeed || 123,
+        layoutSeed: tm.layout?.seed ?? 123,
+        layoutVersion: tm.layout?.layoutVersion ?? 2,
+        buildingId: id,
+        seed: 123,
+        origin: { x: b.x || 0, z: b.z || 0, yaw: b.yaw || 0 },
+        source: { asset: b.asset || 'house_wood_1', w: b.w || 10, d: b.d || 10, floors: 2 },
+        plot: [{ x: -10, z: -10 }, { x: 10, z: -10 }, { x: 10, z: 10 }, { x: -10, z: 10 }],
+        obstacles: [],
+        draft: null,
+        applied: null
+      };
+      if (g.world.state.set) g.world.state.set(key, record);
+    }
     await g.director.go({ mode: 'home', planet: idx, city: 0, home: record.id });
     return record.id;
   });
@@ -363,16 +381,29 @@ try {
       const idx = g.world.homeIndex;
       const tm = g.director.mode;
       const b = tm.layout?.buildings?.[0] || { x: 0, z: 0, yaw: 0, w: 10, d: 10, asset: 'house_wood_1' };
-      const { ensureHomeRecord } = await import('/src/world/homeState.js');
-      const record = ensureHomeRecord(g.world.state, {
-        planet: idx,
-        city: 0,
-        townSeed: tm.townSeed || 123,
-        layoutSeed: tm.layout?.seed ?? 123,
-        layoutVersion: tm.layout?.layoutVersion ?? 2,
-        building: b,
-        plot: [{ x: -10, z: -10 }, { x: 10, z: -10 }, { x: 10, z: 10 }, { x: -10, z: 10 }]
-      });
+      const id = b.id || `home-${idx}-0-0`;
+      const key = `home:${idx}:0:${id}`;
+      let record = g.world.state.get ? g.world.state.get(key) : null;
+      if (!record) {
+        record = {
+          schemaVersion: 1,
+          id,
+          planet: idx,
+          city: 0,
+          townSeed: tm.townSeed || 123,
+          layoutSeed: tm.layout?.seed ?? 123,
+          layoutVersion: tm.layout?.layoutVersion ?? 2,
+          buildingId: id,
+          seed: 123,
+          origin: { x: b.x || 0, z: b.z || 0, yaw: b.yaw || 0 },
+          source: { asset: b.asset || 'house_wood_1', w: b.w || 10, d: b.d || 10, floors: 2 },
+          plot: [{ x: -10, z: -10 }, { x: 10, z: -10 }, { x: 10, z: 10 }, { x: -10, z: 10 }],
+          obstacles: [],
+          draft: null,
+          applied: null
+        };
+        if (g.world.state.set) g.world.state.set(key, record);
+      }
       await g.director.go({ mode: 'home', planet: idx, city: 0, home: record.id });
     });
     await waitPlayReady('home');
@@ -540,6 +571,7 @@ const markdownContent = `# Smoke Test Routes & Resource Stability Report
 
 **Tanggal:** ${dateStamp} (${report.timezone})  
 **Target URL:** \`${base}\`  
+**Snapshot Commit:** \`${gitCommit}\` (preview dist)  
 **Browser:** Chrome Headless (\`${report.browser}\`) via Metal  
 **Hasil Keseluruhan:** ${report.summary.failedRoutes === 0 && report.summary.totalErrors === 0 && report.cycleStress.stable ? '✅ **LULUS (0 Error, Resource Stabil)**' : '⚠️ **PERIKSA TEMUAN**'}
 
@@ -581,10 +613,12 @@ ${report.cycleStress.cycles.map(c => `| Siklus ${c.cycle} | ${c.geometries} | ${
 
 ## 3. Batas yang Belum Bisa Diuji (Limitations)
 
-1. **Pointer Lock Fisik**: Pengujian TPS/walk view menggunakan simulasi input dan API mode internal (\`setView('walk')\`); penangkapan kursor fisik (\`requestPointerLock\`) pada lingkungan browser headless tidak menguji integrasi hardware kursor.
-2. **Audio Spatial & WebAudio**: Sound effects dan background ambience diverifikasi melalui siklus hidup mode tanpa verifikasi kualitas output gelombang suara pada hardware DAC/speaker.
-3. **Multiplayer Live Sync**: Telemetri batching dan cloud saves diuji pada level persistence browser lokal (IndexedDB & WAL localStorage); konektivitas cloud backend langsung diuji terpisah pada \`tests/api/\`.
-4. **Perangkat GPU Terbatas (<8GB RAM)**: Pengujian saat ini berjalan pada Chrome desktop dengan backend Apple Metal. Pengujian throttling pada perangkat low-end iGPU Windows/Android perlu dilakukan pada stage selanjutnya.
+1. **Pointer lock fisik**: walk view memakai API mode internal (\`setView('walk')\`) dan input sintetis; \`requestPointerLock\` di headless tidak menguji kursor perangkat.
+2. **Audio**: hanya lifecycle; kualitas suara/mixing belum didengar.
+3. **Draw calls**: \`renderer.info.render.calls\` = 1 karena post-processing mereset counter per pass; angka ini **bukan** jumlah draw call per frame. Profil draw call memakai harness \`tests/browser/living-town.html\` (autoReset dimatikan).
+4. **Skirmish**: renderer Skirmish tidak diekspos ke harness, sehingga geometry/texture tercatat 0; PASS hanya berarti fase \`command\` aktif tanpa error.
+5. **Pertumbuhan resource**: siklus 1–3 stabil, siklus 4–6 naik tipis. Menjadi item pantau untuk soak test.
+6. **Perangkat target**: Chrome headless di Apple Metal (M1 Pro). Belum ada iGPU / RAM 8 GB nyata.
 `;
 
 await writeFile(readmePath, markdownContent, 'utf8');

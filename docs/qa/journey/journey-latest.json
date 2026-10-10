@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-10-10T01:58:47.047Z",
+  "timestamp": "2026-10-10T02:29:38.310Z",
   "date": "2026-10-10",
   "timezone": "WIB (UTC+7)",
-  "url": "http://localhost:5234",
+  "url": "http://localhost:5235",
   "browser": "154.0.8037.98",
   "git": {
-    "commit": "6ec14aa",
+    "commit": "9ec11fd",
     "build": "production preview dist (qa-m2 snapshot)"
   },
   "steps": [
@@ -35,7 +35,7 @@
         "line": [
           "journey.j1",
           {
-            "planet": "Lusol Prime"
+            "planet": "Ququ Prime"
           }
         ],
         "hint": [
@@ -96,9 +96,9 @@
       "home": {
         "planet": 2,
         "city": 0,
-        "buildingId": "town:128420741:building:f_house_tall:3253:-983:24729",
-        "portalId": "town:128420741:building:f_house_tall:3253:-983:24729:entrance",
-        "asset": "f_house_tall",
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
         "tier": 0
       },
       "trace": null,
@@ -138,9 +138,51 @@
       "home": {
         "planet": 2,
         "city": 0,
-        "buildingId": "town:128420741:building:f_house_tall:3253:-983:24729",
-        "portalId": "town:128420741:building:f_house_tall:3253:-983:24729:entrance",
-        "asset": "f_house_tall",
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
+        "tier": 0
+      },
+      "trace": null,
+      "status": {
+        "save": "idle",
+        "progressFailed": false,
+        "restoreFailed": false,
+        "quarantine": null,
+        "verifying": false,
+        "homeUnavailable": false
+      },
+      "objective": {
+        "step": 4,
+        "total": 6,
+        "line": [
+          "journey.j4"
+        ],
+        "distance": 0,
+        "hint": [
+          "journey.j4.hint"
+        ]
+      },
+      "lastError": null,
+      "pageErrors": [],
+      "pass": true
+    },
+    {
+      "stepId": "04b",
+      "name": "Starter House Door at Night (World Clock)",
+      "screenshot": "04b-walk-door-night.png",
+      "mode": "town",
+      "view": "walk",
+      "stage": "j4",
+      "rank": 3,
+      "done": false,
+      "away": false,
+      "home": {
+        "planet": 2,
+        "city": 0,
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
         "tier": 0
       },
       "trace": null,
@@ -180,9 +222,9 @@
       "home": {
         "planet": 2,
         "city": 0,
-        "buildingId": "town:128420741:building:f_house_tall:3253:-983:24729",
-        "portalId": "town:128420741:building:f_house_tall:3253:-983:24729:entrance",
-        "asset": "f_house_tall",
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
         "tier": 0
       },
       "trace": null,
@@ -221,19 +263,19 @@
       "home": {
         "planet": 2,
         "city": 0,
-        "buildingId": "town:128420741:building:f_house_tall:3253:-983:24729",
-        "portalId": "town:128420741:building:f_house_tall:3253:-983:24729:entrance",
-        "asset": "f_house_tall",
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
         "tier": 0
       },
       "trace": {
         "kind": "light",
-        "id": "light::-2.150:1.851:0",
+        "id": "light::-1.350:3.661:0",
         "expected": {
           "on": true
         },
         "floor": 0,
-        "session": "sn0e9oaz85vk"
+        "session": "sna3t0psi5v"
       },
       "status": {
         "save": "idle",
@@ -271,19 +313,19 @@
       "home": {
         "planet": 2,
         "city": 0,
-        "buildingId": "town:128420741:building:f_house_tall:3253:-983:24729",
-        "portalId": "town:128420741:building:f_house_tall:3253:-983:24729:entrance",
-        "asset": "f_house_tall",
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
         "tier": 0
       },
       "trace": {
         "kind": "light",
-        "id": "light::-2.150:1.851:0",
+        "id": "light::-1.350:3.661:0",
         "expected": {
           "on": true
         },
         "floor": 0,
-        "session": "sn0e9oaz85vk"
+        "session": "sna3t0psi5v"
       },
       "status": {
         "save": "idle",
@@ -304,7 +346,7 @@
           "journey.j6.return",
           {
             "city": "New Babylon",
-            "planet": "Lusol Prime"
+            "planet": "Ququ Prime"
           }
         ]
       },
@@ -325,19 +367,19 @@
       "home": {
         "planet": 2,
         "city": 0,
-        "buildingId": "town:128420741:building:f_house_tall:3253:-983:24729",
-        "portalId": "town:128420741:building:f_house_tall:3253:-983:24729:entrance",
-        "asset": "f_house_tall",
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
         "tier": 0
       },
       "trace": {
         "kind": "light",
-        "id": "light::-2.150:1.851:0",
+        "id": "light::-1.350:3.661:0",
         "expected": {
           "on": true
         },
         "floor": 0,
-        "session": "sn0e9oaz85vk"
+        "session": "sna3t0psi5v"
       },
       "status": {
         "save": "idle",
@@ -358,7 +400,7 @@
           "journey.j6.return",
           {
             "city": "New Babylon",
-            "planet": "Lusol Prime"
+            "planet": "Ququ Prime"
           }
         ]
       },
@@ -379,19 +421,19 @@
       "home": {
         "planet": 2,
         "city": 0,
-        "buildingId": "town:128420741:building:f_house_tall:3253:-983:24729",
-        "portalId": "town:128420741:building:f_house_tall:3253:-983:24729:entrance",
-        "asset": "f_house_tall",
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
         "tier": 0
       },
       "trace": {
         "kind": "light",
-        "id": "light::-2.150:1.851:0",
+        "id": "light::-1.350:3.661:0",
         "expected": {
           "on": true
         },
         "floor": 0,
-        "session": "sn0e9oaz85vk"
+        "session": "sna3t0psi5v"
       },
       "status": {
         "save": "idle",
@@ -429,19 +471,19 @@
       "home": {
         "planet": 2,
         "city": 0,
-        "buildingId": "town:128420741:building:f_house_tall:3253:-983:24729",
-        "portalId": "town:128420741:building:f_house_tall:3253:-983:24729:entrance",
-        "asset": "f_house_tall",
+        "buildingId": "town:64150045:building:f_townhouse:-718:-3824:-13991",
+        "portalId": "town:64150045:building:f_townhouse:-718:-3824:-13991:entrance",
+        "asset": "f_townhouse",
         "tier": 0
       },
       "trace": {
         "kind": "light",
-        "id": "light::-2.150:1.851:0",
+        "id": "light::-1.350:3.661:0",
         "expected": {
           "on": true
         },
         "floor": 0,
-        "session": "sn0e9oaz85vk"
+        "session": "sna3t0psi5v"
       },
       "status": {
         "save": "idle",
@@ -459,7 +501,7 @@
   ],
   "summary": {
     "totalSteps": 10,
-    "passedSteps": 10,
+    "passedSteps": 11,
     "allPassed": true,
     "finalStage": "done",
     "done": true,
